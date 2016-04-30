@@ -20,4 +20,6 @@ docs.json
 __dummy.html
 
 test.d
+wip_*.d
+test.py
 bin/
