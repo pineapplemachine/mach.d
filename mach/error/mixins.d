@@ -4,7 +4,7 @@ module mach.error.mixins;
 
 Example usage:
 
-mixin(errorclassmixin("ExampleError"));
+mixin(ErrorClassMixin("ExampleError"));
 throw new ExampleError();
 throw new ExampleError("Hello, world!");
 throw new ExampleError(new AssertError());
@@ -12,14 +12,13 @@ throw new ExampleError(new AssertError());
 +/
 
 private:
-    
-import std.string : split;
 
 enum string DEFAULT_CONSTRUCTOR_ATTR = "@safe pure nothrow";
 enum string DEFAULT_CONSTRUCTOR_BODY = "super(message, file, line, next);";
     
 public:
 
+/// Mixin to build a throwable class
 static string ThrowableClassMixin(
     in string classname, in string superclass, in string defaultmessage,
     in string classbody = "",
@@ -42,6 +41,7 @@ static string ThrowableClassMixin(
     ";
 }
 
+/// Mixin to build a class extending Error
 static string ErrorClassMixin(
     in string classname, in string defaultmessage = "Error",
     in string classbody = "",
@@ -51,6 +51,7 @@ static string ErrorClassMixin(
     return ThrowableClassMixin(classname, "Error", defaultmessage);
 }
 
+/// Mixin to build a class extending Exception
 static string ExceptionClassMixin(
     in string classname, in string defaultmessage = "Exception",
     in string classbody = "",
