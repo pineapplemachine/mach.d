@@ -26,8 +26,6 @@ import std.algorithm : contains = canFind;
 import std.traits : isNumeric;
 
 import mach.error.mixins : ErrorClassMixin;
-// TODO: Why does importing assertf in the unittest where it's used cause linker errors?
-import mach.error.assertf : assertf;
 
 enum string TEST_TRUE_MESSAGE = "Value must be true";
 enum string TEST_FALSE_MESSAGE = "Value must be false";
@@ -43,7 +41,7 @@ enum string TEST_LESSEREQ_MESSAGE = "First value must be less than or equal to t
 public:
 
 mixin(ErrorClassMixin(
-    "TestFailureError", "Encountered unit test failure.",
+    "TestFailureError", "Encountered unit test failure."
 ));
 
 // Used internally by methods which compare two variables
@@ -167,6 +165,11 @@ alias testlt = testlesser;
 alias testgteq = testgreatereq;
 alias testlteq = testlessereq;
 
+version(unittest){
+    import std.string : indexOf;
+    import mach.error.assertf : assertf;
+}
+
 unittest{
     
     // None of these should throw errors
@@ -215,8 +218,6 @@ unittest{
 unittest{
     
     // All of these should throw errors
-    
-    import std.string : indexOf;
     
     void fail(in void function() test, string message = null){
         bool caught = false;

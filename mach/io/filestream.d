@@ -6,19 +6,16 @@ import core.exception : AssertError;
 import core.stdc.stdio : SEEK_CUR, SEEK_END, SEEK_SET;
 import std.stdio : File, LockType;
 
-import mach.io.stream;
+import mach.io.stream : IOStream, StreamSupportMixin;
 
 public:
-
+    
 class FileStream : IOStream {
-    static bool ends = true;
-    static bool haslength = true;
-    static bool hasposition = true;
-    static bool canseek = true;
+    mixin(StreamSupportMixin(
+        "ends", "haslength", "hasposition", "canseek", "canreset"
+    ));
     
     File target;
-    bool canread = false;
-    bool canwrite = false;
     
     this(File target){
         this.target = target;
@@ -100,8 +97,8 @@ class FileStream : IOStream {
     }
 }
 
+version(unittest) import mach.error.test;
 unittest{
-    import mach.error.test;
     tests("FileStream", {
         tests("Read", {
             auto stream = new FileStream(__FILE__, "rb");

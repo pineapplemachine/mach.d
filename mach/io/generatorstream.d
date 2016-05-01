@@ -2,15 +2,14 @@ module mach.io.generatorstream;
 
 private:
 
-import mach.io.stream;
+import mach.io.stream : InputStream, StreamSupportMixin;
 
 public:
 
 class GeneratorStream(T) : InputStream {
-    static bool ends = false;
-    static bool haslength = false;
-    static bool hasposition = true;
-    static bool canseek = false;
+    mixin(StreamSupportMixin(
+        "hasposition", "canreset"
+    ));
     
     static alias Generator = T function(in size_t index, in T last);
     
@@ -73,8 +72,8 @@ class GeneratorStream(T) : InputStream {
     }
 }
 
+version(unittest) import mach.error.test;
 unittest{
-    import mach.error.test;
     tests("GeneratorStream", {
         int[6] buffer;
         tests("Using last argument", {

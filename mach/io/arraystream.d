@@ -2,15 +2,14 @@ module mach.io.arraystream;
 
 private:
 
-import mach.io.stream;
+import mach.io.stream : IOStream, StreamSupportMixin;
 
 public:
 
 class ArrayStream(T) : IOStream {
-    static bool ends = true;
-    static bool haslength = true;
-    static bool hasposition = true;
-    static bool canseek = true;
+    mixin(StreamSupportMixin(
+        "ends", "haslength", "hasposition", "canseek", "canreset"
+    ));
     
     size_t index;
     T[] target;
@@ -82,8 +81,8 @@ class ArrayStream(T) : IOStream {
     }
 }
 
+version(unittest) import mach.error.test;
 unittest{
-    import mach.error.test;
     tests("ArrayStream", {
         ubyte[6] target;
         auto stream = new ArrayStream!ubyte(target);

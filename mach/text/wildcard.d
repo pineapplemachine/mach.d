@@ -110,9 +110,8 @@ class Matcher{
     
 }
 
+version(unittest) import mach.error.test;
 unittest{
-    import mach.error.test;
-    
     tests("Wildcards", {
         Matcher wild = new Matcher();
         tests("Match single character", {
@@ -164,18 +163,18 @@ unittest{
             testf(wild.match("*+", "test"));
             test (wild.match("t.s*t", "test"));
         });
-        tests("Match against an empty string", {
+        tests("Match an empty string", {
             test (wild.match("", ""));
             test (wild.match("*", ""));
             test (wild.match(".", ""));
             testf(wild.match("+", ""));
             testf(wild.match("%", ""));
         });
-        tests("Matching without case sensitivity", {
+        tests("Match without case sensitivity", {
             testf(wild.match("test", "TEST"));
             test (wild.match("test", "TEST", false));
         });
-        tests("Matching with escaped metacharacters", {
+        tests("Match with escaped metacharacters", {
             test (wild.match("a*\\*", "a*"));
             test (wild.match("\\?", "?"));
             test (wild.match("esc*\\?\\?", "escape??"));
