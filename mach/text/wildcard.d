@@ -111,62 +111,75 @@ class Matcher{
 }
 
 unittest{
+    import mach.error.test;
     
-    Matcher wild = new Matcher();
-    
-    assert(wild.match("test", "test") == true);
-    assert(wild.match("test", "toast") == false);
-    assert(wild.match("t?st", "test") == true);
-    assert(wild.match("t?st", "toot") == false);
-    
-    assert(wild.match("*", "teeeeeeEEEESSSt") == true);
-    assert(wild.match("te*st", "test") == true);
-    assert(wild.match("t*st", "teeest") == true);
-    assert(wild.match("t*st", "test test test") == true);
-    assert(wild.match("one*two*three*four", "onebbbdddtwobbthreefour") == true);
-    assert(wild.match("*yes", "testyes") == true);
-    assert(wild.match("test*", "testyes") == true);
-    assert(wild.match("*testyes*", "testyes") == true);
-    assert(wild.match("t*st", "testno") == false);
-    
-    assert(wild.match(".", "teeeeeeEEEESSSt") == true);
-    assert(wild.match("te.st", "test") == true);
-    assert(wild.match("t.st", "teeest") == true);
-    assert(wild.match("t.st", "test test test") == false);
-    assert(wild.match("t.st", "testno") == false);
-    
-    assert(wild.match("+", "teeeeeeEEEESSSt") == true);
-    assert(wild.match("te+st", "test") == false);
-    assert(wild.match("t+t", "test") == true);
-    assert(wild.match("te+st", "test test test") == true);
-    assert(wild.match("t+st", "testno") == false);
-    assert(wild.match("testno+", "testno") == false);
-    assert(wild.match("test+", "testyes") == true);
-    
-    assert(wild.match("%", "teeeeeeEEEESSSt") == true);
-    assert(wild.match("te%st", "test") == false);
-    assert(wild.match("t%t", "test") == true);
-    assert(wild.match("te%st", "test test test") == false);
-    assert(wild.match("testno%", "testno") == false);
-    assert(wild.match("test%", "testyes") == true);
-    
-    assert(wild.match("**", "test") == true);
-    assert(wild.match("+*", "test") == true);
-    assert(wild.match("*+", "test") == false);
-    assert(wild.match("t.s*t", "test") == true);
-    
-    assert(wild.match("", "") == true);
-    assert(wild.match("*", "") == true);
-    assert(wild.match(".", "") == true);
-    assert(wild.match("+", "") == false);
-    assert(wild.match("%", "") == false);
-    
-    assert(wild.match("test", "TEST") == false);
-    assert(wild.match("test", "TEST", false) == true);
-    
-    assert(wild.match("a*\\*", "a*") == true);
-    assert(wild.match("\\?", "?") == true);
-    assert(wild.match("esc*\\?\\?", "escape??") == true);
-    assert(wild.match("esc*b\\?\\?", "escape??") == false);
-    
+    tests("Wildcards", {
+        Matcher wild = new Matcher();
+        tests("Match single character", {
+            test (wild.match("test", "test"));
+            testf(wild.match("test", "toast"));
+            test (wild.match("t?st", "test"));
+            testf(wild.match("t?st", "toot"));
+        });
+        tests("Match any characters greedily", {
+            test (wild.match("*", "teeeeeeEEEESSSt"));
+            test (wild.match("te*st", "test"));
+            test (wild.match("t*st", "teeest"));
+            test (wild.match("t*st", "test test test"));
+            test (wild.match("one*two*three*four", "onebbbdddtwobbthreefour"));
+            test (wild.match("*yes", "testyes"));
+            test (wild.match("test*", "testyes"));
+            test (wild.match("*testyes*", "testyes"));
+            testf(wild.match("t*st", "testno"));
+            testf(wild.match("t*st", "notest"));
+        });
+        tests("Match any characters lazily", {
+            test (wild.match(".", "teeeeeeEEEESSSt"));
+            test (wild.match("te.st", "test"));
+            test (wild.match("t.st", "teeest"));
+            testf(wild.match("t.st", "test test test"));
+            testf(wild.match("t.st", "testno"));
+            testf(wild.match("t.st", "notest"));
+        });
+        tests("Match at least one character greedily", {
+            test (wild.match("+", "teeeeeeEEEESSSt"));
+            testf(wild.match("te+st", "test"));
+            test (wild.match("t+t", "test"));
+            test (wild.match("te+st", "test test test"));
+            testf(wild.match("t+st", "testno"));
+            testf(wild.match("testno+", "testno"));
+            test (wild.match("test+", "testyes"));
+        });
+        tests("Match at least one character lazily", {
+            test (wild.match("%", "teeeeeeEEEESSSt"));
+            testf(wild.match("te%st", "test"));
+            test (wild.match("t%t", "test"));
+            testf(wild.match("te%st", "test test test"));
+            testf(wild.match("testno%", "testno"));
+            test (wild.match("test%", "testyes"));
+        });
+        tests("Freaky combinations of metacharacters", {
+            test (wild.match("**", "test"));
+            test (wild.match("+*", "test"));
+            testf(wild.match("*+", "test"));
+            test (wild.match("t.s*t", "test"));
+        });
+        tests("Match against an empty string", {
+            test (wild.match("", ""));
+            test (wild.match("*", ""));
+            test (wild.match(".", ""));
+            testf(wild.match("+", ""));
+            testf(wild.match("%", ""));
+        });
+        tests("Matching without case sensitivity", {
+            testf(wild.match("test", "TEST"));
+            test (wild.match("test", "TEST", false));
+        });
+        tests("Matching with escaped metacharacters", {
+            test (wild.match("a*\\*", "a*"));
+            test (wild.match("\\?", "?"));
+            test (wild.match("esc*\\?\\?", "escape??"));
+            testf(wild.match("esc*b\\?\\?", "escape??"));
+        });
+    });
 }
