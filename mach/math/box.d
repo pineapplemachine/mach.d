@@ -126,6 +126,9 @@ struct Box(T) if(isNumeric!T){
     @property bool nonzero() const{
         return (this.minx != this.maxx) & (this.miny != this.maxy);
     }
+    @property bool exists() const{
+        return (this.minx < this.maxx) & (this.miny < this.maxy);
+    }
     
     void translate(N)(in Vector2!N vector){
         this.translate(vector.x, vector.y);
@@ -154,52 +157,67 @@ struct Box(T) if(isNumeric!T){
         this.maxx = min(this.maxx, box.maxx);
         this.maxy = min(this.maxy, box.maxy);
     }
-    //void intersect(in Box[] boxes ...) const{
-    //    foreach(arg; boxes) this.intersect(arg);
-    //}
+    void intersect(N)(in Box!N[] boxes ...){
+        foreach(box; boxes){
+            this.minx = cast(T) max(this.minx, box.minx);
+            this.miny = cast(T) max(this.miny, box.miny);
+            this.maxx = cast(T) min(this.maxx, box.maxx);
+            this.maxy = cast(T) min(this.maxy, box.maxy);
+        }
+    }
+    
     Box!T intersection(N)(in Box!N box) const{
-        return Box(
-            max(this.minx, box.minx),
-            max(this.miny, box.miny),
-            min(this.maxx, box.maxx),
-            min(this.maxy, box.maxy)
+        return Box!T(
+            cast(T) max(minx, box.minx),
+            cast(T) max(miny, box.miny),
+            cast(T) min(maxx, box.maxx),
+            cast(T) min(maxy, box.maxy)
         );
     }
-    //Box!T intersection(in Box[] boxes ...) const{
-    //    Box!T box = Box!T(this);
-    //    box.intersect(boxes);
-    //    return box;
-    //}
+    Box!T intersection(N)(in Box!N[] boxes ...) const{
+        T minx = this.minx, miny = this.miny;
+        T maxx = this.maxx, maxy = this.maxy;
+        foreach(box; boxes){
+            minx = cast(T) max(minx, box.minx);
+            miny = cast(T) max(miny, box.miny);
+            maxx = cast(T) min(maxx, box.maxx);
+            maxy = cast(T) min(maxy, box.maxy);
+        }
+        return Box!T(minx, miny, maxx, maxy);
+    }
     
+    void merge(N)(in Box!N box){
+        this.minx = cast(T) min(this.minx, box.minx);
+        this.miny = cast(T) min(this.miny, box.miny);
+        this.maxx = cast(T) max(this.maxx, box.maxx);
+        this.maxy = cast(T) max(this.maxy, box.maxy);
+    }
+    Box!T merged(N)(in Box!N box) const{
+        return Box(
+            cast(T) min(this.minx, box.minx),
+            cast(T) min(this.miny, box.miny),
+            cast(T) max(this.maxx, box.maxx),
+            cast(T) max(this.maxy, box.maxy)
+        );
+    }
     
-    Box!T contains(N)(in Vector2!N vector) const{
+    bool contains(N)(in Vector2!N vector) const{
         return this.contains(cast(T) vector.x, cast(T) vector.y);
     }
     bool contains(N)(in N x, in N y) const if(isNumeric!N){
         return(
-            (x >= this.minx) & (x < this.maxx) &
-            (y >= this.miny) & (y < this.maxy)
+            (x >= this.minx) &
+            (x <  this.maxx) &
+            (y >= this.miny) &
+            (y <  this.maxy)
         );
     }
     bool contains(N)(in Box!N box) const{
         return(
-            (this.minx <= box.minx) & (this.maxx >= box.maxx) &
-            (this.miny <= box.miny) & (this.maxy >= box.maxy)
-        );
-    }
-    
-    void merge(N)(in Box!N box){
-        this.minx = min(this.minx, box.minx);
-        this.miny = min(this.miny, box.miny);
-        this.maxx = max(this.maxx, box.maxx);
-        this.maxy = max(this.maxy, box.maxy);
-    }
-    Box!T merged(N)(in Box!N box) const{
-        return Box(
-            min(this.minx, box.minx),
-            min(this.miny, box.miny),
-            max(this.maxx, box.maxx),
-            max(this.maxy, box.maxy)
+            (this.minx <= box.minx) &
+            (this.maxx >= box.maxx) &
+            (this.miny <= box.miny) &
+            (this.maxy >= box.maxy)
         );
     }
     
@@ -224,25 +242,66 @@ struct Box(T) if(isNumeric!T){
         return Box!T(x, y, x + this.width, y + this.height);
     }
     
-    Box!T opBinary(string op, N)(Box!N rhs) const{
-        static if(op == "|"){
-            return this.merged(rhs);
-        }else static if(op == "&"){
-            return this.intersection(rhs);
-        }
+    Box!T opBinary(string op: "|", N)(in Box!N rhs) const{
+        return this.merged(rhs);
     }
-    bool opBinaryRight(string op, N)(Box!N rhs) const if(op == "in"){
+    Box!T opBinary(string op: "&", N)(in Box!N rhs) const{
+        return this.intersection(rhs);
+    }
+    bool opBinaryRight(string op: "in", N)(in Box!N rhs) const{
         return this.contains(rhs);
     }
-    bool opBinaryRight(string op, N)(Vector2!N rhs) const if(op == "in"){
+    bool opBinaryRight(string op: "in", N)(in Vector2!N rhs) const{
         return this.contains(rhs);
     }
     
-    bool opCast(Type : bool)(){
-        return this.nonzero();
+    Box!T opBinary(string op, N)(in N value) const if(isNumeric!N){
+        mixin(`return Box!T(
+            this.minx ` ~ op ~ ` value,
+            this.miny ` ~ op ~ ` value,
+            this.maxx ` ~ op ~ ` value,
+            this.maxy ` ~ op ~ ` value
+        );`);
     }
-    Box!N opCast(Type : Box!N, N)() if(!is(N == T)){
-        return Type(this);
+    Box!T opBinary(string op, N)(in Vector2!N vector) const{
+        mixin(`return Box!T(
+            this.minx ` ~ op ~ ` vector.x,
+            this.miny ` ~ op ~ ` vector.y,
+            this.maxx ` ~ op ~ ` vector.x,
+            this.maxy ` ~ op ~ ` vector.y
+        );`);
+    }
+    Box!T opBinaryRight(string op, N)(in N value) const if(isNumeric!N){
+        mixin(`return Box!T(
+            value ` ~ op ~ ` this.minx,
+            value ` ~ op ~ ` this.miny,
+            value ` ~ op ~ ` this.maxx,
+            value ` ~ op ~ ` this.maxy
+        );`);
+    }
+    Box!T opBinaryRight(string op, N)(in Vector2!N vector) const if(op != "in"){
+        mixin(`return Box!T(
+            vector.x ` ~ op ~ `this.minx,
+            vector.y ` ~ op ~ `this.miny,
+            vector.x ` ~ op ~ `this.maxx,
+            vector.y ` ~ op ~ `this.maxy 
+        );`);
+    }
+    
+    bool opCast(Type: bool)() const{
+        return this.exists();
+    }
+    Box!N opCast(Type: Box!N, N)() const if(!is(N == T)){
+        return Box!N(this);
+    }
+    
+    bool opEquals(N)(Box!N box) const{
+        return (
+            (this.minx == box.minx) &
+            (this.miny == box.miny) &
+            (this.maxx == box.maxx) &
+            (this.maxy == box.maxy)
+        );
     }
     
     string toString() const{
