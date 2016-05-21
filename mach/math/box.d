@@ -311,6 +311,53 @@ struct Box(T) if(isNumeric!T){
     
 }
 
+version(unittest) import mach.error.unit;
 unittest{
-    // TODO
+    // TODO: More tests
+    tests("Box", {
+        tests("Equality", {
+            testeq(Box!int(1, 1), Box!int(1, 1));
+            testeq(Box!int(1, 1), Box!real(1, 1));
+            testneq(Box!int(1, 1), Box!int(0, 0));
+            testneq(Box!int(1, 1), Box!real(1.5, 1.5));
+        });
+        tests("Scalar math", {
+            Box!int box = Box!int(1, 2, 3, 4);
+            testeq(box - 1, Box!int(0, 1, 2, 3));
+            testeq(box + 1, Box!int(2, 3, 4, 5));
+            testeq(box / 2, Box!int(0, 1, 1, 2));
+            testeq(box * 2, Box!int(2, 4, 6, 8));
+        });
+        tests("Intersection", {
+            testeq(
+                Box!int(0, 0, 2, 4).intersection(Box!int(0, 0, 4, 2)),
+                Box!int(0, 0, 2, 2)
+            );
+            testeq(
+                Box!int(-2, -2, 1, 1) & Box!int(-1, -1, 2, 2),
+                Box!int(-1, -1, 1, 1)
+            );
+            testf(
+                Box!int(0, 0, 4, 4).intersection(Box!int(-4, -4, 0, 0)).exists
+            ); 
+        });
+        tests("Merge", {
+            testeq(
+                Box!int(0, 0, 1, 1).merged(Box!int(-1, -1, 0, 0)),
+                Box!int(-1, -1, 1, 1)
+            );
+            testeq(
+                Box!int(2, 5) | Box!int(5, 2), Box!int(5, 5)
+            );
+        });
+        tests("Contains", {
+            test(Box!int(10, 10).contains(Box!int(2, 2, 5, 5)));
+            testf(Box!int(10, 10).contains(Box!int(2, 2, 5, 12)));
+            test(Box!int(10, 10).contains(Vector2!int(5, 5)));
+            testf(Box!int(10, 10).contains(Vector2!int(5, 12)));
+            test(Box!int(2, 2, 5, 5) in Box!int(10, 10));
+            test(Vector2!int(2, 2) in Box!int(10, 10));
+            test(Vector2!int(-1, -1) !in Box!int(10, 10));
+        });
+    });
 }
