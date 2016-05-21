@@ -16,6 +16,10 @@ Provides a variety of mathematical functionality.
 
 Modules that don't nicely fit anywhere else.
 
+### mach.sdl
+
+Wraps SDL2 and OpenGL, providing a cleaner way to develop games and other graphical applications.
+
 ### mach.text
 
 Functionality dealing with text, strings, and the manipulation thereof.
