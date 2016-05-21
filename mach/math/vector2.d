@@ -12,6 +12,8 @@ public:
 
 struct Vector2(T) if(isNumeric!T){
     
+    static enum Zero = Vector2!T(0);
+    
     T x, y;
     
     this(N)(in N x) if(isNumeric!N){
@@ -23,11 +25,6 @@ struct Vector2(T) if(isNumeric!T){
     }
     this(N)(in Vector2!N vector){
         this(vector.x, vector.y);
-    }
-    
-    /// Get the null vector.
-    static Vector2!T zero(){
-        return Vector2!T(0, 0);
     }
     
     /// Returns true if this is not the null vector.
@@ -190,11 +187,11 @@ struct Vector2(T) if(isNumeric!T){
         return (this.x == vector.x) & (this.y == vector.y);
     }
     
-    bool opCast(Type: bool)(){
+    bool opCast(Type: bool)() const{
         return this.nonzero();
     }
-    Vector2!N opCast(Type: Vector2!N, N)() if(!is(N == T)){
-        return Type(this);
+    Vector2!N opCast(Type: Vector2!N, N)() const{
+        return Vector2!N(this);
     }
     
     string toString(){
@@ -223,6 +220,12 @@ unittest{
         tests("Nonzero", {
             test(Vector(1, 1).nonzero);
             testf(Vector(0, 0).nonzero);
+            testf(Vector2!int.Zero.nonzero);
+        });
+        tests("Casting", {
+            Vector2!int vectori = Vector2!int(10, 10);
+            Vector2!float vectorf = cast(Vector2!float) vectori;
+            testeq(vectori, vectorf);
         });
     });
     
