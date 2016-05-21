@@ -1,4 +1,4 @@
-module mach.error.test;
+module mach.error.unit;
 
 /++
     
@@ -27,18 +27,22 @@ import std.traits : isNumeric;
 
 import mach.error.mixins : ErrorClassMixin;
 
-enum string TEST_TRUE_MESSAGE = "Value must be true";
-enum string TEST_FALSE_MESSAGE = "Value must be false";
-enum string TEST_EQUAL_MESSAGE = "Values must be equal";
-enum string TEST_UNEQUAL_MESSAGE = "Values must be unequal";
-enum string TEST_NEAR_MESSAGE = "Values must be nearly equal";
-enum string TEST_NOTNEAR_MESSAGE = "Values must not be nearly equal";
-enum string TEST_GREATER_MESSAGE = "First value must be greater";
-enum string TEST_LESSER_MESSAGE = "First value must be lesser";
-enum string TEST_GREATEREQ_MESSAGE = "First value must be greater than or equal to the second";
-enum string TEST_LESSEREQ_MESSAGE = "First value must be less than or equal to the second";
-
 public:
+
+enum DefaultMessage : string {
+    True = "Value must be true",
+    False = "Value must be false",
+    Equal = "Values must be equal",
+    Unequal = "Values must be unequal",
+    Near = "Values must be nearly equal",
+    NotNear = "Values must not be nearly equal",
+    Greater = "First value must be greater",
+    Lesser = "First value must be lesser",
+    GreaterEq = "First value must be greater than or equal to the second",
+    LesserEq = "First value must be less than or equal to the second",
+    Throw = "Must catch a throwable object",
+    ThrowPredicate = "Must catch a throwable object meeting predicate",
+}
 
 mixin(ErrorClassMixin(
     "TestFailureError", "Encountered unit test failure."
@@ -82,23 +86,23 @@ static string testcompmixin(string name, string condition, string defaultmessage
 }
 
 /// Verify that the inputs are equal.
-mixin(testcompmixin("testequal", "lhs == rhs", TEST_EQUAL_MESSAGE));
+mixin(testcompmixin("testequal", "lhs == rhs", DefaultMessage.Equal));
 /// Verify that the inputs are not equal.
-mixin(testcompmixin("testnotequal", "lhs != rhs", TEST_UNEQUAL_MESSAGE));
+mixin(testcompmixin("testnotequal", "lhs != rhs", DefaultMessage.Unequal));
 /// Verify that the first input is greater than the second.
-mixin(testcompmixin("testgreater", "lhs > rhs", TEST_GREATER_MESSAGE));
+mixin(testcompmixin("testgreater", "lhs > rhs", DefaultMessage.Greater));
 /// Verify that the first input is greater than or equal to the second.
-mixin(testcompmixin("testgreatereq", "lhs >= rhs", TEST_GREATEREQ_MESSAGE));
+mixin(testcompmixin("testgreatereq", "lhs >= rhs", DefaultMessage.GreaterEq));
 /// Verify that the first input is less than the second.
-mixin(testcompmixin("testlesser", "lhs < rhs", TEST_LESSER_MESSAGE));
+mixin(testcompmixin("testlesser", "lhs < rhs", DefaultMessage.Lesser));
 /// Verify that the first input is less than or equal to the second.
-mixin(testcompmixin("testlessereq", "lhs <= rhs", TEST_LESSEREQ_MESSAGE));
+mixin(testcompmixin("testlessereq", "lhs <= rhs", DefaultMessage.LesserEq));
 
 /// Verify that the inputs are nearly equal.
 void testnear(N, size_t line = __LINE__, string file = __FILE__)(
     in N lhs, in N rhs, in N epsilon
 )if(isNumeric!N){
-    testnear(TEST_NEAR_MESSAGE, lhs, rhs, epsilon, line, file);
+    testnear(DefaultMessage.Near, lhs, rhs, epsilon, line, file);
 }
 /// ditto
 void testnear(N)(
@@ -114,7 +118,7 @@ void testnear(N)(
 void testnotnear(N, size_t line = __LINE__, string file = __FILE__)(
     in N lhs, in N rhs, in N epsilon
 )if(isNumeric!N){
-    testnotnear(TEST_NOTNEAR_MESSAGE, lhs, rhs, epsilon, line, file);
+    testnotnear(DefaultMessage.NotNear, lhs, rhs, epsilon, line, file);
 }
 /// ditto
 void testnotnear(N)(
@@ -128,7 +132,7 @@ void testnotnear(N)(
 
 /// Verify that a condition is true.
 void testtrue(size_t line = __LINE__, string file = __FILE__)(in bool value){
-    testtrue(TEST_TRUE_MESSAGE, value, line, file);
+    testtrue(DefaultMessage.True, value, line, file);
 }
 /// ditto
 void testtrue(
@@ -138,7 +142,7 @@ void testtrue(
 }
 /// Verify that a condition is false.
 void testfalse(size_t line = __LINE__, string file = __FILE__)(in bool value){
-    testfalse(TEST_FALSE_MESSAGE, value, line, file);
+    testfalse(DefaultMessage.False, value, line, file);
 }
 /// ditto
 void testfalse(
@@ -156,6 +160,33 @@ void tests(in string message, in void delegate() func){
     }
 }
 
+void testfail(in void delegate() func, in size_t line = __LINE__, in string file = __FILE__){
+    testfail(DefaultMessage.Throw, func, line, file);
+}
+void testfail(in string message, in void delegate() func, in size_t line = __LINE__, in string file = __FILE__){
+    bool caught = false;
+    try{
+        func();
+    }catch(Throwable thrown){
+        caught = true;
+    }
+    if(!caught) throw new TestFailureError(message, null, line, file);
+}
+
+alias ThrownCheck = bool delegate(in Throwable thrown);
+void testfail(in ThrownCheck predicate, in void delegate() func, in size_t line = __LINE__, in string file = __FILE__){
+    testfail(DefaultMessage.ThrowPredicate, predicate, func, line, file);
+}
+void testfail(in string message, in ThrownCheck predicate, in void delegate() func, in size_t line = __LINE__, in string file = __FILE__){
+    bool caught = false;
+    try{
+        func();
+    }catch(Throwable thrown){
+        caught = predicate(thrown);
+    }
+    if(!caught) throw new TestFailureError(message, null, line, file);
+}
+
 alias test = testtrue;
 alias testf = testfalse;
 alias testeq = testequal;
@@ -164,10 +195,22 @@ alias testgt = testgreater;
 alias testlt = testlesser;
 alias testgteq = testgreatereq;
 alias testlteq = testlessereq;
+alias fail = testfail;
 
 version(unittest){
     import std.string : indexOf;
-    import mach.error.assertf : assertf;
+    import std.format : format;
+}
+
+unittest{
+    fail(
+        (error) => (cast(AssertError) error !is null && error.msg == "Hello"),
+        {assert(false, "Hello");}
+    );
+    fail(
+        (error) => (cast(TestFailureError) error !is null),
+        {fail({assert(true);});}
+    );
 }
 
 unittest{
@@ -219,21 +262,21 @@ unittest{
     
     // All of these should throw errors
     
-    void fail(in void function() test, string message = null){
-        bool caught = false;
-        try{
-            test();
-        }catch(TestFailureError error){
-            assertf(
-                message is null || error.msg.indexOf(message) == 0,
-                "Messages inconsistent: Expected \"%s\" and got \"%s\".", message, error.msg
-            );
-            caught = true;
-        }
-        assert(caught);
+    void fail(
+        in void delegate() test, in string message = null,
+        size_t line = __LINE__, string file = __FILE__
+    ){
+        testfail(
+            "Error messages must be consistent",
+            (error) => (
+                cast(TestFailureError) error !is null &&
+                error.msg.indexOf(message) == 0
+            ),
+            test, line, file
+        );
     }
     
-    fail({testneq(1, 1);}, TEST_UNEQUAL_MESSAGE);
+    fail({testneq(1, 1);}, DefaultMessage.Unequal);
     fail({testneq(1, 1.0);});
     fail({testneq("hi", "hi");});
     fail({testneq(5 - 5, 0);});
@@ -241,28 +284,28 @@ unittest{
     fail({testneq("message", 1, 1);});
     fail({testneq("message", "abc", "abc");}, "message");
     
-    fail({testeq(0, 1);}, TEST_EQUAL_MESSAGE);
+    fail({testeq(0, 1);}, DefaultMessage.Equal);
     fail({testeq(1, 1.5);});
     fail({testeq("hello", "world");});
     fail({testeq([1, 2], [3, 4]);});
     fail({testeq("message", 0, 1);});
     fail({testeq("message", "abc", "xyz");}, "message");
     
-    fail({testlt(1, 0);}, TEST_LESSER_MESSAGE);
+    fail({testlt(1, 0);}, DefaultMessage.Lesser);
     fail({testlt(2.0, 1.0);});
     fail({testlt("xyz", "abc");});
     fail({testlt("message", 1, 0);});
     fail({testlt("message", "xyz", "abc");}, "message");
     
-    fail({testgt(0, 1);}, TEST_GREATER_MESSAGE);
+    fail({testgt(0, 1);}, DefaultMessage.Greater);
     fail({testgt(1.0, 2.0);});
     fail({testgt("abc", "xyz");});
     fail({testgt("message", 0, 1);});
     fail({testgt("message", "abc", "xyz");}, "message");
     
-    fail({testf(true);}, TEST_FALSE_MESSAGE);
+    fail({testf(true);}, DefaultMessage.False);
     fail({testf("message", true);}, "message");
-    fail({test(false);}, TEST_TRUE_MESSAGE);
+    fail({test(false);}, DefaultMessage.True);
     fail({test("message", false);}, "message");
     
     fail({tests("group", {

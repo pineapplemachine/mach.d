@@ -72,7 +72,7 @@ class GeneratorStream(T) : InputStream {
     }
 }
 
-version(unittest) import mach.error.test;
+version(unittest) import mach.error.unit;
 unittest{
     tests("GeneratorStream", {
         int[6] buffer;

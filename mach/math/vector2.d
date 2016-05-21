@@ -204,7 +204,7 @@ struct Vector2(T) if(isNumeric!T){
     
 }
 
-version(unittest) import mach.error.test;
+version(unittest) import mach.error.unit;
 unittest{
     // TODO: More thorough unit testing
     

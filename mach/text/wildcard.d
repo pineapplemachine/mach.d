@@ -110,7 +110,7 @@ class Matcher{
     
 }
 
-version(unittest) import mach.error.test;
+version(unittest) import mach.error.unit;
 unittest{
     tests("Wildcards", {
         Matcher wild = new Matcher();

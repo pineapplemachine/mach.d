@@ -23,7 +23,7 @@ R round(R = int, N)(in N number) if(isNumeric!N && isNumeric!R){
     }
 }
 
-version(unittest) import mach.error.test;
+version(unittest) import mach.error.unit;
 unittest{
     tests("Rounding", {
         tests("Integers", {

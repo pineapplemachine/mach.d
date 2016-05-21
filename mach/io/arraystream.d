@@ -81,7 +81,7 @@ class ArrayStream(T) : IOStream {
     }
 }
 
-version(unittest) import mach.error.test;
+version(unittest) import mach.error.unit;
 unittest{
     tests("ArrayStream", {
         ubyte[6] target;

@@ -97,7 +97,7 @@ class FileStream : IOStream {
     }
 }
 
-version(unittest) import mach.error.test;
+version(unittest) import mach.error.unit;
 unittest{
     tests("FileStream", {
         tests("Read", {
