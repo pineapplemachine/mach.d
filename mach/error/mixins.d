@@ -33,6 +33,9 @@ static string ThrowableClassMixin(
             " ~ constructorattr ~ " this(Throwable next, size_t line = __LINE__, string file = __FILE__){
                 this(\"" ~ defaultmessage ~ "\", next, line, file);
             }
+            " ~ constructorattr ~ " this(string message, size_t line, string file){
+                this(message, null, line, file);
+            }
             " ~ constructorattr ~ " this(string message, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
                 " ~ constructorbody ~ "
             }
