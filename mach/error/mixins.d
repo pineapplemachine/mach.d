@@ -13,8 +13,8 @@ throw new ExampleError(new AssertError());
 
 private:
 
-enum string DEFAULT_CONSTRUCTOR_ATTR = "@safe pure nothrow";
-enum string DEFAULT_CONSTRUCTOR_BODY = "super(message, file, line, next);";
+enum string DefaultCtorAttr = "@safe pure nothrow";
+enum string DefaultCtorBody = "super(message, file, line, next);";
     
 public:
 
@@ -22,22 +22,22 @@ public:
 static string ThrowableClassMixin(
     in string classname, in string superclass, in string defaultmessage,
     in string classbody = "",
-    in string constructorattr = DEFAULT_CONSTRUCTOR_ATTR,
-    in string constructorbody = DEFAULT_CONSTRUCTOR_BODY
+    in string ctorattr = DefaultCtorAttr,
+    in string ctorbody = DefaultCtorBody
 ){
     return "
         class " ~ classname ~ " : " ~ superclass ~ "{
-            " ~ constructorattr ~ " this(size_t line = __LINE__, string file = __FILE__){
+            " ~ ctorattr ~ " this(size_t line = __LINE__, string file = __FILE__){
                 this(cast(Throwable) null, line, file);
             }
-            " ~ constructorattr ~ " this(Throwable next, size_t line = __LINE__, string file = __FILE__){
+            " ~ ctorattr ~ " this(Throwable next, size_t line = __LINE__, string file = __FILE__){
                 this(\"" ~ defaultmessage ~ "\", next, line, file);
             }
-            " ~ constructorattr ~ " this(string message, size_t line, string file){
+            " ~ ctorattr ~ " this(string message, size_t line, string file){
                 this(message, null, line, file);
             }
-            " ~ constructorattr ~ " this(string message, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
-                " ~ constructorbody ~ "
+            " ~ ctorattr ~ " this(string message, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+                " ~ ctorbody ~ "
             }
             " ~ classbody ~ "
         }
@@ -48,20 +48,20 @@ static string ThrowableClassMixin(
 static string ErrorClassMixin(
     in string classname, in string defaultmessage = "Error",
     in string classbody = "",
-    in string constructorattr = DEFAULT_CONSTRUCTOR_ATTR,
-    in string constructorbody = DEFAULT_CONSTRUCTOR_BODY
+    in string ctorattr = DefaultCtorAttr,
+    in string ctorbody = DefaultCtorBody
 ){
-    return ThrowableClassMixin(classname, "Error", defaultmessage);
+    return ThrowableClassMixin(classname, "Error", defaultmessage, classbody, ctorattr, ctorbody);
 }
 
 /// Mixin to build a class extending Exception
 static string ExceptionClassMixin(
     in string classname, in string defaultmessage = "Exception",
     in string classbody = "",
-    in string constructorattr = DEFAULT_CONSTRUCTOR_ATTR,
-    in string constructorbody = DEFAULT_CONSTRUCTOR_BODY
+    in string ctorattr = DefaultCtorAttr,
+    in string ctorbody = DefaultCtorBody
 ){
-    return ThrowableClassMixin(classname, "Exception", defaultmessage);
+    return ThrowableClassMixin(classname, "Exception", defaultmessage, classbody, ctorattr, ctorbody);
 }
 
 unittest{
