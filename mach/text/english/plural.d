@@ -55,7 +55,7 @@ class Pluralizer{
         ];
         this.PluralOSuffixExceptions = [
             "canto", "hetero", "homo", "photo", "zero", "piano", "portico",
-            "pro", "quarto", "kimono", "hello"
+            "quarto", "kimono", "hello", "euro", "auto", "kilo", "intro"
         ];
         this.PluralFSuffixExceptions = [
             "roof", "staff", "turf"
@@ -100,7 +100,10 @@ class Pluralizer{
             size_t trimright = 0; // Number of chars to trim from right of string
             
             if(word[$-1] == 'o'){
-                if(word[$-2] != 'o' && !PluralOSuffixExceptions.canFind(word.toLower)){
+                if(
+                    word.length > 3 && !word[$-2].isVowel &&
+                    !PluralOSuffixExceptions.canFind(word.toLower)
+                ){
                     suffix = "es";
                 }
             }else if(word[$-1] == 'y'){
@@ -154,6 +157,10 @@ unittest{
         testeq(plural("bus"), "busses");
         testeq(plural("wretch"), "wretches");
         testeq(plural("log"), "logs");
+        testeq(plural("hero"), "heroes");
+        testeq(plural("euro"), "euros");
+        testeq(plural("radio"), "radios");
+        testeq(plural("ego"), "egos");
         testeq(plural("dagger"), "daggers");
         testeq(plural("dwarf"), "dwarves");
         testeq(plural("game"), "games");
