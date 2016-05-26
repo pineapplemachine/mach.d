@@ -2,12 +2,18 @@ module mach.algo.reduce;
 
 private:
 
-import std.traits : isIterable, isSomeFunction;
-import std.range.primitives : ElementType;
+import std.traits : isIterable;
+import std.range.primitives : ElementType, isInfinite;
 
 public:
 
-auto reduce(alias func, Acc, Iter)(in Iter iter, in Acc initial) if(isIterable!Iter){
+
+
+enum canReduce(T) = isIterable!T && !isInfinite!T;
+
+
+
+auto reduce(alias func, Acc, Iter)(in Iter iter, in Acc initial) if(canReduce!Iter){
     const(Acc)* acc = &initial;
     foreach(element; iter){
         Acc result = func(*acc, element);
@@ -15,7 +21,7 @@ auto reduce(alias func, Acc, Iter)(in Iter iter, in Acc initial) if(isIterable!I
     }
     return *acc;
 }
-auto reduce(alias func, Iter)(in Iter iter) if(isIterable!Iter){
+auto reduce(alias func, Iter)(in Iter iter) if(canReduce!Iter){
     import std.stdio;
     bool first = true;
     alias Acc = ElementType!Iter;
@@ -36,13 +42,13 @@ auto reduce(alias func, Iter)(in Iter iter) if(isIterable!Iter){
 
 
 
-auto min(Iter)(in Iter iter) if(isIterable!Iter){
+auto min(Iter)(in Iter iter) if(canReduce!Iter){
     return iter.reduce!((a, b) => (b < a ? b : a));
 }
-auto max(Iter)(in Iter iter) if(isIterable!Iter){
+auto max(Iter)(in Iter iter) if(canReduce!Iter){
     return iter.reduce!((a, b) => (b > a ? b : a));
 }
-auto sum(Iter)(in Iter iter) if(isIterable!Iter){
+auto sum(Iter)(in Iter iter) if(canReduce!Iter){
     return iter.reduce!((a, b) => (a + b))(ElementType!Iter.init);
 }
 

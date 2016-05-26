@@ -2,15 +2,17 @@ module mach.math.range;
 
 private:
 
-import std.range.primitives : ElementType;
+import std.range.primitives : ElementType, isInfinite;
 import std.traits : isIterable;
 
 public:
 
+enum hasRange(T) = isIterable!T && !isInfinite!T;
+
 auto range(T)(T min, T max){
     return Range!T(min, max);
 }
-auto range(Iter)(Iter iter) if(isIterable!Iter){
+auto range(Iter)(Iter iter) if(hasRange!Iter){
     return Range!(ElementType!Iter)(iter);
 }
 
@@ -21,7 +23,7 @@ struct Range(T){
         this.min = cast(N) min;
         this.max = cast(N) max;
     }
-    this(Iter)(Iter iter) if(isIterable!Iter){
+    this(Iter)(Iter iter) if(hasRange!Iter){
         bool first = true;
         foreach(item; iter){
             if(first){
