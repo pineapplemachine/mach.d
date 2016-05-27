@@ -22,9 +22,11 @@ auto reduce(alias func, Acc, Iter)(in Iter iter, in Acc initial) if(canReduce!It
     return *acc;
 }
 auto reduce(alias func, Iter)(in Iter iter) if(canReduce!Iter){
+    return reduce!(func, ElementType!Iter, Iter)(iter);
+}
+auto reduce(alias func, Acc, Iter)(in Iter iter) if(canReduce!Iter){
     import std.stdio;
     bool first = true;
-    alias Acc = ElementType!Iter;
     const(Acc)* acc;
     foreach(element; iter){
         if(first){
@@ -36,21 +38,36 @@ auto reduce(alias func, Iter)(in Iter iter) if(canReduce!Iter){
             acc = &result;
         }
     }
-    assert(!first, "Cannot reduce an empty range without an initial value.");
+    assert(!first, "Cannot reduce empty range without an initial value.");
     return *acc;
 }
 
 
 
-auto min(Iter)(in Iter iter) if(canReduce!Iter){
-    return iter.reduce!((a, b) => (b < a ? b : a));
+template ReductionTemplate(alias func, string initial = ``){
+    auto reducefunc(Iter)(in Iter iter) if(canReduce!Iter){
+        return reducefunc!(ElementType!Iter, Iter)(iter);
+    }
+    auto reducefunc(Acc, Iter)(in Iter iter) if(canReduce!Iter){
+        static if(initial){
+            mixin(`return reduce!(func, Acc)(iter, ` ~ initial ~ `);`);
+        }else{
+            return reduce!(func, Acc)(iter);
+        }
+    }
+    alias ReductionTemplate = reducefunc;
 }
-auto max(Iter)(in Iter iter) if(canReduce!Iter){
-    return iter.reduce!((a, b) => (b > a ? b : a));
-}
-auto sum(Iter)(in Iter iter) if(canReduce!Iter){
-    return iter.reduce!((a, b) => (a + b))(ElementType!Iter.init);
-}
+
+
+
+/// Get the lowest value in an iterable.
+alias min = ReductionTemplate!((a, b) => (b < a ? b : a));
+/// Get the highest value in an iterable.
+alias max = ReductionTemplate!((a, b) => (b > a ? b : a));
+/// Get the sum of all values in an iterable.
+alias sum = ReductionTemplate!((a, b) => (a + b), `Acc.init`);
+/// Get the product of all values in an iterable.
+alias product = ReductionTemplate!((a, b) => (a * b));
 
 
 
