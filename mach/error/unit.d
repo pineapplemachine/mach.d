@@ -69,34 +69,39 @@ void testcomparison(A, B)(
     }
 }
 
-/// Used internally to construct comparison test methods
-static string testcompmixin(string name, string condition, string defaultmessage){
-    return "
-        void " ~ name ~ "(A, B, size_t line = __LINE__, string file = __FILE__)(
-            in A lhs, in B rhs
-        ){
-            " ~ name ~ "(\"" ~ defaultmessage ~ "\", lhs, rhs, line, file);
-        }
-        void " ~ name ~ "(A, B)(
-            in string message, in A lhs, in B rhs, in size_t line = __LINE__, in string file = __FILE__
-        ){
-            testcomparison(lhs, rhs, " ~ condition ~ ", message, line, file);
-        }
-    ";
+
+
+template TestCompTemplate(string condition, string defaultmessage){
+    void func(A, B, size_t line = __LINE__, string file = __FILE__)(
+        in A lhs, in B rhs
+    ){
+        func(defaultmessage, lhs, rhs, line, file);
+    }
+    void func(A, B)(
+        in string message, in A lhs, in B rhs, in size_t line = __LINE__, in string file = __FILE__
+    ){
+        mixin(`testcomparison(lhs, rhs, ` ~ condition ~ `, message, line, file);`);
+    }
+    alias TestCompTemplate = func;
 }
 
+
+
 /// Verify that the inputs are equal.
-mixin(testcompmixin("testequal", "lhs == rhs", DefaultMessage.Equal));
+alias testequal = TestCompTemplate!("lhs == rhs", DefaultMessage.Equal);
 /// Verify that the inputs are not equal.
-mixin(testcompmixin("testnotequal", "lhs != rhs", DefaultMessage.Unequal));
+alias testnotequal = TestCompTemplate!("lhs != rhs", DefaultMessage.Unequal);
 /// Verify that the first input is greater than the second.
-mixin(testcompmixin("testgreater", "lhs > rhs", DefaultMessage.Greater));
+alias testgreater = TestCompTemplate!("lhs > rhs", DefaultMessage.Greater);
 /// Verify that the first input is greater than or equal to the second.
-mixin(testcompmixin("testgreatereq", "lhs >= rhs", DefaultMessage.GreaterEq));
+alias testgreatereq = TestCompTemplate!("lhs >= rhs", DefaultMessage.GreaterEq);
 /// Verify that the first input is less than the second.
-mixin(testcompmixin("testlesser", "lhs < rhs", DefaultMessage.Lesser));
+alias testlesser = TestCompTemplate!("lhs < rhs", DefaultMessage.Lesser);
 /// Verify that the first input is less than or equal to the second.
-mixin(testcompmixin("testlessereq", "lhs <= rhs", DefaultMessage.LesserEq));
+alias testlessereq = TestCompTemplate!("lhs <= rhs", DefaultMessage.LesserEq);
+
+
+
 
 /// Verify that the inputs are nearly equal.
 void testnear(N, size_t line = __LINE__, string file = __FILE__)(
