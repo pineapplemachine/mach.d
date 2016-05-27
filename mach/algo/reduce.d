@@ -30,7 +30,7 @@ auto reduce(alias func, Acc, Iter)(in Iter iter) if(canReduce!Iter){
     const(Acc)* acc;
     foreach(element; iter){
         if(first){
-            auto firstelem = element;
+            auto firstelem = cast(Acc) element;
             acc = &firstelem;
             first = false;
         }else{
@@ -97,12 +97,18 @@ unittest{
         testeq([0, 1, 2].max, 2);
         testeq([2, 1, 0].max, 2);
         testeq([0, 1, -1].max, 1);
-        fail({(new int[0]).min;});
-        fail({(new int[0]).max;});
+        tests("Empty series", {
+            fail({(new int[0]).min;});
+            fail({(new int[0]).max;});
+        });
+        tests("Changing accumulator type", {
+            testeq([1, 2].min!real, 1.0);
+            testtype!real([1, 2].min!real);
+        });
     });
     tests("Summation", {
         testeq([-2, 2].sum, 0);
         testeq([5, 5, 5].sum, 15);
-        testeq("Sum of empty series", (new int[0]).sum, 0);
+        testeq("Empty series", (new int[0]).sum, 0);
     });
 }
