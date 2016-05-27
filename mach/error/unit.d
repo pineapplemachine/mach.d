@@ -29,6 +29,12 @@ import mach.error.mixins : ErrorClassMixin;
 
 public:
 
+
+
+mixin(ErrorClassMixin(
+    "TestFailureError", "Encountered unit test failure."
+));
+
 enum DefaultMessage : string {
     True = "Value must be true",
     False = "Value must be false",
@@ -42,11 +48,11 @@ enum DefaultMessage : string {
     LesserEq = "First value must be less than or equal to the second",
     Throw = "Must catch a throwable object",
     ThrowPredicate = "Must catch a throwable object meeting predicate",
+    Cast = "Value must be castable to type.",
+    Type = "Value must be of type.",
 }
 
-mixin(ErrorClassMixin(
-    "TestFailureError", "Encountered unit test failure."
-));
+
 
 // Used internally by methods which compare two variables
 void testcomparison(A, B)(
@@ -84,8 +90,6 @@ template TestCompTemplate(string condition, string defaultmessage){
     }
     alias TestCompTemplate = func;
 }
-
-
 
 /// Verify that the inputs are equal.
 alias testequal = TestCompTemplate!("lhs == rhs", DefaultMessage.Equal);
@@ -135,6 +139,8 @@ void testnotnear(N)(
     );
 }
 
+
+
 /// Verify that a condition is true.
 void testtrue(size_t line = __LINE__, string file = __FILE__)(in bool value){
     testtrue(DefaultMessage.True, value, line, file);
@@ -156,14 +162,29 @@ void testfalse(
     if(value) throw new TestFailureError(message, null, line, file);
 }
 
-void tests(in string message, in void delegate() func){
-    try{
-        func();
-    }catch(Throwable thrown){
-        thrown.msg = message ~ ": " ~ thrown.msg;
-        throw thrown;
+
+
+void testcast(Type, T, size_t line = __LINE__, string file = __FILE__)(in T value){
+    testcast!(Type, T)(DefaultMessage.Cast, value, line, file);
+}
+void testcast(Type, T)(in T value, in size_t line = __LINE__, in string file = __FILE__){
+    if(cast(Type) value is null){
+        throw new TestFailureError(message, null, line, file);
     }
 }
+
+
+
+void testtype(Type, T, size_t line = __LINE__, string file = __FILE__)(in T value){
+    testtype!(Type, T)(DefaultMessage.Cast, value, line, file);
+}
+void testtype(Type, T)(in T value, in size_t line = __LINE__, in string file = __FILE__){
+    static if(!is(Type == T)){
+        throw new TestFailureError(message, null, line, file);
+    }
+}
+
+
 
 void testfail(in void delegate() func, in size_t line = __LINE__, in string file = __FILE__){
     testfail(DefaultMessage.Throw, func, line, file);
@@ -192,6 +213,19 @@ void testfail(in string message, in ThrownCheck predicate, in void delegate() fu
     if(!caught) throw new TestFailureError(message, null, line, file);
 }
 
+
+
+void tests(in string message, in void delegate() func){
+    try{
+        func();
+    }catch(Throwable thrown){
+        thrown.msg = message ~ ": " ~ thrown.msg;
+        throw thrown;
+    }
+}
+
+
+
 alias test = testtrue;
 alias testf = testfalse;
 alias testeq = testequal;
@@ -201,6 +235,8 @@ alias testlt = testlesser;
 alias testgteq = testgreatereq;
 alias testlteq = testlessereq;
 alias fail = testfail;
+
+
 
 version(unittest){
     import std.string : indexOf;
