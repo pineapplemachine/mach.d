@@ -64,3 +64,5 @@ template hasBinaryOp(T, string op){
 
 enum canIncrement(T) = hasUnaryOp!(T, "++");
 enum canDecrement(T) = hasUnaryOp!(T, "--");
+
+enum bool isIterableReverse(T) = is(typeof({foreach_reverse(elem; T.init){}}));
