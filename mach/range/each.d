@@ -18,6 +18,18 @@ void each_reverse(alias func, Iter)(Iter iter) if(isFiniteIterableReverse!Iter){
     }
 }
 
+version(unittest){
+    import mach.error.unit;
+    import mach.range.compare : equals;
+}
 unittest{
-    // TODO
+    auto input = [1, 2, 3, 4, 5];
+    // Forward
+    int[] output;
+    input.each!((i){output ~= i;});
+    test(output.equals(input));
+    // Reverse
+    int[] output_reverse;
+    input.each_reverse!((i){output_reverse ~= i;});
+    test(output_reverse.equals([5, 4, 3, 2, 1]));
 }

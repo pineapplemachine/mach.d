@@ -110,4 +110,7 @@ unittest{
         testeq([5, 5, 5].sum, 15);
         testeq("Empty series", (new int[0]).sum, 0);
     });
+    tests("Product", {
+        testeq([2, 2, 2].product, 8);
+    });
 }
