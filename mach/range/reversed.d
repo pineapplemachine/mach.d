@@ -2,7 +2,7 @@ module mach.range.reversed;
 
 private:
 
-import mach.range.traits : hasLength, isSavingRange, isBidirectionalRange;
+import mach.traits : hasLength, isSavingRange, isBidirectionalRange;
 import mach.range.asrange : asrange, validAsBidirectionalRange;
 
 public:
@@ -43,7 +43,6 @@ struct ReversedRange(Range) if(canReverseRange!Range){
         @property auto length(){
             return this.source.length;
         }
-        static if(hasBinaryOp(LengthType!Range, size_t, "-", LengthType!Range, size_t));
     }
     
     static if(isSavingRange!Range){

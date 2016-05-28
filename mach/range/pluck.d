@@ -5,8 +5,8 @@ private:
 import std.meta : AliasSeq;
 import std.traits : ReturnType, isImplicitlyConvertible;
 import mach.range.asrange : asrange, validAsRange;
-import mach.range.traits : isRange, isRandomAccessRange, ElementType;
-import mach.range.traits : hasSingleIndexParameter, SingleIndexParameter;
+import mach.traits : isRange, isRandomAccessRange, ElementType;
+import mach.traits : hasSingleIndexParameter, SingleIndexParameter;
 import mach.range.metarange : MetaRangeMixin;
 
 public:

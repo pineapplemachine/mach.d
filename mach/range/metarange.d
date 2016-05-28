@@ -3,7 +3,7 @@ module mach.range.metarange;
 private:
 
 import std.algorithm : canFind; // TODO: Don't use phobos
-import mach.range.traits : isRange;
+import mach.traits : isRange;
 
 public:
 
@@ -20,9 +20,9 @@ enum MetaRangeMixinComponent : string{
 template MetaRangeMixin(Range, string source, string exclusions) if(isRange!Range){
     import std.algorithm : canFind; // TODO: Don't use phobos
     import mach.range.metarange : MetaRangeMixinComponent;
-    import mach.range.traits : hasEmptyEnum, hasLength, hasDollar;
-    import mach.range.traits : isRandomAccessRange, IndexParameters;
-    import mach.range.traits : isSavingRange;
+    import mach.traits : hasEmptyEnum, hasLength, hasDollar;
+    import mach.traits : isRandomAccessRange, IndexParameters;
+    import mach.traits : isSavingRange;
     
     static if(!exclusions.canFind(cast(string) MetaRangeMixinComponent.Empty)){
         static if(hasEmptyEnum!Range){
@@ -81,7 +81,7 @@ template MetaRangeMixin(
 ) if(isRange!Range){
     import std.algorithm : canFind; // TODO: Don't use phobos
     import mach.range.metarange : MetaRangeMixinComponent;
-    import mach.range.traits : isBidirectionalRange;
+    import mach.traits : isBidirectionalRange;
     
     mixin MetaRangeMixin!(Range, source, exclusions);
     

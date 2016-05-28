@@ -2,7 +2,7 @@ module mach.range.reduce;
 
 private:
 
-import mach.range.traits : isFiniteIterable, ElementType;
+import mach.traits : isFiniteIterable, ElementType;
 
 public:
 

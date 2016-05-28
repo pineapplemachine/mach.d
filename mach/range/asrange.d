@@ -5,7 +5,7 @@ private:
 import std.traits : Parameters, ReturnType, TemplateOf, TemplateArgsOf, Unqual;
 import std.traits : isArray, isCallable;
 import std.range.primitives : isBidirectionalRange;
-import mach.range.traits : ArrayElementType, isRange, canIncrement, canDecrement, isCastable;
+import mach.traits : ArrayElementType, isRange, canIncrement, canDecrement, canCast;
 
 public:
 

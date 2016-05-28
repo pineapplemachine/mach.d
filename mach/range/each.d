@@ -2,7 +2,7 @@ module mach.range.each;
 
 private:
 
-import mach.range.traits : isFiniteIterable, isFiniteIterableReverse;
+import mach.traits : isFiniteIterable, isFiniteIterableReverse;
 
 public:
 

@@ -3,7 +3,7 @@ module mach.range.enumerate;
 private:
 
 import std.typecons : Tuple;
-import mach.range.traits : hasLength, canIncrement, hasBinaryOp, isSavingRange, ElementType;
+import mach.traits : hasLength, canIncrement, hasBinaryOp, isSavingRange, ElementType;
 import mach.range.asrange : asrange, validAsRange;
 
 public:
