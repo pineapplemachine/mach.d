@@ -16,6 +16,10 @@ Provides a variety of mathematical functionality.
 
 Modules that don't nicely fit anywhere else.
 
+### mach.range
+
+An attempt to improve upon std.range and std.algorithm.
+
 ### mach.sdl
 
 Wraps SDL2 and OpenGL, providing a cleaner way to develop games and other graphical applications.
@@ -23,3 +27,7 @@ Wraps SDL2 and OpenGL, providing a cleaner way to develop games and other graphi
 ### mach.text
 
 Functionality dealing with text, strings, and the manipulation thereof.
+
+### mach.traits
+
+Similar in purpose to std.traits; provides traits that the standard library doesn't and improves upon some that it does.
