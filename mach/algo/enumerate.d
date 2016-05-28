@@ -2,16 +2,25 @@ module mach.algo.enumerate;
 
 private:
 
-import std.range.primitives : isForwardRange, ElementType;
 import std.typecons : Tuple;
-import mach.algo.traits : hasLength, canIncrement, hasBinaryOp;
+import mach.algo.traits : hasLength, canIncrement, hasBinaryOp, isSavingRange, ElementType;
 import mach.algo.asrange : asrange, validAsRange;
 
 public:
 
-enum canEnumerate(Iter, Index = size_t) = (
-    validAsRange!Iter && canIncrement!Index && hasBinaryOp!(Index, "+")
+
+
+enum canEnumerateIndex(Index) = (
+     canIncrement!Index && hasBinaryOp!(Index, "+")
 );
+enum canEnumerate(Iter, Index = size_t) = (
+    validAsRange!Iter && canEnumerateIndex!Index
+);
+enum canEnumerateRange(Range, Index = size_t) = (
+    isRange!Range && canEnumerateIndex!Index
+);
+
+
 
 auto enumerate(Index = size_t, Iter)(
     Iter iter, Index initial = Index.init
@@ -26,29 +35,31 @@ auto enumerate(Index = size_t, Iter)(
     return EnumerationRange!(Index, typeof(range))(range, initial, step);
 }
 
-struct EnumerationRange(Index = size_t, Base) if(canEnumerate!(Base, Index)){
-    alias Elem = Tuple!(Index, "index", ElementType!Base, "value");
+
+
+struct EnumerationRange(Index = size_t, Range) if(canEnumerateRange!(Range, Index)){
+    alias Element = Tuple!(Index, "index", ElementType!Range, "value");
     
-    Base source;
+    Range source;
     Index step;
     Index index;
     
     this(typeof(this) range){
         this(range.source, range.step, range.index);
     }
-    this(Base source, Index initial = Index.init){
+    this(Range source, Index initial = Index.init){
         Index step = Index.init;
         step++;
         this(source, initial, step);
     }
-    this(Base source, Index initial, Index step){
+    this(Range source, Index initial, Index step){
         this.source = source;
-        this.index = index;
+        this.index = initial;
         this.step = step;
     }
     
     @property auto front(){
-        return Elem(this.index, this.source.front);
+        return Element(this.index, this.source.front);
     }
     void popFront(){
         this.source.popFront();
@@ -58,13 +69,13 @@ struct EnumerationRange(Index = size_t, Base) if(canEnumerate!(Base, Index)){
     @property bool empty(){
         return this.source.empty;
     }
-    static if(hasLength!Base){
+    static if(hasLength!Range){
         @property auto length(){
             return this.source.length;
         }
     }
     
-    static if(isForwardRange!Base){
+    static if(isSavingRange!Range){
         @property auto save(){
             return typeof(this)(this.source.save);
         }

@@ -3,9 +3,9 @@ module mach.algo.asrange;
 private:
 
 import std.traits : Parameters, ReturnType, TemplateOf, TemplateArgsOf, Unqual;
-import std.traits : isArray;
-import std.range.primitives : ElementType, isBidirectionalRange;
-import mach.algo.traits : isRange, canIncrement, canDecrement;
+import std.traits : isArray, isCallable;
+import std.range.primitives : isBidirectionalRange;
+import mach.algo.traits : ArrayElementType, isRange, canIncrement, canDecrement, isCastable;
 
 public:
 
@@ -31,16 +31,16 @@ enum validAsBidirectionalRange(T) = (
 
 
 /// Get a range for iterating over some object.
-auto asrange(Base)(in Base basis) if(!isRange!Base && canMakeRange!Base){
+auto asrange(Base)(Base basis) if(!isRange!Base && canMakeRange!Base){
     return makerange(basis);
 }
 /// ditto
-auto asrange(Range)(in Range range) if(isRange!Range){
+auto asrange(Range)(Range range) if(isRange!Range){
     return range;
 }
 
 /// Create a range for iterating over some object.
-auto makerange(Base)(in Base basis) if(canMakeRange!Base){
+auto makerange(Base)(Base basis) if(canMakeRange!Base){
     static if(canMakeArrayRange!Base){
         return ArrayRange!Base(basis);
     }else static if(canMakeBidirectionalIndexRange!Base){
@@ -71,7 +71,7 @@ template canMakeIndexRange(Base){
 template canMakeFiniteIndexRange(Base){
     enum bool canMakeFiniteIndexRange = is(typeof((inout int = 0){
         static assert(canMakeIndexRange!Base);
-        alias Index = IndexRangeIndex!Base; //Unqual!(Parameters!(Base.opIndex)[0]);
+        alias Index = IndexRangeIndexType!Base; //Unqual!(Parameters!(Base.opIndex)[0]);
         
         Base range = Base.init;
         Index index = Index.init;
@@ -83,7 +83,7 @@ template canMakeBidirectionalIndexRange(Base){
     enum bool canMakeBidirectionalIndexRange = is(typeof((inout int = 0){
         static assert(canMakeFiniteIndexRange!Base);
         Base range = Base.init;
-        auto index = cast(IndexRangeIndex!Base) range.length; // Compatible index and length types
+        auto index = cast(IndexRangeIndexType!Base) range.length; // Compatible index and length types
         static assert(canDecrement!(typeof(index)));
     }));
 }
@@ -92,21 +92,21 @@ enum canMakeArrayRange(Base) = isArray!Base;
 
 
 
-template IndexRangeIndex(Base) if(canMakeIndexRange!Base && !isIndexRange!Base){
-    alias IndexRangeIndex = Unqual!(Parameters!(Base.opIndex)[0]);
+template IndexRangeIndexType(Base) if(canMakeIndexRange!Base && !isIndexRange!Base){
+    alias IndexRangeIndexType = Unqual!(Parameters!(Base.opIndex)[0]);
 }
-template IndexRangeElement(Base) if(canMakeIndexRange!Base && !isIndexRange!Base){
-    alias IndexRangeElement = ReturnType!(Base.opIndex);
+template IndexRangeElementType(Base) if(canMakeIndexRange!Base && !isIndexRange!Base){
+    alias IndexRangeElementType = ReturnType!(Base.opIndex);
 }
 
 template IndexRangeBase(Range) if(isIndexRange!Range){
     alias IndexRangeBase = TemplateArgsOf!Range[0];
 }
-template IndexRangeIndex(Range) if(isIndexRange!Range){
-    alias IndexRangeIndex = IndexRangeIndex!(IndexRangeBase!Range);
+template IndexRangeIndexType(Range) if(isIndexRange!Range){
+    alias IndexRangeIndexType = IndexRangeIndexType!(IndexRangeBase!Range);
 }
-template IndexRangeElement(Range) if(isIndexRange!Range){
-    alias IndexRangeElement = IndexRangeElement!(IndexRangeBase!Range);
+template IndexRangeElementType(Range) if(isIndexRange!Range){
+    alias IndexRangeElementType = IndexRangeElementType!(IndexRangeBase!Range);
 }
 
 template isIndexRange(Range){
@@ -122,7 +122,7 @@ template isIndexRange(Range){
 
 
 static immutable string IndexRangeCommonMixin = `
-    Elem opIndex(Index index){
+    auto opIndex(Index index){
         return this.basis[index];
     }
     
@@ -149,8 +149,8 @@ static immutable string FiniteIndexRangeCommonMixin = `
 /// Make a range from some object implementing opIndex(Index) by starting at
 /// Index.init and infinitely incrementing.
 struct IndexRange(Base) if(canMakeIndexRange!Base){
-    alias Index = IndexRangeIndex!Base;
-    alias Elem = IndexRangeElement!Base;
+    alias Index = IndexRangeIndexType!Base;
+    alias Element = IndexRangeElementType!Base;
     
     Base basis;
     Index index;
@@ -168,7 +168,7 @@ struct IndexRange(Base) if(canMakeIndexRange!Base){
     void popFront(){
         this.index++;
     }
-    @property Elem front(){
+    @property Element front(){
         return this.basis[this.index];
     }
     
@@ -178,8 +178,7 @@ struct IndexRange(Base) if(canMakeIndexRange!Base){
 /// Make a range from some object implementing opIndex(Index) and length by
 /// starting at Index.init and incrementing until index >= length.
 struct FiniteIndexRange(Base) if(canMakeFiniteIndexRange!Base){
-    alias Index = IndexRangeIndex!Base;
-    alias Elem = IndexRangeElement!Base;
+    alias Index = IndexRangeIndexType!Base;
     
     Base basis;
     Index index;
@@ -198,7 +197,7 @@ struct FiniteIndexRange(Base) if(canMakeFiniteIndexRange!Base){
     void popFront(){
         this.index++;
     }
-    @property Elem front() in{assert(!this.empty);}body{
+    @property auto front() in{assert(!this.empty);}body{
         return this.basis[this.index];
     }
     
@@ -216,8 +215,7 @@ struct FiniteIndexRange(Base) if(canMakeFiniteIndexRange!Base){
 /// at Index.init and back index at length-1 and keep popping until the front
 /// index exceeds the back index.
 struct BidirectionalIndexRange(Base) if(canMakeBidirectionalIndexRange!Base){
-    alias Index = IndexRangeIndex!Base;
-    alias Elem = IndexRangeElement!Base;
+    alias Index = IndexRangeIndexType!Base;
     
     Base basis;
     Index frontindex;
@@ -241,14 +239,14 @@ struct BidirectionalIndexRange(Base) if(canMakeBidirectionalIndexRange!Base){
     void popFront(){
         this.frontindex++;
     }
-    @property Elem front() in{assert(!this.empty);}body{
+    @property auto front() in{assert(!this.empty);}body{
         return this.basis[this.frontindex];
     }
     
     void popBack(){
         this.backindex--;
     }
-    @property Elem back() in{assert(!this.empty);}body{
+    @property auto back() in{assert(!this.empty);}body{
         auto index = this.backindex;
         index--;
         return this.basis[index];
@@ -267,7 +265,6 @@ struct BidirectionalIndexRange(Base) if(canMakeBidirectionalIndexRange!Base){
 /// Range based on an array.
 struct ArrayRange(Base) if(canMakeArrayRange!Base){
     alias Index = size_t;
-    alias Elem = Unqual!(ElementType!Base);
     
     const Base basis;
     Index frontindex;
@@ -288,14 +285,14 @@ struct ArrayRange(Base) if(canMakeArrayRange!Base){
     void popFront(){
         this.frontindex++;
     }
-    @property Elem front() const in{assert(!this.empty);}body{
+    @property auto front() const{
         return this.basis[this.frontindex];
     }
     
     void popBack(){
         this.backindex--;
     }
-    @property Elem back() const in{assert(!this.empty);}body{
+    @property auto back() const{
         return this.basis[this.backindex - 1];
     }
     
@@ -310,10 +307,10 @@ struct ArrayRange(Base) if(canMakeArrayRange!Base){
     }
     alias opDollar = length;
     
-    Elem opIndex(in Index index) const{
+    auto opIndex(in Index index) const{
         return this.basis[index];
     }
-    typeof(this) opSlice(in Index low, in Index high) const{
+    auto opSlice(in Index low, in Index high) const{
         return typeof(this)(this.basis[low .. high]);
     }
     

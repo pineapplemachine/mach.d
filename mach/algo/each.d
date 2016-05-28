@@ -2,18 +2,17 @@ module mach.algo.each;
 
 private:
 
-import std.traits : isIterable;
-import mach.algo.traits : isIterableReverse;
+import mach.algo.traits : isFiniteIterable, isFiniteIterableReverse;
 
 public:
 
-void each(alias func, Iter)(Iter iter) if(isIterable!Iter){
+void each(alias func, Iter)(Iter iter) if(isFiniteIterable!Iter){
     foreach(item; iter){
         func(item);
     }
 }
 
-void each_reverse(alias func, Iter)(Iter iter) if(isIterableReverse!Iter){
+void each_reverse(alias func, Iter)(Iter iter) if(isFiniteIterableReverse!Iter){
     foreach_reverse(item; iter){
         func(item);
     }

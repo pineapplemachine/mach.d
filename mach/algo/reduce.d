@@ -2,14 +2,13 @@ module mach.algo.reduce;
 
 private:
 
-import std.traits : isIterable;
-import std.range.primitives : ElementType, isInfinite;
+import mach.algo.traits : isFiniteIterable, ElementType;
 
 public:
 
 
 
-enum canReduce(T) = isIterable!T && !isInfinite!T;
+alias canReduce = isFiniteIterable;
 
 
 

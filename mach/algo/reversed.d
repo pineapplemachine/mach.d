@@ -2,23 +2,23 @@ module mach.algo.reversed;
 
 private:
 
-import std.range.primitives : isForwardRange;
-import mach.algo.traits : hasLength;
+import mach.algo.traits : hasLength, isSavingRange, isBidirectionalRange;
 import mach.algo.asrange : asrange, validAsBidirectionalRange;
 
 public:
 
 alias canReverse = validAsBidirectionalRange;
+alias canReverseRange = isBidirectionalRange;
 
 auto reversed(Iter)(Iter iter) if(canReverse!Iter){
     auto range = iter.asrange;
     return ReversedRange!(typeof(range))(range);
 }
 
-struct ReversedRange(Base) if(canReverse!Base){
-    Base source;
+struct ReversedRange(Range) if(canReverseRange!Range){
+    Range source;
     
-    this(Base source){
+    this(Range source){
         this.source = source;
     }
     
@@ -39,13 +39,14 @@ struct ReversedRange(Base) if(canReverse!Base){
     @property bool empty(){
         return this.source.empty;
     }
-    static if(hasLength!Base){
+    static if(hasLength!Range){
         @property auto length(){
             return this.source.length;
         }
+        static if(hasBinaryOp(LengthType!Range, size_t, "-", LengthType!Range, size_t));
     }
     
-    static if(isForwardRange!Base){
+    static if(isSavingRange!Range){
         @property auto save(){
             return typeof(this)(this.source.save);
         }
