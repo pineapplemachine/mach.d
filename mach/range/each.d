@@ -1,8 +1,8 @@
-module mach.algo.each;
+module mach.range.each;
 
 private:
 
-import mach.algo.traits : isFiniteIterable, isFiniteIterableReverse;
+import mach.range.traits : isFiniteIterable, isFiniteIterableReverse;
 
 public:
 

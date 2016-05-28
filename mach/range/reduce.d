@@ -1,8 +1,8 @@
-module mach.algo.reduce;
+module mach.range.reduce;
 
 private:
 
-import mach.algo.traits : isFiniteIterable, ElementType;
+import mach.range.traits : isFiniteIterable, ElementType;
 
 public:
 

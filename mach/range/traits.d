@@ -1,4 +1,4 @@
-module mach.algo.traits;
+module mach.range.traits;
 
 private:
 

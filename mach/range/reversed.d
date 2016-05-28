@@ -1,9 +1,9 @@
-module mach.algo.reversed;
+module mach.range.reversed;
 
 private:
 
-import mach.algo.traits : hasLength, isSavingRange, isBidirectionalRange;
-import mach.algo.asrange : asrange, validAsBidirectionalRange;
+import mach.range.traits : hasLength, isSavingRange, isBidirectionalRange;
+import mach.range.asrange : asrange, validAsBidirectionalRange;
 
 public:
 

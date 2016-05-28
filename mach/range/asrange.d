@@ -1,11 +1,11 @@
-module mach.algo.asrange;
+module mach.range.asrange;
 
 private:
 
 import std.traits : Parameters, ReturnType, TemplateOf, TemplateArgsOf, Unqual;
 import std.traits : isArray, isCallable;
 import std.range.primitives : isBidirectionalRange;
-import mach.algo.traits : ArrayElementType, isRange, canIncrement, canDecrement, isCastable;
+import mach.range.traits : ArrayElementType, isRange, canIncrement, canDecrement, isCastable;
 
 public:
 

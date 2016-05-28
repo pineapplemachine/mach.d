@@ -1,13 +1,13 @@
-module mach.algo.pluck;
+module mach.range.pluck;
 
 private:
 
 import std.meta : AliasSeq;
 import std.traits : ReturnType, isImplicitlyConvertible;
-import mach.algo.asrange : asrange, validAsRange;
-import mach.algo.traits : isRange, isRandomAccessRange, ElementType;
-import mach.algo.traits : hasSingleIndexParameter, SingleIndexParameter;
-import mach.algo.metarange : MetaRangeMixin;
+import mach.range.asrange : asrange, validAsRange;
+import mach.range.traits : isRange, isRandomAccessRange, ElementType;
+import mach.range.traits : hasSingleIndexParameter, SingleIndexParameter;
+import mach.range.metarange : MetaRangeMixin;
 
 public:
 
@@ -118,7 +118,7 @@ struct MultiPluckRange(Range) if(canPluckRange!Range){
 
 version(unittest){
     import mach.error.unit;
-    import mach.algo.compare : equals;
+    import mach.range.compare : equals;
 }
 unittest{
     tests("Pluck", {

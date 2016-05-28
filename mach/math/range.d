@@ -2,7 +2,7 @@ module mach.math.range;
 
 private:
 
-import mach.algo.traits : ElementType, isFiniteIterable, hasBinaryOp, hasComparison;
+import mach.range.traits : ElementType, isFiniteIterable, hasBinaryOp, hasComparison;
 
 public:
 

@@ -1,9 +1,9 @@
-module mach.algo.compare;
+module mach.range.compare;
 
 private:
 
-import mach.algo.asrange : asrange, validAsRange;
-import mach.algo.traits : ElementType, isFiniteIterable, isFiniteRange, hasComparison;
+import mach.range.asrange : asrange, validAsRange;
+import mach.range.traits : ElementType, isFiniteIterable, isFiniteRange, hasComparison;
 
 public:
 

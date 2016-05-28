@@ -1,9 +1,9 @@
-module mach.algo.filter;
+module mach.range.filter;
 
 private:
 
 import std.range.primitives : isForwardRange, isBidirectionalRange;
-import mach.algo.asrange : asrange, validAsRange;
+import mach.range.asrange : asrange, validAsRange;
 
 public:
 

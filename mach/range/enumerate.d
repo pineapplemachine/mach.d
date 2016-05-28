@@ -1,10 +1,10 @@
-module mach.algo.enumerate;
+module mach.range.enumerate;
 
 private:
 
 import std.typecons : Tuple;
-import mach.algo.traits : hasLength, canIncrement, hasBinaryOp, isSavingRange, ElementType;
-import mach.algo.asrange : asrange, validAsRange;
+import mach.range.traits : hasLength, canIncrement, hasBinaryOp, isSavingRange, ElementType;
+import mach.range.asrange : asrange, validAsRange;
 
 public:
 

@@ -1,9 +1,9 @@
-module mach.algo.metarange;
+module mach.range.metarange;
 
 private:
 
 import std.algorithm : canFind; // TODO: Don't use phobos
-import mach.algo.traits : isRange;
+import mach.range.traits : isRange;
 
 public:
 
@@ -19,10 +19,10 @@ enum MetaRangeMixinComponent : string{
 
 template MetaRangeMixin(Range, string source, string exclusions) if(isRange!Range){
     import std.algorithm : canFind; // TODO: Don't use phobos
-    import mach.algo.metarange : MetaRangeMixinComponent;
-    import mach.algo.traits : hasEmptyEnum, hasLength, hasDollar;
-    import mach.algo.traits : isRandomAccessRange, IndexParameters;
-    import mach.algo.traits : isSavingRange;
+    import mach.range.metarange : MetaRangeMixinComponent;
+    import mach.range.traits : hasEmptyEnum, hasLength, hasDollar;
+    import mach.range.traits : isRandomAccessRange, IndexParameters;
+    import mach.range.traits : isSavingRange;
     
     static if(!exclusions.canFind(cast(string) MetaRangeMixinComponent.Empty)){
         static if(hasEmptyEnum!Range){
@@ -80,8 +80,8 @@ template MetaRangeMixin(
     string backstr, string popBackstr
 ) if(isRange!Range){
     import std.algorithm : canFind; // TODO: Don't use phobos
-    import mach.algo.metarange : MetaRangeMixinComponent;
-    import mach.algo.traits : isBidirectionalRange;
+    import mach.range.metarange : MetaRangeMixinComponent;
+    import mach.range.traits : isBidirectionalRange;
     
     mixin MetaRangeMixin!(Range, source, exclusions);
     
