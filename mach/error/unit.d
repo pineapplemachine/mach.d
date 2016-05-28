@@ -23,7 +23,7 @@ import std.format : format;
 import std.conv : to;
 import std.math : abs;
 import std.algorithm : contains = canFind;
-import std.traits : isNumeric;
+import std.traits : isNumeric, fullyQualifiedName;
 
 import mach.error.mixins : ErrorClassMixin;
 
@@ -38,6 +38,7 @@ mixin(ErrorClassMixin(
 enum DefaultMessage : string {
     True = "Value must be true",
     False = "Value must be false",
+    Is = "Values must be identical",
     Equal = "Values must be equal",
     Unequal = "Values must be unequal",
     Near = "Values must be nearly equal",
@@ -48,8 +49,8 @@ enum DefaultMessage : string {
     LesserEq = "First value must be less than or equal to the second",
     Throw = "Must catch a throwable object",
     ThrowPredicate = "Must catch a throwable object meeting predicate",
-    Cast = "Value must be castable to type.",
-    Type = "Value must be of type.",
+    Cast = "Value must be castable to type",
+    Type = "Value must be of type",
 }
 
 
@@ -91,6 +92,8 @@ template TestCompTemplate(string condition, string defaultmessage){
     alias TestCompTemplate = func;
 }
 
+/// Verify that the inputs are identical.
+alias testis = TestCompTemplate!("lhs is rhs", DefaultMessage.Is);
 /// Verify that the inputs are equal.
 alias testequal = TestCompTemplate!("lhs == rhs", DefaultMessage.Equal);
 /// Verify that the inputs are not equal.
@@ -176,11 +179,14 @@ void testcast(Type, T)(in T value, in size_t line = __LINE__, in string file = _
 
 
 void testtype(Type, T, size_t line = __LINE__, string file = __FILE__)(in T value){
-    testtype!(Type, T)(DefaultMessage.Cast, value, line, file);
+    testtype!(Type, T)(DefaultMessage.Type, value, line, file);
 }
-void testtype(Type, T)(in T value, in size_t line = __LINE__, in string file = __FILE__){
+void testtype(Type, T)(in string message, in T value, in size_t line = __LINE__, in string file = __FILE__){
     static if(!is(Type == T)){
-        throw new TestFailureError(message, null, line, file);
+        throw new TestFailureError(
+            message ~ " " ~ fullyQualifiedName!Type ~ " and " ~ fullyQualifiedName!T,
+            null, line, file
+        );
     }
 }
 
