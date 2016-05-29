@@ -5,7 +5,7 @@ private:
 import std.meta : AliasSeq;
 import std.traits : ReturnType, isImplicitlyConvertible;
 import mach.range.asrange : asrange, validAsRange;
-import mach.traits : isRange, isRandomAccessRange, ElementType, hasField;
+import mach.traits : isRange, isRandomAccessRange, ElementType, hasProperty;
 import mach.traits : hasSingleIndexParameter, SingleIndexParameter;
 import mach.range.metarange : MetaRangeMixin;
 
@@ -24,11 +24,11 @@ template PluckIndexParameter(Iter) if(canPluck!Iter){
     alias PluckIndexParameter = SingleIndexParameter!(ElementType!Iter);
 }
 
-enum canPluckField(Iter, string field) = (
-    validAsRange!Iter && hasField!(ElementType!Iter, field)
+enum canPluckProperty(Iter, string property) = (
+    validAsRange!Iter && hasProperty!(ElementType!Iter, property)
 );
-enum canPluckFieldRange(Range, string field) = (
-    isRange!Range && hasField!(ElementType!Range, field)
+enum canPluckPropertyRange(Range, string property) = (
+    isRange!Range && hasProperty!(ElementType!Range, property)
 );
 
 
@@ -47,14 +47,14 @@ auto pluck(Index, Iter)(
     return MultiPluckRange!(typeof(range))(range, indexes);
 }
 
-auto pluck(string field, Iter)(
+auto pluck(string property, Iter)(
     Iter iter
-) if(canPluckField!(Iter, field)){
+) if(canPluckProperty!(Iter, property)){
     auto range = iter.asrange;
-    return FieldPluckRange!(field, typeof(range))(range);
+    return PropertyPluckRange!(property, typeof(range))(range);
 }
 
-// TODO: MultiFieldPluckRange
+// TODO: MultiPropertyPluckRange
 
 
 
@@ -87,11 +87,11 @@ struct PluckRange(Range) if(canPluckRange!Range){
     }
 }
 
-struct FieldPluckRange(string field, Range) if(canPluckFieldRange!(Range, field)){
+struct PropertyPluckRange(string property, Range) if(canPluckPropertyRange!(Range, property)){
     mixin MetaRangeMixin!(
         Range, `source`,
         `RandomAccess Slice`,
-        `return this.source.front.` ~ field ~ `;`,
+        `return this.source.front.` ~ property ~ `;`,
         `this.source.popFront();`
     );
     
@@ -108,7 +108,7 @@ struct FieldPluckRange(string field, Range) if(canPluckFieldRange!(Range, field)
     
     static if(isRandomAccessRange!Range){
         auto opIndex(IndexParameters!Range index){
-            mixin(`return this.source.opIndex(index).` ~ field ~ `;`);
+            mixin(`return this.source.opIndex(index).` ~ property ~ `;`);
         }
     }
 }
@@ -166,8 +166,11 @@ version(unittest){
     private:
     import mach.error.unit;
     import mach.range.compare : equals;
-    struct FieldPluckTest{
+    struct PropertyPluckTest{
         int x, y;
+        @property int z() const{
+            return this.x + this.y;
+        }
     }
 }
 unittest{
@@ -192,17 +195,19 @@ unittest{
                 ];
                 test(data.pluck("a").equals(["apple", "attack", "airplane"]));
             });
-            tests("Field name", {
-                FieldPluckTest[] data = [
-                    FieldPluckTest(0, 2),
-                    FieldPluckTest(2, 4),
-                    FieldPluckTest(4, 6)
+            tests("Property name", {
+                PropertyPluckTest[] data = [
+                    PropertyPluckTest(0, 2),
+                    PropertyPluckTest(2, 4),
+                    PropertyPluckTest(4, 6)
                 ];
-                test(canPluckField!(typeof(data), `x`));
-                test(canPluckField!(typeof(data), `y`));
-                testf(canPluckField!(typeof(data), `z`));
+                test(canPluckProperty!(typeof(data), `x`));
+                test(canPluckProperty!(typeof(data), `y`));
+                test(canPluckProperty!(typeof(data), `z`));
+                testf(canPluckProperty!(typeof(data), `w`));
                 test(data.pluck!`x`.equals([0, 2, 4]));
                 test(data.pluck!`y`.equals([2, 4, 6]));
+                test(data.pluck!`z`.equals([2, 6, 10]));
             });
         });
         tests("Multiple indexes", {
