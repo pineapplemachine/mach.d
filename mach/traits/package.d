@@ -9,3 +9,4 @@ import mach.traits.index;
 import mach.traits.iter;
 import mach.traits.length;
 import mach.traits.op;
+import mach.traits.templates;

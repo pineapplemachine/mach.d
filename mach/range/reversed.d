@@ -4,7 +4,7 @@ private:
 
 import std.traits : Unqual, isNumeric;
 import mach.traits : canCast, hasLength, LengthType, isBidirectionalRange;
-import mach.traits : SingleIndexParameter, hasSingleIndexParameter;
+import mach.traits : SingleIndexParameter, hasSingleIndexParameter, isTemplateOf;
 import mach.range.asrange : asrange, validAsBidirectionalRange;
 import mach.range.metarange : MetaRangeMixin;
 
@@ -15,11 +15,18 @@ public:
 alias canReverse = validAsBidirectionalRange;
 alias canReverseRange = isBidirectionalRange;
 
+enum isReversedRange(Range) = isTemplateOf!(Range, ReversedRange);
+
 
 
 auto reversed(Iter)(Iter iter) if(canReverse!Iter){
-    auto range = iter.asrange;
-    return ReversedRange!(typeof(range))(range);
+    static if(!isReversedRange!Iter){
+        auto range = iter.asrange;
+        return ReversedRange!(typeof(range))(range);
+    }else{
+        // Dont re-reverse an already reversed range
+        return iter.source;
+    }
 }
 
 
