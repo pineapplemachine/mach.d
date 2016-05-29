@@ -10,7 +10,13 @@ public:
 
 
 
-enum canIndex(T) = isArray!T || isAssociativeArray!T || is(typeof(T.opIndex));
+enum canIndexPrimitive(T) = (
+    isArray!T || isAssociativeArray!T
+);
+
+enum canIndex(T) = (
+    canIndexPrimitive!T || is(typeof(T.opIndex))
+);
 
 template IndexParameters(T) if(canIndex!T){
     static if(isArray!T){
@@ -23,9 +29,12 @@ template IndexParameters(T) if(canIndex!T){
 }
 
 template hasSingleIndexParameter(T){
-    enum bool hasSingleIndexParameter = canIndex!T && is(typeof((inout int = 0){
-        static assert(IndexParameters!T.length == 1);
-    }));
+    enum bool hasSingleIndexParameter = canIndex!T && (
+        canIndexPrimitive!T ||
+        is(typeof((inout int = 0){
+            static assert(IndexParameters!T.length == 1);
+        }))
+    );
 }
 
 template SingleIndexParameter(T) if(hasSingleIndexParameter!T){
