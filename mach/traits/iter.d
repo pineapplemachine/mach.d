@@ -2,8 +2,9 @@ module mach.traits.iter;
 
 private:
 
-import std.traits : isArray;
+import std.traits : isArray, ReturnType, isImplicitlyConvertible;
 import std.math : isInfinity, isNaN;
+import mach.traits.element : ElementType;
 import mach.traits.index : canIndex;
 
 public:
@@ -51,7 +52,10 @@ template isSavingRange(Range){
     }));
 }
 
-enum isRandomAccessRange(Range) = isRange!Range && canIndex!Range;
+enum isRandomAccessRange(Range) = (
+    isRange!Range && canIndex!Range &&
+    isImplicitlyConvertible!(ReturnType!(Range.opIndex), ElementType!Range)
+);
 
 
 
