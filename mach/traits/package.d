@@ -2,6 +2,7 @@ module mach.traits;
 
 public:
 
+import mach.traits.array;
 import mach.traits.element;
 import mach.traits.field;
 import mach.traits.hash;
