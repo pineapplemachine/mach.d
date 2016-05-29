@@ -35,13 +35,13 @@ template SingleIndexParameter(T) if(hasSingleIndexParameter!T){
 
 
 version(unittest){
-    struct IndexTest{
+    private struct IndexTest{
         int value;
         auto opIndex(in int index) const{
             return this.value + index;
         }
     }
-    struct IndexMultiTest{
+    private struct IndexMultiTest{
         real value;
         auto opIndex(in real x, in float y) const{
             return this.value + x + y;

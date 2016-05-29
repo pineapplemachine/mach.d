@@ -73,8 +73,7 @@ struct MultiPluckRange(Range) if(canPluckRange!Range){
         `
             auto front = this.source.front;
             return this.getelement(front);
-        `,
-        `
+        `, `
             this.source.popFront();
         `
     );

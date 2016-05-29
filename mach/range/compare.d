@@ -55,7 +55,7 @@ bool equals(bool length = true, IterA, IterB)(
 
 version(unittest){
     import mach.error.unit;
-    struct TestRange{
+    private struct TestRange{
         int value, end;
         @property auto front() const{
             return this.value;

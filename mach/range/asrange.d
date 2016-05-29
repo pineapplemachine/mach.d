@@ -325,7 +325,7 @@ version(unittest){
     import mach.error.unit;
     
     // Test IndexRange creation
-    struct Indexed{
+    private struct Indexed{
         int value;
         int opIndex(in int index) const{
             return this.value + index;
@@ -333,13 +333,13 @@ version(unittest){
     }
     
     // Test BidirectionalIndexRange creation
-    struct BiIndexed0{
+    private struct BiIndexed0{
         int value, length;
         int opIndex(in int index) const{
             return this.value + index;
         }
     }
-    struct BiIndexed1{
+    private struct BiIndexed1{
         int value, len;
         int opIndex(in int index) const{
             return this.value + index;

@@ -63,7 +63,7 @@ template ElementType(Iter){
 
 
 version(unittest){
-    struct RangeElementTest{
+    private struct RangeElementTest{
         int value;
         @property auto front() const{
             return this.value;
@@ -73,12 +73,12 @@ version(unittest){
         }
         enum bool empty = false;
     }
-    struct ApplyElementTest{
+    private struct ApplyElementTest{
         int opApply(in int delegate(ref string item) each){
             return 0;
         }
     }
-    struct ApplyReverseElementTest{
+    private struct ApplyReverseElementTest{
         int opApplyReverse(in int delegate(ref string item) each){
             return 0;
         }

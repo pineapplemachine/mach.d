@@ -32,29 +32,29 @@ enum hasDollar(T) = isArray!T || is(typeof(T.opDollar));
 
 
 version(unittest){
-    struct LengthFieldTest{
+    private struct LengthFieldTest{
         double length;
     }
-    struct LengthPropertyTest{
+    private struct LengthPropertyTest{
         double len;
         @property auto length(){
             return this.len;
         }
     }
-    struct NoLengthTest{
+    private struct NoLengthTest{
         double len;
     }
-    struct DollarAliasTest{
+    private struct DollarAliasTest{
         int len;
         alias opDollar = len;
     }
-    struct DollarPropertyTest{
+    private struct DollarPropertyTest{
         int len;
         @property auto opDollar(){
             return this.len;
         }
     }
-    struct NoDollarTest{
+    private struct NoDollarTest{
         double notadollar;
     }
 }
