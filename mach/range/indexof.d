@@ -30,7 +30,7 @@ enum bool canIndexOfRange(Iter, Sub, Index) = (
 );
 
 /// True if Sub can be searched for in Iter as an atomic element.
-enum bool canIndexOfAtomic(Iter, Sub, Index) = (
+enum bool canIndexOfElement(Iter, Sub, Index) = (
     isFiniteIterable!Iter &&
     validIndexOfIndex!Index
 );
@@ -62,14 +62,14 @@ auto indexof(Index = DefaultIndexOfIndex, Iter, Sub)(Iter iter, Sub sub) if(
 
 /// Find the first element in iter matching sub, or -1 if none match.
 auto indexof(alias pred, Index = DefaultIndexOfIndex, Iter, Sub)(Iter iter, Sub sub) if(
-    !canIndexOfRange!(Iter, Sub, Index) && canIndexOfAtomic!(Iter, Sub, Index)
+    !canIndexOfRange!(Iter, Sub, Index) && canIndexOfElement!(Iter, Sub, Index)
 ){
     return indexofelement!(pred, Index, Iter, Sub)(iter, sub);
 }
 
 /// Find the first element in iter equal to sub, or -1 if none are equal.
 auto indexof(Index = DefaultIndexOfIndex, Iter, Sub)(Iter iter, Sub sub) if(
-    !canIndexOfRange!(Iter, Sub, Index) && canIndexOfAtomic!(Iter, Sub, Index)
+    !canIndexOfRange!(Iter, Sub, Index) && canIndexOfElement!(Iter, Sub, Index)
 ){
     return indexofelement!(DefaultIndexOfPredicate, Index, Iter, Sub)(iter, sub);
 }
@@ -123,7 +123,7 @@ auto indexofrange(Index = DefaultIndexOfIndex, Iter, Sub)(Iter iter, Sub sub) if
 
 
 auto indexofelement(alias pred, Index = DefaultIndexOfIndex, Iter, Sub)(Iter iter, Sub sub) if(
-    canIndexOfAtomic!(Iter, Sub, Index)
+    canIndexOfElement!(Iter, Sub, Index)
 ){
     Index index = 0;
     foreach(item; iter){
@@ -134,7 +134,7 @@ auto indexofelement(alias pred, Index = DefaultIndexOfIndex, Iter, Sub)(Iter ite
 }
 
 auto indexofelement(Index = DefaultIndexOfIndex, Iter, Sub)(Iter iter, Sub sub) if(
-    canIndexOfAtomic!(Iter, Sub, Index)
+    canIndexOfElement!(Iter, Sub, Index)
 ){
     return indexofelement!(DefaultIndexOfPredicate, Index, Iter, Sub)(iter, sub);
 }
