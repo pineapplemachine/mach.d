@@ -2,20 +2,33 @@ module mach.range.reversed;
 
 private:
 
-import mach.traits : hasLength, isSavingRange, isBidirectionalRange;
+import std.traits : Unqual, isNumeric;
+import mach.traits : canCast, hasLength, LengthType, isBidirectionalRange;
+import mach.traits : SingleIndexParameter, hasSingleIndexParameter;
 import mach.range.asrange : asrange, validAsBidirectionalRange;
+import mach.range.metarange : MetaRangeMixin;
 
 public:
 
+
+
 alias canReverse = validAsBidirectionalRange;
 alias canReverseRange = isBidirectionalRange;
+
+
 
 auto reversed(Iter)(Iter iter) if(canReverse!Iter){
     auto range = iter.asrange;
     return ReversedRange!(typeof(range))(range);
 }
 
+
+
 struct ReversedRange(Range) if(canReverseRange!Range){
+    mixin MetaRangeMixin!(
+        Range, `source`, `RandomAccess Slice`
+    );
+    
     Range source;
     
     this(Range source){
@@ -36,22 +49,36 @@ struct ReversedRange(Range) if(canReverseRange!Range){
         this.source.popFront();
     }
     
-    @property bool empty(){
-        return this.source.empty;
-    }
-    static if(hasLength!Range){
-        @property auto length(){
-            return this.source.length;
-        }
-    }
-    
-    static if(isSavingRange!Range){
-        @property auto save(){
-            return typeof(this)(this.source.save);
+    static if(hasLength!Range && isNumeric!(LengthType!Range)){
+        // TODO: Slices
+        
+        alias Len = Unqual!(LengthType!Range);
+        
+        static if(hasSingleIndexParameter!Range && canCast!(Len, SingleIndexParameter!Range)){
+            auto opIndex(Len index){
+                return this.source[
+                    cast(SingleIndexParameter!Range) this.source.length - index - 1
+                ];
+            }
         }
     }
 }
 
+
+
+version(unittest){
+    import mach.error.unit;
+    import mach.range.compare : equals;
+}
 unittest{
-    // TODO
+    tests("Reversed", {
+        auto input = [0, 1, 2, 3];
+        test(input.reversed.equals([3, 2, 1, 0]));
+        tests("Random access", {
+            testeq(input.reversed[0], 3);
+            testeq(input.reversed[3], 0);
+            testeq(input.reversed[$-1], 0);
+        });
+        // TODO: Slices
+    });
 }

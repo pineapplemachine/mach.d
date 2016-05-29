@@ -44,7 +44,9 @@ template MetaRangeMixin(Range, string source, string exclusions) if(isRange!Rang
     
     static if(!exclusions.canFind(cast(string) MetaRangeMixinComponent.Dollar)){
         static if(hasDollar!Range){
-            alias opDollar = Range.opDollar;
+            @property auto opDollar(){
+                mixin(`return this.` ~ source ~ `.opDollar;`);
+            }
         }
     }
     
