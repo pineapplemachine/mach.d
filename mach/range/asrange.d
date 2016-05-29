@@ -5,7 +5,8 @@ private:
 import std.traits : Parameters, ReturnType, TemplateOf, TemplateArgsOf, Unqual;
 import std.traits : isArray, isCallable;
 import std.range.primitives : isBidirectionalRange;
-import mach.traits : ArrayElementType, isRange, canIncrement, canDecrement, canCast;
+import mach.traits : isRange, isSavingRange, isRandomAccessRange;
+import mach.traits : ArrayElementType, canIncrement, canDecrement, canCast;
 
 public:
 
@@ -26,6 +27,14 @@ enum validAsBidirectionalRange(T) = (
     isBidirectionalRange!T ||
     canMakeArrayRange!T ||
     canMakeBidirectionalIndexRange!T
+);
+
+enum validAsSavingRange(T) = (
+    isSavingRange!T || canMakeRange!T
+);
+
+enum validAsRandomAccessRange(T) = (
+    isRandomAccessRange!T || canMakeRange!T
 );
 
 
