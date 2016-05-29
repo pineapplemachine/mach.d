@@ -4,8 +4,11 @@ private:
 
 import std.range.primitives : isForwardRange, isBidirectionalRange;
 import mach.range.asrange : asrange, validAsRange;
+import mach.range.metarange : MetaRangeMixin;
 
 public:
+
+
 
 /// Given an object that can be taken as a range, create a new range which
 /// enumerates only those values of the original range matching some predicate.
@@ -14,55 +17,52 @@ auto filter(alias pred, Iter)(Iter iter) if(validAsRange!Iter){
     return FilterRange!(pred, typeof(range))(range);
 }
 
+
+
 struct FilterRange(alias pred, Range){
+    mixin MetaRangeMixin!(
+        Range, `source`,
+        `Length Dollar RandomAccess Slice`,
+        `
+            return this.source.front;
+        `, `
+            this.source.popFront();
+            this.consumeFront();
+        `
+    );
+    
     Range source;
     
     this(Range source){
         this.source = source;
-        this.consume();
-        static if(isBidirectionalRange!Range) this.consumeback();
-    }
-    
-    @property auto front(){
-        return this.source.front;
-    }
-    void popFront(){
-        this.source.popFront();
-        this.consume();
+        this.consumeFront();
+        static if(isBidirectionalRange!Range) this.consumeBack();
     }
     
     /// Pop values from source range until a matching value is found.
-    void consume(){
+    void consumeFront(){
         while(!this.source.empty && !pred(this.source.front)){
             this.source.popFront();
         }
     }
     
-    @property bool empty(){
-        return this.source.empty;
-    }
-    
     static if(isBidirectionalRange!Range){
-        @property auto back(){
-            return this.source.back;
-        }
-        void popBack(){
-            this.source.popBack();
-            this.consumeback();
-        }
-        void consumeback(){
+        void consumeBack(){
             while(!this.source.empty && !pred(this.source.back)){
                 this.source.popBack();
             }
         }
     }
-    static if(isForwardRange!Range){
-        @property auto save(){
-            return typeof(this)(this.source.save);
-        }
-    }
 }
 
+
+
+version(unittest){
+    import mach.error.unit;
+    import mach.range.compare : equals;
+}
 unittest{
-    // TODO
+    tests("Filter", {
+        test([1, 2, 3, 4, 5, 6].filter!((n) => (n % 2 == 0)).equals([2, 4, 6]));
+    });
 }
