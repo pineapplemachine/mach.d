@@ -2,7 +2,6 @@ module mach.range.enumerate;
 
 private:
 
-import std.typecons : Tuple;
 import std.traits : isImplicitlyConvertible;
 import mach.traits : canIncrement, canDecrement, canCast, ElementType;
 import mach.traits : isRange, isRandomAccessRange, hasLength, LengthType;
@@ -60,9 +59,7 @@ struct EnumerationRangeElement(Index, Value){
     }
 }
 struct EnumerationRange(Index = size_t, Range) if(canEnumerateRange!(Range, Index)){
-    //alias Element = Tuple!(Index, "index", ElementType!Range, "value");
     alias Element = EnumerationRangeElement!(Index, ElementType!Range);
-    
     
     static enum bool isBidirectional = canEnumerateRangeBidirectional!(Range, Index);
     
