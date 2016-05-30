@@ -3,8 +3,8 @@ module mach.range.reversed;
 private:
 
 import std.traits : Unqual, isNumeric;
-import mach.traits : canCast, hasLength, LengthType, isBidirectionalRange;
-import mach.traits : SingleIndexParameter, hasSingleIndexParameter, isTemplateOf;
+import mach.traits : isBidirectionalRange, isRandomAccessRange, hasNumericLength;
+import mach.traits : canCast, hasLength, LengthType, isTemplateOf;
 import mach.range.asrange : asrange, validAsBidirectionalRange;
 import mach.range.metarange : MetaRangeMixin;
 
@@ -33,7 +33,7 @@ auto reversed(Iter)(Iter iter) if(canReverse!Iter){
 
 struct ReversedRange(Range) if(canReverseRange!Range){
     mixin MetaRangeMixin!(
-        Range, `source`, `RandomAccess Slice`
+        Range, `source`, `Index Slice`
     );
     
     Range source;
@@ -56,17 +56,9 @@ struct ReversedRange(Range) if(canReverseRange!Range){
         this.source.popFront();
     }
     
-    static if(hasLength!Range && isNumeric!(LengthType!Range)){
-        // TODO: Slices
-        
-        alias Len = Unqual!(LengthType!Range);
-        
-        static if(hasSingleIndexParameter!Range && canCast!(Len, SingleIndexParameter!Range)){
-            auto opIndex(Len index){
-                return this.source[
-                    cast(SingleIndexParameter!Range) this.source.length - index - 1
-                ];
-            }
+    static if(isRandomAccessRange!Range && hasNumericLength!Range){
+        auto opIndex(LengthType!Range index){
+            return this.source[this.source.length - index - 1];
         }
     }
 }

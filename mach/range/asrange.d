@@ -131,16 +131,16 @@ template isIndexRange(Range){
 
 
 static immutable string IndexRangeCommonMixin = `
-    auto opIndex(Index index){
+    auto ref opIndex(Index index){
         return this.basis[index];
     }
     
-    @property auto save(){
+    @property auto ref save(){
         return typeof(this)(this);
     }
     
     static if(is(typeof(this.basis[Index.init .. Index.init]) == Base)){
-        auto opSlice(Index low, Index high){
+        auto ref opSlice(Index low, Index high){
             return typeof(this)(this.basis[low .. high]);
         }
     }
@@ -177,7 +177,7 @@ struct IndexRange(Base) if(canMakeIndexRange!Base){
     void popFront(){
         this.index++;
     }
-    @property Element front(){
+    @property auto ref front(){
         return this.basis[this.index];
     }
     
@@ -206,7 +206,7 @@ struct FiniteIndexRange(Base) if(canMakeFiniteIndexRange!Base){
     void popFront(){
         this.index++;
     }
-    @property auto front() in{assert(!this.empty);}body{
+    @property auto ref front() in{assert(!this.empty);}body{
         return this.basis[this.index];
     }
     
@@ -230,6 +230,8 @@ struct BidirectionalIndexRange(Base) if(canMakeBidirectionalIndexRange!Base){
     Index frontindex;
     Index backindex;
     
+    alias index = frontindex;
+    
     this(typeof(this) range){
         this(range.basis, range.frontindex, range.backindex);
     }
@@ -248,14 +250,14 @@ struct BidirectionalIndexRange(Base) if(canMakeBidirectionalIndexRange!Base){
     void popFront(){
         this.frontindex++;
     }
-    @property auto front() in{assert(!this.empty);}body{
+    @property auto ref front() in{assert(!this.empty);}body{
         return this.basis[this.frontindex];
     }
     
     void popBack(){
         this.backindex--;
     }
-    @property auto back() in{assert(!this.empty);}body{
+    @property auto ref back() in{assert(!this.empty);}body{
         auto index = this.backindex;
         index--;
         return this.basis[index];
@@ -279,6 +281,8 @@ struct ArrayRange(Base) if(canMakeArrayRange!Base){
     Index frontindex;
     Index backindex;
     
+    alias index = frontindex;
+    
     this(typeof(this) range){
         this(range.basis, range.frontindex, range.backindex);
     }
@@ -294,14 +298,14 @@ struct ArrayRange(Base) if(canMakeArrayRange!Base){
     void popFront(){
         this.frontindex++;
     }
-    @property auto front() const{
+    @property auto ref front() const{
         return this.basis[this.frontindex];
     }
     
     void popBack(){
         this.backindex--;
     }
-    @property auto back() const{
+    @property auto ref back() const{
         return this.basis[this.backindex - 1];
     }
     
@@ -316,10 +320,10 @@ struct ArrayRange(Base) if(canMakeArrayRange!Base){
     }
     alias opDollar = length;
     
-    auto opIndex(in Index index) const{
+    auto ref opIndex(in Index index) const{
         return this.basis[index];
     }
-    auto opSlice(in Index low, in Index high) const{
+    auto ref opSlice(in Index low, in Index high) const{
         return typeof(this)(this.basis[low .. high]);
     }
     
@@ -331,6 +335,7 @@ struct ArrayRange(Base) if(canMakeArrayRange!Base){
 
 
 version(unittest){
+    private:
     import mach.error.unit;
     
     // Test IndexRange creation
@@ -375,4 +380,11 @@ unittest{
     auto bi1 = BiIndexed1(0, 10);
     auto range1 = bi1.asrange;
     testtype!(BidirectionalIndexRange!BiIndexed1)(range1);
+}
+unittest{
+    auto range = [1, 2, 3].asrange;
+    auto saved = range.save;
+    while(!range.empty) range.popFront();
+    testeq(range.index, 3);
+    testeq(saved.index, 0);
 }

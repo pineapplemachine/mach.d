@@ -22,7 +22,7 @@ auto filter(alias pred, Iter)(Iter iter) if(validAsRange!Iter){
 struct FilterRange(alias pred, Range){
     mixin MetaRangeMixin!(
         Range, `source`,
-        `Length Dollar RandomAccess Slice`,
+        `Length Dollar Index Slice`,
         `
             return this.source.front;
         `, `
@@ -58,6 +58,7 @@ struct FilterRange(alias pred, Range){
 
 
 version(unittest){
+    private:
     import mach.error.unit;
     import mach.range.compare : equals;
 }

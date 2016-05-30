@@ -5,7 +5,7 @@ private:
 import std.meta : AliasSeq;
 import std.traits : ReturnType, isImplicitlyConvertible;
 import mach.range.asrange : asrange, validAsRange;
-import mach.traits : isRange, isRandomAccessRange, ElementType, hasProperty;
+import mach.traits : isRange, isIndexedRange, ElementType, hasProperty;
 import mach.traits : hasSingleIndexParameter, SingleIndexParameter;
 import mach.range.metarange : MetaRangeMixin;
 
@@ -61,7 +61,7 @@ auto pluck(string property, Iter)(
 struct PluckRange(Range) if(canPluckRange!Range){
     mixin MetaRangeMixin!(
         Range, `source`,
-        `RandomAccess Slice`,
+        `Index Slice`,
         `return this.source.front[this.index];`,
         `this.source.popFront();`
     );
@@ -80,7 +80,7 @@ struct PluckRange(Range) if(canPluckRange!Range){
         this.index = index;
     }
     
-    static if(isRandomAccessRange!Range){
+    static if(isIndexedRange!Range){
         auto opIndex(IndexParameters!Range index){
             return this.source.opIndex(index)[this.index];
         }
@@ -90,7 +90,7 @@ struct PluckRange(Range) if(canPluckRange!Range){
 struct PropertyPluckRange(string property, Range) if(canPluckPropertyRange!(Range, property)){
     mixin MetaRangeMixin!(
         Range, `source`,
-        `RandomAccess Slice`,
+        `Index Slice`,
         `return this.source.front.` ~ property ~ `;`,
         `this.source.popFront();`
     );
@@ -106,7 +106,7 @@ struct PropertyPluckRange(string property, Range) if(canPluckPropertyRange!(Rang
         this.source = source;
     }
     
-    static if(isRandomAccessRange!Range){
+    static if(isIndexedRange!Range){
         auto opIndex(IndexParameters!Range index){
             mixin(`return this.source.opIndex(index).` ~ property ~ `;`);
         }
@@ -116,7 +116,7 @@ struct PropertyPluckRange(string property, Range) if(canPluckPropertyRange!(Rang
 struct MultiPluckRange(Range) if(canPluckRange!Range){
     mixin MetaRangeMixin!(
         Range, `source`,
-        `RandomAccess Slice`,
+        `Index Slice`,
         `
             auto front = this.source.front;
             return this.getelement(front);
@@ -142,7 +142,7 @@ struct MultiPluckRange(Range) if(canPluckRange!Range){
         this.indexes = indexes;
     }
     
-    static if(isRandomAccessRange!Range){
+    static if(isIndexedRange!Range){
         auto opIndex(IndexParameters!Range index){
             auto value = this.source.opIndex(index);
             return this.getelement(value);

@@ -4,7 +4,7 @@ private:
 
 import std.meta : AliasSeq;
 import std.traits : Parameters;
-import std.traits : isArray, isAssociativeArray, KeyType;
+import std.traits : isNumeric, isArray, isAssociativeArray, KeyType;
 
 public:
 
@@ -39,6 +39,12 @@ template hasSingleIndexParameter(T){
 
 template SingleIndexParameter(T) if(hasSingleIndexParameter!T){
     alias SingleIndexParameter = IndexParameters!T[0];
+}
+
+template hasNumericIndex(T){
+    enum bool hasNumericIndex = is(typeof((inout int = 0){
+        auto value = T.init[0];
+    }));
 }
 
 

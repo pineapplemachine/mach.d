@@ -52,10 +52,20 @@ template isSavingRange(Range){
     }));
 }
 
-enum isRandomAccessRange(Range) = (
+enum isIndexedRange(Range) = (
     isRange!Range && canIndex!Range &&
     isImplicitlyConvertible!(ReturnType!(Range.opIndex), ElementType!Range)
 );
+
+template isRandomAccessRange(Range){
+    enum bool isRandomAccessRange = isRange!Range && is(typeof((inout int = 0){
+        size_t index = 0;
+        Range range = Range.init;
+        auto front = range.front;
+        auto element = range[index];
+        static assert(is(typeof(front) == typeof(element)));
+    }));
+}
 
 
 

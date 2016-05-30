@@ -2,7 +2,7 @@ module mach.range.map;
 
 private:
 
-import mach.traits : isRange;
+import mach.traits : isRange, isIndexedRange;
 import mach.range.asrange : asrange, validAsRange;
 import mach.range.metarange : MetaRangeMixin;
 
@@ -26,7 +26,7 @@ auto map(alias transform, Iter)(Iter iter) if(canMap!Iter){
 
 struct MapRange(alias transform, Range) if(canMapRange!Range){
     mixin MetaRangeMixin!(
-        Range, `source`, `RandomAccess Slice`,
+        Range, `source`, `Index Slice`,
         `return transform(this.source.front);`,
         `this.source.popFront();`
     );
@@ -40,8 +40,8 @@ struct MapRange(alias transform, Range) if(canMapRange!Range){
         this.source = source;
     }
     
-    static if(isRandomAccessRange!Range){
-        auto opIndex(IndexParameters!Range index){
+    static if(isIndexedRange!Range){
+        auto ref opIndex(IndexParameters!Range index){
             return transform(this.source.opIndex(index));
         }
     }

@@ -11,7 +11,7 @@ enum MetaRangeMixinComponent : string{
     Empty = `Empty`,
     Length = `Length`,
     Dollar = `Dollar`,
-    RandomAccess = `RandomAccess`,
+    Index = `Index`,
     Slice = `Slice`,
     Save = `Save`,
     Back = `Back`,
@@ -21,7 +21,7 @@ template MetaRangeMixin(Range, string source, string exclusions) if(isRange!Rang
     import std.algorithm : canFind; // TODO: Don't use phobos
     import mach.range.metarange : MetaRangeMixinComponent;
     import mach.traits : hasEmptyEnum, hasLength, hasDollar;
-    import mach.traits : isRandomAccessRange, IndexParameters;
+    import mach.traits : isIndexedRange, IndexParameters;
     import mach.traits : isSavingRange;
     
     static if(!exclusions.canFind(cast(string) MetaRangeMixinComponent.Empty)){
@@ -50,9 +50,9 @@ template MetaRangeMixin(Range, string source, string exclusions) if(isRange!Rang
         }
     }
     
-    static if(!exclusions.canFind(cast(string) MetaRangeMixinComponent.RandomAccess)){
-        static if(isRandomAccessRange!Range){
-            auto opIndex(IndexParameters!Range index){
+    static if(!exclusions.canFind(cast(string) MetaRangeMixinComponent.Index)){
+        static if(isIndexedRange!Range){
+            auto ref opIndex(IndexParameters!Range index){
                 mixin(`return this.` ~ source ~ `.opIndex(index);`);
             }
         }
@@ -60,11 +60,13 @@ template MetaRangeMixin(Range, string source, string exclusions) if(isRange!Rang
     
     static if(exclusions.canFind(cast(string) MetaRangeMixinComponent.Save)){
         static if(isSavingRange!Range){
-            @property auto save(){
+            @property auto ref save(){
                 mixin(`return typeof(this)(this.` ~ source ~ `.save);`);
             }
         }
     }
+    
+    // TODO: Slice
 }
 
 template MetaRangeMixin(Range, string source, string exclusions, string front, string popFront) if(isRange!Range){
@@ -87,7 +89,7 @@ template MetaRangeMixin(
     
     mixin MetaRangeMixin!(Range, source, exclusions);
     
-    @property auto front(){
+    @property auto ref front(){
         mixin(frontstr);
     }
     void popFront(){
@@ -96,7 +98,7 @@ template MetaRangeMixin(
     
     static if(exclusions.canFind(cast(string) MetaRangeMixinComponent.Back)){
         static if(isBidirectionalRange!Range){
-            @property auto back(){
+            @property auto ref back(){
                 mixin(backstr);
             }
             void popBack(){

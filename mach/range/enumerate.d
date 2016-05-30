@@ -45,10 +45,8 @@ struct EnumerationRangeElement(Index, Value){
     Value value;
     
     // Because who doesn't like shorthand
-    alias idx = index;
-    alias i = index;
-    alias val = value;
-    alias v = val;
+    alias idx = index; alias i = index;
+    alias val = value; alias v = value;
     
     this(typeof(this) element){
         this(element.index, element.value);
@@ -64,7 +62,7 @@ struct EnumerationRange(Index = size_t, Range) if(canEnumerateRange!(Range, Inde
     static enum bool isBidirectional = canEnumerateRangeBidirectional!(Range, Index);
     
     mixin MetaRangeMixin!(
-        Range, `source`, `RandomAccess Slice`
+        Range, `source`, `Index Slice`
     );
     
     Range source;
@@ -96,7 +94,7 @@ struct EnumerationRange(Index = size_t, Range) if(canEnumerateRange!(Range, Inde
         }
     }
     
-    @property auto front(){
+    @property auto ref front(){
         return Element(this.frontindex, this.source.front);
     }
     void popFront(){
@@ -104,7 +102,7 @@ struct EnumerationRange(Index = size_t, Range) if(canEnumerateRange!(Range, Inde
         this.frontindex++;
     }
     static if(isBidirectional){
-        @property auto back(){
+        @property auto ref back(){
             return Element(this.backindex, this.source.back);
         }
         void popBack(){
@@ -114,11 +112,12 @@ struct EnumerationRange(Index = size_t, Range) if(canEnumerateRange!(Range, Inde
     }
     
     static if(
-        isRandomAccessRange!Range &&
-        hasSingleIndexParameter!Range &&
-        isImplicitlyConvertible!(SingleIndexParameter!Range, Index)
+        isRandomAccessRange!Range && is(typeof((inout int = 0){
+            auto range = Range.init;
+            auto element = range[Index.init];
+        }))
     ){
-        auto opIndex(Index index){
+        auto ref opIndex(Index index){
             return Element(index, this.source[index]);
         }
     }

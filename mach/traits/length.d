@@ -3,7 +3,7 @@ module mach.traits.length;
 private:
 
 import std.traits : ReturnType, isSomeFunction;
-import std.traits : isArray, isAssociativeArray;
+import std.traits : isArray, isAssociativeArray, isNumeric;
 
 public:
 
@@ -24,6 +24,14 @@ template LengthType(T) if(hasLength!T){
         alias LengthType = ReturnType!(T.length);
     }else{
         alias LengthType = typeof(T.length);
+    }
+}
+
+template hasNumericLength(T){
+    static if(hasLength!T){
+        enum bool hasNumericLength = isNumeric!(LengthType!T);
+    }else{
+        enum bool hasNumericLength = false;
     }
 }
 
