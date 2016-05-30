@@ -14,4 +14,5 @@ import mach.range.map : map;
 import mach.range.pluck : pluck;
 import mach.range.reduce : reduce;
 import mach.range.reduction : min, max, sum, product;
+import mach.range.repeat : repeat, repeatrandomaccess, repeatsaving, repeatelement;
 import mach.range.reversed : reversed;
