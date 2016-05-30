@@ -9,14 +9,17 @@ public:
 
 
 
-enum canCompare(alias pred, IterA, IterB) = (
+enum canCompareIterables(alias pred, IterA, IterB) = (
     validAsRange!IterA && validAsRange!IterB &&
     isFiniteIterable!IterA && isFiniteIterable!IterB &&
     is(typeof(pred(ElementType!IterA.init, ElementType!IterB.init)))
 );
 
-alias EqualityComparison = (a, b) => (a == b);
-enum canCompareEquality(IterA, IterB) = canCompare!(EqualityComparison, IterA, IterB);
+private alias EqualityComparison = (a, b) => (a == b);
+
+enum canCompareIterablesEquality(IterA, IterB) = (
+    canCompareIterables!(EqualityComparison, IterA, IterB)
+);
 
 
 
@@ -24,7 +27,7 @@ bool compare(
     alias pred, bool length = true, IterA, IterB
 )(
     IterA itera, IterB iterb
-) if(canCompare!(pred, IterA, IterB)){
+) if(canCompareIterables!(pred, IterA, IterB)){
     auto rangea = itera.asrange;
     auto rangeb = iterb.asrange;
     while(!rangea.empty && !rangeb.empty){
@@ -47,7 +50,7 @@ bool compare(
 /// optionally ignoring length.
 bool equals(bool length = true, IterA, IterB)(
     IterA itera, IterB iterb
-) if(canCompareEquality!(IterA, IterB)){
+) if(canCompareIterablesEquality!(IterA, IterB)){
     return compare!(EqualityComparison, length, IterA, IterB)(itera, iterb);
 }
 
