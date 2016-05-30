@@ -33,6 +33,7 @@ enum canGetSimpleHeadRange(Range, Count) = (
 
 
 
+/// Get as a range the first count elements of some iterable.
 auto head(Iter, Count)(Iter iter, Count count) if(
     canGetSimpleHead!(Iter, Count) && !canGetEnd!(Iter, Count)
 ){
@@ -40,11 +41,13 @@ auto head(Iter, Count)(Iter iter, Count count) if(
     return SimpleHeadRange!(typeof(range), Count)(range, count);
 }
 
+/// ditto
 auto head(Iter, Count)(Iter iter, Count count) if(canGetEnd!(Iter, Count)){
     auto range = iter.asrange;
     return HeadRange!(typeof(range), Count)(range, count);
 }
 
+/// Get as a range the trailing count elements of some iterable.
 auto tail(Iter, Count)(Iter iter, Count count) if(canGetEnd!(Iter, Count)){
     auto range = iter.asrange;
     return TailRange!(typeof(range), Count)(range, count);
