@@ -67,6 +67,13 @@ template isRandomAccessRange(Range){
     }));
 }
 
+template isSlicingRange(Range){
+    enum bool isSlicingRange = isRange!Range && is(typeof((inout int = 0){
+        auto slice = Range.init[0 .. 0];
+        static assert(is(typeof(slice) == Range));
+    }));
+}
+
 
 
 enum hasEmptyEnum(T) = __traits(compiles, {enum empty = T.empty;});

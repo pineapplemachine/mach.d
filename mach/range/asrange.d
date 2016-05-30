@@ -37,6 +37,28 @@ enum validAsRandomAccessRange(T) = (
     isRandomAccessRange!T || canMakeRange!T
 );
 
+template MakeRangeType(Base) if(canMakeRange!Base){
+    static if(canMakeArrayRange!Base){
+        alias MakeRangeType = ArrayRange!Base;
+    }else static if(canMakeBidirectionalIndexRange!Base){
+        alias MakeRangeType = BidirectionalIndexRange!Base;
+    }else static if(canMakeFiniteIndexRange!Base){
+        alias MakeRangeType = FiniteIndexRange!Base;
+    }else static if(canMakeIndexRange!Base){
+        alias MakeRangeType = IndexRange!Base;
+    }else{
+        static assert(false); // This shouldn't happen
+    }
+}
+
+template AsRangeType(T) if(validAsRange!T){
+    static if(isRange!T){
+        alias AsRangeType = T;
+    }else{
+        alias AsRangeType = MakeRangeType!T;
+    }
+}
+
 
 
 /// Get a range for iterating over some object.
@@ -50,17 +72,7 @@ auto asrange(Range)(Range range) if(isRange!Range){
 
 /// Create a range for iterating over some object.
 auto makerange(Base)(Base basis) if(canMakeRange!Base){
-    static if(canMakeArrayRange!Base){
-        return ArrayRange!Base(basis);
-    }else static if(canMakeBidirectionalIndexRange!Base){
-        return BidirectionalIndexRange!Base(basis);
-    }else static if(canMakeFiniteIndexRange!Base){
-        return FiniteIndexRange!Base(basis);
-    }else static if(canMakeIndexRange!Base){
-        return IndexRange!Base(basis);
-    }else{
-        static assert(false); // This shouldn't happen
-    }
+    return MakeRangeType!Base(basis);
 }
 
 
@@ -140,7 +152,7 @@ static immutable string IndexRangeCommonMixin = `
     }
     
     static if(is(typeof(this.basis[Index.init .. Index.init]) == Base)){
-        auto ref opSlice(Index low, Index high){
+        typeof(this) opSlice(Index low, Index high){
             return typeof(this)(this.basis[low .. high]);
         }
     }
@@ -323,7 +335,7 @@ struct ArrayRange(Base) if(canMakeArrayRange!Base){
     auto ref opIndex(in Index index) const{
         return this.basis[index];
     }
-    auto ref opSlice(in Index low, in Index high) const{
+    typeof(this) opSlice(in Index low, in Index high) const{
         return typeof(this)(this.basis[low .. high]);
     }
     
@@ -367,6 +379,9 @@ unittest{
     int[] array = [1, 1, 2, 3, 5, 8];
     auto range = array.asrange;
     testis(range, range.asrange);
+    auto slice = range[0 .. 3];
+    testeq(slice.length, 3);
+    test(is(typeof(range) == typeof(slice)));
 }
 unittest{
     auto indexed = Indexed(0);
