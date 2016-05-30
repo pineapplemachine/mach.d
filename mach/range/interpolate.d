@@ -30,7 +30,7 @@ alias LinearInterpolation = (start, end, t){
 alias CosineInterpolation = (start, end, t){
     import std.math : PI, cos;
     auto f = (1 - cos(t * PI)) * .5;
-    return (1 - f) * start + f * end;
+    return start + (end - start) * f;
 };
 
 
