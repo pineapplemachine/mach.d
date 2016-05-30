@@ -75,8 +75,8 @@ struct SimpleHeadRange(Range, Count = size_t) if(canGetSimpleHeadRange!(Range, C
     }
     this(Range source, Count limit, Count index = Count.init){
         this.source = source;
-        this.index = index;
         this.limit = limit;
+        this.index = index;
     }
     
     @property auto ref front(){
@@ -103,7 +103,7 @@ struct SimpleHeadRange(Range, Count = size_t) if(canGetSimpleHeadRange!(Range, C
     
     static if(isSavingRange!Range){
         @property auto ref save(){
-            return typeof(this)(this.source.save);
+            return typeof(this)(this.source.save, this.limit, this.index);
         }
     }
 }
