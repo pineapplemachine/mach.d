@@ -5,6 +5,7 @@ import mach.range.asrange : asrange;
 import mach.range.compare : compare, equals;
 import mach.range.contains : contains, containsrange, containselement;
 import mach.range.each : each;
+import mach.range.ends : head, tail;
 import mach.range.enumerate : enumerate;
 import mach.range.filter : filter;
 import mach.range.indexof : indexof, indexofrange, indexofelement;
