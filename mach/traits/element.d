@@ -2,8 +2,10 @@ module mach.traits.element;
 
 private:
 
+import std.meta : staticMap;
 import std.traits : isArray, isDelegate, isSomeFunction, fullyQualifiedName;
 import std.traits : Parameters, ReturnType;
+import mach.traits.common : hasCommonType, CommonType;
 import mach.traits.iter : isRange;
 import mach.traits.op : hasOpApply, hasOpApplyReverse;
 
@@ -62,8 +64,19 @@ template ElementType(Iter){
 
 
 
+template hasCommonElementType(Iters...){
+    enum bool hasCommonElementType = hasCommonType!(staticMap!(ElementType, Iters)); 
+}
+
+template CommonElementType(Iters...) if(hasCommonElementType!Iters){
+    alias CommonElementType = CommonType!(staticMap!(ElementType, Iters));
+}
+
+
+
 version(unittest){
-    private struct RangeElementTest{
+    private:
+    struct RangeElementTest{
         int value;
         @property auto front() const{
             return this.value;
@@ -73,12 +86,12 @@ version(unittest){
         }
         enum bool empty = false;
     }
-    private struct ApplyElementTest{
+    struct ApplyElementTest{
         int opApply(in int delegate(ref string item) each){
             return 0;
         }
     }
-    private struct ApplyReverseElementTest{
+    struct ApplyReverseElementTest{
         int opApplyReverse(in int delegate(ref string item) each){
             return 0;
         }
@@ -94,4 +107,14 @@ unittest{
     static assert(is(ElementType!ApplyElementTest == string));
     // OpApplyReverse
     static assert(is(ElementType!ApplyReverseElementTest == string));
+}
+unittest{
+    // hasCommonElementType
+    static assert(hasCommonElementType!(int[], real[]));
+    static assert(hasCommonElementType!(string[], ApplyElementTest));
+    static assert(!hasCommonElementType!(int[], string[]));
+    static assert(!hasCommonElementType!(int[], ApplyElementTest));
+    // CommonElementType
+    static assert(is(CommonElementType!(int[], real[]) == real));
+    static assert(is(CommonElementType!(string[], ApplyElementTest) == string));
 }
