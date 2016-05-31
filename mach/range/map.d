@@ -41,6 +41,7 @@ struct MapRange(alias transform, Range) if(canMapRange!Range){
     }
     
     static if(isIndexedRange!Range){
+        import mach.traits : IndexParameters;
         auto ref opIndex(IndexParameters!Range index){
             return transform(this.source.opIndex(index));
         }

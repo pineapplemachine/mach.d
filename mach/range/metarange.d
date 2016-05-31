@@ -7,7 +7,9 @@ import mach.traits : isRange;
 
 public:
 
-enum MetaRangeMixinComponent : string{
+
+
+enum MetaRangeMixinComponent : string {
     Empty = `Empty`,
     Length = `Length`,
     Dollar = `Dollar`,
@@ -17,53 +19,101 @@ enum MetaRangeMixinComponent : string{
     Back = `Back`,
 }
 
+
+
+template MetaRangeEmptyMixin(Range, string source) if(isRange!Range){
+    import mach.traits : hasEmptyEnum;
+    static if(hasEmptyEnum!Range){
+        alias empty = Range.empty;
+    }else{
+        @property bool empty(){
+            mixin(`return this.` ~ source ~ `.empty;`);
+        }
+    }
+}
+
+template MetaRangeLengthMixin(Range, string source) if(isRange!Range){
+    import mach.traits : hasLength;
+    static if(hasLength!Range){
+        @property auto length(){
+            mixin(`return this.` ~ source ~ `.length;`);
+        }
+    }
+}
+
+template MetaRangeDollarMixin(Range, string source) if(isRange!Range){
+    import mach.traits : hasDollar;
+    static if(hasDollar!Range){
+        @property auto opDollar(){
+            mixin(`return this.` ~ source ~ `.opDollar;`);
+        }
+    }
+}
+
+template MetaRangeIndexMixin(Range, string source) if(isRange!Range){
+    import mach.traits : isIndexedRange;
+    static if(isIndexedRange!Range){
+        import mach.traits : IndexParameters;
+        auto ref opIndex(IndexParameters!Range index){
+            mixin(`return this.` ~ source ~ `.opIndex(index);`);
+        }
+    }
+}
+
+template MetaRangeSaveMixin(Range, string source) if(isRange!Range){
+    import mach.traits : isSavingRange, hasConstructor;
+    static if(isSavingRange!Range && hasConstructor!(typeof(this))){
+        import std.traits : ParameterIdentifierTuple;
+        import mach.traits : getFunctionWithMostParameters;
+        
+        private static string SaveMixin(){
+            alias Ctor = getFunctionWithMostParameters!(typeof(this), `__ctor`);
+            alias Params = ParameterIdentifierTuple!Ctor;
+            string args = ``;
+            foreach(param; Params){
+                if(args.length) args ~= `, `;
+                args ~= `this.` ~ param;
+                if(param == `source`) args ~= `.save`;
+            }
+            return `return typeof(this)(` ~ args ~ `);`;
+        }
+        
+        @property typeof(this) save(){
+            mixin(SaveMixin());
+        }
+    }
+}
+
+
+
 template MetaRangeMixin(Range, string source, string exclusions) if(isRange!Range){
     import std.algorithm : canFind; // TODO: Don't use phobos
     import mach.range.metarange : MetaRangeMixinComponent;
-    import mach.traits : hasEmptyEnum, hasLength, hasDollar;
-    import mach.traits : isIndexedRange, IndexParameters;
-    import mach.traits : isSavingRange;
+    
     
     static if(!exclusions.canFind(cast(string) MetaRangeMixinComponent.Empty)){
-        static if(hasEmptyEnum!Range){
-            alias empty = Range.empty;
-        }else{
-            @property bool empty(){
-                mixin(`return this.` ~ source ~ `.empty;`);
-            }
-        }
+        import mach.range.metarange : MetaRangeEmptyMixin;
+        mixin MetaRangeEmptyMixin!(Range, source);
     }
     
     static if(!exclusions.canFind(cast(string) MetaRangeMixinComponent.Length)){
-        static if(hasLength!Range){
-            @property auto length(){
-                mixin(`return this.` ~ source ~ `.length;`);
-            }
-        }
+        import mach.range.metarange : MetaRangeLengthMixin;
+        mixin MetaRangeLengthMixin!(Range, source);
     }
     
     static if(!exclusions.canFind(cast(string) MetaRangeMixinComponent.Dollar)){
-        static if(hasDollar!Range){
-            @property auto opDollar(){
-                mixin(`return this.` ~ source ~ `.opDollar;`);
-            }
-        }
+        import mach.range.metarange : MetaRangeDollarMixin;
+        mixin MetaRangeDollarMixin!(Range, source);
     }
     
     static if(!exclusions.canFind(cast(string) MetaRangeMixinComponent.Index)){
-        static if(isIndexedRange!Range){
-            auto ref opIndex(IndexParameters!Range index){
-                mixin(`return this.` ~ source ~ `.opIndex(index);`);
-            }
-        }
+        import mach.range.metarange : MetaRangeIndexMixin;
+        mixin MetaRangeIndexMixin!(Range, source);
     }
     
     static if(exclusions.canFind(cast(string) MetaRangeMixinComponent.Save)){
-        static if(isSavingRange!Range){
-            @property auto ref save(){
-                mixin(`return typeof(this)(this.` ~ source ~ `.save);`);
-            }
-        }
+        import mach.range.metarange : MetaRangeSaveMixin;
+        mixin MetaRangeSaveMixin!(Range, source);
     }
     
     // TODO: Slice
