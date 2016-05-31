@@ -2,6 +2,7 @@ module mach.range;
 
 import mach.range.asarray : asarray;
 import mach.range.asrange : asrange;
+import mach.range.callback : callback;
 import mach.range.chain : chain;
 import mach.range.compare : compare, equals;
 import mach.range.consume : consume, consumereverse;
