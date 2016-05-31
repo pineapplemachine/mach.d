@@ -33,7 +33,7 @@ auto reversed(Iter)(Iter iter) if(canReverse!Iter){
 
 struct ReversedRange(Range) if(canReverseRange!Range){
     mixin MetaRangeMixin!(
-        Range, `source`, `Index Slice`
+        Range, `source`, `Empty Length Dollar Save Back`
     );
     
     Range source;
@@ -61,6 +61,8 @@ struct ReversedRange(Range) if(canReverseRange!Range){
             return this.source[this.source.length - index - 1];
         }
     }
+    
+    // TODO: Slice
 }
 
 
@@ -78,6 +80,6 @@ unittest{
             testeq(input.reversed[3], 0);
             testeq(input.reversed[$-1], 0);
         });
-        // TODO: Slices
+        // TODO: Slice
     });
 }

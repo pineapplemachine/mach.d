@@ -4,7 +4,7 @@ private:
 
 import std.traits : isImplicitlyConvertible;
 import mach.traits : canIncrement, canDecrement, canCast, ElementType;
-import mach.traits : isRange, isRandomAccessRange, hasLength, LengthType;
+import mach.traits : isRange, isSavingRange, isRandomAccessRange, hasLength, LengthType;
 import mach.traits : hasSingleIndexParameter, SingleIndexParameter;
 import mach.range.asrange : asrange, validAsRange;
 import mach.range.metarange : MetaRangeMixin;
@@ -62,7 +62,7 @@ struct EnumerationRange(Index = size_t, Range) if(canEnumerateRange!(Range, Inde
     static enum bool isBidirectional = canEnumerateRangeBidirectional!(Range, Index);
     
     mixin MetaRangeMixin!(
-        Range, `source`, `Index Slice`
+        Range, `source`, `Empty Length Dollar`
     );
     
     Range source;
@@ -123,6 +123,16 @@ struct EnumerationRange(Index = size_t, Range) if(canEnumerateRange!(Range, Inde
     }
     
     // TODO: Slice
+    
+    static if(isSavingRange!Range){
+        @property typeof(this) save(){
+            static if(isBidirectional){
+                return typeof(this)(this.source.save, this.frontindex, this.backindex);
+            }else{
+                return typeof(this)(this.source.save, this.frontindex);
+            }
+        }
+    }
 }
 
 

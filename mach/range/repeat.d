@@ -10,7 +10,6 @@ import mach.traits : hasSingleIndexParameter, SingleIndexParameter;
 import mach.traits : hasNumericLength;
 import mach.range.asrange : asrange, validAsRange;
 import mach.range.asrange : validAsRandomAccessRange, validAsSavingRange;
-import mach.range.metarange : MetaRangeMixin;
 
 public:
 
@@ -122,12 +121,7 @@ auto repeatelement(Element, Count = DefaultRepeatCount)(Element element, Count c
 
 
 
-private template RepeatSavingRangeMixin(Range, string popFront){
-    mixin MetaRangeMixin!(
-        Range, `source`, `Empty Index Slice Length Dollar Back`,
-        `return this.source.front;`, popFront
-    );
-    
+private template RepeatSavingRangeMixin(Range, string popfrontstr){
     Range* source;
     Range original;
     
@@ -150,6 +144,13 @@ private template RepeatSavingRangeMixin(Range, string popFront){
     }
     ~this(){
         if(this.source) free(this.source);
+    }
+    
+    @property auto ref front(){
+        return this.source.front;
+    }
+    void popFront(){
+        mixin(popfrontstr);
     }
     
     static if(isRandomAccessRange!Range && hasNumericLength!Range){

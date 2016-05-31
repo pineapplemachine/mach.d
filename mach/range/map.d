@@ -26,7 +26,7 @@ auto map(alias transform, Iter)(Iter iter) if(canMap!Iter){
 
 struct MapRange(alias transform, Range) if(canMapRange!Range){
     mixin MetaRangeMixin!(
-        Range, `source`, `Index Slice`,
+        Range, `source`, `Empty Length Dollar Save Back`,
         `return transform(this.source.front);`,
         `this.source.popFront();`
     );
@@ -65,6 +65,7 @@ unittest{
         test([1, 2, 3, 4].map!square.equals([1, 4, 9, 16]));
         test(ones.map!square.equals(ones));
         test("Empty input", empty.map!square.equals(empty));
+        testeq("Length", [1, 2, 3].map!square.length, 3);
         testeq("Random access", [2, 3].map!square[1], 9);
     });
 }

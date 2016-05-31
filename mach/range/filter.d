@@ -22,7 +22,7 @@ auto filter(alias pred, Iter)(Iter iter) if(validAsRange!Iter){
 struct FilterRange(alias pred, Range){
     mixin MetaRangeMixin!(
         Range, `source`,
-        `Length Dollar Index Slice`,
+        `Empty Save Back`,
         `
             return this.source.front;
         `, `

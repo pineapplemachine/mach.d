@@ -7,6 +7,7 @@ import std.traits : ReturnType, isImplicitlyConvertible;
 import mach.range.asrange : asrange, validAsRange;
 import mach.traits : isRange, isIndexedRange, ElementType, hasProperty;
 import mach.traits : hasSingleIndexParameter, SingleIndexParameter;
+import mach.traits : IndexParameters;
 import mach.range.metarange : MetaRangeMixin;
 
 public:
@@ -61,7 +62,7 @@ auto pluck(string property, Iter)(
 struct PluckRange(Range) if(canPluckRange!Range){
     mixin MetaRangeMixin!(
         Range, `source`,
-        `Index Slice`,
+        `Empty Length Dollar Save Back`,
         `return this.source.front[this.index];`,
         `this.source.popFront();`
     );
@@ -85,12 +86,14 @@ struct PluckRange(Range) if(canPluckRange!Range){
             return this.source.opIndex(index)[this.index];
         }
     }
+    
+    // TODO: Slice
 }
 
 struct PropertyPluckRange(string property, Range) if(canPluckPropertyRange!(Range, property)){
     mixin MetaRangeMixin!(
         Range, `source`,
-        `Index Slice`,
+        `Empty Length Dollar Save Back`,
         `return this.source.front.` ~ property ~ `;`,
         `this.source.popFront();`
     );
@@ -111,12 +114,14 @@ struct PropertyPluckRange(string property, Range) if(canPluckPropertyRange!(Rang
             mixin(`return this.source.opIndex(index).` ~ property ~ `;`);
         }
     }
+    
+    // TODO: Slice
 }
 
 struct MultiPluckRange(Range) if(canPluckRange!Range){
     mixin MetaRangeMixin!(
         Range, `source`,
-        `Index Slice`,
+        `Empty Length Dollar Save Back`,
         `
             auto front = this.source.front;
             return this.getelement(front);
@@ -148,6 +153,8 @@ struct MultiPluckRange(Range) if(canPluckRange!Range){
             return this.getelement(value);
         }
     }
+    
+    // TODO: Slice
     
     private auto getelement(T)(T value){
         import std.traits : Unqual;
