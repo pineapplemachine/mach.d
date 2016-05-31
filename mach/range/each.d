@@ -12,7 +12,7 @@ void each(alias func, Iter)(Iter iter) if(isFiniteIterable!Iter){
     }
 }
 
-void each_reverse(alias func, Iter)(Iter iter) if(isFiniteIterableReverse!Iter){
+void eachreverse(alias func, Iter)(Iter iter) if(isFiniteIterableReverse!Iter){
     foreach_reverse(item; iter){
         func(item);
     }
@@ -30,6 +30,6 @@ unittest{
     test(output.equals(input));
     // Reverse
     int[] output_reverse;
-    input.each_reverse!((i){output_reverse ~= i;});
+    input.eachreverse!((i){output_reverse ~= i;});
     test(output_reverse.equals([5, 4, 3, 2, 1]));
 }
