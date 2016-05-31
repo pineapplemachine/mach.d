@@ -2,11 +2,11 @@ module mach.range.chain;
 
 private:
 
-import std.meta : staticMap, allSatisfy;
+import std.meta : staticMap, allSatisfy, anySatisfy;
 import mach.traits : hasCommonElementType, CommonElementType;
 import mach.traits : isRange, isBidirectionalRange;
 import mach.traits : isRandomAccessRange, isSavingRange, isSlicingRange;
-import mach.traits : hasNumericLength;
+import mach.traits : hasNumericLength, hasEmptyEnum;
 import mach.range.asrange : asrange, validAsRange, AsRangeType;
 
 public:
@@ -75,11 +75,15 @@ struct ChainRange(Ranges...) if(canChainRanges!Ranges){
         this.sources = sources;
     }
     
-    @property bool empty(){
-        foreach(i, _; Ranges){
-            if(!this.sources[i].empty) return false;
+    static if(anySatisfy!(hasEmptyEnum, Ranges)){
+        enum bool empty = false;
+    }else{
+        @property bool empty(){
+            foreach(i, _; Ranges){
+                if(!this.sources[i].empty) return false;
+            }
+            return true;
         }
-        return true;
     }
     
     @property auto ref front(){
