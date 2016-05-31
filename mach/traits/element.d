@@ -6,6 +6,7 @@ import std.meta : staticMap;
 import std.traits : isArray, isDelegate, isSomeFunction, fullyQualifiedName;
 import std.traits : Parameters, ReturnType;
 import mach.traits.common : hasCommonType, CommonType;
+import mach.traits.hash : canHash;
 import mach.traits.iter : isRange;
 import mach.traits.op : hasOpApply, hasOpApplyReverse;
 
@@ -74,6 +75,10 @@ template CommonElementType(Iters...) if(hasCommonElementType!Iters){
 
 
 
+enum canHashElement(Iter) = canHash!(ElementType!Iter);
+
+
+
 version(unittest){
     private:
     struct RangeElementTest{
@@ -118,3 +123,4 @@ unittest{
     static assert(is(CommonElementType!(int[], real[]) == real));
     static assert(is(CommonElementType!(string[], ApplyElementTest) == string));
 }
+
