@@ -4,6 +4,7 @@ public:
 
 import mach.traits.array;
 import mach.traits.common;
+import mach.traits.ctor;
 import mach.traits.element;
 import mach.traits.field;
 import mach.traits.hash;
