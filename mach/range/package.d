@@ -6,6 +6,7 @@ import mach.range.chain : chain;
 import mach.range.compare : compare, equals;
 import mach.range.consume : consume, consumereverse;
 import mach.range.contains : contains, containsrange, containselement;
+import mach.range.distinct : distinct;
 import mach.range.each : each, eachreverse;
 import mach.range.ends : head, tail;
 import mach.range.enumerate : enumerate;
