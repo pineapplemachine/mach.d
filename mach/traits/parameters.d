@@ -1,4 +1,4 @@
-module mach.traits.element;
+module mach.traits.parameters;
 
 private:
 
