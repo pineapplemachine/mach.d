@@ -7,7 +7,7 @@ import mach.traits : canIncrement, canDecrement, canCast, ElementType;
 import mach.traits : isRange, isSavingRange, isRandomAccessRange, hasLength, LengthType;
 import mach.traits : hasSingleIndexParameter, SingleIndexParameter;
 import mach.range.asrange : asrange, validAsRange;
-import mach.range.metarange : MetaRangeMixin;
+import mach.range.meta : MetaRangeMixin;
 
 public:
 

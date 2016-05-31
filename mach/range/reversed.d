@@ -6,7 +6,7 @@ import std.traits : Unqual, isNumeric;
 import mach.traits : isBidirectionalRange, isRandomAccessRange, hasNumericLength;
 import mach.traits : canCast, hasLength, LengthType, isTemplateOf;
 import mach.range.asrange : asrange, validAsBidirectionalRange;
-import mach.range.metarange : MetaRangeMixin;
+import mach.range.meta : MetaRangeMixin;
 
 public:
 

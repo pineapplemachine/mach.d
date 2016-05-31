@@ -4,7 +4,7 @@ private:
 
 import std.range.primitives : isForwardRange, isBidirectionalRange;
 import mach.range.asrange : asrange, validAsRange;
-import mach.range.metarange : MetaRangeMixin;
+import mach.range.meta : MetaRangeMixin;
 
 public:
 

@@ -3,7 +3,8 @@ module mach.range.asrange;
 private:
 
 import std.traits : Parameters, ReturnType, TemplateOf, TemplateArgsOf, Unqual;
-import std.traits : isArray, isCallable;
+import std.traits : isArray, isCallable, isImplicitlyConvertible;
+import std.traits : isAssociativeArray, KeyType, ValueType;
 import std.range.primitives : isBidirectionalRange;
 import mach.traits : isRange, isSavingRange, isRandomAccessRange;
 import mach.traits : ArrayElementType, canIncrement, canDecrement, canCast;
@@ -15,6 +16,7 @@ public:
 /// Determine whether a range can be created from a type using makerange.
 enum canMakeRange(Base) = (
     canMakeArrayRange!Base ||
+    canMakeAssociativeArrayRange!Base ||
     canMakeIndexRange!Base ||
     canMakeFiniteIndexRange!Base ||
     canMakeBidirectionalIndexRange!Base
@@ -40,6 +42,8 @@ enum validAsRandomAccessRange(T) = (
 template MakeRangeType(Base) if(canMakeRange!Base){
     static if(canMakeArrayRange!Base){
         alias MakeRangeType = ArrayRange!Base;
+    }else static if(canMakeAssociativeArrayRange!Base){
+        alias MakeRangeType = AssociativeArrayRange!Base;
     }else static if(canMakeBidirectionalIndexRange!Base){
         alias MakeRangeType = BidirectionalIndexRange!Base;
     }else static if(canMakeFiniteIndexRange!Base){
@@ -109,7 +113,9 @@ template canMakeBidirectionalIndexRange(Base){
     }));
 }
 
-enum canMakeArrayRange(Base) = isArray!Base;
+alias canMakeArrayRange = isArray;
+
+alias canMakeAssociativeArrayRange = isAssociativeArray;
 
 
 
@@ -157,6 +163,7 @@ static immutable string IndexRangeCommonMixin = `
         }
     }
 `;
+
 static immutable string FiniteIndexRangeCommonMixin = `
     @property auto length(){
         return this.basis.length;
@@ -186,15 +193,17 @@ struct IndexRange(Base) if(canMakeIndexRange!Base){
     
     mixin(IndexRangeCommonMixin);
     
+    enum bool empty = false;
+    
     void popFront(){
         this.index++;
     }
     @property auto ref front(){
         return this.basis[this.index];
     }
-    
-    enum bool empty = false;
 }
+
+
 
 /// Make a range from some object implementing opIndex(Index) and length by
 /// starting at Index.init and incrementing until index >= length.
@@ -215,13 +224,6 @@ struct FiniteIndexRange(Base) if(canMakeFiniteIndexRange!Base){
     mixin(IndexRangeCommonMixin);
     mixin(FiniteIndexRangeCommonMixin);
     
-    void popFront(){
-        this.index++;
-    }
-    @property auto ref front() in{assert(!this.empty);}body{
-        return this.basis[this.index];
-    }
-    
     @property bool empty(){
         return this.index >= this.basis.length;
     }
@@ -229,7 +231,15 @@ struct FiniteIndexRange(Base) if(canMakeFiniteIndexRange!Base){
         return this.length - this.index;
     }
     
+    void popFront(){
+        this.index++;
+    }
+    @property auto ref front() in{assert(!this.empty);}body{
+        return this.basis[this.index];
+    }
 }
+
+
 
 /// Make a range from some object implementing opIndex(Index) and length where
 /// length is also of type Index and can be decremented. Start the front index
@@ -259,6 +269,13 @@ struct BidirectionalIndexRange(Base) if(canMakeBidirectionalIndexRange!Base){
     mixin(IndexRangeCommonMixin);
     mixin(FiniteIndexRangeCommonMixin);
     
+    @property bool empty(){
+        return this.frontindex >= this.backindex;
+    }
+    @property auto remaining(){
+        return this.backindex - this.frontindex;
+    }
+    
     void popFront(){
         this.frontindex++;
     }
@@ -274,35 +291,28 @@ struct BidirectionalIndexRange(Base) if(canMakeBidirectionalIndexRange!Base){
         index--;
         return this.basis[index];
     }
-    
-    @property bool empty(){
-        return this.frontindex > this.backindex;
-    }
-    @property auto remaining(){
-        auto value = this.backindex - this.frontindex;
-        value++;
-        return value;
-    }
 }
 
+
+
 /// Range based on an array.
-struct ArrayRange(Base) if(canMakeArrayRange!Base){
+struct ArrayRange(Array) if(canMakeArrayRange!Array){
     alias Index = size_t;
     
-    const Base basis;
+    const Array array;
     Index frontindex;
     Index backindex;
     
     alias index = frontindex;
     
     this(typeof(this) range){
-        this(range.basis, range.frontindex, range.backindex);
+        this(range.array, range.frontindex, range.backindex);
     }
-    this(in Base basis, Index frontindex = 0){
-        this(basis, frontindex, basis.length);
+    this(in Array array, Index frontindex = 0){
+        this(array, frontindex, array.length);
     }
-    this(in Base basis, Index frontindex, Index backindex){
-        this.basis = basis;
+    this(in Array array, Index frontindex, Index backindex){
+        this.array = array;
         this.frontindex = frontindex;
         this.backindex = backindex;
     }
@@ -311,21 +321,21 @@ struct ArrayRange(Base) if(canMakeArrayRange!Base){
         this.frontindex++;
     }
     @property auto ref front() const{
-        return this.basis[this.frontindex];
+        return this.array[this.frontindex];
     }
     
     void popBack(){
         this.backindex--;
     }
     @property auto ref back() const{
-        return this.basis[this.backindex - 1];
+        return this.array[this.backindex - 1];
     }
     
     @property bool empty() const{
         return this.frontindex >= this.backindex;
     }
     @property auto length() const{
-        return this.basis.length;
+        return this.array.length;
     }
     @property auto remaining() const{
         return this.backindex - this.frontindex;
@@ -333,14 +343,89 @@ struct ArrayRange(Base) if(canMakeArrayRange!Base){
     alias opDollar = length;
     
     auto ref opIndex(in Index index) const{
-        return this.basis[index];
+        return this.array[index];
     }
     typeof(this) opSlice(in Index low, in Index high) const{
-        return typeof(this)(this.basis[low .. high]);
+        return typeof(this)(this.array[low .. high]);
     }
     
     @property auto save(){
         return typeof(this)(this);
+    }
+}
+
+
+
+struct AssociativeArrayRangeElement(Array){
+    KeyType!Array key;
+    ValueType!Array value;
+    alias k = key;
+    alias val = value; alias v = value;
+}
+
+/// Range based on an associative array.
+struct AssociativeArrayRange(Array) if(canMakeAssociativeArrayRange!Array){
+    alias Key = KeyType!Array;
+    alias Keys = ArrayRange!(Key[]);
+    alias Element = AssociativeArrayRangeElement!Array;
+    
+    const Array array;
+    Keys keys;
+    
+    this(in typeof(this) range){
+        this(range.array, range.keys);
+    }
+    this(in Array array){
+        this.array = array;
+        this.keys = Keys(array.keys);
+    }
+    this(in Array array, in Keys keys){
+        this.array = array;
+        this.keys = keys;
+    }
+    
+    @property bool empty(){
+        return this.keys.empty;
+    }
+    @property auto length(){
+        return this.keys.length;
+    }
+    @property auto remaining(){
+        return this.keys.remaining;
+    }
+    alias opDollar = length;
+    
+    @property auto ref front() const{
+        auto key = keys.front;
+        return Element(key, this.array[key]);
+    }
+    void popFront(){
+        this.keys.popFront();
+    }
+    @property auto ref back() const{
+        auto key = keys.back;
+        return Element(key, this.array[key]);
+    }
+    void popBack(){
+        this.keys.popBack();
+    }
+    
+    auto ref opIndex(in size_t index) const{
+        auto key = keys[index];
+        return Element(key, this.array[key]);
+    }
+    static if(!isImplicitlyConvertible!(size_t, Key)){
+        auto ref opIndex(in Key key) const{
+            return Element(key, this.array[key]);
+        }
+    }
+    
+    typeof(this) opSlice(in size_t low, in size_t high) const{
+        return typeof(this)(this.array, this.keys[low .. high]);
+    }
+    
+    @property auto save(){
+        return typeof(this)(this.array, this.keys.save);
     }
 }
 
@@ -376,30 +461,68 @@ version(unittest){
     }
 }
 unittest{
-    int[] array = [1, 1, 2, 3, 5, 8];
-    auto range = array.asrange;
-    testis(range, range.asrange);
-    auto slice = range[0 .. 3];
-    testeq(slice.length, 3);
-    test(is(typeof(range) == typeof(slice)));
+    tests("Range from some type implementing opIndex", {
+        auto indexed = Indexed(0);
+        auto range = indexed.asrange;
+        testtype!(IndexRange!Indexed)(range);
+    });
 }
 unittest{
-    auto indexed = Indexed(0);
-    auto range = indexed.asrange;
-    testtype!(IndexRange!Indexed)(range);
+    tests("Range from some type implementing length and opIndex", {
+        auto bi0 = BiIndexed0(0, 10);
+        auto range0 = bi0.asrange;
+        testtype!(BidirectionalIndexRange!BiIndexed0)(range0);
+        auto bi1 = BiIndexed1(0, 10);
+        auto range1 = bi1.asrange;
+        testtype!(BidirectionalIndexRange!BiIndexed1)(range1);
+    });
 }
 unittest{
-    auto bi0 = BiIndexed0(0, 10);
-    auto range0 = bi0.asrange;
-    testtype!(BidirectionalIndexRange!BiIndexed0)(range0);
-    auto bi1 = BiIndexed1(0, 10);
-    auto range1 = bi1.asrange;
-    testtype!(BidirectionalIndexRange!BiIndexed1)(range1);
+    tests("Array as range", {
+        tests("Saving", {
+            auto range = [1, 2, 3].asrange;
+            testis(range, range.asrange);
+            auto saved = range.save;
+            while(!range.empty) range.popFront();
+            testeq(range.index, 3);
+            testeq(saved.index, 0);
+        });
+        tests("Slicing", {
+            int[] array = [1, 1, 2, 3, 5, 8];
+            auto range = array.asrange;
+            auto slice = range[0 .. 3];
+            testeq(slice.length, 3);
+            test(is(typeof(range) == typeof(slice)));
+        });
+    });
 }
 unittest{
-    auto range = [1, 2, 3].asrange;
-    auto saved = range.save;
-    while(!range.empty) range.popFront();
-    testeq(range.index, 3);
-    testeq(saved.index, 0);
+    tests("Associative array as range", {
+        int[string] array = [
+            "zero": 0, "one": 1,
+            "two": 2, "three": 3,
+            "four": 4, "five": 5
+        ];
+        testeq("Length",
+            array.asrange.length, array.length
+        );
+        tests("Iteration", {
+            auto range = array.asrange;
+            foreach(element; range){
+                testeq(array[element.key], element.value);
+            }
+        });
+        tests("Random access", {
+            auto range = array.asrange;
+            foreach(i; 0 .. array.length){
+                testeq(range[i].value, array[range[i].key]);
+            }
+        });
+        tests("Index by key", {
+            auto range = array.asrange;
+            testeq(range["zero"].value, 0);
+            testeq(range["one"].value, 1);
+            fail({range["not_a_key"];});
+        });
+    });
 }

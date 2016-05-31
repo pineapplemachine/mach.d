@@ -4,7 +4,7 @@ private:
 
 import mach.traits : isRange, isIndexedRange;
 import mach.range.asrange : asrange, validAsRange;
-import mach.range.metarange : MetaRangeMixin;
+import mach.range.meta : MetaRangeMixin;
 
 public:
 

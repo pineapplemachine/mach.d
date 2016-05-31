@@ -5,7 +5,7 @@ private:
 import mach.traits : isRange, isBidirectionalRange, isSavingRange;
 import mach.traits : canHash, ElementType;
 import mach.range.asrange : asrange, validAsRange;
-import mach.range.metarange : MetaRangeEmptyMixin;
+import mach.range.meta : MetaRangeEmptyMixin;
 
 public:
 

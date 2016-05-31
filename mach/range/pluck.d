@@ -8,7 +8,7 @@ import mach.range.asrange : asrange, validAsRange;
 import mach.traits : isRange, isIndexedRange, ElementType, hasProperty;
 import mach.traits : hasSingleIndexParameter, SingleIndexParameter;
 import mach.traits : IndexParameters;
-import mach.range.metarange : MetaRangeMixin;
+import mach.range.meta : MetaRangeMixin;
 
 public:
 

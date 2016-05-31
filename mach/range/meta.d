@@ -1,4 +1,4 @@
-module mach.range.metarange;
+module mach.range.meta;
 
 private:
 
@@ -88,31 +88,31 @@ template MetaRangeSaveMixin(Range, string source) if(isRange!Range){
 
 template MetaRangeMixin(Range, string source, string inclusions) if(isRange!Range){
     import mach.range.contains : contains;
-    import mach.range.metarange : MetaRangeMixinComponent;
+    import mach.range.meta : MetaRangeMixinComponent;
     
     
     static if(inclusions.contains(cast(string) MetaRangeMixinComponent.Empty)){
-        import mach.range.metarange : MetaRangeEmptyMixin;
+        import mach.range.meta : MetaRangeEmptyMixin;
         mixin MetaRangeEmptyMixin!(Range, source);
     }
     
     static if(inclusions.contains(cast(string) MetaRangeMixinComponent.Length)){
-        import mach.range.metarange : MetaRangeLengthMixin;
+        import mach.range.meta : MetaRangeLengthMixin;
         mixin MetaRangeLengthMixin!(Range, source);
     }
     
     static if(inclusions.contains(cast(string) MetaRangeMixinComponent.Dollar)){
-        import mach.range.metarange : MetaRangeDollarMixin;
+        import mach.range.meta : MetaRangeDollarMixin;
         mixin MetaRangeDollarMixin!(Range, source);
     }
     
     static if(inclusions.contains(cast(string) MetaRangeMixinComponent.Index)){
-        import mach.range.metarange : MetaRangeIndexMixin;
+        import mach.range.meta : MetaRangeIndexMixin;
         mixin MetaRangeIndexMixin!(Range, source);
     }
     
     static if(inclusions.contains(cast(string) MetaRangeMixinComponent.Save)){
-        import mach.range.metarange : MetaRangeSaveMixin;
+        import mach.range.meta : MetaRangeSaveMixin;
         mixin MetaRangeSaveMixin!(Range, source);
     }
     
@@ -134,7 +134,7 @@ template MetaRangeMixin(
     string backstr, string popBackstr
 ) if(isRange!Range){
     import mach.range.contains : contains;
-    import mach.range.metarange : MetaRangeMixinComponent;
+    import mach.range.meta : MetaRangeMixinComponent;
     
     mixin MetaRangeMixin!(Range, source, inclusions);
     
