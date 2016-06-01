@@ -6,7 +6,7 @@ import std.traits : Parameters, ReturnType, TemplateOf, TemplateArgsOf, Unqual;
 import std.traits : isArray, isCallable, isImplicitlyConvertible;
 import std.traits : isAssociativeArray, KeyType, ValueType;
 import mach.traits : isRange, isSavingRange, isRandomAccessRange;
-import mach.traits : isBidirectionalRange, isSlicingRange;
+import mach.traits : isBidirectionalRange, isSlicingRange, isMutable;
 import mach.traits : ArrayElementType, canIncrement, canDecrement, canCast;
 
 public:
@@ -298,8 +298,9 @@ struct BidirectionalIndexRange(Base) if(canMakeBidirectionalIndexRange!Base){
 /// Range based on an array.
 struct ArrayRange(Array) if(canMakeArrayRange!Array){
     alias Index = size_t;
+    alias Element = ArrayElementType!Array;
     
-    const Array array;
+    Array array;
     Index frontindex;
     Index backindex;
     
@@ -308,10 +309,10 @@ struct ArrayRange(Array) if(canMakeArrayRange!Array){
     this(typeof(this) range){
         this(range.array, range.frontindex, range.backindex);
     }
-    this(in Array array, Index frontindex = 0){
+    this(Array array, Index frontindex = 0){
         this(array, frontindex, array.length);
     }
-    this(in Array array, Index frontindex, Index backindex){
+    this(Array array, Index frontindex, Index backindex){
         this.array = array;
         this.frontindex = frontindex;
         this.backindex = backindex;
@@ -345,8 +346,21 @@ struct ArrayRange(Array) if(canMakeArrayRange!Array){
     auto ref opIndex(in Index index) const{
         return this.array[index];
     }
-    typeof(this) opSlice(in Index low, in Index high) const{
+    typeof(this) opSlice(in Index low, in Index high){
         return typeof(this)(this.array[low .. high]);
+    }
+    
+    static if(isMutable!Array && isMutable!Element){
+        enum bool mutable = true;
+        @property void front(Element value){
+            this.array[this.frontindex] = value;
+        }
+        @property void back(Element value){
+            this.array[this.backindex - 1] = value;
+        }
+        void opIndexAssign(Element value, in Index index){
+            this.array[index] = value;
+        }
     }
     
     @property auto save(){
@@ -369,17 +383,17 @@ struct AssociativeArrayRange(Array) if(canMakeAssociativeArrayRange!Array){
     alias Keys = ArrayRange!(Key[]);
     alias Element = AssociativeArrayRangeElement!Array;
     
-    const Array array;
+    Array array;
     Keys keys;
     
-    this(in typeof(this) range){
+    this(typeof(this) range){
         this(range.array, range.keys);
     }
-    this(in Array array){
+    this(Array array){
         this.array = array;
         this.keys = Keys(array.keys);
     }
-    this(in Array array, in Keys keys){
+    this(Array array, Keys keys){
         this.array = array;
         this.keys = keys;
     }
@@ -411,7 +425,7 @@ struct AssociativeArrayRange(Array) if(canMakeAssociativeArrayRange!Array){
     }
     
     auto ref opIndex(in size_t index) const{
-        auto key = keys[index];
+        auto key = this.keys[index];
         return Element(key, this.array[key]);
     }
     static if(!isImplicitlyConvertible!(size_t, Key)){
@@ -420,8 +434,43 @@ struct AssociativeArrayRange(Array) if(canMakeAssociativeArrayRange!Array){
         }
     }
     
-    typeof(this) opSlice(in size_t low, in size_t high) const{
+    typeof(this) opSlice(in size_t low, in size_t high){
         return typeof(this)(this.array, this.keys[low .. high]);
+    }
+    
+    static if(isMutable!Array){
+        enum bool mutable = true;
+        
+        @property void front(Element element){
+            this.array.remove(this.keys.front);
+            this.keys.front = element.key;
+            this.array[element.key] = element.value;
+        }
+        @property void front(ValueType!Array value){
+            this.array[this.keys.front] = value;
+        }
+        
+        @property void back(Element element){
+            this.array.remove(this.keys.back);
+            this.keys.back = element.key;
+            this.array[element.key] = element.value;
+        }
+        @property void back(ValueType!Array value){
+            this.array[this.keys.back] = value;
+        }
+        
+        void opIndexAssign(Element element, in size_t index) in{
+            assert(index >= 0 && index < this.keys.length);
+        }body{
+            this.array.remove(this.keys[index]);
+            this.keys[index] = element.key;
+            this.array[element.key] = element.value;
+        }
+        void opIndexAssign(ValueType!Array value, size_t index) in{
+            assert(index >= 0 && index < this.keys.length);
+        }body{
+            this.array[this.keys[index]] = value;
+        }
     }
     
     @property auto save(){
@@ -494,6 +543,13 @@ unittest{
             testeq(slice.length, 3);
             test(is(typeof(range) == typeof(slice)));
         });
+        tests("Mutability", {
+            char[] data = cast(char[]) "hello";
+            auto range = data.asrange;
+            range[1] = 'a';
+            range.popFront();
+            testeq(range.front, 'a');
+        });
     });
 }
 unittest{
@@ -523,6 +579,19 @@ unittest{
             testeq(range["zero"].value, 0);
             testeq(range["one"].value, 1);
             fail({range["not_a_key"];});
+        });
+        tests("Mutability", {
+            auto arraydup = array.dup;
+            auto range = arraydup.asrange;
+            auto insertion = typeof(range).Element("hi", -1);
+            range.front = insertion;
+            range.back = insertion;
+            testeq(range.front, insertion);
+            testeq(range.back, insertion);
+            range[1] = insertion;
+            range.popFront();
+            testeq(range.front, insertion);
+            testeq(arraydup["hi"], -1);
         });
     });
 }

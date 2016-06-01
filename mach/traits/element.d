@@ -8,6 +8,7 @@ import std.traits : Parameters, ReturnType;
 import mach.traits.common : hasCommonType, CommonType;
 import mach.traits.hash : canHash;
 import mach.traits.iter : isRange;
+import mach.traits.mutability : isMutable;
 import mach.traits.op : hasOpApply, hasOpApplyReverse;
 
 public:
@@ -76,6 +77,10 @@ template CommonElementType(Iters...) if(hasCommonElementType!Iters){
 
 
 enum canHashElement(Iter) = canHash!(ElementType!Iter);
+
+
+
+enum hasMutableElement(Iter) = isMutable!(ElementType!Iter);
 
 
 

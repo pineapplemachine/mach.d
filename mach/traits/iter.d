@@ -74,6 +74,40 @@ template isSlicingRange(Range){
     }));
 }
 
+/// Ranges must explicitly declare mutability
+template isMutableRange(Range){
+    static if(__traits(compiles, {enum mutable = Range.mutable;})){
+        enum bool isMutableRange = Range.mutable;
+    }
+}
+
+/// Determine if the front element of a range be reassigned with the value persisting
+template isFrontMutableRange(Range){
+    enum bool isFrontMutableRange = isMutableRange!Range && is(typeof((inout int = 0){
+        Range range = Range.init;
+        auto front = range.front;
+        range.front = front;
+    }));
+}
+
+/// Determine if the back element of a range be reassigned with the value persisting
+template isBackMutableRange(Range){
+    enum bool isFrontMutableRange = isMutableRange!Range && is(typeof((inout int = 0){
+        Range range = Range.init;
+        auto back = range.back;
+        range.back = back;
+    }));
+}
+
+/// Determine if a randomly-accessed element of a range be reassigned with the value persisting
+template isRandomMutableRange(Range){
+    enum bool isRandomMutableRange = isMutableRange!Range && is(typeof((inout int = 0){
+        Range range = Range.init;
+        auto front = range.front;
+        range[0] = front;
+    }));
+}
+
 
 
 enum hasEmptyEnum(T) = __traits(compiles, {enum empty = T.empty;});
