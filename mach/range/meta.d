@@ -87,31 +87,31 @@ template MetaRangeSaveMixin(Range, string source) if(isRange!Range){
 
 
 template MetaRangeMixin(Range, string source, string inclusions) if(isRange!Range){
-    import mach.range.contains : contains;
+    //import mach.range.canFind : canFind;
+    import std.algorithm : canFind;
     import mach.range.meta : MetaRangeMixinComponent;
     
-    
-    static if(inclusions.contains(cast(string) MetaRangeMixinComponent.Empty)){
+    static if(inclusions.canFind(cast(string) MetaRangeMixinComponent.Empty)){
         import mach.range.meta : MetaRangeEmptyMixin;
         mixin MetaRangeEmptyMixin!(Range, source);
     }
     
-    static if(inclusions.contains(cast(string) MetaRangeMixinComponent.Length)){
+    static if(inclusions.canFind(cast(string) MetaRangeMixinComponent.Length)){
         import mach.range.meta : MetaRangeLengthMixin;
         mixin MetaRangeLengthMixin!(Range, source);
     }
     
-    static if(inclusions.contains(cast(string) MetaRangeMixinComponent.Dollar)){
+    static if(inclusions.canFind(cast(string) MetaRangeMixinComponent.Dollar)){
         import mach.range.meta : MetaRangeDollarMixin;
         mixin MetaRangeDollarMixin!(Range, source);
     }
     
-    static if(inclusions.contains(cast(string) MetaRangeMixinComponent.Index)){
+    static if(inclusions.canFind(cast(string) MetaRangeMixinComponent.Index)){
         import mach.range.meta : MetaRangeIndexMixin;
         mixin MetaRangeIndexMixin!(Range, source);
     }
     
-    static if(inclusions.contains(cast(string) MetaRangeMixinComponent.Save)){
+    static if(inclusions.canFind(cast(string) MetaRangeMixinComponent.Save)){
         import mach.range.meta : MetaRangeSaveMixin;
         mixin MetaRangeSaveMixin!(Range, source);
     }
@@ -133,7 +133,8 @@ template MetaRangeMixin(
     string frontstr, string popFrontstr,
     string backstr, string popBackstr
 ) if(isRange!Range){
-    import mach.range.contains : contains;
+    //import mach.range.contains : contains;
+    import std.algorithm : canFind;
     import mach.range.meta : MetaRangeMixinComponent;
     
     mixin MetaRangeMixin!(Range, source, inclusions);
@@ -145,7 +146,7 @@ template MetaRangeMixin(
         mixin(popFrontstr);
     }
     
-    static if(inclusions.contains(cast(string) MetaRangeMixinComponent.Back)){
+    static if(inclusions.canFind(cast(string) MetaRangeMixinComponent.Back)){
         import mach.traits : isBidirectionalRange;
         static if(isBidirectionalRange!Range){
             @property auto ref back(){
