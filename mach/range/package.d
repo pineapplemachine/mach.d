@@ -18,6 +18,7 @@ import mach.range.logical : any, all, none, count, exactly, more, less, atleast,
 import mach.range.map : map;
 import mach.range.mutate : mutate;
 import mach.range.pluck : pluck;
+import mach.range.recur : recur;
 import mach.range.reduce : reduce;
 import mach.range.reduction : min, max, sum, product;
 import mach.range.repeat : repeat, repeatrandomaccess, repeatsaving, repeatelement;
