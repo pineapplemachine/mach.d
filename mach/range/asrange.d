@@ -5,8 +5,8 @@ private:
 import std.traits : Parameters, ReturnType, TemplateOf, TemplateArgsOf, Unqual;
 import std.traits : isArray, isCallable, isImplicitlyConvertible;
 import std.traits : isAssociativeArray, KeyType, ValueType;
-import std.range.primitives : isBidirectionalRange;
 import mach.traits : isRange, isSavingRange, isRandomAccessRange;
+import mach.traits : isBidirectionalRange, isSlicingRange;
 import mach.traits : ArrayElementType, canIncrement, canDecrement, canCast;
 
 public:
@@ -24,20 +24,20 @@ enum canMakeRange(Base) = (
 
 /// Determine if a range can be created from a type, or if it already is a range.
 enum validAsRange(T) = isRange!T || canMakeRange!T;
+template validAsRange(T, alias isType){
+    static if(isRange!T){
+        enum bool validAsRange = isType!T;
+    }else static if(validAsRange!T){
+        enum bool validAsRange = isType!(AsRangeType!T);
+    }else{
+        enum bool validAsRange = false;
+    }
+}
 
-enum validAsBidirectionalRange(T) = (
-    isBidirectionalRange!T ||
-    canMakeArrayRange!T ||
-    canMakeBidirectionalIndexRange!T
-);
-
-enum validAsSavingRange(T) = (
-    isSavingRange!T || canMakeRange!T
-);
-
-enum validAsRandomAccessRange(T) = (
-    isRandomAccessRange!T || canMakeRange!T
-);
+enum validAsBidirectionalRange(T) = validAsRange!(T, isBidirectionalRange);
+enum validAsRandomAccessRange(T) = validAsRange!(T, isRandomAccessRange);
+enum validAsSlicingRange(T) = validAsRange!(T, isSlicingRange);
+enum validAsSavingRange(T) = validAsRange!(T, isSavingRange);
 
 template MakeRangeType(Base) if(canMakeRange!Base){
     static if(canMakeArrayRange!Base){
