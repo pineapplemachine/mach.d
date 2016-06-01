@@ -2,7 +2,7 @@ module mach.range.mutate;
 
 private:
 
-import mach.traits : isMutableFrontRange, isMutableBackRange;
+import mach.traits : isMutableFrontRange, isMutableBackRange, ElementType;
 import mach.range.asrange : asrange, validAsRange;
 import mach.range.meta : MetaRangeMixin;
 
@@ -10,22 +10,35 @@ public:
 
 
 
-enum canMutate(Iter) = validAsRange!(Iter, isMutableFrontRange);
-enum canMutateRange(Range) = isMutableFrontRange!Range;
+enum canMutate(Iter, alias transform) = (
+    validAsRange!(Iter, isMutableFrontRange) &&
+    validMutateTransformation!(Iter, transform)
+);
+enum canMutateRange(Range, alias transform) = (
+    isMutableFrontRange!Range &&
+    validMutateTransformation!(Range, transform)
+);
+
+template validMutateTransformation(Iter, alias transform){
+    enum bool validMutateTransformation = is(typeof((inout int = 0){
+        alias Element = ElementType!Iter;
+        auto element = transform(Element.init);
+    }));
+}
 
 
 
 /// Maps values from the input range to values in an output range using a
 /// transformation function, and differs from the map function in that the
 /// input range is also modified to contain the new values.
-auto mutate(alias transform, Iter)(Iter iter) if(canMutate!Iter){
+auto mutate(alias transform, Iter)(Iter iter) if(canMutate!(Iter, transform)){
     auto range = iter.asrange;
     return MutateRange!(transform, typeof(range))(range);
 }
 
 
 
-struct MutateRange(alias transform, Range) if(canMutateRange!Range){
+struct MutateRange(alias transform, Range) if(canMutateRange!(Range, transform)){
     enum bool isBidirectional = isMutableBackRange!Range;
     
     mixin MetaRangeMixin!(
@@ -35,7 +48,6 @@ struct MutateRange(alias transform, Range) if(canMutateRange!Range){
     Range source;
     bool mutfront;
     static if(isBidirectional) bool mutback;
-    
     
     static if(isBidirectional){
         this(typeof(this) range){
