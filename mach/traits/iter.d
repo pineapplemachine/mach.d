@@ -82,8 +82,8 @@ template isMutableRange(Range){
 }
 
 /// Determine if the front element of a range be reassigned with the value persisting
-template isFrontMutableRange(Range){
-    enum bool isFrontMutableRange = isMutableRange!Range && is(typeof((inout int = 0){
+template isMutableFrontRange(Range){
+    enum bool isMutableFrontRange = isMutableRange!Range && is(typeof((inout int = 0){
         Range range = Range.init;
         auto front = range.front;
         range.front = front;
@@ -91,8 +91,8 @@ template isFrontMutableRange(Range){
 }
 
 /// Determine if the back element of a range be reassigned with the value persisting
-template isBackMutableRange(Range){
-    enum bool isFrontMutableRange = isMutableRange!Range && is(typeof((inout int = 0){
+template isMutableBackRange(Range){
+    enum bool isMutableBackRange = isMutableRange!Range && is(typeof((inout int = 0){
         Range range = Range.init;
         auto back = range.back;
         range.back = back;
@@ -100,8 +100,8 @@ template isBackMutableRange(Range){
 }
 
 /// Determine if a randomly-accessed element of a range be reassigned with the value persisting
-template isRandomMutableRange(Range){
-    enum bool isRandomMutableRange = isMutableRange!Range && is(typeof((inout int = 0){
+template isMutableRandomRange(Range){
+    enum bool isMutableRandomRange = isMutableRange!Range && is(typeof((inout int = 0){
         Range range = Range.init;
         auto front = range.front;
         range[0] = front;
