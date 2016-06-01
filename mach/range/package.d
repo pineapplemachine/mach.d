@@ -21,3 +21,4 @@ import mach.range.reduce : reduce;
 import mach.range.reduction : min, max, sum, product;
 import mach.range.repeat : repeat, repeatrandomaccess, repeatsaving, repeatelement;
 import mach.range.reversed : reversed;
+import mach.range.stride : stride;
