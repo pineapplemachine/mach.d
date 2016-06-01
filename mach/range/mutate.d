@@ -22,7 +22,7 @@ enum canMutateRange(Range, alias transform) = (
 template validMutateTransformation(Iter, alias transform){
     enum bool validMutateTransformation = is(typeof((inout int = 0){
         alias Element = ElementType!Iter;
-        auto element = transform(Element.init);
+        Element result = transform(Element.init);
     }));
 }
 

@@ -2,7 +2,7 @@ module mach.range.map;
 
 private:
 
-import mach.traits : isRange, isIndexedRange;
+import mach.traits : isRange, isIndexedRange, ElementType;
 import mach.range.asrange : asrange, validAsRange;
 import mach.range.meta : MetaRangeMixin;
 
@@ -10,21 +10,32 @@ public:
 
 
 
-alias canMap = validAsRange;
-alias canMapRange = isRange;
+enum canMap(Iter, alias transform) = (
+    validAsRange!Iter && validMapTransformation!(Iter, transform)
+);
+enum canMapRange(Range, alias transform) = (
+    isRange!Range && validMapTransformation!(Range, transform)
+);
+
+template validMapTransformation(Iter, alias transform){
+    enum bool validMapTransformation = is(typeof((inout int = 0){
+        alias Element = ElementType!Iter;
+        auto result = transform(Element.init);
+    }));
+}
 
 
 
 /// Returns a range whose elements are those of the given iterable transformed
 /// by some function.
-auto map(alias transform, Iter)(Iter iter) if(canMap!Iter){
+auto map(alias transform, Iter)(Iter iter) if(canMap!(Iter, transform)){
     auto range = iter.asrange;
     return MapRange!(transform, typeof(range))(range);
 }
 
 
 
-struct MapRange(alias transform, Range) if(canMapRange!Range){
+struct MapRange(alias transform, Range) if(canMapRange!(Range, transform)){
     mixin MetaRangeMixin!(
         Range, `source`, `Empty Length Dollar Save Back`,
         `return transform(this.source.front);`,
