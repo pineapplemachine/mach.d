@@ -361,6 +361,8 @@ struct ArrayRange(Array) if(canMakeArrayRange!Array){
         void opIndexAssign(Element value, in Index index){
             this.array[index] = value;
         }
+    }else{
+        enum bool mutable = false;
     }
     
     @property auto save(){
@@ -471,6 +473,8 @@ struct AssociativeArrayRange(Array) if(canMakeAssociativeArrayRange!Array){
         }body{
             this.array[this.keys[index]] = value;
         }
+    }else{
+        enum bool mutable = false;
     }
     
     @property auto save(){
