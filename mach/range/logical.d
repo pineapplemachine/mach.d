@@ -2,8 +2,9 @@ module mach.range.logical;
 
 private:
 
-import std.traits : Unqual;
-import mach.traits : isFiniteIterable, canIncrement, canCompare;
+import std.traits : Unqual, isImplicitlyConvertible;
+import mach.traits : isFiniteIterable, isIterableReverse, ElementType;
+import mach.traits : canIncrement, canCompare;
 
 public:
 
@@ -60,6 +61,51 @@ bool none(alias pred = DefaultLogicalPredicate, Iter)(Iter iter) if(isFiniteIter
         if(pred(item)) return false;
     }
     return true;
+}
+
+
+
+enum canFindFirst(Iter) = (
+    isFiniteIterable!Iter
+);
+enum canFindLast(Iter) = (
+    isFiniteIterable!Iter && isIterableReverse!Iter
+);
+enum canFindFirst(Iter, Fallback) = (
+    canFindFirst!Iter && isImplicitlyConvertible!(ElementType!Iter, Fallback)
+);
+enum canFindLast(Iter, Fallback) = (
+    canFindLast!Iter && isImplicitlyConvertible!(ElementType!Iter, Fallback)
+);
+
+/// Get the first element matching a predicate.
+auto first(alias pred = DefaultLogicalPredicate, Iter, Fallback)(
+    Iter iter, Fallback fallback
+) if(canFindFirst!(Iter, Fallback)){
+    foreach(item; iter){
+        if(pred(item)) return item;
+    }
+    return fallback;
+}
+
+/// ditto
+auto first(alias pred = DefaultLogicalPredicate, Iter)(Iter iter) if(canFindFirst!Iter){
+    return first!(pred, Iter, ElementType!Iter)(iter, ElementType!Iter.init);
+}
+
+/// Get the last element matching a predicate.
+auto last(alias pred = DefaultLogicalPredicate, Iter, Element)(
+    Iter iter, Element fallback
+) if(canFindLast!(Iter, Element)){
+    foreach_reverse(item; iter){
+        if(pred(item)) return item;
+    }
+    return fallback;
+}
+
+/// ditto
+auto last(alias pred = DefaultLogicalPredicate, Iter)(Iter iter) if(canFindLast!Iter){
+    return last!(pred, Iter, ElementType!Iter)(iter, ElementType!Iter.init);
 }
 
 
@@ -183,6 +229,14 @@ unittest{
                 test(pos.atmost!pred(pos.length + 1));
                 testf(bools.atmost(0));
             });
+        });
+        tests("First", {
+            testeq([0, 1, 2, 3, 4].first!((n) => (n <= 2)), 0);
+            testeq([0, 1, 2, 3, 4].first!((n) => (n >= 2)), 2);
+        });
+        tests("Last", {
+            testeq([0, 1, 2, 3, 4].last!((n) => (n <= 2)), 2);
+            testeq([0, 1, 2, 3, 4].last!((n) => (n >= 2)), 4);
         });
     });
 }
