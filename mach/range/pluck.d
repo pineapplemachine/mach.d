@@ -6,7 +6,6 @@ import std.meta : AliasSeq;
 import std.traits : ReturnType, isImplicitlyConvertible;
 import mach.range.asrange : asrange, validAsRange;
 import mach.traits : isRange, isIndexedRange, ElementType, hasProperty;
-import mach.traits : hasSingleIndexParameter, SingleIndexParameter;
 import mach.traits : IndexParameters;
 import mach.range.meta : MetaRangeMixin;
 
@@ -14,15 +13,19 @@ public:
 
 
 
-enum canPluck(Iter) = (
-    validAsRange!Iter && hasSingleIndexParameter!(ElementType!Iter)
+enum canPluckIndex(Iter, Index) = (
+    validAsRange!Iter && validPluckIndex!(Iter, Index)
 );
-enum canPluckRange(Range) = (
-    isRange!Range && hasSingleIndexParameter!(ElementType!Range)
+enum canPluckIndexRange(Range, Index) = (
+    isRange!Range && validPluckIndex!(Range, Index)
 );
 
-template PluckIndexParameter(Iter) if(canPluck!Iter){
-    alias PluckIndexParameter = SingleIndexParameter!(ElementType!Iter);
+template validPluckIndex(Iter, Index){
+    enum bool validPluckIndex = is(typeof((inout int = 0){
+        alias Element = ElementType!Iter;
+        auto element = Element.init;
+        auto result = element[Index.init];
+    }));
 }
 
 enum canPluckProperty(Iter, string property) = (
@@ -34,41 +37,25 @@ enum canPluckPropertyRange(Range, string property) = (
 
 
 
-auto pluck(Index, Iter)(
-    Iter iter, Index index
-) if(canPluck!Iter && isImplicitlyConvertible!(Index, PluckIndexParameter!Iter)){
+auto pluck(Index, Iter)(Iter iter, Index index) if(canPluckIndex!(Iter, Index)){
     auto range = iter.asrange;
-    return PluckRange!(typeof(range))(range, index);
+    return PluckRange!(typeof(range), Index)(range, index);
 }
 
-auto pluck(Index, Iter)(
-    Iter iter, Index[] indexes
-) if(canPluck!Iter && isImplicitlyConvertible!(Index[], PluckIndexParameter!Iter[])){
-    auto range = iter.asrange;
-    return MultiPluckRange!(typeof(range))(range, indexes);
-}
-
-auto pluck(string property, Iter)(
-    Iter iter
-) if(canPluckProperty!(Iter, property)){
+auto pluck(string property, Iter)(Iter iter) if(canPluckProperty!(Iter, property)){
     auto range = iter.asrange;
     return PropertyPluckRange!(property, typeof(range))(range);
 }
 
-// TODO: MultiPropertyPluckRange
 
 
-
-struct PluckRange(Range) if(canPluckRange!Range){
+struct PluckRange(Range, Index) if(canPluckIndexRange!(Range, Index)){
     mixin MetaRangeMixin!(
         Range, `source`,
         `Empty Length Dollar Save Back`,
         `return this.source.front[this.index];`,
         `this.source.popFront();`
     );
-    
-    alias Index = PluckIndexParameter!Range;
-    alias Element = ReturnType!(typeof(this).front);
     
     Range source;
     Index index;
@@ -83,7 +70,7 @@ struct PluckRange(Range) if(canPluckRange!Range){
     
     static if(isIndexedRange!Range){
         auto opIndex(IndexParameters!Range index){
-            return this.source.opIndex(index)[this.index];
+            return this.source[index][this.index];
         }
     }
     
@@ -98,8 +85,6 @@ struct PropertyPluckRange(string property, Range) if(canPluckPropertyRange!(Rang
         `this.source.popFront();`
     );
     
-    alias Element = ReturnType!(typeof(this).front);
-    
     Range source;
     
     this(typeof(this) range){
@@ -111,60 +96,11 @@ struct PropertyPluckRange(string property, Range) if(canPluckPropertyRange!(Rang
     
     static if(isIndexedRange!Range){
         auto opIndex(IndexParameters!Range index){
-            mixin(`return this.source.opIndex(index).` ~ property ~ `;`);
+            mixin(`return this.source[index].` ~ property ~ `;`);
         }
     }
     
     // TODO: Slice
-}
-
-struct MultiPluckRange(Range) if(canPluckRange!Range){
-    mixin MetaRangeMixin!(
-        Range, `source`,
-        `Empty Length Dollar Save Back`,
-        `
-            auto front = this.source.front;
-            return this.getelement(front);
-        `, `
-            this.source.popFront();
-        `
-    );
-    
-    alias Index = PluckIndexParameter!Range;
-    alias Element = ReturnType!(typeof(this).front);
-    
-    Range source;
-    Index[] indexes;
-    
-    this(PluckRange!Range range){
-        this(range.source, [range.index]);
-    }
-    this(typeof(this) range){
-        this(range.source, range.indexes);
-    }
-    this(Range source, Index[] indexes){
-        this.source = source;
-        this.indexes = indexes;
-    }
-    
-    static if(isIndexedRange!Range){
-        auto opIndex(IndexParameters!Range index){
-            auto value = this.source.opIndex(index);
-            return this.getelement(value);
-        }
-    }
-    
-    // TODO: Slice
-    
-    private auto getelement(T)(T value){
-        import std.traits : Unqual;
-        
-        auto result = new Unqual!(ElementType!T)[this.indexes.length];
-        for(size_t i = 0; i < this.indexes.length; i++){
-            result[i] = value[this.indexes[i]];
-        }
-        return cast(ElementType!T[]) result;
-    }
 }
 
 
@@ -216,11 +152,6 @@ unittest{
                 test(data.pluck!`y`.equals([2, 4, 6]));
                 test(data.pluck!`z`.equals([2, 6, 10]));
             });
-        });
-        tests("Multiple indexes", {
-            testeq(input.pluck([0u, 1u]).length, 4);
-            int[][] plucktest = [[0, 0], [1, 1], [2, 4], [3, 9]];
-            test(input.pluck([1u, 3u]).equals(plucktest));
         });
     });
 }
