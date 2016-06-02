@@ -10,6 +10,7 @@ import mach.traits.hash : canHash;
 import mach.traits.iter : isRange;
 import mach.traits.mutability : isMutable;
 import mach.traits.op : hasOpApply, hasOpApplyReverse;
+import mach.traits.predicate : isPredicate;
 
 public:
 
@@ -78,9 +79,9 @@ template CommonElementType(Iters...) if(hasCommonElementType!Iters){
 
 enum canHashElement(Iter) = canHash!(ElementType!Iter);
 
-
-
 enum hasMutableElement(Iter) = isMutable!(ElementType!Iter);
+
+enum isElementPredicate(Iter, alias pred) = isPredicate!(ElementType!Iter, pred);
 
 
 
@@ -128,4 +129,13 @@ unittest{
     static assert(is(CommonElementType!(int[], real[]) == real));
     static assert(is(CommonElementType!(string[], ApplyElementTest) == string));
 }
-
+unittest{
+    // isElementPredicate
+    alias even = (n) => (n % 2 == 0);
+    alias index = (str) => (str[0] == '?');
+    static assert(isElementPredicate!(int[], even));
+    static assert(isElementPredicate!(double[], even));
+    static assert(isElementPredicate!(string[], index));
+    static assert(!isElementPredicate!(string[], even));
+    static assert(!isElementPredicate!(int[], index));
+}
