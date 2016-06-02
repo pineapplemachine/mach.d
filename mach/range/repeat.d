@@ -2,7 +2,7 @@ module mach.range.repeat;
 
 private:
 
-import std.traits : isNumeric;
+import std.traits : isIntegral;
 import mach.traits : isIterable, isFiniteIterable, isInfiniteIterable;
 import mach.traits : isFiniteRange, isRandomAccessRange, isSavingRange;
 import mach.traits : canIncrement, canCompare, hasNumericLength;
@@ -41,7 +41,7 @@ enum canRepeatElement(Element) = !validAsRange!Element;
 
 alias DefaultRepeatCount = size_t;
 
-alias validRepeatCount = isNumeric;
+alias validRepeatCount = isIntegral;
 
 
 
@@ -268,10 +268,10 @@ struct FiniteRepeatRandomAccessRange(Range, Count = DefaultRepeatCount) if(
     Count count; // Number of times the source range has been fully consumed
     
     this(typeof(this) range){
-        this(range.source, range.frontindex, range.backindex);
+        this(range.source, range.limit, range.count, range.frontindex, range.backindex);
     }
     this(Range source, Count limit, Count frontindex = Count.init){
-        this(source, limit, Count.init, frontindex, source.length);
+        this(source, limit, Count.init, frontindex, cast(Count) source.length);
     }
     this(Range source, Count limit, Count count, Count frontindex, Count backindex){
         this.source = source;
@@ -300,7 +300,7 @@ struct FiniteRepeatRandomAccessRange(Range, Count = DefaultRepeatCount) if(
         this.backindex--;
         if(this.backindex == 0){
             this.count++;
-            this.backindex = this.source.length;
+            this.backindex = cast(Count) this.source.length;
         }
     }
 }
