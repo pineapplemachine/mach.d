@@ -12,7 +12,10 @@ public:
 enum canCompareIterables(alias pred, IterA, IterB) = (
     validAsRange!IterA && validAsRange!IterB &&
     isFiniteIterable!IterA && isFiniteIterable!IterB &&
-    is(typeof(pred(ElementType!IterA.init, ElementType!IterB.init)))
+    is(typeof((inout int = 0){
+        auto result = pred(ElementType!IterA.init, ElementType!IterB.init);
+        if(result){}
+    }))
 );
 
 private alias EqualityComparison = (a, b) => (a == b);
