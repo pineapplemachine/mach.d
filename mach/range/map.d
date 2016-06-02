@@ -2,7 +2,7 @@ module mach.range.map;
 
 private:
 
-import mach.traits : isRange, isIndexedRange, ElementType;
+import mach.traits : isRange, isRandomAccessRange, isSlicingRange, ElementType;
 import mach.range.asrange : asrange, validAsRange;
 import mach.range.meta : MetaRangeMixin;
 
@@ -51,14 +51,16 @@ struct MapRange(alias transform, Range) if(canMapRange!(Range, transform)){
         this.source = source;
     }
     
-    static if(isIndexedRange!Range){
-        import mach.traits : IndexParameters;
-        auto ref opIndex(IndexParameters!Range index){
-            return transform(this.source.opIndex(index));
+    static if(isRandomAccessRange!Range){
+        auto ref opIndex(size_t index){
+            return transform(this.source[index]);
         }
     }
-    
-    // TODO: Slice
+    static if(isSlicingRange!Range){
+        typeof(this) opSlice(size_t low, size_t high){
+            return typeof(this)(this.source[low .. high]);
+        }
+    }
 }
 
 
@@ -70,13 +72,14 @@ version(unittest){
 }
 unittest{
     tests("Map", {
+        alias square = (n) => (n * n);
         int[] ones = [1, 1, 1, 1];
         int[] empty = new int[0];
-        alias square = (n) => (n * n);
         test([1, 2, 3, 4].map!square.equals([1, 4, 9, 16]));
         test(ones.map!square.equals(ones));
         test("Empty input", empty.map!square.equals(empty));
         testeq("Length", [1, 2, 3].map!square.length, 3);
         testeq("Random access", [2, 3].map!square[1], 9);
+        test("Slicing", [1, 2, 3, 4].map!square[1 .. $-1].equals([4, 9]));
     });
 }
