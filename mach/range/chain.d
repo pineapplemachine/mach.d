@@ -66,6 +66,8 @@ auto chain(Iters...)(Iters iters) if(canChain!Iters){
 
 
 struct ChainRange(Ranges...) if(canChainRanges!Ranges){
+    alias Element = CommonElementType!Ranges;
+    
     Ranges sources;
     
     this(typeof(this) range){
@@ -224,6 +226,14 @@ unittest{
             auto range = chain("xxx", "yyy", "zzz");
             test(range[0 .. 4].equals("xxxy"));
             test(range[2 .. $].equals("xyyyzzz"));
+        });
+        tests("Chain of chains", {
+            auto range = chain(chain("abc", "def"), chain("ghi", "jkl", "mno"));
+            testeq(range[0], 'a');
+            testeq(range[3], 'd');
+            testeq(range[6], 'g');
+            testeq(range[9], 'j');
+            testeq(range[12], 'm');
         });
     });
 }
