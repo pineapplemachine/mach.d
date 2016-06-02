@@ -4,7 +4,7 @@ private:
 
 import std.traits : Unqual, isNumeric;
 import mach.traits : isBidirectionalRange, isRandomAccessRange, hasNumericLength;
-import mach.traits : canCast, hasLength, LengthType, isTemplateOf;
+import mach.traits : isSlicingRange, canCast, isTemplateOf;
 import mach.range.asrange : asrange, validAsBidirectionalRange;
 import mach.range.meta : MetaRangeMixin;
 
@@ -56,13 +56,20 @@ struct ReversedRange(Range) if(canReverseRange!Range){
         this.source.popFront();
     }
     
-    static if(isRandomAccessRange!Range && hasNumericLength!Range){
-        auto opIndex(LengthType!Range index){
-            return this.source[this.source.length - index - 1];
+    static if(hasNumericLength!Range){
+        static if(isRandomAccessRange!Range){
+            auto opIndex(size_t index){
+                return this.source[this.source.length - index - 1];
+            }
+        }
+        static if(isSlicingRange!Range){
+            typeof(this) opSlice(size_t low, size_t high){
+                auto sourcelow = this.source.length - high;
+                auto sourcehigh = this.source.length - low;
+                return typeof(this)(this.source[sourcelow .. sourcehigh]);
+            }
         }
     }
-    
-    // TODO: Slice
 }
 
 
@@ -80,6 +87,11 @@ unittest{
             testeq(input.reversed[3], 0);
             testeq(input.reversed[$-1], 0);
         });
-        // TODO: Slice
+        tests("Slicing", {
+            import std.stdio;
+            test(input.reversed[0 .. $-1].equals([3, 2, 1]));
+            test(input.reversed[1 .. $-1].equals([2, 1]));
+            test(input.reversed[1 .. $].equals([2, 1, 0]));
+        });
     });
 }
