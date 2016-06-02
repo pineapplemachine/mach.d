@@ -2,7 +2,7 @@ module mach.range.distinct;
 
 private:
 
-import mach.traits : isRange, isBidirectionalRange, isSavingRange;
+import mach.traits : isRange, isSavingRange;
 import mach.traits : canHash, ElementType;
 import mach.range.asrange : asrange, validAsRange;
 import mach.range.meta : MetaRangeEmptyMixin;
@@ -71,21 +71,6 @@ struct DistinctRange(Range, alias by = DefaultDistinctBy) if(canDistinctRange!(R
         }
     }
     
-    // Note that iterating backwards doesn't necessarily result in the reverse
-    // of running forwards.
-    static if(isBidirectionalRange!Range){
-        @property auto ref back(){
-            return this.source.back;
-        }
-        void popBack(){
-            this.history[by(this.source.back)] = true;
-            this.source.popBack();
-            while(!this.source.empty && by(this.source.back) in this.history){
-                this.source.popBack();
-            }
-        }
-    }
-    
     static if(isSavingRange!Range){
         @property typeof(this) save(){
             return typeof(this)(this.source, this.history);
@@ -123,8 +108,7 @@ unittest{
                 [1, 1], [1, 2], [1, 3]
             ];
             auto range = pairs.distinct!((pair) => (pair[0]));
-            test("Forward", range.equals([[0, 1], [1, 1]]));
-            test("Reverse", range.reversed.equals([[1, 3], [0, 3]]));
+            test(range.equals([[0, 1], [1, 1]]));
         });
     });
 }
