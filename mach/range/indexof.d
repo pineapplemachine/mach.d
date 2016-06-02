@@ -2,6 +2,7 @@ module mach.range.indexof;
 
 private:
 
+import std.traits : isIntegral;
 import mach.traits : isFiniteIterable;
 import mach.range.asrange : asrange, validAsRange, validAsSavingRange;
 
@@ -13,14 +14,7 @@ alias DefaultIndexOfIndex = ptrdiff_t;
 
 alias DefaultIndexOfPredicate = (a, b) => (a == b);
 
-/// Determine if some type supports the operations needed to be an indexof index.
-template validIndexOfIndex(Index){
-    enum bool validIndexOfIndex = is(typeof((inout int = 0){
-        Index i = -1;
-        Index j = 0;
-        j++;
-    }));
-}
+alias validIndexOfIndex = isIntegral;
 
 /// True if Sub can be searched for in Iter as a range.
 enum bool canIndexOfRange(Iter, Sub, Index) = (
