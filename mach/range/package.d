@@ -14,7 +14,7 @@ import mach.range.enumerate : enumerate;
 import mach.range.filter : filter;
 import mach.range.indexof : indexof, indexofrange, indexofelement;
 import mach.range.interpolate : interpolate, lerp, coslerp;
-import mach.range.logical : any, all, none, count, exactly, more, less, atleast, atmost;
+import mach.range.logical : any, all, none, first, last, count, exactly, more, less, atleast, atmost;
 import mach.range.map : map;
 import mach.range.mutate : mutate;
 import mach.range.pluck : pluck;
