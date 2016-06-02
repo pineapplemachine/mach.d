@@ -27,8 +27,13 @@ template isPredicate(A, B, alias predicate){
 
 
 unittest{
+    // Unary isPredicate
     static assert(isPredicate!(int, (n) => (n > 0)));
+    static assert(isPredicate!(int, (in int n) => (n > 0)));
+    static assert(isPredicate!(const int, (n) => (n > 0)));
     static assert(!isPredicate!(int, (x, y) => (x)));
+    static assert(!isPredicate!(int, (in string str) => (str.length)));
+    // Binary isPredicate
     static assert(isPredicate!(int, int, (a, b) => (a > b)));
     static assert(!isPredicate!(int, int, (x, y, z) => (x)));
 }
