@@ -548,7 +548,7 @@ unittest{
             test(is(typeof(range) == typeof(slice)));
         });
         tests("Mutability", {
-            char[] data = cast(char[]) "hello";
+            char[] data = ['h', 'e', 'l', 'l', 'o'];
             auto range = data.asrange;
             range[1] = 'a';
             range.popFront();
