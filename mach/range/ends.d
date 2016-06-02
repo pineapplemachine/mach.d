@@ -2,7 +2,7 @@ module mach.range.ends;
 
 private:
 
-import std.traits : isNumeric;
+import std.traits : isIntegral;
 import mach.error.assertf : assertf;
 import mach.traits : isRange, isBidirectionalRange, isRandomAccessRange, isSavingRange;
 import mach.traits : isInfiniteIterable, isInfiniteRange, hasNumericLength;
@@ -12,7 +12,7 @@ public:
 
 
 
-alias validEndRangeCount = isNumeric;
+alias validEndRangeCount = isIntegral;
 
 enum canGetEnd(Iter, Count) = (
     validAsRandomAccessRange!Iter && hasNumericLength!Iter && validEndRangeCount!Count
@@ -120,7 +120,7 @@ struct EndRange(Range, Count = size_t, bool tail) if(canGetEndRange!(Range, Coun
         this(range.source, range.frontindex, range.backindex, range.limit);
     }
     this(Range source, Count limit, Count frontindex = Count.init){
-        Count backindex = source.length < limit ? source.length : limit;
+        Count backindex = source.length < limit ? cast(Count) source.length : limit;
         this(source, limit, frontindex, backindex);
     }
     this(Range source, Count limit, Count frontindex, Count backindex){
