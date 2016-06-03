@@ -18,6 +18,7 @@ import mach.range.logical : any, all, none, first, last, count, exactly, more, l
 import mach.range.map : map;
 import mach.range.merge : merge;
 import mach.range.mutate : mutate;
+import mach.range.pad : pad, padleft, padright, padleftcount, padrightcount;
 import mach.range.pluck : pluck;
 import mach.range.recur : recur;
 import mach.range.reduce : reduce, reduceeager, reducelazy;
