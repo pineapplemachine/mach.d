@@ -3,8 +3,8 @@ module mach.range.logical;
 private:
 
 import std.traits : Unqual, isImplicitlyConvertible;
-import mach.traits : isFiniteIterable, isIterableReverse, ElementType;
-import mach.traits : canIncrement, canCompare;
+import mach.traits : isIterable, isFiniteIterable, isIterableReverse;
+import mach.traits : canIncrement, canCompare, ElementType, isElementPredicate;
 
 public:
 
@@ -29,6 +29,16 @@ enum canAtLeast(Iter, Count) = (
 
 
 
+enum canAnyAllNone(Iter, alias pred) = (
+    isFiniteIterable!Iter && isElementPredicate!(Iter, pred)
+);
+
+alias canAny = canAnyAllNone;
+alias canAll = canAnyAllNone;
+alias canNone = canAnyAllNone;
+
+
+
 enum validExactlyCount(T) = (
     canIncrement!(Unqual!T) && // Can keep a count
     canCompare!(Unqual!T, T, ">") && // Can short-circuit when target count exceeded
@@ -40,7 +50,7 @@ enum canExactly(Iter, Count) = isFiniteIterable!Iter && validExactlyCount!Count;
 
 
 /// True if any element in an iterable matches the predicate.
-bool any(alias pred = DefaultLogicalPredicate, Iter)(Iter iter) if(isFiniteIterable!Iter){
+bool any(alias pred = DefaultLogicalPredicate, Iter)(Iter iter) if(canAny!(Iter, pred)){
     foreach(item; iter){
         if(pred(item)) return true;
     }
@@ -48,7 +58,7 @@ bool any(alias pred = DefaultLogicalPredicate, Iter)(Iter iter) if(isFiniteItera
 }
 
 /// True if all elements in an iterable match the predicate.
-bool all(alias pred = DefaultLogicalPredicate, Iter)(Iter iter) if(isFiniteIterable!Iter){
+bool all(alias pred = DefaultLogicalPredicate, Iter)(Iter iter) if(canAll!(Iter, pred)){
     foreach(item; iter){
         if(!pred(item)) return false;
     }
@@ -56,7 +66,7 @@ bool all(alias pred = DefaultLogicalPredicate, Iter)(Iter iter) if(isFiniteItera
 }
 
 /// True if no element in an iterable matches the predicate.
-bool none(alias pred = DefaultLogicalPredicate, Iter)(Iter iter) if(isFiniteIterable!Iter){
+bool none(alias pred = DefaultLogicalPredicate, Iter)(Iter iter) if(canNone!(Iter, pred)){
     foreach(item; iter){
         if(pred(item)) return false;
     }
@@ -65,12 +75,8 @@ bool none(alias pred = DefaultLogicalPredicate, Iter)(Iter iter) if(isFiniteIter
 
 
 
-enum canFindFirst(Iter) = (
-    isFiniteIterable!Iter
-);
-enum canFindLast(Iter) = (
-    isFiniteIterable!Iter && isIterableReverse!Iter
-);
+enum canFindFirst(Iter) = isIterable!Iter;
+enum canFindLast(Iter) = isIterableReverse!Iter;
 enum canFindFirst(Iter, Fallback) = (
     canFindFirst!Iter && isImplicitlyConvertible!(ElementType!Iter, Fallback)
 );
@@ -78,8 +84,40 @@ enum canFindLast(Iter, Fallback) = (
     canFindLast!Iter && isImplicitlyConvertible!(ElementType!Iter, Fallback)
 );
 
+enum canFindLast(Iter, alias pred) = (
+    isFiniteIterable!Iter && isIterableReverse!Iter &&
+    isElementPredicate!(Iter, pred)
+);
+enum canFindFirst(Iter, alias pred) = (
+    isFiniteIterable!Iter &&
+    isElementPredicate!(Iter, pred)
+);
+enum canFindLast(Iter, alias pred) = (
+    isFiniteIterable!Iter && isIterableReverse!Iter &&
+    isElementPredicate!(Iter, pred)
+);
+enum canFindFirst(Iter, Fallback, alias pred) = (
+    canFindFirst!(Iter, Fallback) && isElementPredicate!(Iter, pred)
+);
+enum canFindLast(Iter, Fallback, alias pred) = (
+    canFindLast!(Iter, Fallback) && isElementPredicate!(Iter, pred)
+);
+
+/// Get the first element
+auto first(Iter, Fallback)(
+    Iter iter, Fallback fallback
+) if(canFindFirst!(Iter, Fallback)){
+    foreach(item; iter) return item;
+    return fallback;
+}
+
+/// ditto
+auto first(Iter)(Iter iter) if(canFindFirst!Iter){
+    return first!(Iter, ElementType!Iter)(iter, ElementType!Iter.init);
+}
+
 /// Get the first element matching a predicate.
-auto first(alias pred = DefaultLogicalPredicate, Iter, Fallback)(
+auto first(alias pred, Iter, Fallback)(
     Iter iter, Fallback fallback
 ) if(canFindFirst!(Iter, Fallback)){
     foreach(item; iter){
@@ -89,12 +127,25 @@ auto first(alias pred = DefaultLogicalPredicate, Iter, Fallback)(
 }
 
 /// ditto
-auto first(alias pred = DefaultLogicalPredicate, Iter)(Iter iter) if(canFindFirst!Iter){
+auto first(alias pred, Iter)(Iter iter) if(canFindFirst!Iter){
     return first!(pred, Iter, ElementType!Iter)(iter, ElementType!Iter.init);
 }
 
+/// Get the last element
+auto last(Iter, Element)(
+    Iter iter, Element fallback
+) if(canFindLast!(Iter, Element)){
+    foreach_reverse(item; iter) return item;
+    return fallback;
+}
+
+/// ditto
+auto last(Iter)(Iter iter) if(canFindLast!Iter){
+    return last!(Iter, ElementType!Iter)(iter, ElementType!Iter.init);
+}
+
 /// Get the last element matching a predicate.
-auto last(alias pred = DefaultLogicalPredicate, Iter, Element)(
+auto last(alias pred, Iter, Element)(
     Iter iter, Element fallback
 ) if(canFindLast!(Iter, Element)){
     foreach_reverse(item; iter){
@@ -104,7 +155,7 @@ auto last(alias pred = DefaultLogicalPredicate, Iter, Element)(
 }
 
 /// ditto
-auto last(alias pred = DefaultLogicalPredicate, Iter)(Iter iter) if(canFindLast!Iter){
+auto last(alias pred, Iter)(Iter iter) if(canFindLast!Iter){
     return last!(pred, Iter, ElementType!Iter)(iter, ElementType!Iter.init);
 }
 
@@ -233,10 +284,12 @@ unittest{
         tests("First", {
             testeq([0, 1, 2, 3, 4].first!((n) => (n <= 2)), 0);
             testeq([0, 1, 2, 3, 4].first!((n) => (n >= 2)), 2);
+            testeq([0, 1, 2].first, 0);
         });
         tests("Last", {
             testeq([0, 1, 2, 3, 4].last!((n) => (n <= 2)), 2);
             testeq([0, 1, 2, 3, 4].last!((n) => (n >= 2)), 4);
+            testeq([0, 1, 2].last, 2);
         });
     });
 }
