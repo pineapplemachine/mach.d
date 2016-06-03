@@ -27,3 +27,4 @@ import mach.range.repeat : repeat, repeatrandomaccess, repeatsaving, repeateleme
 import mach.range.reversed : reversed;
 import mach.range.select : select, from, until;
 import mach.range.stride : stride;
+import mach.range.walk : walk;
