@@ -1,4 +1,4 @@
-module mach.range.callback;
+module mach.range.tap;
 
 private:
 
@@ -11,19 +11,19 @@ public:
 
 
 
-alias canCallback = isIterable;
-alias canCallbackRange = isRange;
+alias canTap = isIterable;
+alias canTapRange = isRange;
 
 
 
-auto callback(alias func, Iter)(Iter iter) if(canCallback!Iter){
+auto tap(alias func, Iter)(Iter iter) if(canTap!Iter){
     auto range = iter.asrange;
-    return CallbackRange!(func, typeof(range))(range);
+    return TapRange!(func, typeof(range))(range);
 }
 
 
 
-struct CallbackRange(alias func, Range) if(canCallbackRange!Range){
+struct TapRange(alias func, Range) if(canTapRange!Range){
     mixin MetaRangeMixin!(
         Range, `source`, `Empty Length Dollar Save Back`,
         `
@@ -58,11 +58,11 @@ version(unittest){
     import mach.range.compare : equals;
 }
 unittest{
-    tests("Callback", {
+    tests("Tap", {
         auto helloworld = "hello world";
         string forwards = "";
         string backwards = "";
-        auto range = helloworld.callback!((ch){
+        auto range = helloworld.tap!((ch){
             forwards ~= ch;
             backwards = ch ~ backwards;
         });

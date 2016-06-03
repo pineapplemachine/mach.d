@@ -2,7 +2,6 @@ module mach.range;
 
 import mach.range.asarray : asarray;
 import mach.range.asrange : asrange;
-import mach.range.callback : callback;
 import mach.range.chain : chain;
 import mach.range.compare : compare, equals;
 import mach.range.consume : consume, consumereverse;
@@ -27,4 +26,5 @@ import mach.range.repeat : repeat, repeatrandomaccess, repeatsaving, repeateleme
 import mach.range.reversed : reversed;
 import mach.range.select : select, from, until;
 import mach.range.stride : stride;
+import mach.range.tap : tap;
 import mach.range.walk : walk;
