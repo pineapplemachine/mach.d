@@ -19,6 +19,7 @@ enum isReversedRange(Range) = isTemplateOf!(Range, ReversedRange);
 
 
 
+/// Return a range which iterates over some iterable in reverse-order.
 auto reversed(Iter)(Iter iter) if(canReverse!Iter){
     static if(!isReversedRange!Iter){
         auto range = iter.asrange;
@@ -33,7 +34,7 @@ auto reversed(Iter)(Iter iter) if(canReverse!Iter){
 
 struct ReversedRange(Range) if(canReverseRange!Range){
     mixin MetaRangeMixin!(
-        Range, `source`, `Empty Length Dollar Save Back`
+        Range, `source`, `Empty Length Dollar Save`
     );
     
     Range source;
