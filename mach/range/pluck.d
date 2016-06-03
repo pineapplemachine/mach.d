@@ -2,12 +2,9 @@ module mach.range.pluck;
 
 private:
 
-import std.meta : AliasSeq;
-import std.traits : ReturnType, isImplicitlyConvertible;
-import mach.range.asrange : asrange, validAsRange;
-import mach.traits : isRange, isIndexedRange, ElementType, hasProperty;
-import mach.traits : IndexParameters;
-import mach.range.meta : MetaRangeMixin;
+import mach.range.asrange : validAsRange;
+import mach.traits : isRange, ElementType, hasProperty;
+import mach.range.map : map;
 
 public:
 
@@ -37,70 +34,16 @@ enum canPluckPropertyRange(Range, string property) = (
 
 
 
+/// Return a range enumerating some property of the elements in another range.
+/// Really just a simple abstraction of map.
 auto pluck(Index, Iter)(Iter iter, Index index) if(canPluckIndex!(Iter, Index)){
-    auto range = iter.asrange;
-    return PluckRange!(typeof(range), Index)(range, index);
+    return map!(element => element[index])(iter);
 }
 
+/// ditto
 auto pluck(string property, Iter)(Iter iter) if(canPluckProperty!(Iter, property)){
-    auto range = iter.asrange;
-    return PropertyPluckRange!(property, typeof(range))(range);
-}
-
-
-
-struct PluckRange(Range, Index) if(canPluckIndexRange!(Range, Index)){
-    mixin MetaRangeMixin!(
-        Range, `source`,
-        `Empty Length Dollar Save Back`,
-        `return this.source.front[this.index];`,
-        `this.source.popFront();`
-    );
-    
-    Range source;
-    Index index;
-    
-    this(typeof(this) range){
-        this(range.source, range.index);
-    }
-    this(Range source, Index index){
-        this.source = source;
-        this.index = index;
-    }
-    
-    static if(isIndexedRange!Range){
-        auto opIndex(IndexParameters!Range index){
-            return this.source[index][this.index];
-        }
-    }
-    
-    // TODO: Slice
-}
-
-struct PropertyPluckRange(string property, Range) if(canPluckPropertyRange!(Range, property)){
-    mixin MetaRangeMixin!(
-        Range, `source`,
-        `Empty Length Dollar Save Back`,
-        `return this.source.front.` ~ property ~ `;`,
-        `this.source.popFront();`
-    );
-    
-    Range source;
-    
-    this(typeof(this) range){
-        this(range.source);
-    }
-    this(Range source){
-        this.source = source;
-    }
-    
-    static if(isIndexedRange!Range){
-        auto opIndex(IndexParameters!Range index){
-            mixin(`return this.source[index].` ~ property ~ `;`);
-        }
-    }
-    
-    // TODO: Slice
+    mixin(`alias transform = element => element.` ~ property ~ `;`);
+    return map!transform(iter);
 }
 
 
