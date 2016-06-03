@@ -188,6 +188,13 @@ unittest{
                 testeq("Length", range.length, 5);
                 test("Iteration", range.equals([2, 3, 5, 8, 12]));
             });
+            tests("Saving", {
+                auto range = array.reducelazy!sum;
+                auto saved = range.save;
+                range.popFront();
+                testeq(range.front, 3);
+                testeq(saved.front, 1);
+            });
         });
     });
 }
