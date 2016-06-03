@@ -2,18 +2,39 @@ module mach.range.reduce;
 
 private:
 
-import mach.traits : isFiniteIterable, ElementType;
+import std.traits : isImplicitlyConvertible;
+import mach.traits : isIterable, isFiniteIterable, ElementType;
+import mach.traits : isRange, hasNumericLength;
+import mach.range.asrange : asrange, validAsRange;
+import mach.range.meta : MetaRangeMixin;
 
 public:
 
 
 
-alias canReduce = isFiniteIterable;
+enum canEagerReduce(Iter, alias func) = (
+    canEagerReduce!(Iter, ElementType!Iter, func)
+);
+enum canEagerReduce(Iter, Acc, alias func) = (
+    isFiniteIterable!Iter && validReduceFunction!(Iter, Acc, func)
+);
 
-enum canReduce(Iter, alias func) = canReduce!(Iter, ElementType!Iter, func);
+enum canLazyReduce(Iter, alias func) = (
+    canLazyReduce!(Iter, ElementType!Iter, func)
+);
+enum canLazyReduce(Iter, Acc, alias func) = (
+    validAsRange!Iter && validReduceFunction!(Iter, Acc, func)
+);
 
-template canReduce(Iter, Acc, alias func){
-    enum bool canReduce = is(typeof((inout int = 0){
+enum canLazyReduceRange(Range, alias func) = (
+    canLazyReduceRange!(Range, ElementType!Range, func)
+);
+enum canLazyReduceRange(Range, Acc, alias func) = (
+    isRange!Range && validReduceFunction!(Range, Acc, func)
+);
+
+template validReduceFunction(Iter, Acc, alias func) if(isIterable!Iter){
+    enum bool validReduceFunction = is(typeof((inout int = 0){
         alias Element = ElementType!Iter;
         auto element = Element.init;
         auto first = func(Acc.init, element);
@@ -24,8 +45,14 @@ template canReduce(Iter, Acc, alias func){
 
 
 
-auto reduce(alias func, Acc, Iter)(in Iter iter, in Acc initial) if(
-    canReduce!(Iter, Acc, func)
+alias reduce = reduceeager;
+
+auto reduceeager(alias func, Iter)(in Iter iter) if(canEagerReduce!(Iter, func)){
+    return reduceeager!(func, ElementType!Iter, Iter)(iter);
+}
+
+auto reduceeager(alias func, Acc, Iter)(in Iter iter, in Acc initial) if(
+    canEagerReduce!(Iter, Acc, func)
 ){
     const(Acc)* acc = &initial;
     foreach(element; iter){
@@ -34,10 +61,8 @@ auto reduce(alias func, Acc, Iter)(in Iter iter, in Acc initial) if(
     }
     return *acc;
 }
-auto reduce(alias func, Iter)(in Iter iter) if(canReduce!(Iter, func)){
-    return reduce!(func, ElementType!Iter, Iter)(iter);
-}
-auto reduce(alias func, Acc, Iter)(in Iter iter) if(canReduce!(Iter, Acc, func)){
+
+auto reduceeager(alias func, Acc, Iter)(in Iter iter) if(canEagerReduce!(Iter, Acc, func)){
     import std.stdio;
     bool first = true;
     const(Acc)* acc;
@@ -57,24 +82,112 @@ auto reduce(alias func, Acc, Iter)(in Iter iter) if(canReduce!(Iter, Acc, func))
 
 
 
+auto reducelazy(alias func, Iter)(in Iter iter) if(canLazyReduce!(Iter, func)){
+    return reducelazy!(func, ElementType!Iter, Iter)(iter);
+}
+
+auto reducelazy(alias func, Acc, Iter)(in Iter iter, in Acc initial) if(
+    canLazyReduce!(Iter, Acc, func)
+){
+    auto range = iter.asrange;
+    return ReduceRange!(typeof(range), Acc, func, true)(range, initial);
+}
+
+auto reducelazy(alias func, Acc, Iter)(in Iter iter) if(canLazyReduce!(Iter, Acc, func)){
+    auto range = iter.asrange;
+    return ReduceRange!(typeof(range), Acc, func, false)(range);
+}
+
+
+
+struct ReduceRange(Range, Acc, alias func, bool seed = true) if(
+    canLazyReduceRange!(Range, Acc, func) &&
+    (!seed || isImplicitlyConvertible!(ElementType!Range, Acc))
+){
+    mixin MetaRangeMixin!(
+        Range, `source`, `Save`
+    );
+    
+    Range source;
+    Acc value;
+    bool empty;
+    
+    this(typeof(this) range){
+        this(range.source, range.value);
+    }
+    this(Range source, Acc value, bool empty = false){
+        this.source = source;
+        this.value = value;
+        this.empty = empty;
+    }
+    
+    static if(!seed){
+        this(Range source){
+            this.source = source;
+            this.empty = false;
+            if(this.source.empty){
+                assert(false, "Cannot reduce empty range without an initial value.");
+            }else{
+                this.value = this.source.front;
+                this.source.popFront();
+            }
+        }
+    }
+    
+    @property auto ref front() const{
+        return this.value;
+    }
+    void popFront(){
+        if(!this.source.empty){
+            this.value = func(this.value, this.source.front);
+            this.source.popFront();
+        }else{
+            this.empty = true;
+        }
+    }
+    
+    static if(hasNumericLength!Range){
+        @property auto length(){
+            return this.source.length + seed;
+        }
+    }
+}
+
+
+
 version(unittest){
     private:
     import mach.error.unit;
+    import mach.range.compare : equals;
     import std.conv : to;
 }
 unittest{
     tests("Reduce", {
-        auto arr = [1, 2, 3, 4];
-        testeq(
-            "No seed", arr.reduce!((acc, next) => (acc + next)), 10
-        );
-        testeq(
-            "With seed", arr.reduce!((acc, next) => (acc + next))(2), 12
-        );
-        testeq(
-            "Disparate types",
-            arr.reduce!((acc, next) => (to!string(acc) ~ to!string(next)))(""),
-            "1234"
-        );
+        auto array = [1, 2, 3, 4];
+        alias sum = (acc, next) => (acc + next);
+        alias concat = (acc, next) => (to!string(acc) ~ to!string(next));
+        tests("Eager", {
+            testeq("No seed",
+                array.reduceeager!sum, 10
+            );
+            testeq("With seed",
+                array.reduceeager!((acc, next) => (acc + next))(2), 12
+            );
+            testeq("Disparate types",
+                array.reduceeager!concat(""), "1234"
+            );
+        });
+        tests("Lazy", {
+            tests("No seed", {
+                auto range = array.reducelazy!sum;
+                testeq("Length", range.length, 4);
+                test("Iteration", range.equals([1, 3, 6, 10]));
+            });
+            tests("With seed", {
+                auto range = array.reducelazy!sum(2);
+                testeq("Length", range.length, 5);
+                test("Iteration", range.equals([2, 3, 5, 8, 12]));
+            });
+        });
     });
 }

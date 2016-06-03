@@ -20,7 +20,7 @@ import mach.range.merge : merge;
 import mach.range.mutate : mutate;
 import mach.range.pluck : pluck;
 import mach.range.recur : recur;
-import mach.range.reduce : reduce;
+import mach.range.reduce : reduce, reduceeager, reducelazy;
 import mach.range.reduction : min, max, sum, product;
 import mach.range.repeat : repeat, repeatrandomaccess, repeatsaving, repeatelement;
 import mach.range.reversed : reversed;
