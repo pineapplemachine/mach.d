@@ -112,6 +112,18 @@ template isMutableRandomRange(Range){
 
 enum hasEmptyEnum(T) = __traits(compiles, {enum empty = T.empty;});
 
+template hasEmptyEnum(T, bool value){
+    static if(hasEmptyEnum!T){
+        enum bool hasEmptyEnum = T.empty is value;
+    }else{
+        enum bool hasEmptyEnum = false;
+    }
+}
+
+enum hasTrueEmptyEnum(T) = hasEmptyEnum!(T, true);
+
+enum hasFalseEmptyEnum(T) = hasEmptyEnum!(T, false);
+
 
 
 /// This logic is meaningless when not combined with something like isIterable 

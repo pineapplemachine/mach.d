@@ -6,8 +6,10 @@ import std.meta : staticMap, allSatisfy, anySatisfy;
 import mach.traits : hasCommonElementType, CommonElementType;
 import mach.traits : isRange, isBidirectionalRange;
 import mach.traits : isRandomAccessRange, isSavingRange, isSlicingRange;
-import mach.traits : hasNumericLength, hasEmptyEnum;
+import mach.traits : hasNumericLength, hasFalseEmptyEnum, getSummedLength;
 import mach.range.asrange : asrange, validAsRange, AsRangeType;
+import mach.range.meta : MetaMultiRangeEmptyMixin, MetaMultiRangeSaveMixin;
+import mach.range.meta : MetaMultiRangeWrapperMixin;
 
 public:
 
@@ -22,31 +24,13 @@ enum canChainRanges(Ranges...) = (
 
 
 
-private static string ChainMixin(Iters...)(){
-    import std.conv : to;
-    string templates = ``;
-    string params = ``;
-    for(size_t i = 0; i < Iters.length; i++){
-        if(i > 0) params ~= `, `;
-        if(i > 0) templates ~= `, `;
-        string ter = `ters[` ~ i.to!string ~ `]`;
-        params ~= `i` ~ ter ~ `.asrange`;
-        templates ~= `AsRangeType!(I` ~ ter ~ `)`;
-    }
-    return `return ChainRange!(` ~ templates ~ `)(` ~ params ~ `);`;
+auto chain(Iters...)(Iters iters) if(canChain!Iters){
+    mixin(MetaMultiRangeWrapperMixin!(`ChainRange`, Iters));
 }
 
-private static string ChainSaveMixin(Ranges...)(){
-    import std.conv : to;
-    string params = ``;
-    for(size_t i = 0; i < Ranges.length; i++){
-        if(i > 0) params ~= `, `;
-        params ~= `this.sources[` ~ i.to!string ~ `].save`;
-    }
-    return `return typeof(this)(` ~ params ~ `);`;
-}
 
-static string ChainSliceMixin(Ranges...)(){
+
+private static string ChainSliceMixin(Ranges...)(){
     import std.conv : to;
     string params = ``;
     for(size_t i = 0; i < Ranges.length; i++){
@@ -59,14 +43,19 @@ static string ChainSliceMixin(Ranges...)(){
 
 
 
-auto chain(Iters...)(Iters iters) if(canChain!Iters){
-    mixin(ChainMixin!Iters);
-}
-
-
-
 struct ChainRange(Ranges...) if(canChainRanges!Ranges){
     alias Element = CommonElementType!Ranges;
+    
+    mixin MetaMultiRangeSaveMixin!(`sources`, Ranges);
+    mixin MetaMultiRangeEmptyMixin!(
+        `
+            foreach(i, _; Ranges){
+                if(!this.sources[i].empty) return false;
+            }
+            return true;
+        `,
+        `sources`, Ranges
+    );
     
     Ranges sources;
     
@@ -75,17 +64,6 @@ struct ChainRange(Ranges...) if(canChainRanges!Ranges){
     }
     this(Ranges sources){
         this.sources = sources;
-    }
-    
-    static if(anySatisfy!(hasEmptyEnum, Ranges)){
-        enum bool empty = false;
-    }else{
-        @property bool empty(){
-            foreach(i, _; Ranges){
-                if(!this.sources[i].empty) return false;
-            }
-            return true;
-        }
     }
     
     @property auto ref front(){
@@ -118,11 +96,7 @@ struct ChainRange(Ranges...) if(canChainRanges!Ranges){
     
     static if(allSatisfy!(hasNumericLength, Ranges)){
         @property auto length(){
-            size_t length = size_t.init;
-            foreach(i, _; Ranges){
-                length += this.sources[i].length;
-            }
-            return length;
+            return getSummedLength(this.sources);
         }
         alias opDollar = length;
         static if(allSatisfy!(isRandomAccessRange, Ranges)){
@@ -177,12 +151,6 @@ struct ChainRange(Ranges...) if(canChainRanges!Ranges){
                 }
                 assert(false);
             }
-        }
-    }
-    
-    static if(allSatisfy!(isSavingRange, Ranges)){
-        @property typeof(this) save(){
-            mixin(ChainSaveMixin!Ranges);
         }
     }
 }
