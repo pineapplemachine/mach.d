@@ -12,24 +12,24 @@ public:
 
 
 
-enum canEagerReduce(Iter, alias func) = (
-    canEagerReduce!(Iter, ElementType!Iter, func)
+enum canReduceEager(Iter, alias func) = (
+    canReduceEager!(Iter, ElementType!Iter, func)
 );
-enum canEagerReduce(Iter, Acc, alias func) = (
+enum canReduceEager(Iter, Acc, alias func) = (
     isFiniteIterable!Iter && validReduceFunction!(Iter, Acc, func)
 );
 
-enum canLazyReduce(Iter, alias func) = (
-    canLazyReduce!(Iter, ElementType!Iter, func)
+enum canReduceLazy(Iter, alias func) = (
+    canReduceLazy!(Iter, ElementType!Iter, func)
 );
-enum canLazyReduce(Iter, Acc, alias func) = (
+enum canReduceLazy(Iter, Acc, alias func) = (
     validAsRange!Iter && validReduceFunction!(Iter, Acc, func)
 );
 
-enum canLazyReduceRange(Range, alias func) = (
-    canLazyReduceRange!(Range, ElementType!Range, func)
+enum canReduceLazyRange(Range, alias func) = (
+    canReduceLazyRange!(Range, ElementType!Range, func)
 );
-enum canLazyReduceRange(Range, Acc, alias func) = (
+enum canReduceLazyRange(Range, Acc, alias func) = (
     isRange!Range && validReduceFunction!(Range, Acc, func)
 );
 
@@ -47,12 +47,12 @@ template validReduceFunction(Iter, Acc, alias func) if(isIterable!Iter){
 
 alias reduce = reduceeager;
 
-auto reduceeager(alias func, Iter)(in Iter iter) if(canEagerReduce!(Iter, func)){
+auto reduceeager(alias func, Iter)(in Iter iter) if(canReduceEager!(Iter, func)){
     return reduceeager!(func, ElementType!Iter, Iter)(iter);
 }
 
 auto reduceeager(alias func, Acc, Iter)(in Iter iter, in Acc initial) if(
-    canEagerReduce!(Iter, Acc, func)
+    canReduceEager!(Iter, Acc, func)
 ){
     const(Acc)* acc = &initial;
     foreach(element; iter){
@@ -62,7 +62,7 @@ auto reduceeager(alias func, Acc, Iter)(in Iter iter, in Acc initial) if(
     return *acc;
 }
 
-auto reduceeager(alias func, Acc, Iter)(in Iter iter) if(canEagerReduce!(Iter, Acc, func)){
+auto reduceeager(alias func, Acc, Iter)(in Iter iter) if(canReduceEager!(Iter, Acc, func)){
     import std.stdio;
     bool first = true;
     const(Acc)* acc;
@@ -82,18 +82,18 @@ auto reduceeager(alias func, Acc, Iter)(in Iter iter) if(canEagerReduce!(Iter, A
 
 
 
-auto reducelazy(alias func, Iter)(in Iter iter) if(canLazyReduce!(Iter, func)){
+auto reducelazy(alias func, Iter)(in Iter iter) if(canReduceLazy!(Iter, func)){
     return reducelazy!(func, ElementType!Iter, Iter)(iter);
 }
 
 auto reducelazy(alias func, Acc, Iter)(in Iter iter, in Acc initial) if(
-    canLazyReduce!(Iter, Acc, func)
+    canReduceLazy!(Iter, Acc, func)
 ){
     auto range = iter.asrange;
     return ReduceRange!(typeof(range), Acc, func, true)(range, initial);
 }
 
-auto reducelazy(alias func, Acc, Iter)(in Iter iter) if(canLazyReduce!(Iter, Acc, func)){
+auto reducelazy(alias func, Acc, Iter)(in Iter iter) if(canReduceLazy!(Iter, Acc, func)){
     auto range = iter.asrange;
     return ReduceRange!(typeof(range), Acc, func, false)(range);
 }
@@ -101,7 +101,7 @@ auto reducelazy(alias func, Acc, Iter)(in Iter iter) if(canLazyReduce!(Iter, Acc
 
 
 struct ReduceRange(Range, Acc, alias func, bool seed = true) if(
-    canLazyReduceRange!(Range, Acc, func) &&
+    canReduceLazyRange!(Range, Acc, func) &&
     (!seed || isImplicitlyConvertible!(ElementType!Range, Acc))
 ){
     mixin MetaRangeMixin!(
@@ -150,6 +150,7 @@ struct ReduceRange(Range, Acc, alias func, bool seed = true) if(
         @property auto length(){
             return this.source.length + seed;
         }
+        alias opDollar = length;
     }
 }
 

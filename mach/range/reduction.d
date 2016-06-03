@@ -3,36 +3,36 @@ module mach.range.reduction;
 private:
 
 import mach.traits : ElementType;
-import mach.range.reduce : reduce, canReduce;
+import mach.range.reduce : reduceeager, reducelazy, canReduceEager;
 
 public:
 
 
 
-template ReductionTemplate(alias func, string initial = ``){
-    auto reducefunc(Iter)(in Iter iter) if(canReduce!Iter){
+template EagerReductionTemplate(alias func, string initial = ``){
+    auto reducefunc(Iter)(in Iter iter) if(canReduceEager!(Iter, func)){
         return reducefunc!(ElementType!Iter, Iter)(iter);
     }
-    auto reducefunc(Acc, Iter)(in Iter iter) if(canReduce!Iter){
+    auto reducefunc(Acc, Iter)(in Iter iter) if(canReduceEager!(Iter, func)){
         static if(initial){
-            mixin(`return reduce!(func, Acc)(iter, ` ~ initial ~ `);`);
+            mixin(`return reduceeager!(func, Acc)(iter, ` ~ initial ~ `);`);
         }else{
-            return reduce!(func, Acc)(iter);
+            return reduceeager!(func, Acc)(iter);
         }
     }
-    alias ReductionTemplate = reducefunc;
+    alias EagerReductionTemplate = reducefunc;
 }
 
 
 
 /// Get the lowest value in an iterable.
-alias min = ReductionTemplate!((a, b) => (b < a ? b : a));
+alias min = EagerReductionTemplate!((a, b) => (b < a ? b : a));
 /// Get the highest value in an iterable.
-alias max = ReductionTemplate!((a, b) => (b > a ? b : a));
+alias max = EagerReductionTemplate!((a, b) => (b > a ? b : a));
 /// Get the sum of all values in an iterable.
-alias sum = ReductionTemplate!((a, b) => (a + b), `Acc.init`);
+alias sum = EagerReductionTemplate!((a, b) => (a + b), `Acc.init`);
 /// Get the product of all values in an iterable.
-alias product = ReductionTemplate!((a, b) => (a * b));
+alias product = EagerReductionTemplate!((a, b) => (a * b));
 
 
 
