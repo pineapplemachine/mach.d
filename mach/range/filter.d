@@ -2,7 +2,7 @@ module mach.range.filter;
 
 private:
 
-import mach.traits : ElementType, isRange, isBidirectionalRange;
+import mach.traits : ElementType, isRange, isBidirectionalRange, isElementPredicate;
 import mach.traits : isMutableRange, isMutableFrontRange, isMutableBackRange;
 import mach.range.asrange : asrange, validAsRange;
 import mach.range.meta : MetaRangeMixin;
@@ -12,20 +12,11 @@ public:
 
 
 enum canFilter(Iter, alias pred) = (
-    validAsRange!Iter && validFilterPredicate!(Iter, pred)
+    validAsRange!Iter && isElementPredicate!(Iter, pred)
 );
 enum canFilterRange(Range, alias pred) = (
-    isRange!Range && validFilterPredicate!(Range, pred)
+    isRange!Range && isElementPredicate!(Range, pred)
 );
-
-/// Determine whether some predicate can be applied to the elements of an iterable.
-template validFilterPredicate(Iter, alias pred){
-    enum bool validFilterPredicate = is(typeof((inout int = 0){
-        alias Element = ElementType!Iter;
-        auto match = pred(Element.init);
-        if(match){}
-    }));
-}
 
 
 
@@ -42,7 +33,7 @@ struct FilterRange(alias pred, Range) if(canFilterRange!(Range, pred)){
     alias Element = typeof(Range.front);
     
     mixin MetaRangeMixin!(
-        Range, `source`, `Empty Save Back`
+        Range, `source`, `Empty Save`
     );
     
     Range source;
