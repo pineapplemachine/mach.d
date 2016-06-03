@@ -22,10 +22,14 @@ import core.exception : AssertError;
 import std.format : format;
 import std.conv : to;
 import std.math : abs;
-import std.algorithm : contains = canFind;
+import std.string : indexOf;
 import std.traits : isNumeric, fullyQualifiedName;
 
 import mach.error.mixins : ErrorClassMixin;
+
+bool contains(T)(in string str, in T sub){
+    return str.indexOf(sub) >= 0;
+}
 
 public:
 
@@ -245,7 +249,6 @@ alias fail = testfail;
 
 
 version(unittest){
-    import std.string : indexOf;
     import std.format : format;
 }
 
