@@ -3,8 +3,9 @@ module mach.range.indexof;
 private:
 
 import std.traits : isIntegral;
-import mach.traits : isFiniteIterable;
-import mach.range.asrange : asrange, validAsRange, validAsSavingRange;
+import mach.traits : isIterable, isIterableReverse;
+import mach.range.asrange : asrange, validAsRange;
+import mach.range.asrange : validAsSavingRange, validAsRandomAccessRange;
 
 public:
 
@@ -16,16 +17,23 @@ alias DefaultIndexOfPredicate = (a, b) => (a == b);
 
 alias validIndexOfIndex = isIntegral;
 
-/// True if Sub can be searched for in Iter as a range.
-enum bool canIndexOfRange(Iter, Sub, Index) = (
-    isFiniteIterable!Iter &&
+/// True if Sub can be searched for in Iter as a random access range.
+enum bool canIndexOfRandomAccessRange(Iter, Sub, Index) = (
+    isIterable!Iter &&
+    validAsRandomAccessRange!Sub &&
+    validIndexOfIndex!Index
+);
+
+/// True if Sub can be searched for in Iter as a saving range.
+enum bool canIndexOfSavingRange(Iter, Sub, Index) = (
+    isIterable!Iter &&
     validAsSavingRange!Sub &&
     validIndexOfIndex!Index
 );
 
 /// True if Sub can be searched for in Iter as an atomic element.
 enum bool canIndexOfElement(Iter, Sub, Index) = (
-    isFiniteIterable!Iter &&
+    isIterable!Iter &&
     validIndexOfIndex!Index
 );
 
@@ -42,28 +50,28 @@ private struct IndexOfThread(Index, Needle){
 
 /// Find the index of the first matching sequence of sub in iter, or -1 if none exists.
 auto indexof(alias pred, Index = DefaultIndexOfIndex, Iter, Sub)(Iter iter, Sub sub) if(
-    canIndexOfRange!(Iter, Sub, Index)
+    canIndexOfSavingRange!(Iter, Sub, Index)
 ){
     return indexofrange!(pred, Index, Iter, Sub)(iter, sub);
 }
 
 /// Find the index of the first equal sequence of sub in iter, or -1 if none exists.
 auto indexof(Index = DefaultIndexOfIndex, Iter, Sub)(Iter iter, Sub sub) if(
-    canIndexOfRange!(Iter, Sub, Index)
+    canIndexOfSavingRange!(Iter, Sub, Index)
 ){
     return indexofrange!(DefaultIndexOfPredicate, Index, Iter, Sub)(iter, sub);
 }
 
 /// Find the first element in iter matching sub, or -1 if none match.
 auto indexof(alias pred, Index = DefaultIndexOfIndex, Iter, Sub)(Iter iter, Sub sub) if(
-    !canIndexOfRange!(Iter, Sub, Index) && canIndexOfElement!(Iter, Sub, Index)
+    !canIndexOfSavingRange!(Iter, Sub, Index) && canIndexOfElement!(Iter, Sub, Index)
 ){
     return indexofelement!(pred, Index, Iter, Sub)(iter, sub);
 }
 
 /// Find the first element in iter equal to sub, or -1 if none are equal.
 auto indexof(Index = DefaultIndexOfIndex, Iter, Sub)(Iter iter, Sub sub) if(
-    !canIndexOfRange!(Iter, Sub, Index) && canIndexOfElement!(Iter, Sub, Index)
+    !canIndexOfSavingRange!(Iter, Sub, Index) && canIndexOfElement!(Iter, Sub, Index)
 ){
     return indexofelement!(DefaultIndexOfPredicate, Index, Iter, Sub)(iter, sub);
 }
@@ -71,7 +79,7 @@ auto indexof(Index = DefaultIndexOfIndex, Iter, Sub)(Iter iter, Sub sub) if(
 
 
 auto indexofrange(alias pred, Index = DefaultIndexOfIndex, Iter, Sub)(Iter iter, Sub sub) if(
-    canIndexOfRange!(Iter, Sub, Index)
+    canIndexOfSavingRange!(Iter, Sub, Index)
 ){
     auto needle = sub.asrange;
     
@@ -109,7 +117,7 @@ auto indexofrange(alias pred, Index = DefaultIndexOfIndex, Iter, Sub)(Iter iter,
 }
 
 auto indexofrange(Index = DefaultIndexOfIndex, Iter, Sub)(Iter iter, Sub sub) if(
-    canIndexOfRange!(Iter, Sub, Index)
+    canIndexOfSavingRange!(Iter, Sub, Index)
 ){
     return indexofrange!(DefaultIndexOfPredicate, Index, Iter, Sub)(iter, sub);
 }
