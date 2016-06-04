@@ -278,12 +278,27 @@ template findgeneralized(
             alias Result = FindResultIndex!Index;
         }
         
+        static if(all) Result[] results;
+        
         auto findlen = subject.length;
         
+        if(findlen <= 0){
+            static if(all) return results;
+            else return Result(false);
+        }
+        
         static if(randomaccess){
+            if(subject.length <= 0){
+                static if(all) return results;
+                else return Result(false);
+            }
             alias Thread = FindRandomAccessThread!(pred, forward, Index);
             auto findfirst = subject[forward ? 0 : findlen - 1];
         }else{
+            if(subject.empty){
+                static if(all) return results;
+                else return Result(false);
+            }
             alias Thread = FindSavingThread!(pred, forward, Index, Find);
             auto findfirst = forward ? subject.front : subject.back;
         }
@@ -291,8 +306,6 @@ template findgeneralized(
         auto threads = FindThreadManager!Thread(64);
         Index index = forward ? 0 : iter.length;
         Result result;
-        
-        static if(all) Result[] results;
         
         bool step(Element)(ref Element element){
             // Progress living threads
