@@ -11,6 +11,7 @@ import mach.range.distinct : distinct;
 import mach.range.each : each, eachreverse;
 import mach.range.ends : head, tail;
 import mach.range.enumerate : enumerate;
+import mach.range.fill : fill;
 import mach.range.filter : filter;
 import mach.range.find : find, findfirst, findlast, findall;
 import mach.range.include : include, exclude;
