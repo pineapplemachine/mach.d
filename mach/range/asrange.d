@@ -2,6 +2,7 @@ module mach.range.asrange;
 
 private:
 
+import std.typecons : Tuple;
 import std.traits : Parameters, ReturnType, TemplateOf, TemplateArgsOf, Unqual;
 import std.traits : isArray, isCallable, isImplicitlyConvertible;
 import std.traits : isAssociativeArray, KeyType, ValueType;
@@ -372,18 +373,11 @@ struct ArrayRange(Array) if(canMakeArrayRange!Array){
 
 
 
-struct AssociativeArrayRangeElement(Array){
-    KeyType!Array key;
-    ValueType!Array value;
-    alias k = key;
-    alias val = value; alias v = value;
-}
-
 /// Range based on an associative array.
 struct AssociativeArrayRange(Array) if(canMakeAssociativeArrayRange!Array){
     alias Key = KeyType!Array;
     alias Keys = ArrayRange!(Key[]);
-    alias Element = AssociativeArrayRangeElement!Array;
+    alias Element = Tuple!(KeyType!Array, "key", ValueType!Array, "value");
     
     Array array;
     Keys keys;
