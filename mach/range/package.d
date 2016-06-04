@@ -12,6 +12,7 @@ import mach.range.each : each, eachreverse;
 import mach.range.ends : head, tail;
 import mach.range.enumerate : enumerate;
 import mach.range.filter : filter;
+import mach.range.find : find;
 import mach.range.indexof : indexof, indexofrange, indexofelement;
 import mach.range.interpolate : interpolate, lerp, coslerp;
 import mach.range.logical : any, all, none, first, last, count, exactly, more, less, atleast, atmost;
