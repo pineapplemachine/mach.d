@@ -5,27 +5,16 @@ private:
 import std.meta : anySatisfy, allSatisfy;
 import std.traits : ReturnType, isSomeFunction;
 import std.traits : isArray, isAssociativeArray, isNumeric, isIntegral;
+import mach.traits.property : hasProperty, PropertyType;
 
 public:
 
 
 
-/// Distinct from standard library template in that length is not required to
-/// be implicitly convertible to ulong.
-template hasLength(T){
-    enum bool hasLength = is(typeof((inout int = 0){
-        auto len = T.init.length;
-    }));
-}
+enum hasLength(T) = hasProperty!(T, `length`);
 
 template LengthType(T) if(hasLength!T){
-    static if(isArray!T || isAssociativeArray!T){
-        alias LengthType = size_t;
-    }else static if(isSomeFunction!(T.length)){
-        alias LengthType = ReturnType!(T.length);
-    }else{
-        alias LengthType = typeof(T.length);
-    }
+    alias LengthType = PropertyType!(T, `length`);
 }
 
 template hasNumericLength(T){
