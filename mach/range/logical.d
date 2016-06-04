@@ -30,7 +30,7 @@ enum canAtLeast(Iter, Count) = (
 
 
 enum canAnyAllNone(Iter, alias pred) = (
-    isFiniteIterable!Iter && isElementPredicate!(Iter, pred)
+    isFiniteIterable!Iter && isElementPredicate!(pred, Iter)
 );
 
 alias canAny = canAnyAllNone;
@@ -86,21 +86,23 @@ enum canFindLast(Iter, Fallback) = (
 
 enum canFindLast(Iter, alias pred) = (
     isFiniteIterable!Iter && isIterableReverse!Iter &&
-    isElementPredicate!(Iter, pred)
+    isElementPredicate!(pred, Iter)
 );
 enum canFindFirst(Iter, alias pred) = (
     isFiniteIterable!Iter &&
-    isElementPredicate!(Iter, pred)
+    isElementPredicate!(pred, Iter)
 );
 enum canFindLast(Iter, alias pred) = (
     isFiniteIterable!Iter && isIterableReverse!Iter &&
-    isElementPredicate!(Iter, pred)
+    isElementPredicate!(pred, Iter)
 );
 enum canFindFirst(Iter, Fallback, alias pred) = (
-    canFindFirst!(Iter, Fallback) && isElementPredicate!(Iter, pred)
+    canFindFirst!(Iter, Fallback) &&
+    isElementPredicate!(pred, Iter)
 );
 enum canFindLast(Iter, Fallback, alias pred) = (
-    canFindLast!(Iter, Fallback) && isElementPredicate!(Iter, pred)
+    canFindLast!(Iter, Fallback) &&
+    isElementPredicate!(pred, Iter)
 );
 
 /// Get the first element

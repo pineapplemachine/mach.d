@@ -81,7 +81,7 @@ enum canHashElement(Iter) = canHash!(ElementType!Iter);
 
 enum hasMutableElement(Iter) = isMutable!(ElementType!Iter);
 
-enum isElementPredicate(Iter, alias pred) = isPredicate!(ElementType!Iter, pred);
+enum isElementPredicate(alias pred, Iter) = isPredicate!(pred, ElementType!Iter);
 
 
 
@@ -133,9 +133,9 @@ unittest{
     // isElementPredicate
     alias even = (n) => (n % 2 == 0);
     alias index = (str) => (str[0] == '?');
-    static assert(isElementPredicate!(int[], even));
-    static assert(isElementPredicate!(double[], even));
-    static assert(isElementPredicate!(string[], index));
-    static assert(!isElementPredicate!(string[], even));
-    static assert(!isElementPredicate!(int[], index));
+    static assert(isElementPredicate!(even, int[]));
+    static assert(isElementPredicate!(even, double[]));
+    static assert(isElementPredicate!(index, string[]));
+    static assert(!isElementPredicate!(even, string[]));
+    static assert(!isElementPredicate!(index, int[]));
 }

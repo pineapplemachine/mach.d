@@ -14,20 +14,20 @@ alias validSelectFromPredicate = isElementPredicate;
 alias validSelectUntilPredicate = isElementPredicate;
 
 enum canSelectFrom(Iter, alias from) = (
-    isIterable!Iter && validSelectFromPredicate!(Iter, from)
+    isIterable!Iter && validSelectFromPredicate!(from, Iter)
 );
 enum canSelectUntil(Iter, alias until) = (
-    isIterable!Iter && validSelectUntilPredicate!(Iter, until)
+    isIterable!Iter && validSelectUntilPredicate!(until, Iter)
 );
 enum canSelectFromUntil(Iter, alias from, alias until) = (
     canSelectFrom!(Iter, from) && canSelectUntil!(Iter, until)
 );
 
 enum canSelectFromRange(Range, alias from) = (
-    isRange!Range && validSelectFromPredicate!(Range, from)
+    isRange!Range && validSelectFromPredicate!(from, Range)
 );
 enum canSelectUntilRange(Range, alias until) = (
-    isRange!Range && validSelectUntilPredicate!(Range, until)
+    isRange!Range && validSelectUntilPredicate!(until, Range)
 );
 enum canSelectFromUntilRange(Range, alias from, alias until) = (
     canSelectFromRange!(Range, from) && canSelectUntilRange!(Range, until)

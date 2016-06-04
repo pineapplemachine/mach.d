@@ -12,10 +12,10 @@ public:
 
 
 enum canFilter(Iter, alias pred) = (
-    validAsRange!Iter && isElementPredicate!(Iter, pred)
+    validAsRange!Iter && isElementPredicate!(pred, Iter)
 );
 enum canFilterRange(Range, alias pred) = (
-    isRange!Range && isElementPredicate!(Range, pred)
+    isRange!Range && isElementPredicate!(pred, Range)
 );
 
 
