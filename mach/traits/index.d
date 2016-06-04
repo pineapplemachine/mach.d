@@ -18,6 +18,12 @@ enum canIndex(T) = (
     canIndexPrimitive!T || is(typeof(T.opIndex))
 );
 
+template canIndex(T, Indexes...){
+    enum bool canIndex = is(typeof((inout int = 0){
+        auto result = T.init[Indexes.init];
+    }));
+}
+
 template IndexParameters(T) if(canIndex!T){
     static if(isArray!T){
         alias IndexParameters = AliasSeq!(size_t);
@@ -68,6 +74,13 @@ unittest{
     static assert(canIndex!(int[]));
     static assert(canIndex!IndexTest);
     static assert(canIndex!IndexMultiTest);
+    static assert(!canIndex!int);
+    static assert(canIndex!(int[], size_t));
+    static assert(canIndex!(int[][], size_t));
+    static assert(canIndex!(string, size_t));
+    static assert(canIndex!(IndexMultiTest, real, real));
+    static assert(!canIndex!(string, string));
+    static assert(!canIndex!(IndexMultiTest, int));
     // IndexParameters
     static assert(is(IndexParameters!(int[])[0] == size_t));
     static assert(is(IndexParameters!IndexTest[0] == const(int)));
