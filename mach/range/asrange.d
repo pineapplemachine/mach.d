@@ -8,6 +8,7 @@ import std.traits : isArray, isCallable, isImplicitlyConvertible;
 import std.traits : isAssociativeArray, KeyType, ValueType;
 import mach.traits : isRange, isSavingRange, isRandomAccessRange;
 import mach.traits : isBidirectionalRange, isSlicingRange, isMutable;
+import mach.traits : isMutableFrontRange, isMutableBackRange, isMutableRandomRange;
 import mach.traits : ArrayElementType, canIncrement, canDecrement, canCast;
 
 public:
@@ -39,6 +40,9 @@ enum validAsBidirectionalRange(T) = validAsRange!(T, isBidirectionalRange);
 enum validAsRandomAccessRange(T) = validAsRange!(T, isRandomAccessRange);
 enum validAsSlicingRange(T) = validAsRange!(T, isSlicingRange);
 enum validAsSavingRange(T) = validAsRange!(T, isSavingRange);
+enum validAsMutableFrontRange(T) = validAsRange!(T, isMutableFrontRange);
+enum validAsMutableBackRange(T) = validAsRange!(T, isMutableBackRange);
+enum validAsMutableRandomRange(T) = validAsRange!(T, isMutableRandomRange);
 
 template MakeRangeType(Base) if(canMakeRange!Base){
     static if(canMakeArrayRange!Base){

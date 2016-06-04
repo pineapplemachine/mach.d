@@ -28,6 +28,7 @@ import mach.range.reduce : reduce, reduceeager, reducelazy;
 import mach.range.reduction : min, max, sum, product;
 import mach.range.repeat : repeat, repeatrandomaccess, repeatsaving, repeatelement;
 import mach.range.reversed : reversed;
+import mach.range.rotate : rotate;
 import mach.range.select : select, from, until;
 import mach.range.stride : stride;
 import mach.range.tap : tap;
