@@ -19,9 +19,13 @@ enum canCompareIterables(alias pred, IterA, IterB) = (
 );
 
 private alias EqualityComparison = (a, b) => (a == b);
+private alias RecursiveEqualityComparison = (a, b) => (a.equals(b));
 
 enum canCompareIterablesEquality(IterA, IterB) = (
     canCompareIterables!(EqualityComparison, IterA, IterB)
+);
+enum canCompareIterablesRecursiveEquality(IterA, IterB) = (
+    canCompareIterables!(RecursiveEqualityComparison, IterA, IterB)
 );
 
 
@@ -51,10 +55,27 @@ bool compare(
 
 /// Determine whether the values in two iterables are equal,
 /// optionally ignoring length.
-bool equals(bool length = true, IterA, IterB)(
-    IterA itera, IterB iterb
-) if(canCompareIterablesEquality!(IterA, IterB)){
+bool equals(bool length = true, IterA, IterB)(IterA itera, IterB iterb) if(
+    canCompareIterablesEquality!(IterA, IterB) ||
+    canCompareIterablesRecursiveEquality!(IterA, IterB)
+){
+    static if(canCompareIterablesEquality!(IterA, IterB)){
+        return iterequals!(length, IterA, IterB)(itera, iterb);
+    }else{
+        return recursiveequals!(length, IterA, IterB)(itera, iterb);
+    }
+}
+
+bool iterequals(bool length = true, IterA, IterB)(IterA itera, IterB iterb) if(
+    canCompareIterablesEquality!(IterA, IterB)
+){
     return compare!(EqualityComparison, length, IterA, IterB)(itera, iterb);
+}
+
+bool recursiveequals(bool length = true, IterA, IterB)(IterA itera, IterB iterb) if(
+    canCompareIterablesRecursiveEquality!(IterA, IterB)
+){
+    return compare!(RecursiveEqualityComparison, length, IterA, IterB)(itera, iterb);
 }
 
 
@@ -89,6 +110,7 @@ unittest{
             test(TestRange(2, 6).equals(TestRange(2, 6)));
             test(TestRange(2, 6).equals([2, 3, 4, 5]));
             test([2, 3, 4, 5].equals(TestRange(2, 6)));
+            test("Recursive", ["abc", "xyz"].equals(["abc", "xyz"]));
         });
     });
 }
