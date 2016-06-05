@@ -101,8 +101,17 @@ struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!Array){
 version(unittest){
     private:
     import mach.error.unit;
+    import mach.traits : isRange, isBidirectionalRange, isRandomAccessRange;
+    import mach.traits : isSlicingRange, isSavingRange, hasNumericLength;
 }
 unittest{
+    alias Range = ArrayRange!(int[]);
+    static assert(isRange!Range);
+    static assert(isBidirectionalRange!Range);
+    static assert(isRandomAccessRange!Range);
+    static assert(isSlicingRange!Range);
+    static assert(isSavingRange!Range);
+    static assert(hasNumericLength!Range);
     tests("Array as range", {
         tests("Equality", {
             auto range = ArrayRange!(int[])([1, 2, 3]);
@@ -118,9 +127,23 @@ unittest{
         });
         tests("Slicing", {
             auto range = ArrayRange!(int[])([1, 1, 2, 3, 5, 8]);
-            auto slice = range[0 .. 3];
+            auto slice = range[1 .. 4];
             testeq(slice.length, 3);
+            testeq(slice[0], 1);
+            testeq(slice[1], 2);
+            testeq(slice[2], 3);
             test(is(typeof(range) == typeof(slice)));
+        });
+        tests("Random access", {
+            auto range = ArrayRange!(int[])([1, 2, 3]);
+            testeq(range[0], 1);
+            testeq(range[1], 2);
+            testeq(range[$-1], 3);
+        });
+        tests("Empty", {
+            auto range = ArrayRange!(int[])(new int[0]);
+            testeq(range.length, 0);
+            test(range.empty);
         });
         tests("Mutability", {
             char[] data = ['h', 'e', 'l', 'l', 'o'];
@@ -128,6 +151,13 @@ unittest{
             range[1] = 'a';
             range.popFront();
             testeq(range.front, 'a');
+        });
+        tests("Saving", {
+            auto range = ArrayRange!(int[])([1, 2, 3]);
+            auto saved = range.save;
+            range.popFront();
+            testeq(saved.front, 1);
+            testeq(range.front, 2);
         });
     });
 }
