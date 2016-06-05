@@ -41,4 +41,7 @@ unittest{
     // Binary isPredicate
     static assert(isPredicate!((a, b) => (a > b), int, int));
     static assert(!isPredicate!((x, y, z) => (x), int, int));
+    // isTransformation
+    static assert(isTransformation!((a) => (a), int));
+    static assert(isTransformation!((a) => (a[0]), int[]));
 }
