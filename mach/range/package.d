@@ -24,7 +24,7 @@ import mach.range.pad : pad, padleft, padright, padleftcount, padrightcount;
 import mach.range.pluck : pluck;
 import mach.range.recur : recur;
 import mach.range.reduce : reduce, reduceeager, reducelazy;
-import mach.range.reduction : min, max, sum, product;
+import mach.range.reduction : sum, product;
 import mach.range.repeat : repeat, repeatrandomaccess, repeatsaving, repeatelement;
 import mach.range.reversed : reversed;
 import mach.range.rotate : rotate;
