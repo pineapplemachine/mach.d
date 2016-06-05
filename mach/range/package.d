@@ -33,3 +33,4 @@ import mach.range.select : select, from, until;
 import mach.range.stride : stride;
 import mach.range.tap : tap;
 import mach.range.walk : walk;
+import mach.range.zip : zip;
