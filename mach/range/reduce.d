@@ -2,7 +2,7 @@ module mach.range.reduce;
 
 private:
 
-import std.traits : isImplicitlyConvertible;
+import std.traits : Unqual, isImplicitlyConvertible;
 import mach.traits : isIterable, isFiniteIterable, ElementType;
 import mach.traits : isRange, hasNumericLength;
 import mach.range.asrange : asrange, validAsRange;
@@ -33,7 +33,7 @@ enum canReduceLazyRange(Range, Acc, alias func) = (
     isRange!Range && validReduceFunction!(Range, Acc, func)
 );
 
-template validReduceFunction(Iter, Acc, alias func) if(isIterable!Iter){
+template validReduceFunction(Iter, Acc, alias func){
     enum bool validReduceFunction = is(typeof((inout int = 0){
         alias Element = ElementType!Iter;
         auto element = Element.init;
@@ -47,11 +47,11 @@ template validReduceFunction(Iter, Acc, alias func) if(isIterable!Iter){
 
 alias reduce = reduceeager;
 
-auto reduceeager(alias func, Iter)(in Iter iter) if(canReduceEager!(Iter, func)){
+auto reduceeager(alias func, Iter)(Iter iter) if(canReduceEager!(Iter, func)){
     return reduceeager!(func, ElementType!Iter, Iter)(iter);
 }
 
-auto reduceeager(alias func, Acc, Iter)(in Iter iter, in Acc initial) if(
+auto reduceeager(alias func, Acc, Iter)(Iter iter, Acc initial) if(
     canReduceEager!(Iter, Acc, func)
 ){
     const(Acc)* acc = &initial;
@@ -62,7 +62,7 @@ auto reduceeager(alias func, Acc, Iter)(in Iter iter, in Acc initial) if(
     return *acc;
 }
 
-auto reduceeager(alias func, Acc, Iter)(in Iter iter) if(canReduceEager!(Iter, Acc, func)){
+auto reduceeager(alias func, Acc, Iter)(Iter iter) if(canReduceEager!(Iter, Acc, func)){
     import std.stdio;
     bool first = true;
     const(Acc)* acc;
@@ -82,18 +82,18 @@ auto reduceeager(alias func, Acc, Iter)(in Iter iter) if(canReduceEager!(Iter, A
 
 
 
-auto reducelazy(alias func, Iter)(in Iter iter) if(canReduceLazy!(Iter, func)){
+auto reducelazy(alias func, Iter)(Iter iter) if(canReduceLazy!(Iter, func)){
     return reducelazy!(func, ElementType!Iter, Iter)(iter);
 }
 
-auto reducelazy(alias func, Acc, Iter)(in Iter iter, in Acc initial) if(
+auto reducelazy(alias func, Acc, Iter)(Iter iter, Acc initial) if(
     canReduceLazy!(Iter, Acc, func)
 ){
     auto range = iter.asrange;
     return ReduceRange!(typeof(range), Acc, func, true)(range, initial);
 }
 
-auto reducelazy(alias func, Acc, Iter)(in Iter iter) if(canReduceLazy!(Iter, Acc, func)){
+auto reducelazy(alias func, Acc, Iter)(Iter iter) if(canReduceLazy!(Iter, Acc, func)){
     auto range = iter.asrange;
     return ReduceRange!(typeof(range), Acc, func, false)(range);
 }
@@ -109,7 +109,7 @@ struct ReduceRange(Range, Acc, alias func, bool seed = true) if(
     );
     
     Range source;
-    Acc value;
+    Unqual!Acc value;
     bool empty;
     
     this(typeof(this) range){
