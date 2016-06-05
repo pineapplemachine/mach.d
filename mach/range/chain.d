@@ -18,6 +18,7 @@ public:
 enum canChain(Iters...) = (
     Iters.length && allSatisfy!(validAsRange, Iters) && hasCommonElementType!Iters
 );
+
 enum canChainRanges(Ranges...) = (
     Ranges.length && allSatisfy!(isRange, Ranges) && hasCommonElementType!Ranges
 );

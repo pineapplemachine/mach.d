@@ -11,7 +11,7 @@ public:
 
 
 enum canMutate(Iter, alias transform) = (
-    validAsRange!(Iter, isMutableFrontRange) &&
+    validAsRange!(isMutableFrontRange, Iter) &&
     validMutateTransformation!(Iter, transform)
 );
 enum canMutateRange(Range, alias transform) = (

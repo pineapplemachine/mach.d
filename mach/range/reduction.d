@@ -66,4 +66,3 @@ unittest{
         testeq([2, 2, 2].product, 8);
     });
 }
-

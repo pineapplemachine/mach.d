@@ -77,6 +77,9 @@ struct ChunkRange(Range, Count = DefaultChunkCount) if(
     @property bool empty(){
         return this.frontindex >= this.backindex;
     }
+    @property auto remaining(){
+        return this.backindex - this.frontindex;
+    }
     @property auto length(){
         return ceil(this.source.length, this.size);
     }
