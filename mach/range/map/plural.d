@@ -1,30 +1,20 @@
-module mach.range.merge;
+module mach.range.map.plural;
 
 private:
 
 import std.meta : allSatisfy, anySatisfy;
 import mach.traits : hasFalseEmptyEnum, hasNumericLength, getSmallestLength;
 import mach.traits : isBidirectionalRange, isRandomAccessRange, isSlicingRange;
-import mach.traits : isIterable, isRange, isElementTransformation;
 import mach.range.meta : MetaMultiRangeEmptyMixin, MetaMultiRangeSaveMixin;
 import mach.range.meta : MetaMultiRangeWrapperMixin;
+import mach.range.map.templates : canMap, canMapRanges;
 
 public:
 
 
 
-enum canMerge(alias transform, Iters...) = (
-    allSatisfy!(isIterable, Iters) && isElementTransformation!(transform, Iters)
-);
-
-enum canMergeRanges(alias transform, Ranges...) = (
-    allSatisfy!(isRange, Ranges) && isElementTransformation!(transform, Ranges)
-);
-
-
-
-auto merge(alias transform, Iters...)(Iters iters) if(canMerge!(transform, Iters)){
-    mixin(MetaMultiRangeWrapperMixin!(`MergeRange`, `transform`, ``, Iters));
+auto mapplural(alias transform, Iters...)(Iters iters) if(canMap!(transform, Iters)){
+    mixin(MetaMultiRangeWrapperMixin!(`MapPluralRange`, `transform`, ``, Iters));
 }
 
 
@@ -41,7 +31,7 @@ private static string MergeAttributeMixin(string callname, string attribute, Ran
 
 
 
-struct MergeRange(alias transform, Ranges...) if(canMergeRanges!(transform, Ranges)){
+struct MapPluralRange(alias transform, Ranges...) if(canMapRanges!(transform, Ranges)){
     mixin MetaMultiRangeSaveMixin!(`sources`, Ranges);
     mixin MetaMultiRangeEmptyMixin!(
         `
@@ -94,8 +84,6 @@ struct MergeRange(alias transform, Ranges...) if(canMergeRanges!(transform, Rang
     }
 }
 
-// TODO: MergeFillRange
-
 
 
 version(unittest){
@@ -114,26 +102,26 @@ unittest{
         tests("Length", {
             auto inputshort = [1, 2];
             auto inputlong = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-            testeq(merge!sumtwo(inputa, inputshort).length, inputshort.length);
-            testeq(merge!sumtwo(inputa, inputlong).length, inputa.length);
+            testeq(mapplural!sumtwo(inputa, inputshort).length, inputshort.length);
+            testeq(mapplural!sumtwo(inputa, inputlong).length, inputa.length);
         });
         tests("Iteration", {
-            test(merge!sumtwo(inputa, inputb).equals([1, 2, 4, 5]));
-            test(merge!sumthree(inputa, inputb, inputc).equals([2, 4, 6, 8]));
+            test(mapplural!sumtwo(inputa, inputb).equals([1, 2, 4, 5]));
+            test(mapplural!sumthree(inputa, inputb, inputc).equals([2, 4, 6, 8]));
         });
         tests("Backwards", {
-            test(merge!sumtwo(inputa, inputb).reversed.equals([5, 4, 2, 1]));
-            test(merge!sumthree(inputa, inputb, inputc).reversed.equals([8, 6, 4, 2]));
+            test(mapplural!sumtwo(inputa, inputb).reversed.equals([5, 4, 2, 1]));
+            test(mapplural!sumthree(inputa, inputb, inputc).reversed.equals([8, 6, 4, 2]));
         });
         tests("Random access", {
-            auto range = merge!sumtwo(inputa, inputb);
+            auto range = mapplural!sumtwo(inputa, inputb);
             testeq(range[0], 1);
             testeq(range[1], 2);
             testeq(range[2], 4);
             testeq(range[$-1], 5);
         });
         tests("Slicing", {
-            auto range = merge!sumtwo(inputa, inputb);
+            auto range = mapplural!sumtwo(inputa, inputb);
             test(range[0 .. 2].equals([1, 2]));
             test(range[2 .. $].equals([4, 5]));
         });
