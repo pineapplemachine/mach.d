@@ -31,16 +31,19 @@ enum canMakeKnownLengthArrayOf(Iter, Element) = (
 
 
 /// Create an array of up to the first maxlength items from an iterable of unknown length.
-auto asarray(Iter)(Iter iter, size_t maxlength) if(canMakeArray!Iter){
-    return asarray!(ElementType!Iter, Iter)(iter, maxlength);
+auto asarray(bool enforce = false, Iter)(Iter iter, size_t maxlength) if(canMakeArray!Iter){
+    return asarray!(ElementType!Iter, enforce, Iter)(iter, maxlength);
 }
     
 // ditto
-auto asarray(Element, Iter)(Iter iter, size_t maxlength) if(canMakeArrayOf!(Iter, Element)){
+auto asarray(Element, bool enforce = false, Iter)(Iter iter, size_t maxlength) if(canMakeArrayOf!(Iter, Element)){
     Element[] array;
     foreach(item; iter){
+        if(array.length >= maxlength){
+            static if(enforce) assert(false, "Iterable exceeded maximum array length.");
+            else break;
+        }
         array ~= item;
-        if(array.length >= maxlength) break;
     }
     return array;
 }
@@ -145,9 +148,10 @@ unittest{
         fail("Incorrect known length", {
             KnownLengthTest(0, 4).asarray!6;
         });
-        testeq("Max length of infinite range",
-            InfiniteRangeTest(0).asarray(4), [0, 1, 2, 3]
-        );
+        tests("Max length of infinite range", {
+            testeq(InfiniteRangeTest(0).asarray(4), [0, 1, 2, 3]);
+            fail({InfiniteRangeTest(0).asarray!true(4);});
+        });
         auto ints = [1, 2, 3, 4, 5, 6];
         testis("Calling asarray on an array",
             ints.asarray, ints
