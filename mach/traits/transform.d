@@ -1,10 +1,24 @@
-module mach.traits.predicate;
+module mach.traits.transform;
 
 private:
 
 //
 
 public:
+
+
+
+template isTransformation(alias transform, T...){
+    enum bool isTransformation = is(typeof((inout int = 0){
+        auto result = transform(T.init);
+    }));
+}
+
+template isTransformationType(alias transform, Result, T...){
+    enum bool isTransformation = is(typeof((inout int = 0){
+        Result result = transform(T.init);
+    }));
+}
 
 
 

@@ -10,7 +10,7 @@ import mach.traits.hash : canHash;
 import mach.traits.iter : isRange;
 import mach.traits.mutability : isMutable;
 import mach.traits.op : hasOpApply, hasOpApplyReverse;
-import mach.traits.predicate : isPredicate;
+import mach.traits.transform : isTransformation, isPredicate;
 
 public:
 
@@ -81,7 +81,13 @@ enum canHashElement(Iter) = canHash!(ElementType!Iter);
 
 enum hasMutableElement(Iter) = isMutable!(ElementType!Iter);
 
-enum isElementPredicate(alias pred, Iter) = isPredicate!(pred, ElementType!Iter);
+enum isElementPredicate(alias pred, Iters...) = (
+    isPredicate!(pred, staticMap!(ElementType, Iters))
+);
+
+enum isElementTransformation(alias pred, Iters...) = (
+    isTransformation!(pred, staticMap!(ElementType, Iters))
+);
 
 
 
@@ -138,4 +144,11 @@ unittest{
     static assert(isElementPredicate!(index, string[]));
     static assert(!isElementPredicate!(even, string[]));
     static assert(!isElementPredicate!(index, int[]));
+    // isElementTransformation
+    alias twice = (n) => (n + n);
+    alias sum = (a, b) => (a + b);
+    static assert(isElementTransformation!(twice, int[]));
+    static assert(isElementTransformation!(sum, int[], int[]));
+    static assert(!isElementTransformation!(sum, int[]));
+    static assert(!isElementTransformation!(twice, int[], int[]));
 }

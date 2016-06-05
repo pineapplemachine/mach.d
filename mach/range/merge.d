@@ -5,6 +5,7 @@ private:
 import std.meta : allSatisfy, anySatisfy;
 import mach.traits : hasFalseEmptyEnum, hasNumericLength, getSmallestLength;
 import mach.traits : isBidirectionalRange, isRandomAccessRange, isSlicingRange;
+import mach.traits : isIterable, isRange, isElementTransformation;
 import mach.range.meta : MetaMultiRangeEmptyMixin, MetaMultiRangeSaveMixin;
 import mach.range.meta : MetaMultiRangeWrapperMixin;
 
@@ -12,8 +13,18 @@ public:
 
 
 
-auto merge(alias func, Iters...)(Iters iters){
-    mixin(MetaMultiRangeWrapperMixin!(`MergeRange`, `func`, ``, Iters));
+enum canMerge(alias transform, Iters...) = (
+    allSatisfy!(isIterable, Iters) && isElementTransformation!(transform, Iters)
+);
+
+enum canMergeRanges(alias transform, Ranges...) = (
+    allSatisfy!(isRange, Ranges) && isElementTransformation!(transform, Ranges)
+);
+
+
+
+auto merge(alias transform, Iters...)(Iters iters) if(canMerge!(transform, Iters)){
+    mixin(MetaMultiRangeWrapperMixin!(`MergeRange`, `transform`, ``, Iters));
 }
 
 
@@ -30,7 +41,7 @@ private static string MergeAttributeMixin(string callname, string attribute, Ran
 
 
 
-struct MergeRange(alias func, Ranges...){
+struct MergeRange(alias transform, Ranges...) if(canMergeRanges!(transform, Ranges)){
     mixin MetaMultiRangeSaveMixin!(`sources`, Ranges);
     mixin MetaMultiRangeEmptyMixin!(
         `
@@ -56,7 +67,7 @@ struct MergeRange(alias func, Ranges...){
     }
     
     @property auto ref front(){
-        mixin(MergeAttributeMixin!(`func`, `.front`, Ranges));
+        mixin(MergeAttributeMixin!(`transform`, `.front`, Ranges));
     }
     void popFront(){
         foreach(i, _; Ranges) this.sources[i].popFront();
@@ -64,7 +75,7 @@ struct MergeRange(alias func, Ranges...){
     
     static if(allSatisfy!(isBidirectionalRange, Ranges)){
         @property auto ref back(){
-            mixin(MergeAttributeMixin!(`func`, `.back`, Ranges));
+            mixin(MergeAttributeMixin!(`transform`, `.back`, Ranges));
         }
         void popBack(){
             foreach(i, _; Ranges) this.sources[i].popBack();
@@ -73,7 +84,7 @@ struct MergeRange(alias func, Ranges...){
     
     static if(allSatisfy!(isRandomAccessRange, Ranges)){
         auto ref opIndex(size_t index){
-            mixin(MergeAttributeMixin!(`func`, `[index]`, Ranges));
+            mixin(MergeAttributeMixin!(`transform`, `[index]`, Ranges));
         }
     }
     static if(allSatisfy!(isSlicingRange, Ranges)){

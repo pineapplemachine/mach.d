@@ -3,6 +3,7 @@ module mach.range.map;
 private:
 
 import mach.traits : isRange, isRandomAccessRange, isSlicingRange, ElementType;
+import mach.traits : isElementTransformation;
 import mach.range.asrange : asrange, validAsRange;
 import mach.range.meta : MetaRangeMixin;
 
@@ -11,18 +12,12 @@ public:
 
 
 enum canMap(Iter, alias transform) = (
-    validAsRange!Iter && validMapTransformation!(Iter, transform)
-);
-enum canMapRange(Range, alias transform) = (
-    isRange!Range && validMapTransformation!(Range, transform)
+    validAsRange!Iter && isElementTransformation!(transform, Iter)
 );
 
-template validMapTransformation(Iter, alias transform){
-    enum bool validMapTransformation = is(typeof((inout int = 0){
-        alias Element = ElementType!Iter;
-        auto result = transform(Element.init);
-    }));
-}
+enum canMapRange(Range, alias transform) = (
+    isRange!Range && isElementTransformation!(transform, Range)
+);
 
 
 
