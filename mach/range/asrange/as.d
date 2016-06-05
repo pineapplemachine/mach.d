@@ -66,12 +66,12 @@ template AsRangeType(T) if(validAsRange!T){
 
 
 /// Get a range for iterating over some object.
-auto asrange(Base)(Base basis) if(!isRange!Base && canMakeRange!Base){
-    return makerange(basis);
-}
-/// ditto
-auto asrange(Range)(Range range) if(isRange!Range){
-    return range;
+auto asrange(Base)(Base basis) if(validAsRange!Base){
+    static if(isRange!Base){
+        return basis;
+    }else{
+        return makerange(basis);
+    }
 }
 
 /// Create a range for iterating over some object.
