@@ -5,7 +5,7 @@ private:
 import mach.traits : isRange, isSavingRange;
 import mach.traits : canHash, ElementType;
 import mach.range.asrange : asrange, validAsRange;
-import mach.range.meta : MetaRangeEmptyMixin;
+import mach.range.meta : MetaRangeMixin;
 
 public:
 
@@ -41,7 +41,7 @@ auto distinct(alias by = DefaultDistinctBy, Iter)(Iter iter) if(canDistinct!(Ite
 
 
 struct DistinctRange(Range, alias by = DefaultDistinctBy) if(canDistinctRange!(Range, by)){
-    mixin MetaRangeEmptyMixin!(Range, `source`);
+    mixin MetaRangeMixin!(Range, `source`, `Empty Save`);
     alias ByType = typeof(by(ElementType!Range.init));
     
     alias History = bool[ByType]; // TODO: Proper set?
@@ -73,7 +73,7 @@ struct DistinctRange(Range, alias by = DefaultDistinctBy) if(canDistinctRange!(R
     
     static if(isSavingRange!Range){
         @property typeof(this) save(){
-            return typeof(this)(this.source, this.history);
+            return typeof(this)(this.source.save, this.history);
         }
     }
 }
