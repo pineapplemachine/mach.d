@@ -49,14 +49,14 @@ struct AssociativeArrayRange(Array) if(canMakeAssociativeArrayRange!Array){
     
     @property auto ref front() const{
         auto key = keys.front;
-        return Element(key, this.array[key]);
+        return Element(cast(KeyType!Array) key, cast(ValueType!Array) this.array[key]);
     }
     void popFront(){
         this.keys.popFront();
     }
     @property auto ref back() const{
         auto key = keys.back;
-        return Element(key, this.array[key]);
+        return Element(cast(KeyType!Array) key, cast(ValueType!Array) this.array[key]);
     }
     void popBack(){
         this.keys.popBack();
@@ -64,11 +64,11 @@ struct AssociativeArrayRange(Array) if(canMakeAssociativeArrayRange!Array){
     
     auto ref opIndex(in size_t index) const{
         auto key = this.keys[index];
-        return Element(key, this.array[key]);
+        return Element(cast(KeyType!Array) key, cast(ValueType!Array) this.array[key]);
     }
     static if(!isImplicitlyConvertible!(size_t, Key)){
         auto ref opIndex(in Key key) const{
-            return Element(key, this.array[key]);
+            return Element(cast(KeyType!Array) key, cast(ValueType!Array) this.array[key]);
         }
     }
     
