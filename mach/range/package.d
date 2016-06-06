@@ -4,7 +4,7 @@ public:
 
 import mach.range.asarray : asarray;
 import mach.range.asrange : asrange;
-import mach.range.associate : associate;
+import mach.range.associate : associate, group, distribute;
 import mach.range.chain : chain;
 import mach.range.chunk : chunk, divide;
 import mach.range.compare : compare, equals, iterequals, recursiveequals;

@@ -5,94 +5,89 @@ private:
 import std.traits : Unqual;
 import std.typecons : tuple;
 import mach.traits : isIterable, canHash, ElementType, isTuple;
+import mach.range.map : map;
+import mach.range.zip : zip;
 
 public:
 
 
 
-template canAssociate(Iter){
-    static if(isIterable!Iter){
-        alias Element = ElementType!Iter;
-        static if(isTuple!Element && Element.length == 2){
-            enum bool canAssociate = canHash!(typeof(Element[0]));
+// TODO: canAssociate, canGroup, canDistribution templates
+
+
+
+/// Vaguely like a reduction, but specialized for the construction of
+/// associative arrays. Accepts one function to map the initial value
+/// encountered for some key to a value to store in the array, and another
+/// function to describe how the value in the array is mutated upon successive
+/// encounters with the same key. This can be used, for example, to: First set
+/// some counter to 1, then increment every time the key is encountered again;
+/// to replace the previous value with the new one every time some key is
+/// encountered; to construct a list of values associated with some key.
+auto associate(alias initial, alias successive, Iter)(Iter iter){
+    alias Key = typeof(ElementType!Iter[0]);
+    alias Value = typeof(initial(ElementType!Iter[1].init));
+    Unqual!Value[Key] array;
+    foreach(key, value; iter){
+        if(auto current = key in array){
+            successive(current, value);
         }else{
-            enum bool canAssociate = false;
+            array[key] = initial(value);
         }
-    }else{
-        enum bool canAssociate = false;
     }
-}
-
-template canAssociate(Iter, Key){
-    static if(isIterable!Iter){
-        enum bool canAssociate = canHash!Key;
-    }else{
-        enum bool canAssociate = false;
-    }
-}
-
-template canAssociateTransformed(alias transform, Iter){
-    import mach.range.map : canMap;
-    static if(canMap!(transform, Iter)){
-        enum bool canAssociateTransformed = canAssociate!(
-            Iter, typeof(transform(ElementType!Iter.init))
-        );
-    }else{
-        enum bool canAssociateTransformed = false;
-    }
-}
-
-template canAssociateIterables(Keys, Values){
-    static if(isIterable!Keys && isIterable!Values){
-        enum bool canAssociateIterables = canHash!(ElementType!Keys);
-    }else{
-        enum bool canAssociateIterables = false;
-    }
-}
-
-
-
-/// Create an associative array using keys and values from two separate ranges.
-/// When plural is false, every key maps to the first element associated with
-/// that key. When plural is true, every key maps to an array of elements
-/// associated with that key.
-auto associate(bool plural = false, Keys, Values)(Keys keys, Values values) if(
-    canAssociateIterables!(Keys, Values)
-){
-    import mach.range.zip : zip;
-    return associate!plural(zip(keys, values));
-}
-
-/// Create an associative array, mapping to key, value from an input iterable.
-auto associate(alias transform, bool plural = false, Iter)(Iter iter) if(
-    canAssociateTransformed!(transform, Iter)
-){
-    import mach.range.map : map;
-    return associate!plural(iter.map!transform);
-}
-
-/// Create an associative array from an iterable containing key, value tuples.
-auto associate(bool plural = false, Iter)(Iter iter) if(canAssociate!Iter){
-    alias Element = ElementType!Iter;
-    return associate!(typeof(Element[0]), typeof(Element[1]), plural)(iter);
+    return array;
 }
 
 /// ditto
-auto associate(Key, Value, bool plural = false, Iter)(Iter iter) if(canAssociate!(Iter, Key)){
-    static if(!plural){
-        Unqual!Value[Key] array;
-        foreach(key, value; iter){
-            if(key !in array) array[key] = value;
-        }
-        return array;
-    }else{
-        Unqual!Value[][Key] array;
-        foreach(key, value; iter){
-            if(key in array) array[key] ~= value;
-            else array[key] = [value];
-        }
-        return array;
-    }
+auto associate(alias initial, alias successive, Keys, Values)(
+    Keys keys, Values values
+){
+    return associate!(initial, successive)(zip(keys, values));
+}
+
+
+
+/// Map keys to values one to one. The first value encountered for a key is the
+/// one that is recorded in the associative array.
+auto associate(Iter)(Iter iter){
+    return associate!((first) => (first), (acc, next){})(iter);
+}
+
+/// ditto
+auto associate(alias by, Iter)(Iter iter){
+    return associate(iter.map!(by, e => e));
+}
+
+/// ditto
+auto associate(Keys, Values)(Keys keys, Values values){
+    return associate(zip(keys, values));
+}
+
+
+
+/// Map keys to values one to many. A list of values is recorded for every key.
+auto group(Iter)(Iter iter){
+    return associate!((first) => ([first]), (acc, next){(*acc) ~= next;})(iter);
+}
+
+/// ditto
+auto group(alias by, Iter)(Iter iter){
+    return group(iter.map!(e => tuple(by(e), e)));
+}
+
+/// ditto
+auto group(Keys, Values)(Keys keys, Values values){
+    return group(zip(keys, values));
+}
+
+
+
+/// Records a count of the number of values encountered with some key, but does
+/// not record the values themselves.
+auto distribution(Iter)(Iter iter){
+    return associate!((first) => (1), (acc, next){(*acc)++;})(
+        iter.map!(e => e, e => e)
+    );
 }
 
 
@@ -103,22 +98,28 @@ version(unittest){
     import mach.range.enumerate : enumerate;
 }
 unittest{
-    tests("Associate", {
+    tests("Associations", {
         auto inputa = [0, 0, 1, 1, 2, 2];
         auto inputb = [0, 1, 2, 3, 4, 5];
-        tests("Singular", {
+        tests("Distribution", {
             testeq(
-                associate!false(inputa, inputb),
+                inputa.distribution,
+                cast(const(int[const(int)])) [0:2, 1:2, 2:2]
+            );
+        });
+        tests("Association", {
+            testeq(
+                associate(inputa, inputb),
                 cast(const int[const int]) [0:0, 1:2, 2:4]
             );
             testeq("Enumerate",
-                [10, 11, 12].enumerate.associate!false,
+                [10, 11, 12].enumerate.associate,
                 cast(const int[uint]) [0:10, 1:11, 2:12]
             );
         });
-        tests("Plural", {
+        tests("Group", {
             testeq(
-                associate!true(inputa, inputb),
+                group(inputa, inputb),
                 cast(const int[][const int]) [0:[0,1], 1:[2,3], 2:[4,5]]
             );
         });
