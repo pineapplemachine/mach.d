@@ -5,7 +5,7 @@ private:
 import mach.traits : isRandomAccessRange, isSlicingRange, ElementType;
 import mach.range.asrange : asrange;
 import mach.range.meta : MetaRangeMixin;
-import mach.range.map.templates : canMap, canMapRange;
+import mach.range.map.templates : canMap, canMapRange, AdjoinTransformations;
 
 public:
 
@@ -13,9 +13,12 @@ public:
 
 /// Returns a range whose elements are those of the given iterable transformed
 /// by some function.
-auto mapsingular(alias transform, Iter)(Iter iter) if(canMap!(transform, Iter)){
-    auto range = iter.asrange;
-    return MapSingularRange!(transform, typeof(range))(range);
+template mapsingular(transformations...) if(transformations.length){
+    alias transform = AdjoinTransformations!transformations;
+    auto mapsingular(Iter)(Iter iter) if(canMap!(transform, Iter)){
+        auto range = iter.asrange;
+        return MapSingularRange!(transform, typeof(range))(range);
+    }
 }
 
 
@@ -58,13 +61,26 @@ version(unittest){
 unittest{
     tests("Map", {
         alias square = (n) => (n * n);
-        int[] ones = [1, 1, 1, 1];
-        int[] empty = new int[0];
-        test([1, 2, 3, 4].mapsingular!square.equals([1, 4, 9, 16]));
-        test(ones.mapsingular!square.equals(ones));
-        test("Empty input", empty.mapsingular!square.equals(empty));
-        testeq("Length", [1, 2, 3].mapsingular!square.length, 3);
-        testeq("Random access", [2, 3].mapsingular!square[1], 9);
-        test("Slicing", [1, 2, 3, 4].mapsingular!square[1 .. $-1].equals([4, 9]));
+        alias cube = (n) => (n * n * n);
+        tests("Single function", {
+            int[] ones = [1, 1, 1, 1];
+            int[] empty = new int[0];
+            test([1, 2, 3, 4].mapsingular!square.equals([1, 4, 9, 16]));
+            test(ones.mapsingular!square.equals(ones));
+            test("Empty input", empty.mapsingular!square.equals(empty));
+            testeq("Length", [1, 2, 3].mapsingular!square.length, 3);
+            testeq("Random access", [2, 3].mapsingular!square[1], 9);
+            test("Slicing", [1, 2, 3, 4].mapsingular!square[1 .. $-1].equals([4, 9]));
+        });
+        tests("Multiple functions", {
+            auto input = [1, 2, 3];
+            auto range = input.mapsingular!(square, cube);
+            testeq(range[0][0], 1);
+            testeq(range[0][1], 1);
+            testeq(range[1][0], 4);
+            testeq(range[1][1], 8);
+            testeq(range[2][0], 9);
+            testeq(range[2][1], 27);
+        });
     });
 }

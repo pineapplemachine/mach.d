@@ -7,14 +7,17 @@ import mach.traits : hasFalseEmptyEnum, hasNumericLength, getSmallestLength;
 import mach.traits : isBidirectionalRange, isRandomAccessRange, isSlicingRange;
 import mach.range.meta : MetaMultiRangeEmptyMixin, MetaMultiRangeSaveMixin;
 import mach.range.meta : MetaMultiRangeWrapperMixin;
-import mach.range.map.templates : canMap, canMapRanges;
+import mach.range.map.templates : canMap, canMapRanges, AdjoinTransformations;
 
 public:
 
 
 
-auto mapplural(alias transform, Iters...)(Iters iters) if(canMap!(transform, Iters)){
-    mixin(MetaMultiRangeWrapperMixin!(`MapPluralRange`, `transform`, ``, Iters));
+template mapplural(transformations...) if(transformations.length){
+    alias transform = AdjoinTransformations!transformations;
+    auto mapplural(Iters...)(Iters iters) if(canMap!(transform, Iters)){
+        mixin(MetaMultiRangeWrapperMixin!(`MapPluralRange`, `transform`, ``, Iters));
+    }
 }
 
 
@@ -96,6 +99,7 @@ unittest{
     tests("Merge", {
         alias sumtwo = (a, b) => (a + b);
         alias sumthree = (a, b, c) => (a + b + c);
+        alias product = (a, b) => (a * b);
         auto inputa = [0, 0, 1, 1];
         auto inputb = [1, 2, 3, 4];
         auto inputc = [1, 2, 2, 3];
@@ -124,6 +128,13 @@ unittest{
             auto range = mapplural!sumtwo(inputa, inputb);
             test(range[0 .. 2].equals([1, 2]));
             test(range[2 .. $].equals([4, 5]));
+        });
+        tests("Multiple functions", {
+            auto range = mapplural!(sumtwo, product)(inputa, inputb);
+            foreach(i; 0 .. inputa.length){
+                testeq(range[i][0], sumtwo(inputa[i], inputb[i]));
+                testeq(range[i][1], product(inputa[i], inputb[i]));
+            }
         });
     });
 }

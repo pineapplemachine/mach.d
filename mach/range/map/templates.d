@@ -30,6 +30,17 @@ enum canMapRange(alias transform, Range) = (
     canMapRanges!(transform, Range)
 );
 
+template AdjoinTransformations(transformations...){
+    static if(transformations.length == 0){
+        alias AdjoinTransformations = (e) => (e);
+    }else static if(transformations.length == 1){
+        alias AdjoinTransformations = transformations[0];
+    }else{
+        import std.functional : adjoin;
+        alias AdjoinTransformations = adjoin!transformations;
+    }
+}
+
 
 
 unittest{

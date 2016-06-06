@@ -4,17 +4,20 @@ private:
 
 import mach.range.map.plural : mapplural;
 import mach.range.map.singular : mapsingular;
-import mach.range.map.templates : canMap;
+import mach.range.map.templates : canMap, AdjoinTransformations;
 
 public:
 
 
 
-auto map(alias transform, Iters...)(Iters iters) if(canMap!(transform, Iters)){
-    static if(Iters.length == 1){
-        return mapsingular!transform(iters[0]);
-    }else{
-        return mapplural!transform(iters);
+template map(transformations...) if(transformations.length){
+    alias transform = AdjoinTransformations!transformations;
+    auto map(Iters...)(Iters iters) if(canMap!(transform, Iters)){
+        static if(Iters.length == 1){
+            return mapsingular!transform(iters[0]);
+        }else{
+            return mapplural!transform(iters);
+        }
     }
 }
 
