@@ -45,12 +45,14 @@ struct TapRange(alias func, Range) if(canTapRange!Range){
         this.source.popFront();
     }
     
-    @property auto ref back(){
-        return this.source.back;
-    }
-    void popBack(){
-        func(this.source.back);
-        this.source.popBack();
+    static if(isBidirectionalRange!Range){
+        @property auto ref back(){
+            return this.source.back;
+        }
+        void popBack(){
+            func(this.source.back);
+            this.source.popBack();
+        }
     }
     
     static if(isSlicingRange!Range){
