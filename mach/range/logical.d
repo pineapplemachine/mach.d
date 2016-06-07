@@ -163,9 +163,15 @@ auto last(alias pred, Iter)(Iter iter) if(canFindLast!Iter){
 
 
 
-auto count(
-    alias pred = DefaultLogicalPredicate, Count = size_t, Iter
-)(Iter iter) if(canCount!(Iter, Count)){
+auto count(Count = size_t, Iter, Element)(Iter iter, Element element) if(
+    canCount!(Iter, Count)
+){
+    return count!(e => e == element)(iter);
+}
+
+auto count(alias pred = DefaultLogicalPredicate, Count = size_t, Iter)(Iter iter) if(
+    canCount!(Iter, Count)
+){
     Count count = Count.init;
     foreach(item; iter){
         if(pred(item)) count++;
@@ -173,9 +179,15 @@ auto count(
     return count;
 }
 
-bool exactly(
-    alias pred = DefaultLogicalPredicate, Count, Iter
-)(Iter iter, Count target) if(canExactly!(Iter, Count)){
+auto exactly(Count = size_t, Iter, Element)(Iter iter, Element element, Count target) if(
+    canExactly!(Iter, Count)
+){
+    return count!(e => e == element)(iter, target);
+}
+
+bool exactly(alias pred = DefaultLogicalPredicate, Count, Iter)(Iter iter, Count target) if(
+    canExactly!(Iter, Count)
+){
     auto count = Unqual!Count.init;
     foreach(item; iter){
         if(pred(item)){
