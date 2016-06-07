@@ -37,9 +37,9 @@ template validReduceFunction(Iter, Acc, alias func){
     enum bool validReduceFunction = is(typeof((inout int = 0){
         alias Element = ElementType!Iter;
         auto element = Element.init;
-        auto first = func(Acc.init, element);
-        auto second = func(first, element);
-        auto third = func(second, element);
+        Acc first = func(Acc.init, element);
+        Acc second = func(first, element);
+        Acc third = func(second, element);
     }));
 }
 
