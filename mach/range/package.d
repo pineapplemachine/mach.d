@@ -23,6 +23,7 @@ import mach.range.interpolate : interpolate, lerp, coslerp;
 import mach.range.logical : any, all, none, first, last, count, exactly, more, less, atleast, atmost;
 import mach.range.map : map;
 import mach.range.mutate : mutate;
+import mach.range.ngrams : ngrams;
 import mach.range.pad : pad, padleft, padright, padleftcount, padrightcount;
 import mach.range.pluck : pluck;
 import mach.range.random : lcong, mersenne, xorshift;
