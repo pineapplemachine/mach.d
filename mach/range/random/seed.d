@@ -5,7 +5,7 @@ private:
 import core.stdc.stdlib : malloc, free;
 import core.thread : MonoTime, Thread, getpid;
 import std.algorithm : max;
-import std.traits : isIntegral;
+import std.traits : isIntegral, Unqual;
 import mach.range.chunk : divide;
 import mach.range.reduce : reduce;
 import mach.range.map : map;
@@ -15,38 +15,40 @@ public:
 
 
 /// Not guaranteed to be cryptographically secure.
-auto seeds(T, size_t count)() if(isIntegral!T && count > 0){
-    static T counter = 4;
+auto seeds(T, size_t count)(T[] entropy...) @trusted nothrow if(
+    isIntegral!T && count > 0
+){
+    static Unqual!T counter = 4;
     auto mem = malloc(size_t.sizeof); free(mem);
     // The more values are in this array, the better this function's entropy.
-    auto entropy = [
-        cast(const T) MonoTime.currTime.ticks,
-        cast(const T) cast(void*) Thread.getThis(),
-        cast(const T) getpid(),
-        cast(const T) mem,
-        cast(const T) counter,
+    auto seedentropy = entropy ~ [
+        cast(T) MonoTime.currTime.ticks,
+        cast(T) cast(void*) Thread.getThis(),
+        cast(T) getpid(),
+        cast(T) mem,
+        cast(T) counter,
     ];
     T[count] output;
-    foreach(i; 0 .. max(count, entropy.length)){
-        auto e = entropy[i % entropy.length];
+    foreach(i; 0 .. max(count, seedentropy.length)){
+        auto e = seedentropy[i % seedentropy.length];
         output[i % count] ^= e;
         counter *= e; counter ^= e;
     }
     return output;
 }
 
-auto seeds(size_t count)() if(count > 0){
-    return seeds!(ulong, count);
+auto seeds(size_t count, T = ulong)(T[] entropy...) @trusted nothrow if(count > 0){
+    return seeds!(T, count);
 }
 
-auto seed(T)() if(isIntegral!T){
+auto seed(T)(T[] entropy...) @trusted nothrow if(isIntegral!T){
     return seeds!(T, 1)[0];
 }
 
 
 
 /// Generate a seed where performance is more important than entropy.
-auto cheapseed(){
+auto cheapseed() @trusted nothrow{
     return MonoTime.currTime.ticks ^ getpid();
 }
 
