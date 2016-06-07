@@ -114,7 +114,7 @@ unittest{
             );
             testeq("Enumerate",
                 [10, 11, 12].enumerate.associate,
-                cast(const int[uint]) [0:10, 1:11, 2:12]
+                cast(const int[size_t]) [0:10, 1:11, 2:12]
             );
         });
         tests("Group", {
