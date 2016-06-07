@@ -36,3 +36,39 @@ import mach.range.stride : stride;
 import mach.range.tap : tap;
 import mach.range.walk : walk;
 import mach.range.zip : zip;
+
+
+
+version(unittest){
+    private:
+    import std.stdio;
+    import mach.error.unit;
+    import mach.traits;
+}
+unittest{
+    tests("Combinations of functions", {
+        tests("Things", {
+            auto input = "hello world";
+            auto rev = input.reversed;
+            test(rev.equals("dlrow olleh"));
+            auto padded = rev.padleftcount('_', 2);
+            test(padded.equals("__dlrow olleh"));
+            auto distro = padded.distribution;
+            testeq(distro['h'], 1);
+            testeq(distro['l'], 3);
+            testeq(distro['o'], 2);
+            testeq(distro['_'], 2);
+            foreach(key, value; distro) testeq(padded.count(key), value);
+        });
+        tests("Stuff", {
+            real counter = 0;
+            real summed = lerp(0, 1, 32).tap!((e){counter += e;}).sum;
+            testeq(counter, 16.0);
+            testeq(counter, summed);
+        });
+    });
+}
+
+
+
+
