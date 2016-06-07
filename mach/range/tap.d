@@ -25,13 +25,7 @@ auto tap(alias func, Iter)(Iter iter) if(canTap!Iter){
 
 struct TapRange(alias func, Range) if(canTapRange!Range){
     mixin MetaRangeMixin!(
-        Range, `source`, `Empty Length Dollar Save Back`,
-        `
-            return this.source.front;
-        `, `
-            func(front);
-            this.source.popFront();
-        `
+        Range, `source`, `Empty Length Dollar Save`,
     );
     
     Range source;
@@ -41,6 +35,22 @@ struct TapRange(alias func, Range) if(canTapRange!Range){
     }
     this(Range source){
         this.source = source;
+    }
+    
+    @property auto ref front(){
+        return this.source.front;
+    }
+    void popFront(){
+        func(this.source.front);
+        this.source.popFront();
+    }
+    
+    @property auto ref back(){
+        return this.source.back;
+    }
+    void popBack(){
+        func(this.source.back);
+        this.source.popBack();
     }
     
     static if(isSlicingRange!Range){
