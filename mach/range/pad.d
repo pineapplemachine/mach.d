@@ -2,6 +2,7 @@ module mach.range.pad;
 
 private:
 
+import std.conv : to;
 import std.traits : isIntegral, isImplicitlyConvertible;
 import mach.traits : isBidirectionalRange, isRandomAccessRange, isSlicingRange;
 import mach.traits : isRange, ElementType, hasNumericLength;
@@ -263,7 +264,7 @@ struct PadRange(Range, Count = size_t) if(canPadRange!(Range, Count)){
                 return typeof(this)(
                     this.source[sourcelow .. sourcehigh],
                     this.frontpadding, this.backpadding,
-                    slicepadfront, slicepadback
+                    to!Count(slicepadfront), to!Count(slicepadback)
                 );
             }
         }

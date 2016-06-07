@@ -2,6 +2,7 @@ module mach.range.chunk;
 
 private:
 
+import std.conv : to;
 import std.traits : isIntegral;
 import mach.math.round : ceil;
 import mach.traits : hasNumericLength, isSlicingRange;
@@ -99,21 +100,25 @@ struct ChunkRange(Range, Count = DefaultChunkCount) if(
         this.backindex--;
     }
     
-    auto ref opIndex(in Count index){
+    auto ref opIndex(in size_t index){
         auto low = index * this.size;
         auto high = low + this.size;
-        if(high > this.source.length) high = this.source.length;
+        if(high > this.source.length) high = to!Count(this.source.length);
         return this.source[low .. high];
     }
     
-    typeof(this) opSlice(in Count low, in Count high) in{
+    typeof(this) opSlice(in size_t low, in size_t high) in{
         assert(low >= 0 && high >= low && high <= this.length);
     }body{
         if(this.source.length){
-            Count slicelow = low * this.size;
-            Count slicehigh = high * this.size;
-            if(slicelow > this.source.length - 1) slicelow = this.source.length - 1;
-            if(slicehigh > this.source.length) slicehigh = this.source.length;
+            size_t slicelow = low * this.size;
+            size_t slicehigh = high * this.size;
+            if(slicelow > this.source.length - 1){
+                slicelow = to!size_t(this.source.length - 1);
+            }
+            if(slicehigh > this.source.length){
+                slicehigh = to!size_t(this.source.length);
+            }
             return typeof(this)(this.source[slicelow .. slicehigh], this.size);
         }else{
             return typeof(this)(this.source[0 .. $], this.size);
