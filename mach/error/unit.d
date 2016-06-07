@@ -242,8 +242,8 @@ alias testeq = testequal;
 alias testneq = testnotequal;
 alias testgt = testgreater;
 alias testlt = testlesser;
-alias testgteq = testgreatereq;
-alias testlteq = testlessereq;
+alias testgte = testgreatereq;
+alias testlte = testlessereq;
 alias fail = testfail;
 
 

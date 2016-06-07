@@ -25,6 +25,7 @@ import mach.range.map : map;
 import mach.range.mutate : mutate;
 import mach.range.pad : pad, padleft, padright, padleftcount, padrightcount;
 import mach.range.pluck : pluck;
+import mach.range.random : lcong, mersenne, xorshift;
 import mach.range.recur : recur;
 import mach.range.reduce : reduce, reduceeager, reducelazy;
 import mach.range.reduction : sum, product;
@@ -47,7 +48,7 @@ version(unittest){
 }
 unittest{
     tests("Combinations of functions", {
-        tests("Things", {
+        tests("Reversed, Pad, Distribution, Count", {
             auto input = "hello world";
             auto rev = input.reversed;
             test(rev.equals("dlrow olleh"));
@@ -60,7 +61,7 @@ unittest{
             testeq(distro['_'], 2);
             foreach(key, value; distro) testeq(padded.count(key), value);
         });
-        tests("Stuff", {
+        tests("Lerp, Tap, Sum", {
             real counter = 0;
             real summed = lerp(0, 1, 32).tap!((e){counter += e;}).sum;
             testeq(counter, 16.0);
