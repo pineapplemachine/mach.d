@@ -33,7 +33,8 @@ auto xorshift(T = ulong)(T[4] seeds) if(canXorshift!T){
 
 
 struct XorshiftRange(T) if(canXorshift!T){
-    static enum ubyte seeds = 4;
+    static enum bool rng = true;
+    static enum size_t seeds = 4;
     
     // Funky algorithm for selecting shifting primes based on the recommendation
     // of using [13, 7, 17] for 64-bit integers.

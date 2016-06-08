@@ -39,7 +39,8 @@ auto lcong(T = ulong)(T[3] seeds) if(canLinearCongruential!T){
 
 
 struct LinearCongruentialRange(T) if(canLinearCongruential!T){
-    static enum ubyte seeds = 1;
+    static enum bool rng = true;
+    static enum size_t seeds = 1;
     
     T front, a, c; // m = T.sizeof * 8;
     

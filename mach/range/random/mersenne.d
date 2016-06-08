@@ -34,7 +34,8 @@ auto mersenne(T = ulong)(T seed) if(canMersenne!T){
 
 
 struct MersenneRange(T) if(canMersenne!T){
-    static enum ubyte seeds = 1;
+    static enum bool rng = true;
+    static enum size_t seeds = 1;
     
     static if(T.sizeof == 4){
         static enum Constant : T{
