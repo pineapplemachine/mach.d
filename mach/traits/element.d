@@ -7,7 +7,7 @@ import std.traits : isArray, isDelegate, isSomeFunction, fullyQualifiedName;
 import std.traits : Parameters, ReturnType;
 import mach.traits.common : hasCommonType, CommonType;
 import mach.traits.hash : canHash;
-import mach.traits.iter : isRange;
+import mach.traits.iter : isRange, isIterable;
 import mach.traits.mutability : isMutable;
 import mach.traits.op : hasOpApply, hasOpApplyReverse;
 import mach.traits.transform : isTransformation, isPredicate;
@@ -77,6 +77,16 @@ template CommonElementType(Iters...) if(hasCommonElementType!Iters){
 
 
 
+template isIterableOf(Iter, T){
+    static if(isIterable!Iter){
+        enum bool isIterableOf = is(ElementType!Iter == T);
+    }else{
+        enum bool isIterableOf = false;
+    }
+}
+
+
+
 enum canHashElement(Iter) = canHash!(ElementType!Iter);
 
 enum hasMutableElement(Iter) = isMutable!(ElementType!Iter);
@@ -124,6 +134,12 @@ unittest{
     static assert(is(ElementType!ApplyElementTest == string));
     // OpApplyReverse
     static assert(is(ElementType!ApplyReverseElementTest == string));
+}
+unittest{
+    // isIterableOf
+    static assert(isIterableOf!(int[], int));
+    static assert(isIterableOf!(string, immutable char));
+    static assert(!isIterableOf!(int, int));
 }
 unittest{
     // hasCommonElementType

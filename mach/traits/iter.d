@@ -6,6 +6,7 @@ import std.traits : isArray, ReturnType, isImplicitlyConvertible;
 import std.math : isInfinity, isNaN;
 import mach.traits.element : ElementType;
 import mach.traits.index : canIndex;
+import mach.traits.property : hasEnumType;
 
 public:
 
@@ -110,7 +111,7 @@ template isMutableRandomRange(Range){
 
 
 
-enum hasEmptyEnum(T) = __traits(compiles, {enum empty = T.empty;});
+enum hasEmptyEnum(T) = hasEnumType!(T, bool, `empty`);
 
 template hasEmptyEnum(T, bool value){
     static if(hasEmptyEnum!T){
@@ -161,6 +162,23 @@ enum isInfiniteRange(Range) = isRange!Range && isInfinite!Range;
 
 
 
+version(unittest){
+    private:
+    struct EmptyEnumTrue{
+        enum bool empty = true;
+    }
+    struct EmptyEnumFalse{
+        enum bool empty = false;
+    }
+    struct EmptyEnumInt{
+        enum int empty = 13;
+    }
+}
 unittest{
-    // TODO
+    // TODO: More tests
+    static assert(hasEmptyEnum!EmptyEnumTrue);
+    static assert(hasEmptyEnum!EmptyEnumFalse);
+    static assert(!hasEmptyEnum!EmptyEnumInt);
+    static assert(hasEmptyEnum!(EmptyEnumTrue, true));
+    static assert(hasEmptyEnum!(EmptyEnumFalse, false));
 }

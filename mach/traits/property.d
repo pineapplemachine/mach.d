@@ -39,9 +39,34 @@ template PropertyType(T, string property) if(hasProperty!(T, property)){
 
 
 
+template hasEnum(T, string name){
+    mixin(`
+        enum bool hasEnum = __traits(compiles, {enum value = T.` ~ name ~ `;});
+    `);
+}
+
+template hasEnumType(T, EType, string name){
+    mixin(`
+        enum bool hasEnumType = __traits(compiles, {enum EType value = T.` ~ name ~ `;});
+    `);
+}
+
+template hasEnumValue(T, string name, alias value){
+    static if(hasEnum!(T, name)){
+        mixin(`
+            enum bool hasEnumValue = T.` ~ name ~ ` == value;
+        `);
+    }else{
+        enum bool hasEnumValue = false;
+    }
+}
+
+
+
 version(unittest){
     private:
     struct TestField{
+        enum bool enumvalue = true;
         int x;
         const int y;
         string str;
@@ -79,4 +104,16 @@ unittest{
     static assert(is(PropertyType!(TestField, `z`) == int));
     static assert(is(PropertyType!(TestField, `str`) == string));
     static assert(!is(PropertyType!(TestField, `notaproperty`)));
+    // hasEnum
+    static assert(hasEnum!(TestField, `enumvalue`));
+    static assert(!hasEnum!(TestField, `x`));
+    static assert(!hasEnum!(TestField, `notaproperty`));
+    // hasEnumType
+    static assert(hasEnumType!(TestField, bool, `enumvalue`));
+    static assert(!hasEnumType!(TestField, string, `enumvalue`));
+    // hasEnumValue
+    static assert(hasEnumValue!(TestField, `enumvalue`, true));
+    static assert(!hasEnumValue!(TestField, `enumvalue`, false));
+    static assert(!hasEnumValue!(TestField, `x`, true));
+    static assert(!hasEnumValue!(TestField, `notaproperty`, true));
 }

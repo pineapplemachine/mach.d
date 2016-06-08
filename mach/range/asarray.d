@@ -3,7 +3,7 @@ module mach.range.asarray;
 private:
 
 import mach.traits : isArrayOf, isIterable, isFiniteIterable, ElementType;
-import mach.traits : hasLength, LengthType, canCast;
+import mach.traits : hasNumericLength, LengthType, canCast;
 
 public:
 
@@ -19,7 +19,7 @@ enum canMakeArrayOf(Iter, Element) = (
 enum canMakeKnownLengthArray(Iter) = (
     canMakeArray!Iter &&
     isFiniteIterable!Iter &&
-    hasLength!Iter &&
+    hasNumericLength!Iter &&
     canCast!(LengthType!Iter, size_t)
 );
 

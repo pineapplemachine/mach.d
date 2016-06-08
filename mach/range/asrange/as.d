@@ -2,7 +2,7 @@ module mach.range.asrange.as;
 
 private:
 
-import mach.traits : isRange, isSavingRange, isRandomAccessRange;
+import mach.traits : hasProperty, isRange, isSavingRange, isRandomAccessRange;
 import mach.traits : isBidirectionalRange, isSlicingRange, isMutable;
 import mach.traits : isMutableFrontRange, isMutableBackRange, isMutableRandomRange;
 import mach.range.asrange.aarange;
@@ -22,7 +22,7 @@ enum canMakeRange(Base) = (
 
 /// Determine if a range can be created from a type, or if it already is a range.
 enum validAsRange(T) = (
-    isRange!T || canMakeRange!T
+    isRange!T || canMakeRange!T || hasProperty!(T, `asrange`)
 );
 
 template validAsRange(alias isType, T){
@@ -58,25 +58,28 @@ template MakeRangeType(T) if(canMakeRange!T){
 template AsRangeType(T) if(validAsRange!T){
     static if(isRange!T){
         alias AsRangeType = T;
-    }else{
+    }else static if(canMakeRange!T){
         alias AsRangeType = MakeRangeType!T;
+    }else static if(hasProperty!(T, `asrange`)){
+        alias AsRangeType = typeof(T.init.asrange());
     }
 }
 
 
 
 /// Get a range for iterating over some object.
-auto asrange(Base)(Base basis) if(validAsRange!Base){
-    static if(isRange!Base){
-        return basis;
-    }else{
-        return makerange(basis);
-    }
+auto asrange(T)(ref T range) if(isRange!T){
+    return range;
+}
+
+/// ditto
+auto asrange(T)(ref T basis) if(canMakeRange!T && !isRange!T){
+    return makerange(basis);
 }
 
 /// Create a range for iterating over some object.
-auto makerange(Base)(Base basis) if(canMakeRange!Base){
-    return MakeRangeType!Base(basis);
+auto makerange(T)(ref T basis) if(canMakeRange!T){
+    return MakeRangeType!T(basis);
 }
 
 
