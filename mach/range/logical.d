@@ -182,7 +182,7 @@ auto count(alias pred = DefaultLogicalPredicate, Count = size_t, Iter)(Iter iter
 auto exactly(Count = size_t, Iter, Element)(Iter iter, Element element, Count target) if(
     canExactly!(Iter, Count)
 ){
-    return count!(e => e == element)(iter, target);
+    return exactly!(e => e == element)(iter, target);
 }
 
 bool exactly(alias pred = DefaultLogicalPredicate, Count, Iter)(Iter iter, Count target) if(
