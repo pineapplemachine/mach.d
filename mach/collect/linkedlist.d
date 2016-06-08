@@ -48,14 +48,14 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
     /// expensive require that it be done explicitly.
     this(this) @disable;
     
-    void setnodes(Node* node){
+    void setnodes(Node* node) pure nothrow @safe @nogc{
         node.prev = node;
         node.next = node;
         this.frontnode = node;
         this.backnode = node;
         this.length = 1;
     }
-    void setnodes(Nodes nodes){
+    void setnodes(Nodes nodes) pure nothrow @safe @nogc{
         this.frontnode = nodes.front;
         this.backnode = nodes.back;
         nodes.front.prev = this.backnode;
@@ -64,24 +64,32 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
     }
     
     /// True when the list contains no elements.
-    @property bool empty() const{
+    @property bool empty() const pure nothrow @safe @nogc{
         return this.frontnode is null;
     }
     
     /// Get the frontmost value in the list.
-    @property auto ref front() const in{assert(!this.empty);} body{
+    @property auto ref front() const pure nothrow @safe @nogc in{
+        assert(!this.empty);
+    } body{
         return this.frontnode.value;
     }
     /// Set the frontmost value in the list.
-    @property void front(ref T value) in{assert(!this.empty);} body{
+    @property void front(ref T value) pure nothrow @safe @nogc in{
+        assert(!this.empty);
+    } body{
         this.frontnode.value = value;
     }
     /// Get the backmost value in the list.
-    @property auto ref back() const in{assert(!this.empty);} body{
+    @property auto ref back() const pure nothrow @safe @nogc in{
+        assert(!this.empty);
+    } body{
         return this.backnode.value;
     }
     /// Set the frontmost value in the list.
-    @property void back(ref T value) in{assert(!this.empty);} body{
+    @property void back(ref T value) pure nothrow @safe @nogc in{
+        assert(!this.empty);
+    } body{
         this.backnode.value = value;
     }
     
@@ -160,50 +168,56 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
         return nodes;
     }
     
-    void append(N)(N nodes) if(isNodes!N){
+    void append(N)(N nodes) pure nothrow @safe @nogc if(isNodes!N){
         if(this.empty) this.setnodes(nodes);
         else this.insertafternode(this.backnode, nodes);
     }
-    void prepend(N)(N nodes) if(isNodes!N){
+    void prepend(N)(N nodes) pure nothrow @safe @nogc if(isNodes!N){
         if(this.empty) this.setnodes(nodes);
         else this.insertbeforenode(this.frontnode, nodes);
     }
     
-    void insertbefore(N)(size_t index, N nodes) if(isNodes!N) in{
+    void insertbefore(N)(size_t index, N nodes) pure nothrow @safe @nogc if(isNodes!N) in{
         assert(index >= 0 && index < this.length);
     }body{
         if(this.empty) this.setnodes(nodes);
         else this.insertbeforenode(this.nodeat(index), nodes);
     }
-    void insertafter(N)(size_t index, N nodes) if(isNodes!N) in{
+    void insertafter(N)(size_t index, N nodes) pure nothrow @safe @nogc if(isNodes!N) in{
         assert(index >= 0 && index < this.length);
     }body{
         if(this.empty) this.setnodes(nodes);
         else this.insertafternode(this.nodeat(index), nodes);
     }
     
-    void insertbeforenode(Node* before, Node* node){
+    void insertbeforenode(Node* before, Node* node) pure nothrow @safe @nogc{
         this.insertbeforenode(before, node, node, 1);
     }
-    void insertafternode(Node* after, Node* node){
+    void insertafternode(Node* after, Node* node) pure nothrow @safe @nogc{
         this.insertafternode(after, node, node, 1);
     }
     
-    void insertbeforenode(Iter)(Node* before, Iter values) if(isIterableOf!(Iter, T)){
+    void insertbeforenode(Iter)(Node* before, Iter values) pure nothrow @safe @nogc if(
+        isIterableOf!(Iter, T)
+    ){
         this.insertbeforenode(before, Node.many(values));
     }
-    void insertafternode(Iter)(Node* after, Iter values) if(isIterableOf!(Iter, T)){
+    void insertafternode(Iter)(Node* after, Iter values) pure nothrow @safe @nogc if(
+        isIterableOf!(Iter, T)
+    ){
         this.insertafternode(after, Node.many(values));
     }
     
-    void insertbeforenode(Node* before, Nodes nodes){
+    void insertbeforenode(Node* before, Nodes nodes) pure nothrow @safe @nogc{
         this.insertbeforenode(before, nodes.front, nodes.back, nodes.length);
     }
-    void insertafternode(Node* after, Nodes nodes){
+    void insertafternode(Node* after, Nodes nodes) pure nothrow @safe @nogc{
         this.insertafternode(after, nodes.front, nodes.back, nodes.length);
     }
     
-    void insertbeforenode(Node* before, Node* front, Node* back, size_t length){
+    void insertbeforenode(
+        Node* before, Node* front, Node* back, size_t length
+    ) pure nothrow @safe @nogc{
         back.next = before;
         front.prev = before.prev;
         before.prev.next = front;
@@ -211,7 +225,9 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
         this.length += length;
         if(before is this.frontnode) this.frontnode = front;
     }
-    void insertafternode(Node* after, Node* front, Node* back, size_t length){
+    void insertafternode(
+        Node* after, Node* front, Node* back, size_t length
+    ) pure nothrow @safe @nogc{
         front.prev = after;
         back.next = after.next;
         after.next.prev = back;
@@ -251,11 +267,11 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
         return list;
     }
     
-    auto nodes(){
+    auto nodes() pure nothrow @safe @nogc{
         return Nodes(this.frontnode, this.backnode, this.length);
     }
     
-    auto nodeat(in size_t index) const in{
+    auto nodeat(in size_t index) const pure nothrow @trusted @nogc in{
         assert(index >= 0 && index < this.length);
     }body{
         if(index < this.length / 2){
@@ -276,13 +292,19 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
         assert(false);
     }
     
-    auto asrange(){
+    auto asrange() pure nothrow @safe @nogc{
         return LinkedListRange!(typeof(this))(&this);
     }
-    auto asarray(){
+    auto asarray() pure nothrow @safe{
         T[] array = new T[this.length];
-        size_t index = 0;
-        foreach(value; this) array[index++] = value;
+        if(!this.empty){
+            Node* current = cast(Node*) this.frontnode;
+            size_t index = 0;
+            do{
+                array[index++] = current.value;
+                current = current.next;
+            } while(current != this.frontnode);
+        }
         return array;
     }
     
@@ -313,7 +335,7 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
         return result;
     }
     
-    auto ref opIndex(in size_t index) const in{
+    auto ref opIndex(in size_t index) const pure nothrow @trusted @nogc in{
         assert(index >= 0 && index < this.length);
     }body{
         return this.nodeat(index).value;
