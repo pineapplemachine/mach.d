@@ -476,8 +476,6 @@ struct LinkedListRange(List){
     alias Element = ElementType!List;
     alias Node = List.Node;
     
-    enum bool mutable = true;
-    
     List* list;
     Node* frontnode;
     Node* backnode;
@@ -517,6 +515,8 @@ struct LinkedListRange(List){
     }
     
     static if(isMutable!List){
+        enum bool mutable = true;
+        
         auto removeFront(callbacks...)(){
             auto next = this.frontnode.next;
             this.list.remove!callbacks(this.frontnode);
