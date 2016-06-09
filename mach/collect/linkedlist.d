@@ -98,13 +98,13 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
         this.backnode.value = value;
     }
     
-    @property auto firstnode(in bool delegate(in Node* value) pred) const{
+    @property Node* firstnode(in bool delegate(in Node* value) pred) const{
         for(auto range = this.asrange!false; !range.empty; range.popFront()){
             if(pred(range.frontnode)) return range.frontnode;
         }
         return null;
     }
-    @property auto lastnode(in bool delegate(in Node* value) pred) const{
+    @property Node* lastnode(in bool delegate(in Node* value) pred) const{
         for(auto range = this.asrange!false; !range.empty; range.popBack()){
             if(pred(range.backnode)) return range.backnode;
         }
@@ -208,6 +208,12 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
             auto nodes = Node.many(values);
             action(atnode, nodes);
             return nodes;
+        }
+        
+        auto action(in bool delegate(in T value) pred, T value){
+            auto node = this.firstnode(node => pred(node.value));
+            if(node !is null) return action(node, value);
+            else return this.append(value);
         }
         
         void action(N)(size_t index, N nodes) pure nothrow @safe @nogc if(
@@ -569,6 +575,13 @@ unittest{
             testeq(slice[1], 2);
             testeq(slice[$-1], 3);
         });
+        tests("Iteration", {
+            void itertest(T)(auto ref T iter){
+                foreach(element; iter) testeq(element, list[element]);
+            }
+            foreach(element; list) testeq(element, list[element]);
+            itertest(list);
+        });
         tests("Appending", {
             auto copy = list.copy();
             copy.append(5);
@@ -595,6 +608,13 @@ unittest{
                 range.popFront();
             }
             test(range.empty);
+        });
+        tests("Maintaining order", {
+            auto sorted = LinkedList!int(0, 4);
+            foreach(value; [5, 1, 3, 2]){
+                sorted.insertbefore(e => e > value, value);
+            }
+            testeq(sorted.asarray, [0, 1, 2, 3, 4, 5]);
         });
         tests("Contains", {
             test(0 in list);
