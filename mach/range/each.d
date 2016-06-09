@@ -8,13 +8,13 @@ public:
 
 
 
-void each(alias func, Iter)(Iter iter) if(isFiniteIterable!Iter){
+void each(alias func, Iter)(auto ref Iter iter) if(isFiniteIterable!Iter){
     foreach(item; iter){
         func(item);
     }
 }
 
-void eachreverse(alias func, Iter)(Iter iter) if(isFiniteIterableReverse!Iter){
+void eachreverse(alias func, Iter)(auto ref Iter iter) if(isFiniteIterableReverse!Iter){
     foreach_reverse(item; iter){
         func(item);
     }

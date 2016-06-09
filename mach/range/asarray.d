@@ -2,6 +2,7 @@ module mach.range.asarray;
 
 private:
 
+import std.traits : Unqual;
 import mach.traits : isArrayOf, isIterable, isFiniteIterable, ElementType;
 import mach.traits : hasNumericLength, LengthType, canCast;
 
@@ -31,12 +32,12 @@ enum canMakeKnownLengthArrayOf(Iter, Element) = (
 
 
 /// Create an array of up to the first maxlength items from an iterable of unknown length.
-auto asarray(bool enforce = false, Iter)(Iter iter, size_t maxlength) if(canMakeArray!Iter){
+auto asarray(bool enforce = false, Iter)(auto ref Iter iter, size_t maxlength) if(canMakeArray!Iter){
     return asarray!(ElementType!Iter, enforce, Iter)(iter, maxlength);
 }
     
 // ditto
-auto asarray(Element, bool enforce = false, Iter)(Iter iter, size_t maxlength) if(canMakeArrayOf!(Iter, Element)){
+auto asarray(Element, bool enforce = false, Iter)(auto ref Iter iter, size_t maxlength) if(canMakeArrayOf!(Iter, Element)){
     Element[] array;
     foreach(item; iter){
         if(array.length >= maxlength){
@@ -49,12 +50,12 @@ auto asarray(Element, bool enforce = false, Iter)(Iter iter, size_t maxlength) i
 }
 
 /// Create an array from an arbitrary iterable of known length.
-auto asarray(Iter)(Iter iter) if(canMakeKnownLengthArray!Iter){
+auto asarray(Iter)(auto ref Iter iter) if(canMakeKnownLengthArray!Iter){
     return asarray!(ElementType!Iter, Iter)(iter);
 }
 
 /// ditto
-auto asarray(Element, Iter)(Iter iter) if(
+auto asarray(Element, Iter)(auto ref Iter iter) if(
     canMakeKnownLengthArrayOf!(Iter, Element) && !isArrayOf!(Iter, Element)
 ){
     return asknownlengtharray!(Element, Iter)(iter, cast(size_t) iter.length);
@@ -66,8 +67,8 @@ auto asarray(Element, Array)(Array array) if(isArrayOf!(Array, Element)){
 }
 
 /// Create array from an iterable where exact length is known at runtime.
-auto asknownlengtharray(Element, Iter)(Iter iter, size_t length) if(canMakeArrayOf!(Iter, Element)){
-    Element[] array = new Element[length];
+auto asknownlengtharray(Element, Iter)(auto ref Iter iter, size_t length) if(canMakeArrayOf!(Iter, Element)){
+    Unqual!Element[] array = new Unqual!Element[length];
     size_t index = 0;
     foreach(item; iter){
         assert(index < array.length, "Iterable is longer than assumed length.");
@@ -78,12 +79,12 @@ auto asknownlengtharray(Element, Iter)(Iter iter, size_t length) if(canMakeArray
 }
 
 /// Create array from an iterable where exact length is known at compile time.
-auto asarray(size_t length, Iter)(Iter iter) if(canMakeArray!(Iter)){
+auto asarray(size_t length, Iter)(auto ref Iter iter) if(canMakeArray!(Iter)){
     return asarray!(ElementType!Iter, length, Iter)(iter);
 }
 
 /// ditto
-auto asarray(Element, size_t length, Iter)(Iter iter) if(canMakeArrayOf!(Iter, Element)){
+auto asarray(Element, size_t length, Iter)(auto ref Iter iter) if(canMakeArrayOf!(Iter, Element)){
     Element[length] array;
     size_t index = 0;
     foreach(item; iter){
