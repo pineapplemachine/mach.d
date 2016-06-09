@@ -68,17 +68,17 @@ template AsRangeType(T) if(validAsRange!T){
 
 
 /// Get a range for iterating over some object.
-auto asrange(T)(ref T range) if(isRange!T){
+auto asrange(T)(auto ref T range) if(isRange!T){
     return range;
 }
 
 /// ditto
-auto asrange(T)(ref T basis) if(canMakeRange!T && !isRange!T){
+auto asrange(T)(auto ref T basis) if(canMakeRange!T && !isRange!T){
     return makerange(basis);
 }
 
 /// Create a range for iterating over some object.
-auto makerange(T)(ref T basis) if(canMakeRange!T){
+auto makerange(T)(auto ref T basis) if(canMakeRange!T){
     return MakeRangeType!T(basis);
 }
 
