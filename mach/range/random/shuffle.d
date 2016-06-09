@@ -30,20 +30,24 @@ template canShuffle(Iter, RNG){
 
 
 
+alias shuffle = shuffleeager;
+
+
+
 /// Eagerly constructs an array which contains the members of the source
 /// iterable in a random order.
 auto shuffleeager(Iter)(Iter iter) if(canShuffle!Iter){
-    static XorshiftRange!size_t random;
+    static XorshiftRange!size_t rng;
     static bool seeded = false;
     if(!seeded){
-        random.seed(seeds!(size_t, typeof(random).seeds));
+        rng.seed(seeds!(size_t, typeof(rng).seeds));
         seeded = true;
     }
-    return shuffleeager(iter, random);
+    return shuffleeager(iter, rng);
 }
 
 /// ditto
-auto shuffleeager(Iter, RNG)(Iter iter, RNG random) if(canShuffle!(Iter, RNG)){
+auto shuffleeager(Iter, RNG)(Iter iter, RNG rng) if(canShuffle!(Iter, RNG)){
     alias Element = Unqual!(ElementType!Iter);
     alias KnownLength = hasNumericLength!Iter;
     static if(KnownLength){
@@ -53,8 +57,8 @@ auto shuffleeager(Iter, RNG)(Iter iter, RNG random) if(canShuffle!(Iter, RNG)){
     }
     size_t i = 0;
     foreach(element; iter){
-        size_t j = random.front % (i + 1);
-        random.popFront();
+        size_t j = rng.random!size_t(i + 1);
+        rng.popFront();
         if(j == i){
             static if(KnownLength) array[i] = element;
             else array ~= element;
@@ -67,13 +71,6 @@ auto shuffleeager(Iter, RNG)(Iter iter, RNG random) if(canShuffle!(Iter, RNG)){
     }
     return array;
 }
-
-
-
-alias shuffle = shuffleeager;
-
-// TODO: shufflelazy
-
 
 
 

@@ -26,7 +26,7 @@ import mach.range.mutate : mutate;
 import mach.range.ngrams : ngrams;
 import mach.range.pad : pad, padleft, padright, padleftcount, padrightcount;
 import mach.range.pluck : pluck;
-import mach.range.random : lcong, mersenne, xorshift;
+import mach.range.random : lcong, mersenne, xorshift, shuffle;
 import mach.range.recur : recur;
 import mach.range.reduce : reduce, reduceeager, reducelazy;
 import mach.range.reduction : sum, product;
