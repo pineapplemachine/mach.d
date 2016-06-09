@@ -5,7 +5,8 @@ private:
 import std.typecons : Tuple;
 import std.experimental.allocator : make, dispose;
 import std.experimental.allocator.gc_allocator : GCAllocator;
-import mach.traits : isIterableOf, ElementType;
+import std.traits : isImplicitlyConvertible;
+import mach.traits : isMutable, isIterableOf, ElementType;
 
 template NodesTuple(T, Allocator){
     alias Node = LinkedListNode!(T, Allocator);
@@ -48,14 +49,18 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
     /// expensive require that it be done explicitly.
     this(this) @disable;
     
-    void setnodes(Node* node) pure nothrow @safe @nogc{
+    void setnodes(Node* node) pure nothrow @safe @nogc in{
+        assert(this.empty, "Unsafe to perform this operation upon a list that is not empty.");
+    }body{
         node.prev = node;
         node.next = node;
         this.frontnode = node;
         this.backnode = node;
         this.length = 1;
     }
-    void setnodes(Nodes nodes) pure nothrow @safe @nogc{
+    void setnodes(Nodes nodes) pure nothrow @safe @nogc in{
+        assert(this.empty, "Unsafe to perform this operation upon a list that is not empty.");
+    }body{
         this.frontnode = nodes.front;
         this.backnode = nodes.back;
         nodes.front.prev = this.backnode;
@@ -93,147 +98,175 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
         this.backnode.value = value;
     }
     
-    /// Add a single value to the end of the list.
-    auto append(T value){
-        auto node = Allocator.instance.make!Node(value);
-        this.append(node);
-        return node;
+    @property auto firstnode(in bool delegate(in Node* value) pred) const{
+        for(auto range = this.asrange!false; !range.empty; range.popFront()){
+            if(pred(range.frontnode)) return range.frontnode;
+        }
+        return null;
     }
-    /// Add many values to the end of the list.
-    auto append(T[] values...){
-        auto nodes = Node.many(values);
-        this.append(nodes);
-        return nodes;
-    }
-    /// ditto
-    auto append(Iter)(Iter values) if(isIterableOf!(Iter, T)){
-        auto nodes = Node.many(values);
-        this.append(nodes);
-        return nodes;
-    }
-    /// Add a single value to the beginning of the list.
-    auto prepend(T value){
-        auto node = Allocator.instance.make!Node(value);
-        this.prepend(node);
-        return node;
-    }
-    /// Add many values to the beginning of the list.
-    auto prepend(T[] values...){
-        auto nodes = Node.many(values);
-        this.prepend(nodes);
-        return nodes;
-    }
-    /// ditto
-    auto prepend(Iter)(Iter values) if(isIterableOf!(Iter, T)){
-        auto nodes = Node.many(values);
-        this.prepend(nodes);
-        return nodes;
+    @property auto lastnode(in bool delegate(in Node* value) pred) const{
+        for(auto range = this.asrange!false; !range.empty; range.popBack()){
+            if(pred(range.backnode)) return range.backnode;
+        }
+        return null;
     }
     
-    
-    /// Insert a single value at an arbitrary position in the list.
-    auto insertbefore(size_t index, T value){
-        auto node = Allocator.instance.make!Node(value);
-        this.insertbefore(index, node);
-        return node;
+    @property auto first(in bool delegate(in T value) pred, T fallback = T.init) const{
+        for(auto range = this.asrange!false; !range.empty; range.popFront()){
+            if(pred(range.front)) return range.front;
+        }
+        return fallback;
     }
-    /// Insert many values at an arbitrary position in the list.
-    auto insertbefore(size_t index, T[] values...){
-        auto nodes = Node.many(values);
-        this.insertbefore(index, nodes);
-        return nodes;
-    }
-    /// ditto
-    auto insertbefore(Iter)(size_t index, Iter values) if(isIterableOf!(Iter, T)){
-        auto nodes = Node.many(values);
-        this.insertbefore(index, nodes);
-        return nodes;
-    }
-    /// Insert a single value at an arbitrary position in the list.
-    auto insertafter(size_t index, T value){
-        auto node = Allocator.instance.make!Node(value);
-        this.insertafter(index, node);
-        return node;
-    }
-    /// Insert many values at an arbitrary position in the list.
-    auto insertafter(size_t index, T[] values...){
-        auto nodes = Node.many(values);
-        this.insertafter(index, nodes);
-        return nodes;
-    }
-    /// ditto
-    auto insertafter(Iter)(size_t index, Iter values) if(isIterableOf!(Iter, T)){
-        auto nodes = Node.many(values);
-        this.insertafter(index, nodes);
-        return nodes;
+    @property auto last(in bool delegate(in T value) pred, T fallback = T.init) const{
+        for(auto range = this.asrange!false; !range.empty; range.popBack()){
+            if(pred(range.back)) return range.back;
+        }
+        return fallback;
     }
     
-    void append(N)(N nodes) pure nothrow @safe @nogc if(isNodes!N){
-        if(this.empty) this.setnodes(nodes);
-        else this.insertafternode(this.backnode, nodes);
+    bool contains(Node* node){
+        return this.firstnode(n => n is node) !is null;
     }
-    void prepend(N)(N nodes) pure nothrow @safe @nogc if(isNodes!N){
-        if(this.empty) this.setnodes(nodes);
-        else this.insertbeforenode(this.frontnode, nodes);
+    bool contains(ref T value){
+        return this.firstnode(n => n.value == value) !is null;
     }
     
-    void insertbefore(N)(size_t index, N nodes) pure nothrow @safe @nogc if(isNodes!N) in{
-        assert(index >= 0 && index < this.length);
+    alias insertbefore = AddAtAction!true;
+    alias insertafter = AddAtAction!false;
+    alias prepend = AddAction!true;
+    alias append = AddAction!false;
+    
+    enum canAdd(X) = (
+        isImplicitlyConvertible!(X, T) ||
+        isIterableOf!(X, T) || isNodes!X
+    );
+    
+    /// Used to define append and prepend methods
+    private template AddAction(bool front){
+        auto action(ref T value){
+            auto node = Allocator.instance.make!Node(value);
+            action(node);
+            return node;
+        }
+        auto action(T[] values...){
+            auto nodes = Node.many(values);
+            action(nodes);
+            return nodes;
+        }
+        auto action(Iter)(ref Iter values) if(isIterableOf!(Iter, T)){
+            auto nodes = Node.many(values);
+            action(nodes);
+            return nodes;
+        }
+        
+        auto action(ref typeof(this) list){
+            auto range = list.asrange;
+            static assert(isIterableOf!(typeof(range), T));
+            return action!(typeof(range))(range);
+        }
+        void action(N)(ref N nodes) pure nothrow @safe @nogc if(isNodes!N){
+            if(this.empty){
+                this.setnodes(nodes);
+            }else{
+                static if(front) this.insertbefore(this.frontnode, nodes);
+                else this.insertafter(this.backnode, nodes);
+            }
+        }
+        
+        alias AddAction = action;
+    }
+    
+    /// Used to define insertbefore and insertafter methods
+    private template AddAtAction(bool before){
+        auto action(size_t index, T value){
+            auto node = Allocator.instance.make!Node(value);
+            action(index, node);
+            return node;
+        }
+        auto action(size_t index, T[] values...){
+            auto nodes = Node.many(values);
+            action(index, nodes);
+            return nodes;
+        }
+        auto action(Iter)(size_t index, Iter values) if(isIterableOf!(Iter, T)){
+            auto nodes = Node.many(values);
+            action(index, nodes);
+            return nodes;
+        }
+        
+        auto action(Node* atnode, T value){
+            auto node = Allocator.instance.make!Node(value);
+            action(atnode, node);
+            return node;
+        }
+        auto action(Node* atnode, T[] values...){
+            auto nodes = Node.many(values);
+            action(atnode, nodes);
+            return nodes;
+        }
+        auto action(Iter)(Node* atnode, Iter values) if(isIterableOf!(Iter, T)){
+            auto nodes = Node.many(values);
+            action(atnode, nodes);
+            return nodes;
+        }
+        
+        void action(N)(size_t index, N nodes) pure nothrow @safe @nogc if(
+            isNodes!N
+        ) in{
+            assert(index >= 0 && index < this.length);
+        }body{
+            if(this.empty) this.setnodes(nodes);
+            else action(this.nodeat(index), nodes);
+        }
+        
+        void action(Node* atnode, Node* node) pure nothrow @safe @nogc{
+            action(atnode, node, node, 1);
+        }
+        
+        void action(Iter)(Node* atnode, Iter values) pure nothrow @safe @nogc if(
+            isIterableOf!(Iter, T)
+        ){
+            action(atnode, Node.many(values));
+        }
+        
+        void action(Node* atnode, Nodes nodes) pure nothrow @safe @nogc{
+            action(atnode, nodes.front, nodes.back, nodes.length);
+        }
+        
+        void action(
+            Node* atnode, Node* front, Node* back, size_t length
+        ) pure nothrow @safe @nogc{
+            static if(before){
+                alias before = atnode;
+                back.next = before;
+                front.prev = before.prev;
+                before.prev.next = front;
+                before.prev = back;
+                this.length += length;
+                if(before is this.frontnode) this.frontnode = front;
+            }else{
+                alias after = atnode;
+                front.prev = after;
+                back.next = after.next;
+                after.next.prev = back;
+                after.next = front;
+                this.length += length;
+                if(after is this.backnode) this.backnode = back;
+            }
+        }
+        
+        alias AddAtAction = action;
+    }
+    
+    /// Remove some node from this list.
+    void remove(callbacks...)(Node* node) in{
+        assert(!this.empty);
     }body{
-        if(this.empty) this.setnodes(nodes);
-        else this.insertbeforenode(this.nodeat(index), nodes);
-    }
-    void insertafter(N)(size_t index, N nodes) pure nothrow @safe @nogc if(isNodes!N) in{
-        assert(index >= 0 && index < this.length);
-    }body{
-        if(this.empty) this.setnodes(nodes);
-        else this.insertafternode(this.nodeat(index), nodes);
-    }
-    
-    void insertbeforenode(Node* before, Node* node) pure nothrow @safe @nogc{
-        this.insertbeforenode(before, node, node, 1);
-    }
-    void insertafternode(Node* after, Node* node) pure nothrow @safe @nogc{
-        this.insertafternode(after, node, node, 1);
-    }
-    
-    void insertbeforenode(Iter)(Node* before, Iter values) pure nothrow @safe @nogc if(
-        isIterableOf!(Iter, T)
-    ){
-        this.insertbeforenode(before, Node.many(values));
-    }
-    void insertafternode(Iter)(Node* after, Iter values) pure nothrow @safe @nogc if(
-        isIterableOf!(Iter, T)
-    ){
-        this.insertafternode(after, Node.many(values));
-    }
-    
-    void insertbeforenode(Node* before, Nodes nodes) pure nothrow @safe @nogc{
-        this.insertbeforenode(before, nodes.front, nodes.back, nodes.length);
-    }
-    void insertafternode(Node* after, Nodes nodes) pure nothrow @safe @nogc{
-        this.insertafternode(after, nodes.front, nodes.back, nodes.length);
-    }
-    
-    void insertbeforenode(
-        Node* before, Node* front, Node* back, size_t length
-    ) pure nothrow @safe @nogc{
-        back.next = before;
-        front.prev = before.prev;
-        before.prev.next = front;
-        before.prev = back;
-        this.length += length;
-        if(before is this.frontnode) this.frontnode = front;
-    }
-    void insertafternode(
-        Node* after, Node* front, Node* back, size_t length
-    ) pure nothrow @safe @nogc{
-        front.prev = after;
-        back.next = after.next;
-        after.next.prev = back;
-        after.next = front;
-        this.length += length;
-        if(after is this.backnode) this.backnode = back;
+        node.prev.next = node.next;
+        node.next.prev = node.prev;
+        foreach(callback; callbacks) callback(node.value);
+        Allocator.instance.dispose(node);
+        this.length--;
     }
     
     /// Clear the list, optionally calling some callbacks on each element of the
@@ -257,13 +290,18 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
     typeof(this) copy(callbacks...)(){
         typeof(this) list;
         if(!this.empty){
-            Node* current = this.frontnode;
-            do{
-                foreach(callback; callbacks) callback(current.value);
-                list.append(current.value);
-                current = current.next;
-            } while(current != this.frontnode);
+            for(auto range = this.asrange; !range.empty; range.popFront()){
+                foreach(callback; callbacks) callback(range.front);
+                list.append(range.front);
+            }
         }
+        return list;
+    }
+    
+    /// Concatenate this list with some other value.
+    typeof(this) concat(Rhs, callbacks...)(ref Rhs rhs) if(canAdd!Rhs){
+        typeof(this) list = this.copy!callbacks();
+        list.append(rhs);
         return list;
     }
     
@@ -271,39 +309,44 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
         return Nodes(this.frontnode, this.backnode, this.length);
     }
     
+    /// Get the list node at some index.
     auto nodeat(in size_t index) const pure nothrow @trusted @nogc in{
         assert(index >= 0 && index < this.length);
     }body{
         if(index < this.length / 2){
-            Node* current = cast(Node*) this.frontnode;
-            size_t currentindex = 0;
-            do{
-                if(currentindex++ == index) return current;
-                current = current.next;
-            } while(current != this.frontnode);
+            size_t i = 0;
+            for(auto range = this.asrange!false; !range.empty; range.popFront()){
+                if(i++ == index) return range.frontnode;
+            }
         }else{
-            Node* current = cast(Node*) this.backnode;
-            size_t currentindex = this.length - 1;
-            do{
-                if(currentindex-- == index) return current;
-                current = current.prev;
-            } while(current != this.backnode);
+            size_t i = this.length - 1;
+            for(auto range = this.asrange!false; !range.empty; range.popBack()){
+                if(i-- == index) return range.backnode;
+            }
         }
         assert(false);
     }
     
-    auto asrange() pure nothrow @safe @nogc{
+    /// Get a range for iterating over this list whose contents can be mutated.
+    auto asrange()() pure nothrow @safe @nogc{
+        return this.asrange!true;
+    }
+    /// ditto
+    auto asrange(bool mutable)() pure nothrow @safe @nogc if(mutable){
         return LinkedListRange!(typeof(this))(&this);
     }
-    auto asarray() pure nothrow @safe{
+    /// Get a range for iterating over this list which may not itself alter the list.
+    auto asrange(bool mutable)() pure nothrow @safe @nogc const if(!mutable){
+        return LinkedListRange!(const typeof(this))(&this);
+    }
+    
+    /// Get the contents of this list as an array.
+    auto asarray(callbacks...)() pure nothrow @safe{
         T[] array = new T[this.length];
-        if(!this.empty){
-            Node* current = cast(Node*) this.frontnode;
-            size_t index = 0;
-            do{
-                array[index++] = current.value;
-                current = current.next;
-            } while(current != this.frontnode);
+        size_t index = 0;
+        for(auto range = this.asrange; !range.empty; range.popFront()){
+            foreach(callback; callbacks) callback(range.front);
+            array[index++] = range.front;
         }
         return array;
     }
@@ -335,12 +378,14 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
         return result;
     }
     
+    /// Get the element at an index.
     auto ref opIndex(in size_t index) const pure nothrow @trusted @nogc in{
         assert(index >= 0 && index < this.length);
     }body{
         return this.nodeat(index).value;
     }
-        
+    
+    /// Get a list containing elements of this one from a low until a high index.
     auto ref opSlice(callbacks...)(in size_t low, in size_t high) const in{
         assert(low >= 0 && high >= low && high <= this.length);
     }body{
@@ -360,6 +405,40 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
         } while(current != this.frontnode);
         return slice;
     }
+    
+    /// Append some value to this list.
+    void opOpAssign(string op: "~", Rhs)(Rhs rhs) if(canAdd!Rhs){
+        this.append(rhs);
+    }
+    
+    /// Concatenate this list with some other value.
+    auto opBinary(string op: "~", Rhs)(Rhs rhs) if(canAdd!Rhs){
+        auto result = this.copy();
+        result.append(rhs);
+        return result;
+    }
+    /// ditto
+    auto opBinaryRight(string op: "~", Lhs)(Lhs lhs) if(canAdd!Lhs){
+        auto result = typeof(this)(lhs);
+        result.append(this);
+        return result;
+    }
+    
+    /// ditto
+    auto opBinary(string op: "~")(ref typeof(this) rhs){
+        auto result = this.copy();
+        result.append(rhs);
+        return result;
+    }
+    
+    /// Determine if a node is contained within this list.
+    auto opBinaryRight(string op: "in")(ref Node* node){
+        return this.contains(node);
+    }
+    /// Determine if a value is contained within this list.
+    auto opBinaryRight(string op: "in")(T value){
+        return this.contains(value);
+    }
 }
 
 
@@ -372,7 +451,7 @@ struct LinkedListNode(T, Allocator = DefaultLinkedListAllocator){
     Node* prev;
     Node* next;
     
-    static auto many(Iter)(Iter values) if(isIterableOf!(Iter, T)){
+    static auto many(Iter)(ref Iter values) if(isIterableOf!(Iter, T)){
         Node* first;
         Node* current, previous;
         size_t length;
@@ -397,23 +476,25 @@ struct LinkedListRange(List){
     alias Element = ElementType!List;
     alias Node = List.Node;
     
+    enum bool mutable = true;
+    
     List* list;
     Node* frontnode;
     Node* backnode;
     bool empty;
     
-    this(List* list){
+    this(List* list) @trusted{
         this.list = list;
-        this.frontnode = list.frontnode;
-        this.backnode = list.backnode;
+        this.frontnode = cast(Node*) list.frontnode;
+        this.backnode = cast(Node*) list.backnode;
         this.empty = list.empty;
     }
     
-    @property auto length(){
+    @property auto length() const{
         return this.list.length;
     }
     
-    @property auto ref front(){
+    @property Element front() const{
         return this.frontnode.value;
     }
     @property void front(ref Element value){
@@ -424,15 +505,35 @@ struct LinkedListRange(List){
         this.empty = this.frontnode.prev is this.backnode;
     }
     
-    @property auto ref back(){
+    @property Element back() const{
         return this.backnode.value;
     }
     @property void back(ref Element value){
         this.backnode.value = value;
     }
     void popBack(){
-        this.backnode = this.backnode.next;
+        this.backnode = this.backnode.prev;
         this.empty = this.frontnode.prev is this.backnode;
+    }
+    
+    static if(isMutable!List){
+        auto removeFront(callbacks...)(){
+            auto next = this.frontnode.next;
+            this.list.remove!callbacks(this.frontnode);
+            this.frontnode = next;
+        }
+        auto insertFront(ref Element value){
+            this.frontnode = this.list.insertafter(this.frontnode, value);
+        }
+        
+        auto removeBack(callbacks...)(){
+            auto prev = this.backnode.prev;
+            this.list.remov!callbackse(this.backnode);
+            this.backnode = prev;
+        }
+        auto insertBack(ref Element value){
+            this.backnode = this.list.insertafter(this.backnode, value);
+        }
     }
 }
 
@@ -454,8 +555,12 @@ unittest{
         testeq("Length",
             list.length, 5
         );
-        tests("Iteration and random access", {
-            foreach(element; list) testeq(list[element], element);
+        tests("Random access", {
+            testeq(list[0], 0);
+            testeq(list[1], 1);
+            testeq(list[2], 2);
+            testeq(list[3], 3);
+            testeq(list[$-1], 4);
         });
         tests("Slices", {
             auto slice = list[1 .. $-1];
@@ -490,6 +595,24 @@ unittest{
                 range.popFront();
             }
             test(range.empty);
+        });
+        tests("Contains", {
+            test(0 in list);
+            test(1 in list);
+            testf(11 in list);
+        });
+        tests("Concatenation", {
+            auto copy = list.copy();
+            copy ~= 5;
+            copy ~= [6, 7];
+            testeq(copy.length, list.length + 3);
+            auto concat = list ~ copy ~ 0 ~ [1, 2];
+            testeq(concat.length, list.length + copy.length + 3);
+            testeq(concat.asarray, [
+                0, 1, 2, 3, 4,
+                0, 1, 2, 3, 4, 5, 6, 7,
+                0, 1, 2
+            ]);
         });
     });
 }
