@@ -6,6 +6,7 @@ import std.traits : isIntegral;
 import std.math : abs;
 import mach.math : flog2;
 import mach.range.random.seed : seed;
+import mach.range.random.templates : RNGMixin;
 
 public:
 
@@ -39,7 +40,8 @@ auto lcong(T = ulong)(T[3] seeds) if(canLinearCongruential!T){
 
 
 struct LinearCongruentialRange(T) if(canLinearCongruential!T){
-    static enum bool rng = true;
+    mixin RNGMixin!T;
+    
     static enum size_t seeds = 1;
     
     T front, a, c; // m = T.sizeof * 8;

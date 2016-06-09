@@ -4,6 +4,7 @@ private:
 
 import std.traits : isIntegral;
 import mach.range.random.seed : seed;
+import mach.range.random.templates : RNGMixin;
 
 public:
 
@@ -34,7 +35,8 @@ auto mersenne(T = ulong)(T seed) if(canMersenne!T){
 
 
 struct MersenneRange(T) if(canMersenne!T){
-    static enum bool rng = true;
+    mixin RNGMixin!T;
+    
     static enum size_t seeds = 1;
     
     static if(T.sizeof == 4){

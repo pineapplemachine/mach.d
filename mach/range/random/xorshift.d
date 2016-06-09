@@ -5,6 +5,7 @@ private:
 import std.traits : isIntegral;
 import mach.math : flog2;
 import mach.range.random.seed : seeds;
+import mach.range.random.templates : RNGMixin;
 
 public:
 
@@ -33,7 +34,8 @@ auto xorshift(T = ulong)(T[4] seeds) if(canXorshift!T){
 
 
 struct XorshiftRange(T) if(canXorshift!T){
-    static enum bool rng = true;
+    mixin RNGMixin!T;
+    
     static enum size_t seeds = 4;
     
     // Funky algorithm for selecting shifting primes based on the recommendation
