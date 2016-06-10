@@ -98,7 +98,7 @@ version(unittest){
     import mach.range.compare : equals;
     import mach.range.consume : consume;
     import mach.range.mutate : mutate;
-    import mach.range.reversed : reversed;
+    import mach.range.retro : retro;
 }
 unittest{
     tests("Filter", {
@@ -107,7 +107,7 @@ unittest{
             test([1, 2, 3, 4, 5, 6].filter!even.equals([2, 4, 6]));
         });
         tests("Backwards", {
-            test([2, 4, 5].filter!even.reversed.equals([4, 2]));
+            test([2, 4, 5].filter!even.retro.equals([4, 2]));
         });
         tests("Mutability", {
             auto array = [1, 2, 3, 4, 5, 6];

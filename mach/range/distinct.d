@@ -84,7 +84,7 @@ version(unittest){
     private:
     import mach.error.unit;
     import mach.range.compare : equals;
-    import mach.range.reversed : reversed;
+    import mach.range.retro : retro;
 }
 unittest{
     tests("Distinct", {

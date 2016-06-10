@@ -201,7 +201,7 @@ version(unittest){
     private:
     import mach.error.unit;
     import mach.range.compare : equals;
-    import mach.range.reversed : reversed;
+    import mach.range.retro : retro;
     struct PoppingStrideTest(T){
         T array;
         size_t frontindex, backindex;
@@ -239,7 +239,7 @@ unittest{
                 test("01234567".stride(2).equals("0246"));
             });
             tests("Bidirectionality", {
-                auto range = "012345".stride(2).reversed;
+                auto range = "012345".stride(2).retro;
                 testeq(range.length, 3);
                 test(range.equals("420"));
             });
@@ -285,11 +285,11 @@ unittest{
             tests("Bidirectionality", {
                 tests("Backwards iteration", {
                     auto source1 = PoppingStrideTest!string("hello world");
-                    test(source1.stride(2).reversed.equals("drwolh"));
-                    test(source1.stride(3).reversed.equals("lwlh"));
+                    test(source1.stride(2).retro.equals("drwolh"));
+                    test(source1.stride(3).retro.equals("lwlh"));
                     auto source2 = PoppingStrideTest!string("hello worlds");
-                    test(source2.stride(2).reversed.equals("drwolh"));
-                    test(source2.stride(3).reversed.equals("lwlh"));
+                    test(source2.stride(2).retro.equals("drwolh"));
+                    test(source2.stride(3).retro.equals("lwlh"));
                 });
                 tests("Combination", {
                     auto range = PoppingStrideTest!string("abcdefg").stride(2);

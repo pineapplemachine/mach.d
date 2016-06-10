@@ -132,7 +132,7 @@ version(unittest){
     private:
     import mach.error.unit;
     import mach.range.compare : equals;
-    import mach.range.reversed : reversed;
+    import mach.range.retro : retro;
 }
 unittest{
     tests("Chunk", {
@@ -144,7 +144,7 @@ unittest{
                 range.equals(["abcd", "efgh", "ijkl", "mnop"])
             );
             test("Backwards",
-                range.reversed.equals(["mnop", "ijkl", "efgh", "abcd"])
+                range.retro.equals(["mnop", "ijkl", "efgh", "abcd"])
             );
             test("Divide",
                 range.equals(input.divide(range.length))
@@ -174,7 +174,7 @@ unittest{
                 range.equals(["abcde", "fghij", "klmno", "p"])
             );
             test("Backwards",
-                range.reversed.equals(["p", "klmno", "fghij", "abcde"])
+                range.retro.equals(["p", "klmno", "fghij", "abcde"])
             );
             tests("Divide", {
                 auto input = "abcde";

@@ -93,7 +93,7 @@ version(unittest){
     private:
     import mach.error.unit;
     import mach.range.compare : equals;
-    import mach.range.reversed : reversed;
+    import mach.range.retro : retro;
 }
 unittest{
     tests("Merge", {
@@ -114,8 +114,8 @@ unittest{
             test(mapplural!sumthree(inputa, inputb, inputc).equals([2, 4, 6, 8]));
         });
         tests("Backwards", {
-            test(mapplural!sumtwo(inputa, inputb).reversed.equals([5, 4, 2, 1]));
-            test(mapplural!sumthree(inputa, inputb, inputc).reversed.equals([8, 6, 4, 2]));
+            test(mapplural!sumtwo(inputa, inputb).retro.equals([5, 4, 2, 1]));
+            test(mapplural!sumthree(inputa, inputb, inputc).retro.equals([8, 6, 4, 2]));
         });
         tests("Random access", {
             auto range = mapplural!sumtwo(inputa, inputb);

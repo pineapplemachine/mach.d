@@ -1,4 +1,4 @@
-module mach.range.reversed;
+module mach.range.retro;
 
 private:
 
@@ -12,18 +12,18 @@ public:
 
 
 
-alias canReverse = validAsBidirectionalRange;
-alias canReverseRange = isBidirectionalRange;
+alias canRetro = validAsBidirectionalRange;
+alias canRetroRange = isBidirectionalRange;
 
-enum isReversedRange(Range) = isTemplateOf!(Range, ReversedRange);
+enum isRetroRange(Range) = isTemplateOf!(Range, RetroRange);
 
 
 
 /// Return a range which iterates over some iterable in reverse-order.
-auto reversed(Iter)(Iter iter) if(canReverse!Iter){
-    static if(!isReversedRange!Iter){
+auto retro(Iter)(Iter iter) if(canRetro!Iter){
+    static if(!isRetroRange!Iter){
         auto range = iter.asrange;
-        return ReversedRange!(typeof(range))(range);
+        return RetroRange!(typeof(range))(range);
     }else{
         // Dont re-reverse an already reversed range
         return iter.source;
@@ -32,7 +32,7 @@ auto reversed(Iter)(Iter iter) if(canReverse!Iter){
 
 
 
-struct ReversedRange(Range) if(canReverseRange!Range){
+struct RetroRange(Range) if(canRetroRange!Range){
     mixin MetaRangeMixin!(
         Range, `source`, `Empty Length Dollar Save`
     );
@@ -82,17 +82,17 @@ version(unittest){
 unittest{
     tests("Reversed", {
         auto input = [0, 1, 2, 3];
-        test(input.reversed.equals([3, 2, 1, 0]));
+        test(input.retro.equals([3, 2, 1, 0]));
         tests("Random access", {
-            testeq(input.reversed[0], 3);
-            testeq(input.reversed[3], 0);
-            testeq(input.reversed[$-1], 0);
+            testeq(input.retro[0], 3);
+            testeq(input.retro[3], 0);
+            testeq(input.retro[$-1], 0);
         });
         tests("Slicing", {
             import std.stdio;
-            test(input.reversed[0 .. $-1].equals([3, 2, 1]));
-            test(input.reversed[1 .. $-1].equals([2, 1]));
-            test(input.reversed[1 .. $].equals([2, 1, 0]));
+            test(input.retro[0 .. $-1].equals([3, 2, 1]));
+            test(input.retro[1 .. $-1].equals([2, 1]));
+            test(input.retro[1 .. $].equals([2, 1, 0]));
         });
     });
 }

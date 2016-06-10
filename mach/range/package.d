@@ -31,7 +31,7 @@ import mach.range.recur : recur;
 import mach.range.reduce : reduce, reduceeager, reducelazy;
 import mach.range.reduction : sum, product;
 import mach.range.repeat : repeat, repeatrandomaccess, repeatsaving, repeatelement;
-import mach.range.reversed : reversed;
+import mach.range.retro : retro;
 import mach.range.rotate : rotate;
 import mach.range.select : select, from, until;
 import mach.range.stride : stride;
@@ -49,9 +49,9 @@ version(unittest){
 }
 unittest{
     tests("Combinations of functions", {
-        tests("Reversed, Pad, Distribution, Count", {
+        tests("Retro, Pad, Distribution, Count", {
             auto input = "hello world";
-            auto rev = input.reversed;
+            auto rev = input.retro;
             test(rev.equals("dlrow olleh"));
             auto padded = rev.padleftcount('_', 2);
             test(padded.equals("__dlrow olleh"));
