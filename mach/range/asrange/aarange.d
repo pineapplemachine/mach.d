@@ -47,14 +47,14 @@ struct AssociativeArrayRange(Array) if(canMakeAssociativeArrayRange!Array){
     }
     alias opDollar = length;
     
-    @property auto ref front() const{
+    @property auto ref front(){
         auto key = keys.front;
         return Element(cast(KeyType!Array) key, cast(ValueType!Array) this.array[key]);
     }
     void popFront(){
         this.keys.popFront();
     }
-    @property auto ref back() const{
+    @property auto ref back(){
         auto key = keys.back;
         return Element(cast(KeyType!Array) key, cast(ValueType!Array) this.array[key]);
     }
@@ -62,7 +62,7 @@ struct AssociativeArrayRange(Array) if(canMakeAssociativeArrayRange!Array){
         this.keys.popBack();
     }
     
-    auto ref opIndex(in size_t index) const{
+    auto ref opIndex(in size_t index){
         auto key = this.keys[index];
         return Element(cast(KeyType!Array) key, cast(ValueType!Array) this.array[key]);
     }

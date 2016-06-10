@@ -40,14 +40,14 @@ struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!Array){
     void popFront(){
         this.frontindex++;
     }
-    @property auto ref front() const{
+    @property auto ref front(){
         return this.array[this.frontindex];
     }
     
     void popBack(){
         this.backindex--;
     }
-    @property auto ref back() const{
+    @property auto ref back(){
         return this.array[this.backindex - 1];
     }
     
@@ -62,7 +62,7 @@ struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!Array){
     }
     alias opDollar = length;
     
-    auto ref opIndex(in Index index) const{
+    auto ref opIndex(in Index index){
         return this.array[index];
     }
     typeof(this) opSlice(in Index low, in Index high){

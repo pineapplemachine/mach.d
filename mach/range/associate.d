@@ -103,24 +103,20 @@ unittest{
         auto inputb = [0, 1, 2, 3, 4, 5];
         tests("Distribution", {
             testeq(
-                inputa.distribution,
-                cast(const(int[const(int)])) [0:2, 1:2, 2:2]
+                inputa.distribution, [0:2, 1:2, 2:2]
             );
         });
         tests("Association", {
             testeq(
-                associate(inputa, inputb),
-                cast(const int[const int]) [0:0, 1:2, 2:4]
+                associate(inputa, inputb), [0:0, 1:2, 2:4]
             );
             testeq("Enumerate",
-                [10, 11, 12].enumerate.associate,
-                cast(const int[size_t]) [0:10, 1:11, 2:12]
+                [10, 11, 12].enumerate.associate, [0u:10, 1u:11, 2u:12]
             );
         });
         tests("Group", {
             testeq(
-                group(inputa, inputb),
-                cast(const int[][const int]) [0:[0,1], 1:[2,3], 2:[4,5]]
+                group(inputa, inputb), [0:[0,1], 1:[2,3], 2:[4,5]]
             );
         });
     });
