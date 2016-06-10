@@ -23,9 +23,7 @@ enum canGetEndRange(Range, Count) = (
 );
 
 enum canGetSimpleHead(Iter, Count) = (
-    validAsRange!Iter && (
-        hasNumericLength!Iter || isInfiniteIterable!Iter
-    ) && validEndRangeCount!Count
+    validAsRange!Iter && validEndRangeCount!Count
 );
 
 enum canGetSimpleHeadRange(Range, Count) = (
@@ -94,13 +92,13 @@ struct SimpleHeadRange(Range, Count = size_t) if(canGetSimpleHeadRange!(Range, C
     
     static if(isInfiniteRange!Range){
         alias length = limit;
-    }else{
+        alias opDollar = length;
+    }else static if(hasNumericLength!Range){
         @property auto length(){
             return this.source.length < this.limit ? this.source.length : this.limit;
         }
+        alias opDollar = length;
     }
-    
-    alias opDollar = length;
     
     static if(isSavingRange!Range){
         @property auto ref save(){
