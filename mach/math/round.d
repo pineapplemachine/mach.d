@@ -29,7 +29,7 @@ R round(R = int, N)(in N number) if(isNumeric!N && isNumeric!R){
 R ceil(R = int, N)(in N x, in N y) if(isNumeric!N && isNumeric!R){
     static if(isIntegral!N){
         auto floor = x / y;
-        return cast(R) (floor + (floor * y < x));
+        return cast(R) (floor + (x % y > 0));
     }else{
         auto result = x / y;
         if(result % 1 == 0){
