@@ -132,29 +132,29 @@ struct PoppingStrideRange(Range, Stride = DefaultStride){
     );
     
     Range source;
-    Stride stride;
+    Stride stridelength;
     
     static if(isBidirectional){
         bool preparedback;
         this(typeof(this) range){
-            this(range.source, range.stride, range.preparedback);
+            this(range.source, range.stridelength, range.preparedback);
         }
-        this(Range source, Stride stride, bool preparedback = false) in{
-            assert(stride > 0);
+        this(Range source, Stride stridelength, bool preparedback = false) in{
+            assert(stridelength > 0);
         }body{
             this.source = source;
-            this.stride = stride;
+            this.stridelength = stridelength;
             this.preparedback = preparedback;
         }
     }else{
         this(typeof(this) range){
-            this(range.source, range.stride);
+            this(range.source, range.stridelength);
         }
-        this(Range source, Stride stride) in{
-            assert(stride > 0);
+        this(Range source, Stride stridelength) in{
+            assert(stridelength > 0);
         }body{
             this.source = source;
-            this.stride = stride;
+            this.stridelength = stridelength;
         }
     }
     
@@ -162,7 +162,7 @@ struct PoppingStrideRange(Range, Stride = DefaultStride){
         return this.source.front;
     }
     void popFront(){
-        for(Stride i = Stride.init; i < this.stride && !this.source.empty; i++){
+        for(Stride i = Stride.init; i < this.stridelength && !this.source.empty; i++){
             this.source.popFront();
         }
     }
@@ -174,13 +174,13 @@ struct PoppingStrideRange(Range, Stride = DefaultStride){
         }
         void popBack(){
             if(!this.preparedback) this.prepareBack();
-            for(Stride i = Stride.init; i < this.stride && !this.source.empty; i++){
+            for(Stride i = Stride.init; i < this.stridelength && !this.source.empty; i++){
                 this.source.popBack();
             }
         }
         /// Pop elements from the back to get a consistent range frontwards and backwards
         void prepareBack(){
-            auto pop = (this.source.length - (this.source.length > 0)) % this.stride;
+            auto pop = (this.source.length - (this.source.length > 0)) % this.stridelength;
             for(Stride i = Stride.init; i < pop; i++){
                 this.source.popBack();
             }
@@ -188,10 +188,12 @@ struct PoppingStrideRange(Range, Stride = DefaultStride){
         }
     }
     
-    @property auto length(){
-        return this.source.length / this.stride + (
-            this.source.length % this.stride > 0
-        );
+    static if(hasNumericLength!Range){
+        @property auto length(){
+            return this.source.length / this.stridelength + (
+                this.source.length % this.stridelength > 0
+            );
+        }
     }
 }
 
