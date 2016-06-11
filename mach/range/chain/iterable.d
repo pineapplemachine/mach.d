@@ -45,7 +45,7 @@ enum canChainForwardIterableRange(Range) = (
 
 
 
-auto ref chainiter(Iter)(Iter iter) if(canChainIterableOfIterables!Iter){
+auto ref chainiter(Iter)(auto ref Iter iter) if(canChainIterableOfIterables!Iter){
     static if(canChainRandomAccessIterable!Iter){
         return chainiterrandomaccess(iter);
     }else{
@@ -53,11 +53,11 @@ auto ref chainiter(Iter)(Iter iter) if(canChainIterableOfIterables!Iter){
     }
 }
 
-auto ref chainiterrandomaccess(Iter)(Iter iter) if(canChainRandomAccessIterable!Iter){
+auto ref chainiterrandomaccess(Iter)(auto ref Iter iter) if(canChainRandomAccessIterable!Iter){
     return ChainRandomAccessIterablesRange!(typeof(iter))(iter);
 }
 
-auto ref chainiterforward(Iter)(Iter iter) if(canChainForwardIterable!Iter){
+auto ref chainiterforward(Iter)(auto ref Iter iter) if(canChainForwardIterable!Iter){
     auto range = iter.asrange;
     return ChainForwardIterablesRange!(typeof(range))(range);
 }

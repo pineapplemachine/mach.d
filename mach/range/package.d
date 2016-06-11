@@ -17,6 +17,7 @@ import mach.range.enumerate : enumerate;
 import mach.range.fill : fill;
 import mach.range.filter : filter;
 import mach.range.find : find, findfirst, findlast, findall;
+import mach.range.flatten : flatten;
 import mach.range.include : include, exclude;
 import mach.range.indexof : indexof, indexofiterable, indexofelement;
 import mach.range.interpolate : interpolate, lerp, coslerp;
