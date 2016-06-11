@@ -189,10 +189,9 @@ struct PoppingStrideRange(Range, Stride = DefaultStride){
     }
     
     static if(hasNumericLength!Range){
+        import mach.math : ceil;
         @property auto length(){
-            return this.source.length / this.stridelength + (
-                this.source.length % this.stridelength > 0
-            );
+            return ceil(this.source.length, this.stridelength);
         }
     }
 }
