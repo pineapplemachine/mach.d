@@ -111,6 +111,16 @@ template isMutableRandomRange(Range){
 
 
 
+template isRandomAccessIterable(T){
+    enum bool isRandomAccessIterable = isIterable!T && is(typeof((inout int = 0){
+        size_t index = 0;
+        auto element = T.init[index];
+        static assert(is(ElementType!T == typeof(element)));
+    }));
+}
+
+
+
 enum hasEmptyEnum(T) = hasEnumType!(T, bool, `empty`);
 
 template hasEmptyEnum(T, bool value){

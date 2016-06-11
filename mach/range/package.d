@@ -5,7 +5,7 @@ public:
 import mach.range.asarray : asarray;
 import mach.range.asrange : asrange;
 import mach.range.associate : associate, group, distribution;
-import mach.range.chain : chain;
+import mach.range.chain : chain, chainiter, chainranges;
 import mach.range.chunk : chunk, divide;
 import mach.range.compare : compare, equals, iterequals, recursiveequals;
 import mach.range.consume : consume, consumereverse;

@@ -85,6 +85,14 @@ template isIterableOf(Iter, T){
     }
 }
 
+template isIterableOf(Iter, alias pred){
+    static if(isIterable!Iter){
+        enum bool isIterableOf = pred!(ElementType!Iter);
+    }else{
+        enum bool isIterableOf = false;
+    }
+}
+
 
 
 enum canHashElement(Iter) = canHash!(ElementType!Iter);
@@ -136,10 +144,14 @@ unittest{
     static assert(is(ElementType!ApplyReverseElementTest == string));
 }
 unittest{
-    // isIterableOf
+    // isIterableOf type
     static assert(isIterableOf!(int[], int));
     static assert(isIterableOf!(string, immutable char));
     static assert(!isIterableOf!(int, int));
+    // isIterableOf predicate
+    static assert(isIterableOf!(int[][], isArray));
+    static assert(!isIterableOf!(int[], isArray));
+    static assert(!isIterableOf!(int, isArray));
 }
 unittest{
     // hasCommonElementType

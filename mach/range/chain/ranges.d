@@ -1,4 +1,4 @@
-module mach.range.chain;
+module mach.range.chain.ranges;
 
 private:
 
@@ -15,17 +15,19 @@ public:
 
 
 
-enum canChain(Iters...) = (
+/// Can a sequence of aliased iterables be chained?
+enum canChainIterables(Iters...) = (
     Iters.length && allSatisfy!(validAsRange, Iters) && hasCommonElementType!Iters
 );
 
+/// Can a sequence of aliased ranges be chained?
 enum canChainRanges(Ranges...) = (
     Ranges.length && allSatisfy!(isRange, Ranges) && hasCommonElementType!Ranges
 );
 
 
 
-auto chain(Iters...)(Iters iters) if(canChain!Iters){
+auto chainranges(Iters...)(Iters iters) if(canChainIterables!Iters){
     mixin(MetaMultiRangeWrapperMixin!(`ChainRange`, Iters));
 }
 
@@ -37,7 +39,10 @@ private static string ChainSliceMixin(Ranges...)(){
     for(size_t i = 0; i < Ranges.length; i++){
         if(i > 0) params ~= `, `;
         auto istr = i.to!string;
-        params ~= `this.sources[` ~ istr ~ `][this.getslicelow(` ~ istr ~ `, low) .. this.getslicehigh(` ~ istr ~ `, high)]`;
+        params ~= `this.sources[` ~ istr ~ `][
+            this.getslicelow(` ~ istr ~ `, low) ..
+            this.getslicehigh(` ~ istr ~ `, high)
+        ]`;
     }
     return `return typeof(this)(` ~ params ~ `);`;
 }
@@ -166,16 +171,16 @@ version(unittest){
 unittest{
     tests("Chaining", {
         test("Basic equality",
-            chain("yo", "dawg").equals("yodawg")
+            chainranges("yo", "dawg").equals("yodawg")
         );
         test("Disparate types",
-            chain([1, 2], [3.0, 4.0]).equals([1.0, 2.0, 3.0, 4.0])
+            chainranges([1, 2], [3.0, 4.0]).equals([1.0, 2.0, 3.0, 4.0])
         );
         testeq("Length",
-            chain("yo", "dawg").length, 6
+            chainranges("yo", "dawg").length, 6
         );
         tests("Random access", {
-            auto range = chain("yo", "dawg");
+            auto range = chainranges("yo", "dawg");
             testeq(range[0], 'y');
             testeq(range[1], 'o');
             testeq(range[2], 'd');
@@ -184,7 +189,7 @@ unittest{
             testeq(range[$-1], 'g');
         });
         tests("Saving", {
-            auto range = chain("yo", "dawg");
+            auto range = chainranges("yo", "dawg");
             auto saved = range.save;
             range.popFront();
             range.popBack();
@@ -192,12 +197,12 @@ unittest{
             test(saved.equals("yodawg"));
         });
         tests("Slices", {
-            auto range = chain("xxx", "yyy", "zzz");
+            auto range = chainranges("xxx", "yyy", "zzz");
             test(range[0 .. 4].equals("xxxy"));
             test(range[2 .. $].equals("xyyyzzz"));
         });
         tests("Chain of chains", {
-            auto range = chain(chain("abc", "def"), chain("ghi", "jkl", "mno"));
+            auto range = chainranges(chainranges("abc", "def"), chainranges("ghi", "jkl", "mno"));
             testeq(range[0], 'a');
             testeq(range[3], 'd');
             testeq(range[6], 'g');
