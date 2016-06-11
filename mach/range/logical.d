@@ -53,7 +53,7 @@ enum canExactly(Iter, Count) = isFiniteIterable!Iter && validExactlyCount!Count;
 bool any(alias pred = DefaultLogicalPredicate, Iter)(auto ref Iter iter) if(
     canAny!(Iter, pred)
 ){
-    foreach(item; iter){
+    foreach(ref item; iter){
         if(pred(item)) return true;
     }
     return false;
@@ -63,7 +63,7 @@ bool any(alias pred = DefaultLogicalPredicate, Iter)(auto ref Iter iter) if(
 bool all(alias pred = DefaultLogicalPredicate, Iter)(auto ref Iter iter) if(
     canAll!(Iter, pred)
 ){
-    foreach(item; iter){
+    foreach(ref item; iter){
         if(!pred(item)) return false;
     }
     return true;
@@ -73,7 +73,7 @@ bool all(alias pred = DefaultLogicalPredicate, Iter)(auto ref Iter iter) if(
 bool none(alias pred = DefaultLogicalPredicate, Iter)(auto ref Iter iter) if(
     canNone!(Iter, pred)
 ){
-    foreach(item; iter){
+    foreach(ref item; iter){
         if(pred(item)) return false;
     }
     return true;
