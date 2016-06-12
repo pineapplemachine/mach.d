@@ -283,6 +283,16 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator){
     }body{
         node.prev.next = node.next;
         node.next.prev = node.prev;
+        if(node is this.frontnode){
+            if(node is this.backnode){
+                this.frontnode = null;
+                this.backnode = null;
+            }else{
+                this.frontnode = node.next;
+            }
+        }else if(node is this.backnode){
+            this.backnode = node.prev;
+        }
         foreach(callback; callbacks) callback(node.value);
         Allocator.instance.dispose(node);
         this.length--;
@@ -463,6 +473,16 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator){
     auto opBinaryRight(string op: "in")(T value){
         return this.contains(value);
     }
+    
+    override string toString() const{
+        import std.conv : to;
+        string str = "";
+        for(auto range = this.asrange!false; !range.empty; range.popFront()){
+            if(str.length) str ~= ", ";
+            str ~= range.front.to!string;
+        }
+        return "[" ~ str ~ "]";
+    }
 }
 
 
@@ -626,6 +646,12 @@ unittest{
             copy.insert(1, 8);
             copy.insert(3, 8, 8);
             testeq(copy.asarray, [0, 8, 1, 8, 8, 2, 3, 4]);
+        });
+        tests("Removal", {
+            auto copy = list.dup;
+            copy.removefirst();
+            copy.removelast();
+            testeq(copy.asarray, [1, 2, 3]);
         });
         tests("As range", {
             auto range = list.asrange;
