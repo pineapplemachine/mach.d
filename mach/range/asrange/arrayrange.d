@@ -69,16 +69,25 @@ struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!Array){
         return typeof(this)(this.array[low .. high]);
     }
     
-    static if(isMutable!Array && isMutable!Element){
-        enum bool mutable = true;
-        @property void front(Element value){
-            this.array[this.frontindex] = value;
+    static if(isMutable!Array){
+        void insertBack(Element value) in{
+            // Behavior undefined if iterating backward
+            assert(this.backindex == this.array.length);
+        }body{
+            this.array ~= value;
+            this.backindex++;
         }
-        @property void back(Element value){
-            this.array[this.backindex - 1] = value;
-        }
-        void opIndexAssign(Element value, in Index index){
-            this.array[index] = value;
+        static if(isMutable!Element){
+            enum bool mutable = true;
+            @property void front(Element value){
+                this.array[this.frontindex] = value;
+            }
+            @property void back(Element value){
+                this.array[this.backindex - 1] = value;
+            }
+            void opIndexAssign(Element value, in Index index){
+                this.array[index] = value;
+            }
         }
     }else{
         enum bool mutable = false;
@@ -151,6 +160,10 @@ unittest{
             range[1] = 'a';
             range.popFront();
             testeq(range.front, 'a');
+            testeq(range.back, 'o');
+            range.insertBack('s');
+            testeq(range.length, data.length + 1);
+            testeq(range.back, 's');
         });
         tests("Saving", {
             auto range = ArrayRange!(int[])([1, 2, 3]);
