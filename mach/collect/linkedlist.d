@@ -98,13 +98,13 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
         this.backnode.value = value;
     }
     
-    @property Node* firstnode(in bool delegate(in Node* value) pred) const{
+    @property Node* firstnode()(in bool delegate(in Node* value) pred) const{
         for(auto range = this.asrange!false; !range.empty; range.popFront()){
             if(pred(range.frontnode)) return range.frontnode;
         }
         return null;
     }
-    @property Node* lastnode(in bool delegate(in Node* value) pred) const{
+    @property Node* lastnode()(in bool delegate(in Node* value) pred) const{
         for(auto range = this.asrange!false; !range.empty; range.popBack()){
             if(pred(range.backnode)) return range.backnode;
         }
@@ -262,6 +262,18 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
         }
         
         alias AddAtAction = action;
+    }
+    
+    auto insertsorted(T value){
+        return this.insertsorted((a, b) => (a > b), value);
+    }
+    auto insertsorted(in bool delegate(in T a, in T b) compare, T value){
+        auto node = this.firstnode(node => compare(value, node.value));
+        if(node is null){
+            return this.append(value);
+        }else{
+            return this.insertbefore(node, value);
+        }
     }
     
     /// Remove some node from this list.
@@ -611,9 +623,10 @@ unittest{
         });
         tests("Maintaining order", {
             auto sorted = LinkedList!int(0, 4);
-            foreach(value; [5, 1, 3, 2]){
-                sorted.insertbefore(e => e > value, value);
-            }
+            foreach(value; [5, 1, 3, 2]) sorted.insertsorted((a, b) => (a < b), value);
+            testeq(sorted.asarray, [0, 1, 2, 3, 4, 5]);
+            sorted.clear();
+            foreach(value; [5, 1, 4, 0, 3, 2]) sorted.insertsorted((a, b) => (a < b), value);
             testeq(sorted.asarray, [0, 1, 2, 3, 4, 5]);
         });
         tests("Contains", {
