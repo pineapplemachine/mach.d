@@ -5,7 +5,7 @@ private:
 import std.typecons : Tuple;
 import std.experimental.allocator : make, dispose;
 import std.experimental.allocator.gc_allocator : GCAllocator;
-import std.traits : isImplicitlyConvertible;
+import std.traits : isImplicitlyConvertible, Unqual;
 import mach.traits : isMutable, isIterableOf, ElementType;
 
 template NodesTuple(T, Allocator){
@@ -22,7 +22,7 @@ alias DefaultLinkedListAllocator = GCAllocator;
 
 
 /// Implements a cyclic doubly-linked list.
-struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
+class LinkedList(T, Allocator = DefaultLinkedListAllocator){
     alias Node = LinkedListNode!(T, Allocator);
     alias Nodes = NodesTuple!(T, Allocator);
     alias opDollar = length;
@@ -34,6 +34,7 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
     Node* backnode; /// Last node in the list.
     size_t length; /// Number of nodes currently in the list.
     
+    this(){}
     this(T[] elements...){
         this.append(elements);
     }
@@ -47,7 +48,7 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
     
     /// Safe postblitting would require copying; since that's potentially
     /// expensive require that it be done explicitly.
-    this(this) @disable;
+    //this(this) @disable;
     
     void setnodes(Node* node) pure nothrow @safe @nogc in{
         assert(this.empty, "Unsafe to perform this operation upon a list that is not empty.");
@@ -287,6 +288,13 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
         this.length--;
     }
     
+    void removefirst(callbacks...)() in{assert(!this.empty);} body{
+        this.remove(this.frontnode);
+    }
+    void removelast(callbacks...)() in{assert(!this.empty);} body{
+        this.remove(this.backnode);
+    }
+    
     /// Clear the list, optionally calling some callbacks on each element of the
     /// list, for example a function that frees newly-unused memory.
     void clear(callbacks...)(){
@@ -305,8 +313,8 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
     }
     
     /// Create a new list containing the same elements as this one.
-    typeof(this) copy(callbacks...)(){
-        typeof(this) list;
+    @property typeof(this) dup(callbacks...)(){
+        auto list = new typeof(this);
         if(!this.empty){
             for(auto range = this.asrange; !range.empty; range.popFront()){
                 foreach(callback; callbacks) callback(range.front);
@@ -351,11 +359,11 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
     }
     /// ditto
     auto asrange(bool mutable)() pure nothrow @safe @nogc if(mutable){
-        return LinkedListRange!(typeof(this))(&this);
+        return LinkedListRange!(typeof(this))(this);
     }
     /// Get a range for iterating over this list which may not itself alter the list.
     auto asrange(bool mutable)() pure nothrow @safe @nogc const if(!mutable){
-        return LinkedListRange!(const typeof(this))(&this);
+        return LinkedListRange!(const typeof(this))(this);
     }
     
     /// Get the contents of this list as an array.
@@ -407,20 +415,18 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
     auto ref opSlice(callbacks...)(in size_t low, in size_t high) const in{
         assert(low >= 0 && high >= low && high <= this.length);
     }body{
-        LinkedList!T slice;
+        auto slice = new Unqual!(typeof(this));
         Node* lownode;
         Node* highnode;
-        Node* current = cast(Node*) this.frontnode;
         size_t index = 0;
-        do{
-            foreach(callback; callbacks) callback(current.value);
+        for(auto range = this.asrange!false; !range.empty; range.popFront()){
+            foreach(callback; callbacks) callback(range.front);
             if(index >= low){
                 if(index >= high) break;
-                slice.append(current.value);
+                slice.append(range.front);
             }
-            current = current.next;
             index++;
-        } while(current != this.frontnode);
+        }
         return slice;
     }
     
@@ -431,7 +437,7 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
     
     /// Concatenate this list with some other value.
     auto opBinary(string op: "~", Rhs)(Rhs rhs) if(canAdd!Rhs){
-        auto result = this.copy();
+        auto result = this.dup;
         result.append(rhs);
         return result;
     }
@@ -444,7 +450,7 @@ struct LinkedList(T, Allocator = DefaultLinkedListAllocator){
     
     /// ditto
     auto opBinary(string op: "~")(ref typeof(this) rhs){
-        auto result = this.copy();
+        auto result = this.dup;
         result.append(rhs);
         return result;
     }
@@ -494,12 +500,12 @@ struct LinkedListRange(List){
     alias Element = ElementType!List;
     alias Node = List.Node;
     
-    List* list;
+    List list;
     Node* frontnode;
     Node* backnode;
     bool empty;
     
-    this(List* list) @trusted{
+    this(List list) @trusted{
         this.list = list;
         this.frontnode = cast(Node*) list.frontnode;
         this.backnode = cast(Node*) list.backnode;
@@ -532,6 +538,15 @@ struct LinkedListRange(List){
         this.empty = this.frontnode.prev is this.backnode;
     }
     
+    //@property typeof(this) save(){
+    //    return typeof(this)(
+    //        this.list.dup,
+    //        null, // todo
+    //        null, // todo
+    //        this.empty
+    //    );
+    //}
+    
     static if(isMutable!List){
         enum bool mutable = true;
         
@@ -563,7 +578,7 @@ version(unittest){
 }
 unittest{
     tests("Doubly-linked list", {
-        auto list = LinkedList!int(0, 1, 2, 3, 4);
+        auto list = new LinkedList!int(0, 1, 2, 3, 4);
         testeq("Front",
             list.front, 0
         );
@@ -595,19 +610,19 @@ unittest{
             itertest(list);
         });
         tests("Appending", {
-            auto copy = list.copy();
+            auto copy = list.dup;
             copy.append(5);
             copy.append(6, 7);
             testeq(copy.asarray, [0, 1, 2, 3, 4, 5, 6, 7]);
         });
         tests("Prepending", {
-            auto copy = list.copy();
+            auto copy = list.dup;
             copy.prepend(-1);
             copy.prepend(-3, -2);
             testeq(copy.asarray, [-3, -2, -1, 0, 1, 2, 3, 4]);
         });
         tests("Insertion", {
-            auto copy = list.copy();
+            auto copy = list.dup;
             copy.insert(1, 8);
             copy.insert(3, 8, 8);
             testeq(copy.asarray, [0, 8, 1, 8, 8, 2, 3, 4]);
@@ -622,7 +637,7 @@ unittest{
             test(range.empty);
         });
         tests("Maintaining order", {
-            auto sorted = LinkedList!int(0, 4);
+            auto sorted = new LinkedList!int(0, 4);
             foreach(value; [5, 1, 3, 2]) sorted.insertsorted((a, b) => (a < b), value);
             testeq(sorted.asarray, [0, 1, 2, 3, 4, 5]);
             sorted.clear();
@@ -635,7 +650,7 @@ unittest{
             testf(11 in list);
         });
         tests("Concatenation", {
-            auto copy = list.copy();
+            auto copy = list.dup;
             copy ~= 5;
             copy ~= [6, 7];
             testeq(copy.length, list.length + 3);
