@@ -79,6 +79,8 @@ template isSlicingRange(Range){
 template isMutableRange(Range){
     static if(__traits(compiles, {enum mutable = Range.mutable;})){
         enum bool isMutableRange = Range.mutable;
+    }else{
+        enum bool isMutableRange = false;
     }
 }
 
