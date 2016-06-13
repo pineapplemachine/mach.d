@@ -4,18 +4,16 @@ private:
 
 import mach.range.asrange : asrange, validAsRange;
 import mach.traits : ElementType, isFiniteIterable, isFiniteRange, canCompare;
+import mach.traits : isPredicate;
 
 public:
 
 
 
 enum canCompareIterables(alias pred, IterA, IterB) = (
-    validAsRange!IterA && validAsRange!IterB &&
-    isFiniteIterable!IterA && isFiniteIterable!IterB &&
-    is(typeof((inout int = 0){
-        auto result = pred(ElementType!IterA.init, ElementType!IterB.init);
-        if(result){}
-    }))
+    validAsRange!(isFiniteIterable, IterA) &&
+    validAsRange!(isFiniteIterable, IterB) &&
+    isPredicate!(pred, ElementType!IterA, ElementType!IterB)
 );
 
 private alias EqualityComparison = (a, b) => (a == b);
