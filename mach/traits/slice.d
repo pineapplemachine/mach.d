@@ -51,11 +51,11 @@ template canSliceSame(alias pred, T, Low, High){
 
 
 
-template SliceType(T){
+template SliceType(T) if(canSlice!(T, size_t, size_t)){
     alias SliceType = SliceType!(T, size_t);
 }
 
-template SliceType(T, Low){
+template SliceType(T, Low) if(canSlice!(T, Low, Low)){
     alias SliceType = SliceType!(T, Low, Low);
 }
 
