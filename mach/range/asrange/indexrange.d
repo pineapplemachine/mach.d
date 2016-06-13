@@ -50,7 +50,7 @@ struct IndexRange(Base, Index = size_t) if(canMakeIndexRange!(Base, Index)){
     }
     
     @property auto length(){
-        return this.basis.length;
+        return this.source.length;
     }
     alias opDollar = length;
     
@@ -80,7 +80,7 @@ struct IndexRange(Base, Index = size_t) if(canMakeIndexRange!(Base, Index)){
         }
     }
     
-    @property typeof(this) save() const{
+    @property typeof(this) save(){
         return typeof(this)(this);
     }
 }
