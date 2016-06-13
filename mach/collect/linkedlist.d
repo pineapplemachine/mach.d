@@ -422,7 +422,7 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator){
     }
     
     /// Get a list containing elements of this one from a low until a high index.
-    auto ref opSlice(callbacks...)(in size_t low, in size_t high) const in{
+    auto ref slice(callbacks...)(in size_t low, in size_t high) const in{
         assert(low >= 0 && high >= low && high <= this.length);
     }body{
         auto slice = new Unqual!(typeof(this));
@@ -438,6 +438,12 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator){
             index++;
         }
         return slice;
+    }
+    /// ditto
+    auto ref opSlice(in size_t low, in size_t high) const in{
+        assert(low >= 0 && high >= low && high <= this.length);
+    }body{
+        return this.slice(low, high);
     }
     
     /// Append some value to this list.
