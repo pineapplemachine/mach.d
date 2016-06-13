@@ -1,4 +1,4 @@
-module mach.range.find;
+module mach.range.find.findeager;
 
 private:
 
@@ -8,46 +8,11 @@ import mach.traits : isRange, isSavingRange, isBidirectionalRange;
 import mach.traits : hasNumericIndex, hasNumericLength;
 import mach.range.asrange : asrange, validAsSavingRange, validAsBidirectionalRange;
 
+import mach.range.find.result;
+import mach.range.find.templates;
+import mach.range.find.threads;
+
 public:
-
-
-
-alias DefaultFindPredicate = (element, subject) => (element == subject);
-
-alias DefaultFindIndex = size_t;
-
-alias validFindIndex = isIntegral;
-
-enum canFindIn(Iter, bool forward) = (
-    (forward && isIterable!Iter) ||
-    (!forward && isIterableReverse!Iter && hasNumericLength!Iter)
-);
-
-enum canFindElement(alias pred, Index, Iter, bool forward = true) = (
-    canFindIn!(Iter, forward) && validFindIndex!Index &&
-    isPredicate!(pred, ElementType!Iter)
-);
-
-enum canFindIterable(alias pred, Index, Iter, Find, bool forward = true) = (
-    canFindRandomAccess!(pred, Index, Iter, Find, forward) ||
-    canFindSaving!(pred, Index, Iter, Find, forward)
-);
-
-enum canFindRandomAccess(alias pred, Index, Iter, Find, bool forward = true) = (
-    canFindIn!(Iter, forward) && validFindIndex!Index &&
-    hasNumericIndex!Find && hasNumericLength!Find &&
-    isPredicate!(pred, ElementType!Iter, ElementType!Find)
-);
-
-enum canFindSaving(alias pred, Index, Iter, Find, bool forward = true) = (
-    canFindIn!(Iter, forward) && validFindIndex!Index &&
-    validAsSavingRange!Find && (forward || validAsBidirectionalRange!Find) &&
-    isPredicate!(pred, ElementType!Iter, ElementType!Find)
-);
-
-enum canFindSavingRange(alias pred, Index, Iter, Find, bool forward = true) = (
-    isRange!Find && canFindSaving!(pred, Index, Iter, Find, forward)
-);
 
 
 
@@ -201,53 +166,7 @@ auto findallsaving(alias pred, Index = DefaultFindIndex, Iter, Find)(
 
 
 
-/// Result of a find operation with both an index and a value.
-struct FindResult(Index, Value){
-    Index index;
-    Value value;
-    bool exists;
-    
-    this(bool exists){
-        this.exists = exists;
-    }
-    this(Index index, Value value, bool exists = true){
-        this.index = index;
-        this.value = value;
-        this.exists = exists;
-    }
-    
-    string toString() const{
-        import std.conv : to;
-        if(this.exists){
-            return to!string(this.value) ~ " found at index " ~ to!string(this.index);
-        }else{
-            return "not found";
-        }
-    }
-}
 
-/// Result of a find operation with an index but no value.
-struct FindResultIndex(Index){
-    Index index;
-    bool exists;
-    
-    this(bool exists){
-        this.exists = exists;
-    }
-    this(Index index, bool exists = true){
-        this.index = index;
-        this.exists = exists;
-    }
-    
-    string toString() const{
-        import std.conv : to;
-        if(this.exists){
-            return "found at index " ~ to!string(this.index);
-        }else{
-            return "not found";
-        }
-    }
-}
 
 
 
@@ -360,145 +279,7 @@ template findgeneralized(
 
 
 
-/// Common methods for find thread types.
-private template FindThreadMixin(bool forward, Index){
-    import mach.traits : canSliceSame;
-    auto result(Iter)(Iter iter, Index index){
-        static if(forward){
-            immutable Index low = this.foundindex;
-            immutable Index high = index + 1;
-        }else{
-            immutable Index low = index - 1;
-            immutable Index high = this.foundindex;
-        }
-        static if(canSliceSame!Iter){
-            auto slice = iter[low .. high];
-            return FindResult!(Index, typeof(slice))(low, slice);
-        }else{
-            return FindResultIndex!(Index)(low);
-        }
-    }
-}
 
-/// Contains information for an individual search thread where the subject being
-/// searched for has random access.
-private struct FindRandomAccessThread(alias pred, bool forward, Index){
-    mixin FindThreadMixin!(forward, Index);
-    
-    Index foundindex;
-    Index searchindex;
-    bool alive;
-    this(Index foundindex, Index searchindex, bool alive = true){
-        this.foundindex = foundindex;
-        this.searchindex = searchindex;
-        this.alive = alive;
-    }
-    bool next(Element, Find)(Element element, Find subject){
-        if(pred(element, subject[this.searchindex])){
-            static if(forward){
-                this.searchindex++;
-                if(this.searchindex >= subject.length){
-                    this.alive = false;
-                    return true;
-                }else{
-                    return false;
-                }
-            }else{
-                if(this.searchindex == 0){
-                    this.alive = false;
-                    return true;
-                }else{
-                    this.searchindex--;
-                    return false;
-                }
-            }
-        }else{
-            this.alive = false;
-            return false;
-        }
-    }
-}
-
-/// Contains information for an individual search thread where the subject being
-/// searched for is a saving range.
-private struct FindSavingThread(alias pred, bool forward, Index, Range){
-    mixin FindThreadMixin!(forward, Index);
-    
-    Index foundindex;
-    Range searchrange;
-    bool alive;
-    this(Index foundindex, Range searchrange, bool alive = true){
-        this.foundindex = foundindex;
-        this.searchrange = searchrange;
-        this.alive = alive;
-    }
-    bool next(Element)(Element element){
-        static if(forward){
-            if(pred(element, this.searchrange.front)){
-                this.searchrange.popFront();
-                if(this.searchrange.empty){
-                    this.alive = false;
-                    return true;
-                }else{
-                    return false;
-                }
-            }
-        }else{
-            if(pred(element, this.searchrange.back)){
-                this.searchrange.popBack();
-                if(this.searchrange.empty){
-                    this.alive = false;
-                    return true;
-                }else{
-                    return false;
-                }
-            }
-        }
-        this.alive = false;
-        return false;
-    }
-}
-
-/// Used by find functions to collect and manage search threads.
-private struct FindThreadManager(Thread){
-    size_t threshold;
-    Thread[] threads;
-    
-    this(size_t threshold){
-        this.threshold = threshold;
-    }
-    
-    /// Add a new thread to the list
-    void add(Thread thread){
-        this.threads ~= thread;
-    }
-    
-    /// Remove dead threads from the list
-    void clean(){
-        Thread[] alive;
-        foreach(thread; this.threads){
-            if(thread.alive) alive ~= thread;
-        }
-        this.threads = alive;
-    }
-    
-    /// Iterate over alive threads
-    int opApply(in int delegate(ref Thread thread) apply){
-        int result = 0;
-        size_t dead = 0;
-        foreach(ref thread; this.threads){
-            if(thread.alive){
-                result = apply(thread);
-                if(result) break;
-                dead += !thread.alive;
-            }else{
-                dead++;
-            }
-        }
-        if(!result && dead > this.threshold) this.clean();
-        return result;
-    }
-}
 
 
 
