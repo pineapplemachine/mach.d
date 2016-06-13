@@ -107,7 +107,7 @@ struct ChainRandomAccessIterablesRange(Iter) if(canChainRandomAccessIterable!Ite
     }
     @property auto length(){
         alias lengthsum = (size_t len, r) => (len + r.length);
-        return this.source.reduce!lengthsum(0);
+        return this.source.reduce!lengthsum(cast(size_t) 0);
     }
     alias opDollar = length;
 
@@ -212,7 +212,7 @@ struct ChainForwardIterablesRange(Range) if(canChainForwardIterable!Range){
         static if(hasNumericLength!SubRange){
             @property auto length(){
                 alias lengthsum = (size_t len, r) => (len + r.length);
-                return this.source.reduce!lengthsum(0) + this.tracklength;
+                return this.source.reduce!lengthsum(cast(size_t) 0) + this.tracklength;
             }
             alias opDollar = length;
         }

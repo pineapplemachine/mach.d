@@ -111,7 +111,8 @@ unittest{
                 associate(inputa, inputb), [0:0, 1:2, 2:4]
             );
             testeq("Enumerate",
-                [10, 11, 12].enumerate.associate, [0u:10, 1u:11, 2u:12]
+                [10, 11, 12].enumerate.associate,
+                [cast(size_t) 0:10, cast(size_t) 1:11, cast(size_t) 2:12]
             );
         });
         tests("Group", {
