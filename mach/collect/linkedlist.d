@@ -4,9 +4,10 @@ private:
 
 import std.typecons : Tuple;
 import std.experimental.allocator : make, dispose;
-import std.experimental.allocator.gc_allocator : GCAllocator;
+import std.experimental.allocator.mallocator : Mallocator;
 import std.traits : isImplicitlyConvertible, Unqual;
-import mach.traits : isMutable, isIterableOf, ElementType;
+import mach.traits : isFiniteIterable, isIterableOf, ElementType;
+import mach.traits : isMutable, isAllocator;
 
 template NodesTuple(T, Allocator){
     alias Node = LinkedListNode!(T, Allocator);
@@ -17,18 +18,40 @@ public:
 
 
 
-alias DefaultLinkedListAllocator = GCAllocator;
+alias DefaultLinkedListAllocator = Mallocator;
+
+template canLinkedList(T, Allocator = DefaultLinkedListAllocator){
+    enum bool canLinkedList = isAllocator!Allocator;
+}
+
+template validAsLinkedList(Iter, Allocator = DefaultLinkedListAllocator){
+    static if(isFiniteIterable!Iter){
+        enum bool validAsLinkedList = canLinkedList!(ElementType!Iter, Allocator);
+    }else{
+        enum bool validAsLinkedList = false;
+    }
+}
+
+
+
+auto aslist(Allocator = DefaultLinkedListAllocator, Iter)(
+    auto ref Iter iter
+) if(validAsLinkedList!(Iter, Allocator)){
+    return new LinkedList!(ElementType!Iter, Allocator)(iter);
+}
 
 
 
 /// Implements a cyclic doubly-linked list.
-class LinkedList(T, Allocator = DefaultLinkedListAllocator){
+class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
+    canLinkedList!(T, Allocator)
+){
     alias Node = LinkedListNode!(T, Allocator);
     alias Nodes = NodesTuple!(T, Allocator);
     alias opDollar = length;
     alias insert = insertbefore;
     
-    private enum isNodes(T) = is(T == Node*) || is(T == Nodes);
+    private enum isNodes(N) = is(N == Node*) || is(N == Nodes);
     
     Node* frontnode; /// First node in the list.
     Node* backnode; /// Last node in the list.
@@ -80,25 +103,28 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator){
     } body{
         return this.frontnode.value;
     }
-    /// Set the frontmost value in the list.
-    @property void front(ref T value) pure nothrow @safe @nogc in{
-        assert(!this.empty);
-    } body{
-        this.frontnode.value = value;
-    }
     /// Get the backmost value in the list.
     @property auto ref back() const pure nothrow @safe @nogc in{
         assert(!this.empty);
     } body{
         return this.backnode.value;
     }
-    /// Set the frontmost value in the list.
-    @property void back(ref T value) pure nothrow @safe @nogc in{
-        assert(!this.empty);
-    } body{
-        this.backnode.value = value;
-    }
     
+    static if(isMutable!T){
+        /// Set the frontmost value in the list.
+        @property void front(ref T value) pure nothrow @safe @nogc in{
+            assert(!this.empty);
+        } body{
+            this.frontnode.value = value;
+        }
+        /// Set the frontmost value in the list.
+        @property void back(ref T value) pure nothrow @safe @nogc in{
+            assert(!this.empty);
+        } body{
+            this.backnode.value = value;
+        }
+    }
+        
     @property Node* firstnode()(in bool delegate(in Node* value) pred) const{
         for(auto range = this.asrange!false; !range.empty; range.popFront()){
             if(pred(range.frontnode)) return range.frontnode;
@@ -415,10 +441,21 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator){
     }
     
     /// Get the element at an index.
+    /// Please note, this is not especially efficient.
     auto ref opIndex(in size_t index) const pure nothrow @trusted @nogc in{
         assert(index >= 0 && index < this.length);
     }body{
         return this.nodeat(index).value;
+    }
+    
+    static if(isMutable!T){
+        /// Assign the element at an index.
+        /// Please note, this is not especially efficient.
+        void opIndexAssign(T value, in size_t index) pure nothrow @trusted @nogc in{
+            assert(index >= 0 && index < this.length);
+        }body{
+            this.nodeat(index).value = value;
+        }
     }
     
     /// Get a list containing elements of this one from a low until a high index.
@@ -545,9 +582,6 @@ struct LinkedListRange(List){
     @property Element front() const{
         return this.frontnode.value;
     }
-    @property void front(ref Element value){
-        this.frontnode.value = value;
-    }
     void popFront(){
         this.frontnode = this.frontnode.next;
         this.empty = this.frontnode.prev is this.backnode;
@@ -555,9 +589,6 @@ struct LinkedListRange(List){
     
     @property Element back() const{
         return this.backnode.value;
-    }
-    @property void back(ref Element value){
-        this.backnode.value = value;
     }
     void popBack(){
         this.backnode = this.backnode.prev;
@@ -575,6 +606,15 @@ struct LinkedListRange(List){
     
     static if(isMutable!List){
         enum bool mutable = true;
+        
+        static if(isMutable!Element){
+            @property void front(ref Element value){
+                this.frontnode.value = value;
+            }
+            @property void back(ref Element value){
+                this.backnode.value = value;
+            }
+        }
         
         auto removeFront(callbacks...)(){
             auto next = this.frontnode.next;
@@ -604,6 +644,9 @@ version(unittest){
 }
 unittest{
     tests("Doubly-linked list", {
+        static assert(canLinkedList!int);
+        static assert(canLinkedList!string);
+        static assert(canLinkedList!(const int));
         auto list = new LinkedList!int(0, 1, 2, 3, 4);
         testeq("Front",
             list.front, 0
@@ -659,6 +702,13 @@ unittest{
             copy.removelast();
             testeq(copy.asarray, [1, 2, 3]);
         });
+        tests("Index assignment", {
+            auto copy = list.dup;
+            copy[0] = 1;
+            copy[1] = 2;
+            testeq(copy[0], 1);
+            testeq(copy[1], 2);
+        });
         tests("As range", {
             auto range = list.asrange;
             testeq(range.length, list.length);
@@ -693,6 +743,14 @@ unittest{
                 0, 1, 2, 3, 4, 5, 6, 7,
                 0, 1, 2
             ]);
+        });
+        tests("Iterable as list", {
+            auto input = "hello world";
+            auto list = input.aslist;
+            testeq(list.length, input.length);
+            foreach(i; 0 .. input.length){
+                testeq(list[i], input[i]);
+            }
         });
     });
 }
