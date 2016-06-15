@@ -2,6 +2,7 @@ module mach.traits;
 
 public:
 
+import mach.traits.allocator;
 import mach.traits.array;
 import mach.traits.common;
 import mach.traits.ctor;
