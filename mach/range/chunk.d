@@ -39,14 +39,6 @@ auto chunk(Iter, Count = DefaultChunkCount)(Iter iter, Count size) if(
     return ChunkRange!(typeof(range), Count)(range, size);
 }
 
-/// Divides a single range into a range of smaller ranges, given a number of
-/// such smaller ranges to produce.
-auto divide(Iter, Count = DefaultChunkCount)(Iter iter, Count count) if(
-    canChunk!(Iter, Count)
-){
-    return chunk(iter, ceil(iter.length, count));
-}
-
 
 
 struct ChunkRange(Range, Count = DefaultChunkCount) if(
@@ -146,9 +138,6 @@ unittest{
             test("Backwards",
                 range.retro.equals(["mnop", "ijkl", "efgh", "abcd"])
             );
-            test("Divide",
-                range.equals(input.divide(range.length))
-            );
             tests("Random access", {
                 test(range[0].equals("abcd"));
                 test(range[1].equals("efgh"));
@@ -176,11 +165,6 @@ unittest{
             test("Backwards",
                 range.retro.equals(["p", "klmno", "fghij", "abcde"])
             );
-            tests("Divide", {
-                auto input = "abcde";
-                auto range = input.chunk(3);
-                test(range.equals(input.divide(range.length)));
-            });
         });
     });
 }
