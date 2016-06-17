@@ -168,8 +168,6 @@ struct FindAllRange(alias pred, Range, Subject, Index = DefaultFindIndex) if(
     }
     
     bool stepthreads(ref ElementType!Range element){
-        //import std.stdio;
-        //writeln("\n", this.index, "\n");
         auto found = false;
         // Progress living threads
         foreach(ref thread; this.threads){
