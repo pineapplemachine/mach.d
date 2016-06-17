@@ -1,11 +1,27 @@
 module mach.range.find.result;
 
+private:
+
+import std.typecons : Tuple;
+
 public:
 
 
 
-/// Result of a find operation with both an index and a value.
-struct FindResult(Index, Value){
+/// Result of a plural find operation with both an index and a value.
+template FindResultPlural(Index, Value){
+    alias FindResultPlural = Tuple!(Index, `index`, Value, `value`);
+}
+
+/// Result of a plural find operation with an index but no value.
+template FindResultIndexPlural(Index){
+    alias FindResultPlural = Index;
+}
+
+
+
+/// Result of a singular find operation with both an index and a value.
+struct FindResultSingular(Index, Value){
     Index index;
     Value value;
     bool exists;
@@ -29,8 +45,8 @@ struct FindResult(Index, Value){
     }
 }
 
-/// Result of a find operation with an index but no value.
-struct FindResultIndex(Index){
+/// Result of a singular find operation with an index but no value.
+struct FindResultIndexSingular(Index){
     Index index;
     bool exists;
     
