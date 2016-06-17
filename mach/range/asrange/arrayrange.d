@@ -24,17 +24,19 @@ struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!Array){
     Array array;
     Index frontindex;
     Index backindex;
+    Index length;
     
     this(typeof(this) range){
-        this(range.array, range.frontindex, range.backindex);
+        this(range.array, range.frontindex, range.backindex, range.length);
     }
     this(Array array, Index frontindex = Index.init){
-        this(array, frontindex, array.length);
+        this(array, frontindex, array.length, array.length);
     }
-    this(Array array, Index frontindex, Index backindex){
+    this(Array array, Index frontindex, Index backindex, Index length){
         this.array = array;
         this.frontindex = frontindex;
         this.backindex = backindex;
+        this.length = length;
     }
     
     void popFront(){
@@ -54,9 +56,6 @@ struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!Array){
     @property bool empty() const{
         return this.frontindex >= this.backindex;
     }
-    @property auto length() const{
-        return this.array.length;
-    }
     @property auto remaining() const{
         return this.backindex - this.frontindex;
     }
@@ -70,13 +69,6 @@ struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!Array){
     }
     
     static if(isMutable!Array){
-        void insertBack(Element value) in{
-            // Behavior undefined if iterating backward
-            assert(this.backindex == this.array.length);
-        }body{
-            this.array ~= value;
-            this.backindex++;
-        }
         static if(isMutable!Element){
             enum bool mutable = true;
             @property void front(Element value){
@@ -161,9 +153,8 @@ unittest{
             range.popFront();
             testeq(range.front, 'a');
             testeq(range.back, 'o');
-            range.insertBack('s');
-            testeq(range.length, data.length + 1);
-            testeq(range.back, 's');
+            range.front = 'i';
+            testeq(data[1], 'i');
         });
         tests("Saving", {
             auto range = ArrayRange!(int[])([1, 2, 3]);
