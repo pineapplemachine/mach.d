@@ -389,6 +389,16 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
         assert(false);
     }
     
+    /// Get the index of some node in this list.
+    auto nodeindex(in Node* node) const pure nothrow @trusted @nogc{
+        size_t index = 0;
+        for(auto range = this.asrange!false; !range.empty; range.popFront()){
+            if(range.frontnode is node) return index;
+            index++;
+        }
+        assert(false, "Node is not a member of the list.");
+    }
+    
     /// Get a range for iterating over this list whose contents can be mutated.
     auto asrange()() pure nothrow @safe @nogc{
         return this.asrange!true;
@@ -569,10 +579,13 @@ struct LinkedListRange(List){
     bool empty;
     
     this(List list) @trusted{
+        this(list, cast(Node*) list.frontnode, cast(Node*) list.backnode, list.empty);
+    }
+    this(List list, Node* frontnode, Node* backnode, bool empty){
         this.list = list;
-        this.frontnode = cast(Node*) list.frontnode;
-        this.backnode = cast(Node*) list.backnode;
-        this.empty = list.empty;
+        this.frontnode = frontnode;
+        this.backnode = backnode;
+        this.empty = empty;
     }
     
     @property auto length() const{
@@ -595,15 +608,6 @@ struct LinkedListRange(List){
         this.empty = this.frontnode.prev is this.backnode;
     }
     
-    //@property typeof(this) save(){
-    //    return typeof(this)(
-    //        this.list.dup,
-    //        null, // todo
-    //        null, // todo
-    //        this.empty
-    //    );
-    //}
-    
     static if(isMutable!List){
         enum bool mutable = true;
         
@@ -616,13 +620,17 @@ struct LinkedListRange(List){
             }
         }
         
+        auto insert(ref Element value){
+            this.backnode = this.list.append(value);
+        }
+        
         auto removeFront(callbacks...)(){
             auto next = this.frontnode.next;
             this.list.remove!callbacks(this.frontnode);
             this.frontnode = next;
         }
         auto insertFront(ref Element value){
-            this.frontnode = this.list.insertafter(this.frontnode, value);
+            this.frontnode = this.list.insertbefore(this.frontnode, value);
         }
         
         auto removeBack(callbacks...)(){
