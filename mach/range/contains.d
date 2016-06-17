@@ -2,7 +2,7 @@ module mach.range.contains;
 
 private:
 
-import mach.range.find : find, DefaultFindIndex, canFindElement, canFindIterable;
+import mach.range.find : find, DefaultFindIndex, canFindElementEager, canFindIterable;
 
 public:
 
@@ -14,32 +14,32 @@ alias DefaultContainsPredicate = (a, b) => (a == b);
 
 auto contains(alias pred, Index = DefaultFindIndex, Iter)(
     Iter iter
-) if(canFindElement!(pred, Index, Iter, true)){
+) if(canFindElementEager!(pred, Index, Iter, true)){
     return containselement!(pred, Index, Iter)(iter);
 }
 
 auto contains(alias pred, Index = DefaultFindIndex, Iter, Find)(
     Iter iter, Find subject
-) if(canFindElement!(pred, Index, Iter, true)){
-    return containsiterable!(pred, Index, Iter, Find)(iter, subject);
+) if(canFindElementEager!(pred, Index, Iter, true)){
+    return containsiter!(pred, Index, Iter, Find)(iter, subject);
 }
 
 auto contains(Index = DefaultFindIndex, Iter, Find)(
     Iter iter, Find subject
 ) if(
-    canFindElement!((element) => (element == subject), Index, Iter, true) ||
+    canFindElementEager!((element) => (element == subject), Index, Iter, true) ||
     canFindIterable!(DefaultContainsPredicate, Index, Iter, Find, true)
 ){
-    static if(canFindElement!((element) => (element == subject), Index, Iter, true)){
+    static if(canFindElementEager!((element) => (element == subject), Index, Iter, true)){
         return containselement!((element) => (element == subject), Index, Iter)(iter);
     }else{
-        return containsiterable!(DefaultContainsPredicate, Index, Iter, Find)(iter, subject);
+        return containsiter!(DefaultContainsPredicate, Index, Iter, Find)(iter, subject);
     }
 }
 
 
 
-auto containsiterable(
+auto containsiter(
     alias pred = DefaultContainsPredicate, Index = DefaultFindIndex, Iter, Find
 )(Iter iter, Find subject) if(
     canFindIterable!(pred, Index, Iter, Find, true)
@@ -49,13 +49,13 @@ auto containsiterable(
 
 auto containselement(alias pred, Index = DefaultFindIndex, Iter)(
     Iter iter
-) if(canFindElement!(pred, Index, Iter, true)){
+) if(canFindElementEager!(pred, Index, Iter, true)){
     return find!(pred, Index)(iter).exists;
 }
 
 auto containselement(Index = DefaultFindIndex, Iter, Find)(
     Iter iter, Find subject
-) if(canFindElement!((element) => (element == subject), Index, Iter, true)){
+) if(canFindElementEager!((element) => (element == subject), Index, Iter, true)){
     return containselement!((element) => (element == subject), Index, Iter)(iter);
 }
 

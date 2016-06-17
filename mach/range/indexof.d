@@ -2,7 +2,7 @@ module mach.range.indexof;
 
 private:
 
-import mach.range.find : find, canFindElement, canFindIterable;
+import mach.range.find : find, canFindElementEager, canFindIterable;
 
 public:
 
@@ -16,32 +16,32 @@ alias DefaultIndexOfPredicate = (a, b) => (a == b);
 
 auto indexof(alias pred, Index = DefaultIndexOfIndex, Iter)(
     Iter iter
-) if(canFindElement!(pred, Index, Iter, true)){
+) if(canFindElementEager!(pred, Index, Iter, true)){
     return indexofelement!(pred, Index, Iter)(iter);
 }
 
 auto indexof(alias pred, Index = DefaultIndexOfIndex, Iter, Find)(
     Iter iter, Find subject
-) if(canFindElement!(pred, Index, Iter, true)){
-    return indexofiterable!(pred, Index, Iter, Find)(iter, subject);
+) if(canFindElementEager!(pred, Index, Iter, true)){
+    return indexofiter!(pred, Index, Iter, Find)(iter, subject);
 }
 
 auto indexof(Index = DefaultIndexOfIndex, Iter, Find)(
     Iter iter, Find subject
 ) if(
-    canFindElement!((element) => (element == subject), Index, Iter, true) ||
+    canFindElementEager!((element) => (element == subject), Index, Iter, true) ||
     canFindIterable!(DefaultIndexOfPredicate, Index, Iter, Find, true)
 ){
-    static if(canFindElement!((element) => (element == subject), Index, Iter, true)){
+    static if(canFindElementEager!((element) => (element == subject), Index, Iter, true)){
         return indexofelement!((element) => (element == subject), Index, Iter)(iter);
     }else{
-        return indexofiterable!(DefaultIndexOfPredicate, Index, Iter, Find)(iter, subject);
+        return indexofiter!(DefaultIndexOfPredicate, Index, Iter, Find)(iter, subject);
     }
 }
 
 
 
-auto indexofiterable(
+auto indexofiter(
     alias pred = DefaultIndexOfPredicate, Index = DefaultIndexOfIndex, Iter, Find
 )(Iter iter, Find subject) if(
     canFindIterable!(pred, Index, Iter, Find, true)
@@ -52,14 +52,14 @@ auto indexofiterable(
 
 auto indexofelement(alias pred, Index = DefaultIndexOfIndex, Iter)(
     Iter iter
-) if(canFindElement!(pred, Index, Iter, true)){
+) if(canFindElementEager!(pred, Index, Iter, true)){
     auto result = find!(pred, Index)(iter);
     return result.exists ? result.index : -1;
 }
 
 auto indexofelement(Index = DefaultIndexOfIndex, Iter, Find)(
     Iter iter, Find subject
-) if(canFindElement!((element) => (element == subject), Index, Iter, true)){
+) if(canFindElementEager!((element) => (element == subject), Index, Iter, true)){
     return indexofelement!((element) => (element == subject), Index, Iter)(iter);
 }
 
