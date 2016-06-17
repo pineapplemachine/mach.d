@@ -2,42 +2,85 @@ module mach.range.split;
 
 private:
 
-import mach.traits : hasNumericLength, isFiniteIterable;
-import mach.range.asrange : asrange, validAsRange;
-import mach.range.find : findall, canFindElement, canFindIterable, DefaultFindIndex; // TODO: lazy
+import std.traits : isIntegral;
+import mach.traits : hasProperty, hasNumericLength, isFiniteIterable, ElementType;
+import mach.range.asrange : asrange, validAsRange, AsRangeType;
+import mach.range.find;// : findalliterlazy, canFindAllLazy, canFindIterable, canFindElementLazy, DefaultFindIndex;
 import mach.range.pluck : pluck;
 
 public:
 
 
+alias DefaultSplitPredicate = (a, b) => (a == b);
+alias DefaultSplitIndex = size_t;
 
-// TODO
-//template canSplit(alias compare, Iter, Delim){
-//    static if(canFindElement!(
-//}
+alias validSplitIndex = isIntegral;
 
-
-
-auto split(alias compare = (a, b) => (a == b), Iter, Delim)(Iter iter, Delim delimiter){
-    auto range = iter.asrange;
-    auto found = range.findall!compare(delimiter).pluck!`index`;
-    return SplitRange!(typeof(range), typeof(found))(range, found, delimiter.length);
+template canSplit(alias pred, Index, Iter, Delim){
+    static if(validAsRange!Iter){
+        alias Range = AsRangeType!Iter;
+        enum bool canSplit = (
+            validSplitIndex!Index && (
+                canFindAllLazy!(pred, Index, Range, Delim) ||
+                canFindAllEager!(pred, Index, Range, Delim) ||
+                canFindAllElementsLazy!(e => pred(e, Delim.init), Index, Range) ||
+                canFindAllElementsEager!(e => pred(e, Delim.init), Index, Range)
+            )
+        );
+    }else{
+        enum bool canSplit = (
+            validSplitIndex!Index && (
+                canFindAllEager!(pred, Index, Iter, Delim) ||
+                canFindAllElementsEager!(e => pred(e, Delim.init), Index, Iter)
+            )
+        );
+    }
 }
 
 
 
-struct SplitRange(Iter, Delims){
+auto split(alias pred = DefaultSplitPredicate, Index = DefaultSplitIndex, Iter, Delim)(
+    auto ref Iter iter, auto ref Delim delimiter
+) if(canSplit!(pred, Index, Iter, Delim)){
+    static if(validAsRange!Iter){
+        auto source = iter.asrange;
+    }else{
+        alias source = iter;
+    }
+    alias Source = typeof(source);
+    static if(canFindAllIterable!(pred, Index, Source, Delim)){
+        auto found = source.findalliter!pred(delimiter);
+    }else static if(canFindAllElements!(e => pred(e, delimiter), Index, Source)){
+        auto found = source.findallelements!(e => pred(e, delimiter))(delimiter);
+    }else{
+        assert(false); // This shouldn't happen
+    }
+    static if(validSplitIndex!(ElementType!(typeof(found)))){
+        alias indexes = found;
+    }else static if(hasProperty!(ElementType!(typeof(found)), `index`)){
+        auto indexes = found.pluck!`index`;
+    }else{
+        assert(false); // This shouldn't happen
+    }
+    return SplitIterableRange!(Source, typeof(indexes))(
+        source, indexes, delimiter.length
+    );
+}
+
+
+
+struct SplitIterableRange(Iter, Delims, Index = DefaultSplitIndex){
     enum bool Finite = isFiniteIterable!Delims;
     
     Iter source;
     Delims delimindexes;
-    size_t delimlength;
-    size_t segmentbegin;
+    Index delimlength;
+    Index segmentbegin;
     
     static if(Finite) bool empty;
     else enum bool empty = false;
     
-    this(Iter source, Delims delimindexes, size_t delimlength){
+    this(Iter source, Delims delimindexes, Index delimlength){
         this.source = source;
         this.delimindexes = delimindexes;
         this.delimlength = delimlength;
@@ -70,10 +113,11 @@ struct SplitRange(Iter, Delims){
 }
 
 
+
 unittest{
     // TODO
     //import std.stdio;
-    //auto input = "hello";
+    //auto input = "hello. world";
     //auto range = input.split(". ");
     //writeln(range);
 }
