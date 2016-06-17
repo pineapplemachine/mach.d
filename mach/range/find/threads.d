@@ -11,6 +11,7 @@ public:
 /// Common methods for find thread types.
 template FindThreadMixin(bool forward, Index){
     import mach.traits : canSliceSame;
+    
     auto result(Iter)(Iter iter, Index index){
         static if(forward){
             immutable Index low = this.foundindex;
@@ -21,9 +22,9 @@ template FindThreadMixin(bool forward, Index){
         }
         static if(canSliceSame!Iter){
             auto slice = iter[low .. high];
-            return FindResult!(Index, typeof(slice))(low, slice);
+            return FindResultPlural!(Index, typeof(slice))(low, slice);
         }else{
-            return FindResultIndex!(Index)(low);
+            return FindResultIndexPlural!(Index)(low);
         }
     }
 }
@@ -36,12 +37,13 @@ struct FindRandomAccessThread(alias pred, bool forward, Index){
     Index foundindex;
     Index searchindex;
     bool alive;
+    
     this(Index foundindex, Index searchindex, bool alive = true){
         this.foundindex = foundindex;
         this.searchindex = searchindex;
         this.alive = alive;
     }
-    bool next(Element, Find)(Element element, Find subject){
+    bool next(Element, Subject)(Element element, Subject subject){
         if(pred(element, subject[this.searchindex])){
             static if(forward){
                 this.searchindex++;
@@ -65,6 +67,10 @@ struct FindRandomAccessThread(alias pred, bool forward, Index){
             return false;
         }
     }
+    
+    @property typeof(this) dup(){
+        return typeof(this)(this.foundindex, this.searchindex, this.alive);
+    }
 }
 
 /// Contains information for an individual search thread where the subject being
@@ -75,6 +81,7 @@ struct FindSavingThread(alias pred, bool forward, Index, Range){
     Index foundindex;
     Range searchrange;
     bool alive;
+    
     this(Index foundindex, Range searchrange, bool alive = true){
         this.foundindex = foundindex;
         this.searchrange = searchrange;
@@ -104,6 +111,10 @@ struct FindSavingThread(alias pred, bool forward, Index, Range){
         }
         this.alive = false;
         return false;
+    }
+    
+    @property typeof(this) dup(){
+        return typeof(this)(this.foundindex, this.searchrange.save, this.alive);
     }
 }
 
@@ -147,5 +158,14 @@ struct FindThreadManager(Thread){
         }
         if(!result && dead > this.threshold) this.clean();
         return result;
+    }
+    
+    @property typeof(this) dup(){
+        typeof(this) manager;
+        manager.threshold = this.threshold;
+        foreach(ref thread; this.threads){
+            if(thread.alive) manager.threads ~= thread.dup;
+        }
+        return manager;
     }
 }
