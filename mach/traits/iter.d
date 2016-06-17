@@ -111,6 +111,35 @@ template isMutableRandomRange(Range){
     }));
 }
 
+/// Determine if a range can have an element safely added during consumption.
+/// The added element should not be included in the range's iteration.
+/// The addition should persist in whatever collection backs the range, if any.
+template isMutableInsertRange(Range){
+    enum bool isMutableInsertFrontRange = isMutableRange!Range && is(typeof((inout int = 0){
+        Range range = Range.init;
+        auto front = range.front;
+        range.insert(front);
+    }));
+}
+
+/// Determine if a range can have the current front element safely removed.
+/// The removal should persist in whatever collection backs the range, if any.
+template isMutableRemoveFrontRange(Range){
+    enum bool isMutableRemoveFrontRange = isMutableRange!Range && is(typeof((inout int = 0){
+        Range range = Range.init;
+        range.removeFront();
+    }));
+}
+
+/// Determine if a range can have the current back element safely removed.
+/// The removal should persist in whatever collection backs the range, if any.
+template isMutableRemoveBackRange(Range){
+    enum bool isMutableRemoveBackRange = isMutableRange!Range && is(typeof((inout int = 0){
+        Range range = Range.init;
+        range.removeBack();
+    }));
+}
+
 
 
 template isRandomAccessIterable(T){
@@ -161,6 +190,7 @@ template isFinite(Iter){
         }));
     }
 }
+
 enum isInfinite(Iter) = !isFinite!Iter;
 
 
