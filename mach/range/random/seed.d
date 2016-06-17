@@ -6,7 +6,6 @@ import core.stdc.stdlib : malloc, free;
 import core.thread : MonoTime, Thread, getpid;
 import std.algorithm : max;
 import std.traits : isIntegral, Unqual;
-import mach.range.chunk : divide;
 import mach.range.reduce : reduce;
 import mach.range.map : map;
 
