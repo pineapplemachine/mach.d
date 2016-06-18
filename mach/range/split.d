@@ -11,6 +11,7 @@ import mach.range.pluck : pluck;
 public:
 
 
+
 alias DefaultSplitPredicate = (a, b) => (a == b);
 alias DefaultSplitIndex = size_t;
 
@@ -49,9 +50,11 @@ auto split(alias pred = DefaultSplitPredicate, Index = DefaultSplitIndex, Iter, 
     }
     alias Source = typeof(source);
     static if(canFindAllIterable!(pred, Index, Source, Delim)){
-        auto found = source.findalliter!pred(delimiter);
+        auto found = source.findalliter!(pred, Index, Source, Delim)(delimiter);
+        auto delimlength = delimiter.length;
     }else static if(canFindAllElements!(e => pred(e, delimiter), Index, Source)){
-        auto found = source.findallelements!(e => pred(e, delimiter))(delimiter);
+        auto found = source.findallelements!(e => pred(e, delimiter), Index, Source)();
+        auto delimlength = 1;
     }else{
         assert(false); // This shouldn't happen
     }
@@ -60,10 +63,10 @@ auto split(alias pred = DefaultSplitPredicate, Index = DefaultSplitIndex, Iter, 
     }else static if(hasProperty!(ElementType!(typeof(found)), `index`)){
         auto indexes = found.pluck!`index`;
     }else{
-        assert(false); // This shouldn't happen
+        assert(false); // Also shouldn't happen
     }
     return SplitIterableRange!(Source, typeof(indexes))(
-        source, indexes, delimiter.length
+        source, indexes, delimlength
     );
 }
 
@@ -114,10 +117,34 @@ struct SplitIterableRange(Iter, Delims, Index = DefaultSplitIndex){
 
 
 
+version(unittest){
+    private:
+    import mach.error.unit;
+    import mach.range.compare : equals;
+}
 unittest{
-    // TODO
-    //import std.stdio;
-    //auto input = "hello. world";
-    //auto range = input.split(". ");
-    //writeln(range);
+    tests("Split", {
+        tests("Range delimiter", {
+            tests("Longer-than-one", {
+                auto range = "hello..there..world".split("..");
+                test(range.equals(["hello", "there", "world"]));
+            });
+            tests("Single length", {
+                auto range = "hello.there.world".split(".");
+                test(range.equals(["hello", "there", "world"]));
+            });
+        });
+        tests("Element delimiter", {
+            auto range = "hello.there.world".split('.');
+            test(range.equals(["hello", "there", "world"]));
+        });
+        tests("No delimiters", {
+            auto range = "test".split(", ");
+            test(range.equals(["test"]));
+        });
+        tests("Delimiters in series", {
+            auto range = "x,y,,z".split(",");
+            test(range.equals(["x", "y", "", "z"]));
+        });
+    });
 }
