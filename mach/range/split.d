@@ -3,9 +3,11 @@ module mach.range.split;
 private:
 
 import std.traits : isIntegral;
-import mach.traits : hasProperty, hasNumericLength, isFiniteIterable, ElementType;
+import mach.traits : hasProperty, hasNumericLength, ElementType;
+import mach.traits : isFiniteIterable, isSavingRange;
 import mach.range.asrange : asrange, validAsRange, AsRangeType;
-import mach.range.find;// : findalliterlazy, canFindAllLazy, canFindIterable, canFindElementLazy, DefaultFindIndex;
+import mach.range.find : findalliter, findallelements;
+import mach.range.find : canFindAllIterable, canFindAllElements;
 import mach.range.pluck : pluck;
 
 public:
@@ -18,24 +20,14 @@ alias DefaultSplitIndex = size_t;
 alias validSplitIndex = isIntegral;
 
 template canSplit(alias pred, Index, Iter, Delim){
-    static if(validAsRange!Iter){
-        alias Range = AsRangeType!Iter;
-        enum bool canSplit = (
-            validSplitIndex!Index && (
-                canFindAllLazy!(pred, Index, Range, Delim) ||
-                canFindAllEager!(pred, Index, Range, Delim) ||
-                canFindAllElementsLazy!(e => pred(e, Delim.init), Index, Range) ||
-                canFindAllElementsEager!(e => pred(e, Delim.init), Index, Range)
-            )
-        );
-    }else{
-        enum bool canSplit = (
-            validSplitIndex!Index && (
-                canFindAllEager!(pred, Index, Iter, Delim) ||
-                canFindAllElementsEager!(e => pred(e, Delim.init), Index, Iter)
-            )
-        );
-    }
+    static if(validAsRange!Iter) alias Source = AsRangeType!Iter;
+    else alias Source = Iter;
+    enum bool canSplit = (
+        validSplitIndex!Index && (
+            canFindAllIterable!(pred, Index, Source, Delim) ||
+            canFindAllElements!(e => pred(e, Delim.init), Index, Source)
+        )
+    );
 }
 
 
@@ -90,6 +82,28 @@ struct SplitIterableRange(Iter, Delims, Index = DefaultSplitIndex){
         this.segmentbegin = 0;
         static if(Finite) this.empty = false;
     }
+    static if(Finite){
+        this(
+            Iter source, Delims delimindexes,
+            Index delimlength, Index segmentindex, bool empty
+        ){
+            this.source = source;
+            this.delimindexes = delimindexes;
+            this.delimlength = delimlength;
+            this.segmentbegin = segmentbegin;
+            this.empty = empty;
+        }
+    }else{
+        this(
+            Iter source, Delims delimindexes,
+            Index delimlength, Index segmentindex
+        ){
+            this.source = source;
+            this.delimindexes = delimindexes;
+            this.delimlength = delimlength;
+            this.segmentbegin = segmentbegin;
+        }
+    }
     
     static if(hasNumericLength!Delims){
         @property auto length(){
@@ -112,6 +126,22 @@ struct SplitIterableRange(Iter, Delims, Index = DefaultSplitIndex){
         }
         this.segmentbegin = this.delimindexes.front + this.delimlength;
         this.delimindexes.popFront();
+    }
+    
+    static if(isSavingRange!Delims){
+        @property typeof(this) save(){
+            static if(Finite){
+                return typeof(this)(
+                    this.source, this.delimindexes.save,
+                    this.delimlength, this.segmentbegin, this.empty
+                );
+            }else{
+                return typeof(this)(
+                    this.source, this.delimindexes.save,
+                    this.delimlength, this.segmentbegin
+                );
+            }
+        }
     }
 }
 
@@ -145,6 +175,11 @@ unittest{
         tests("Delimiters in series", {
             auto range = "x,y,,z".split(",");
             test(range.equals(["x", "y", "", "z"]));
+        });
+        tests("Start/end with delimiter", {
+            test("hi.".split(".").equals(["hi", ""]));
+            test(".hi".split(".").equals(["", "hi"]));
+            test(".hi.".split(".").equals(["", "hi", ""]));
         });
     });
 }
