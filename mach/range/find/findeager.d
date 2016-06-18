@@ -25,17 +25,31 @@ enum canFindIterable(alias pred, Index, Iter, Subject, bool forward = true) = (
     canFindSaving!(pred, Index, Iter, Subject, forward)
 );
 
-enum canFindRandomAccess(alias pred, Index, Iter, Subject, bool forward = true) = (
-    canFindIn!(Iter, forward) && validFindIndex!Index &&
-    hasNumericIndex!Subject && hasNumericLength!Subject &&
-    isPredicate!(pred, ElementType!Iter, ElementType!Subject)
-);
+template canFindRandomAccess(alias pred, Index, Iter, Subject, bool forward = true){
+    static if(
+        canFindIn!(Iter, forward) && validFindIndex!Index &&
+        hasNumericIndex!Subject && hasNumericLength!Subject
+    ){
+        enum bool canFindRandomAccess = (
+            isPredicate!(pred, ElementType!Iter, ElementType!Subject)
+        );
+    }else{
+        enum bool canFindRandomAccess= false;
+    }
+}
 
-enum canFindSaving(alias pred, Index, Iter, Subject, bool forward = true) = (
-    canFindIn!(Iter, forward) && validFindIndex!Index &&
-    validAsSavingRange!Subject && (forward || validAsBidirectionalRange!Subject) &&
-    isPredicate!(pred, ElementType!Iter, ElementType!Subject)
-);
+template canFindSaving(alias pred, Index, Iter, Subject, bool forward = true){
+    static if(
+        canFindIn!(Iter, forward) && validFindIndex!Index &&
+        validAsSavingRange!Subject && (forward || validAsBidirectionalRange!Subject)
+    ){
+        enum bool canFindSaving = (
+            isPredicate!(pred, ElementType!Iter, ElementType!Subject)
+        );
+    }else{
+        enum bool canFindSaving= false;
+    }
+}
 
 enum canFindSavingRange(alias pred, Index, Iter, Subject, bool forward = true) = (
     isRange!Subject && canFindSaving!(pred, Index, Iter, Subject, forward)
