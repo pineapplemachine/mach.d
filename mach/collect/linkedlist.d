@@ -152,7 +152,7 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
         }
         return false;
     }
-    bool contains(in ref T value) const pure @safe nothrow @nogc{
+    bool contains(in T value) const pure @safe nothrow @nogc{
         foreach(listvalue; this.values){
             if(listvalue == value) return true;
         }
@@ -306,7 +306,7 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
     }
     
     /// Remove some node from this list.
-    auto remove(Node* node) nothrow in{
+    auto remove(Node* node) nothrow @nogc in{
         assert(!this.empty);
     }body{
         auto value = node.value;
@@ -327,10 +327,10 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
         return value;
     }
     
-    auto removefirst() in{assert(!this.empty);} body{
+    auto removefront() nothrow @nogc in{assert(!this.empty);} body{
         return this.remove(this.frontnode);
     }
-    auto removelast() in{assert(!this.empty);} body{
+    auto removeback() nothrow @nogc in{assert(!this.empty);} body{
         return this.remove(this.backnode);
     }
     
@@ -446,18 +446,15 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
     }
     
     /// Get a list containing elements of this one from a low until a high index.
-    auto ref slice(callbacks...)(in size_t low, in size_t high) const in{
+    auto ref slice()(in size_t low, in size_t high) const nothrow in{
         assert(low >= 0 && high >= low && high <= this.length);
     }body{
         auto slice = new Unqual!(typeof(this));
-        Node* lownode;
-        Node* highnode;
         size_t index = 0;
-        for(auto range = this.asrange!false; !range.empty; range.popFront()){
-            foreach(callback; callbacks) callback(range.front);
+        foreach(value; this.values){
             if(index >= low){
                 if(index >= high) break;
-                slice.append(range.front);
+                slice.append(value);
             }
             index++;
         }
@@ -713,8 +710,8 @@ unittest{
         });
         tests("Removal", {
             auto copy = list.dup;
-            copy.removefirst();
-            copy.removelast();
+            copy.removefront();
+            copy.removeback();
             testeq(copy.asarray, [1, 2, 3]);
         });
         tests("Index assignment", {
