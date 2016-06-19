@@ -44,6 +44,7 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
     alias Nodes = LinkedListNodes!(T, Allocator);
     alias opDollar = length;
     alias insert = insertbefore;
+    alias Element = T;
     
     private enum isNodes(N) = is(N == Node*) || is(N == Nodes);
     
@@ -146,10 +147,16 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
     }
     
     bool contains(Node* node){
-        return this.firstnode(n => n is node) !is null;
+        foreach(listnode; this.nodes){
+            if(listnode is node) return true;
+        }
+        return false;
     }
     bool contains(ref T value){
-        return this.firstnode(n => n.value == value) !is null;
+        foreach(listvalue; this.values){
+            if(listvalue == value) return true;
+        }
+        return false;
     }
     
     alias insertbefore = AddAtAction!true;
@@ -164,23 +171,23 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
     
     /// Used to define append and prepend methods
     private template AddAction(bool front){
-        auto action(ref T value){
+        auto action(T value) nothrow @nogc{
             auto node = Allocator.instance.make!Node(value);
             action(node);
             return node;
         }
-        auto action(T[] values...){
+        auto action(T[] values...) nothrow @nogc{
             auto nodes = Node.many(values);
             action(nodes);
             return nodes;
         }
-        auto action(Iter)(ref Iter values) if(isIterableOf!(Iter, T)){
+        auto action(Iter)(auto ref Iter values) nothrow @nogc if(isIterableOf!(Iter, T)){
             auto nodes = Node.many(values);
             action(nodes);
             return nodes;
         }
         
-        auto action(ref typeof(this) list){
+        auto action(ref typeof(this) list) nothrow @nogc{
             auto range = list.asrange;
             static assert(isIterableOf!(typeof(range), T));
             return action!(typeof(range))(range);
@@ -299,9 +306,10 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
     }
     
     /// Remove some node from this list.
-    void remove(callbacks...)(Node* node) in{
+    auto remove(Node* node) nothrow in{
         assert(!this.empty);
     }body{
+        auto value = node.value;
         node.prev.next = node.next;
         node.next.prev = node.prev;
         if(node is this.frontnode){
@@ -314,16 +322,16 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
         }else if(node is this.backnode){
             this.backnode = node.prev;
         }
-        foreach(callback; callbacks) callback(node.value);
         Allocator.instance.dispose(node);
         this.length--;
+        return value;
     }
     
-    void removefirst(callbacks...)() in{assert(!this.empty);} body{
-        this.remove(this.frontnode);
+    auto removefirst() in{assert(!this.empty);} body{
+        return this.remove(this.frontnode);
     }
-    void removelast(callbacks...)() in{assert(!this.empty);} body{
-        this.remove(this.backnode);
+    auto removelast() in{assert(!this.empty);} body{
+        return this.remove(this.backnode);
     }
     
     /// Clear the list, optionally calling some callbacks on each element of the
@@ -344,14 +352,9 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
     }
     
     /// Create a new list containing the same elements as this one.
-    @property typeof(this) dup(callbacks...)(){
+    @property typeof(this) dup() nothrow{
         auto list = new typeof(this);
-        if(!this.empty){
-            for(auto range = this.asrange; !range.empty; range.popFront()){
-                foreach(callback; callbacks) callback(range.front);
-                list.append(range.front);
-            }
-        }
+        foreach(value; this.values) list.append(value);
         return list;
     }
     
@@ -362,23 +365,19 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
         return list;
     }
     
-    auto nodes() pure nothrow @safe @nogc{
-        return Nodes(this.frontnode, this.backnode, this.length);
-    }
-    
     /// Get the list node at some index.
     auto nodeat(in size_t index) const pure nothrow @trusted @nogc in{
         assert(index >= 0 && index < this.length);
     }body{
         if(index < this.length / 2){
             size_t i = 0;
-            for(auto range = this.asrange!false; !range.empty; range.popFront()){
-                if(i++ == index) return range.frontnode;
+            for(auto range = this.nodes; !range.empty; range.popFront()){
+                if(i++ == index) return range.front;
             }
         }else{
             size_t i = this.length - 1;
-            for(auto range = this.asrange!false; !range.empty; range.popBack()){
-                if(i-- == index) return range.backnode;
+            for(auto range = this.nodes; !range.empty; range.popBack()){
+                if(i-- == index) return range.back;
             }
         }
         assert(false);
@@ -387,8 +386,8 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
     /// Get the index of some node in this list.
     auto nodeindex(in Node* node) const pure nothrow @trusted @nogc{
         size_t index = 0;
-        for(auto range = this.asrange!false; !range.empty; range.popFront()){
-            if(range.frontnode is node) return index;
+        foreach(listnode; this.nodes){
+            if(listnode is node) return index;
             index++;
         }
         assert(false, "Node is not a member of the list.");
@@ -408,42 +407,19 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
     }
     
     /// Get the contents of this list as an array.
-    auto asarray(callbacks...)() pure nothrow @safe{
-        T[] array = new T[this.length];
-        size_t index = 0;
-        for(auto range = this.asrange; !range.empty; range.popFront()){
-            foreach(callback; callbacks) callback(range.front);
-            array[index++] = range.front;
-        }
+    auto asarray() pure nothrow @safe{
+        T[] array;
+        array.reserve(this.length);
+        foreach(value; this.values) array ~= value;
         return array;
     }
     
-    /// Iterate forwards through the list.
-    int opApply(int delegate(ref T element) apply){
-        int result = 0;
-        if(!this.empty){
-            Node* current = this.frontnode;
-            do{
-                result = apply(current.value);
-                if(result) break;
-                current = current.next;
-            }while(current !is this.frontnode);
-        }
-        return result;
+    /// Get a range representing the nodes in this list.
+    auto nodes() pure const nothrow @safe @nogc{
+        return Nodes(this.frontnode, this.backnode, this.length);
     }
-    /// Iterate backwards through the list.
-    int opApplyReverse(int delegate(ref T element) apply){
-        int result = 0;
-        if(!this.empty){
-            Node* current = this.backnode;
-            do{
-                result = apply(current.value);
-                if(result) break;
-                current = current.prev;
-            }while(current !is this.backnode);
-        }
-        return result;
-    }
+    /// Get a range representing the values in this list.
+    alias values = this.asrange!false;
     
     /// Get the element at an index.
     /// Please note, this is not especially efficient.
@@ -568,39 +544,25 @@ struct LinkedListNodes(T, Allocator){
     Node* back;
     size_t length;
     
-    @property bool empty(){
+    this(const(Node*) front, const(Node*) back, in size_t length) @trusted @nogc nothrow{
+        this(cast(Node*) front, cast(Node*) back, cast(size_t) length);
+    }
+    this(Node* front, Node* back, size_t length) @safe @nogc nothrow{
+        this.front = front;
+        this.back = back;
+        this.length = length;
+    }
+    
+    @property bool empty() @safe pure nothrow @nogc{
         return this.front is null || this.back is null;
     }
-    void popFront() in{assert(!this.empty);} body{
+    void popFront() @safe pure nothrow @nogc in{assert(!this.empty);} body{
         if(this.front is this.back) this.front = null;
         else this.front = this.front.next;
     }
-    void popBack() in{assert(!this.empty);} body{
+    void popBack() @safe pure nothrow @nogc in{assert(!this.empty);} body{
         if(this.front is this.back) this.back = null;
         else this.back = this.back.prev;
-    }
-    
-    int opApply(in int delegate(ref Node* node) apply){
-        if(this.front !is null){
-            assert(this.back !is null);
-            Node* current = this.front;
-            do{
-                if(auto result = apply(current)) return result;
-                current = current.next;
-            } while(current !is this.front);
-        }
-        return 0;
-    }
-    int opApplyReverse(in int delegate(ref Node* node) apply){
-        if(this.back !is null){
-            assert(this.front !is null);
-            Node* current = this.back;
-            do{
-                if(auto result = apply(current)) return result;
-                current = current.prev;
-            } while(current !is this.back);
-        }
-        return 0;
     }
 }
 
@@ -717,21 +679,13 @@ unittest{
             testeq(slice[$-1], 3);
         });
         tests("Iteration", {
-            void itertest(T)(auto ref T iter){
-                foreach(element; iter) testeq(element, list[element]);
-            }
-            foreach(element; list) testeq(element, list[element]);
-            itertest(list);
+            foreach(value; list.values) testeq(value, list[value]);
         });
         tests("Iterate nodes", {
             auto nodes = list.nodes;
             size_t count = 0;
-            // Iterate with opApply
             foreach(node; nodes) count++;
             testeq(count, list.length);
-            // Iterate as a range
-            for(auto range = nodes; !range.empty; range.popFront()) count--;
-            testeq(count, 0);
         });
         tests("Appending", {
             auto copy = list.dup;
@@ -767,10 +721,7 @@ unittest{
         tests("As range", {
             auto range = list.asrange;
             testeq(range.length, list.length);
-            foreach(element; list){
-                testeq(element, range.front);
-                range.popFront();
-            }
+            foreach(i; 0 .. list.length) range.popFront();
             test(range.empty);
         });
         tests("Maintaining order", {
