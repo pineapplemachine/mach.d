@@ -16,6 +16,17 @@ enum canFindAllIterable(alias pred, Index, Iter, Subject) = (
     canFindAllLazy!(pred, Index, Iter, Subject)
 );
 
+enum canFindAll(alias pred, Index, Iter, Subject) = (
+    canFindAllIterable!(pred, Index, Iter, Subject)
+);
+enum canFindAll(alias pred, Index, Iter) = (
+    canFindAllElements!(pred, Index, Iter)
+);
+enum canFindAll(Index, Iter, Subject) = (
+    canFindAllElements!((e => e == Subject.init), Index, Iter) ||
+    canFindAllIterable!(DefaultFindPredicate, Index, Iter, Subject)
+);
+
 
 
 auto findalliter(
