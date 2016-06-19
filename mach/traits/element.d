@@ -54,6 +54,8 @@ template ElementType(Iter){
         alias ElementType = ArrayElementType!Iter;
     }else static if(isRange!Iter){
         alias ElementType = RangeElementType!Iter;
+    }else static if(__traits(compiles, {alias E = Iter.Element;})){
+        alias ElementType = Iter.Element;
     }else static if(hasOpApply!Iter){
         alias ElementType = OpApplyElementType!Iter;
     }else static if(hasOpApplyReverse!Iter){

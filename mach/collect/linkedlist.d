@@ -4,9 +4,9 @@ private:
 
 import std.experimental.allocator : make, dispose;
 import std.experimental.allocator.mallocator : Mallocator;
-import std.traits : isImplicitlyConvertible, Unqual;
+import std.traits : isIntegral, isImplicitlyConvertible, Unqual;
 import mach.traits : isFiniteIterable, isIterableOf, ElementType;
-import mach.traits : isMutable, isAllocator;
+import mach.traits : isMutable, isAllocator, canIncrement;
 
 public:
 
@@ -146,13 +146,13 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
         return fallback;
     }
     
-    bool contains(Node* node){
+    bool contains(in Node* node) const pure @safe nothrow @nogc{
         foreach(listnode; this.nodes){
             if(listnode is node) return true;
         }
         return false;
     }
-    bool contains(ref T value){
+    bool contains(in ref T value) const pure @safe nothrow @nogc{
         foreach(listvalue; this.values){
             if(listvalue == value) return true;
         }
@@ -366,16 +366,18 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
     }
     
     /// Get the list node at some index.
-    auto nodeat(in size_t index) const pure nothrow @trusted @nogc in{
+    auto nodeat(Index)(in Index index) const pure nothrow @trusted @nogc if(
+        isIntegral!Index
+    )in{
         assert(index >= 0 && index < this.length);
     }body{
         if(index < this.length / 2){
-            size_t i = 0;
+            Index i = 0;
             for(auto range = this.nodes; !range.empty; range.popFront()){
                 if(i++ == index) return range.front;
             }
         }else{
-            size_t i = this.length - 1;
+            Index i = this.length - 1;
             for(auto range = this.nodes; !range.empty; range.popBack()){
                 if(i-- == index) return range.back;
             }
@@ -384,8 +386,12 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
     }
     
     /// Get the index of some node in this list.
-    auto nodeindex(in Node* node) const pure nothrow @trusted @nogc{
-        size_t index = 0;
+    auto nodeindex(Index = size_t)(
+        in Node* node, Index start = Index.init
+    ) const pure nothrow @trusted @nogc if(
+        canIncrement!Index
+    ){
+        Index index = start;
         foreach(listnode; this.nodes){
             if(listnode is node) return index;
             index++;
