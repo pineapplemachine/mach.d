@@ -2,17 +2,11 @@ module mach.collect.linkedlist;
 
 private:
 
-import std.typecons : Tuple;
 import std.experimental.allocator : make, dispose;
 import std.experimental.allocator.mallocator : Mallocator;
 import std.traits : isImplicitlyConvertible, Unqual;
 import mach.traits : isFiniteIterable, isIterableOf, ElementType;
 import mach.traits : isMutable, isAllocator;
-
-template NodesTuple(T, Allocator){
-    alias Node = LinkedListNode!(T, Allocator);
-    alias NodesTuple = Tuple!(Node*, `front`, Node*, `back`, size_t, `length`);
-}
 
 public:
 
@@ -47,7 +41,7 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
     canLinkedList!(T, Allocator)
 ){
     alias Node = LinkedListNode!(T, Allocator);
-    alias Nodes = NodesTuple!(T, Allocator);
+    alias Nodes = LinkedListNodes!(T, Allocator);
     alias opDollar = length;
     alias insert = insertbefore;
     
@@ -291,6 +285,7 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
         alias AddAtAction = action;
     }
     
+    // TODO: Remove (delegate functionality to SortedList)
     auto insertsorted(T value){
         return this.insertsorted((a, b) => (a > b), value);
     }
@@ -542,7 +537,7 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
 
 struct LinkedListNode(T, Allocator = DefaultLinkedListAllocator){
     alias Node = typeof(this);
-    alias Nodes = NodesTuple!(T, Allocator);
+    alias Nodes = LinkedListNodes!(T, Allocator);
     
     T value;
     Node* prev;
@@ -564,6 +559,48 @@ struct LinkedListNode(T, Allocator = DefaultLinkedListAllocator){
             length++;
         }
         return Nodes(first, current, length);
+    }
+}
+
+struct LinkedListNodes(T, Allocator){
+    alias Node = LinkedListNode!(T, Allocator);
+    Node* front;
+    Node* back;
+    size_t length;
+    
+    @property bool empty(){
+        return this.front is null || this.back is null;
+    }
+    void popFront() in{assert(!this.empty);} body{
+        if(this.front is this.back) this.front = null;
+        else this.front = this.front.next;
+    }
+    void popBack() in{assert(!this.empty);} body{
+        if(this.front is this.back) this.back = null;
+        else this.back = this.back.prev;
+    }
+    
+    int opApply(in int delegate(ref Node* node) apply){
+        if(this.front !is null){
+            assert(this.back !is null);
+            Node* current = this.front;
+            do{
+                if(auto result = apply(current)) return result;
+                current = current.next;
+            } while(current !is this.front);
+        }
+        return 0;
+    }
+    int opApplyReverse(in int delegate(ref Node* node) apply){
+        if(this.back !is null){
+            assert(this.front !is null);
+            Node* current = this.back;
+            do{
+                if(auto result = apply(current)) return result;
+                current = current.prev;
+            } while(current !is this.back);
+        }
+        return 0;
     }
 }
 
@@ -685,6 +722,16 @@ unittest{
             }
             foreach(element; list) testeq(element, list[element]);
             itertest(list);
+        });
+        tests("Iterate nodes", {
+            auto nodes = list.nodes;
+            size_t count = 0;
+            // Iterate with opApply
+            foreach(node; nodes) count++;
+            testeq(count, list.length);
+            // Iterate as a range
+            for(auto range = nodes; !range.empty; range.popFront()) count--;
+            testeq(count, 0);
         });
         tests("Appending", {
             auto copy = list.dup;
