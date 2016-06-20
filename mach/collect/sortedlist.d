@@ -22,6 +22,7 @@ struct SortedList(
     alias List = LinkedList!(T, Allocator);
     alias Node = List.Node;
     alias opDollar = length;
+    alias Element = T;
     
     List list = null;
     
