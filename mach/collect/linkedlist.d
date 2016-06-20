@@ -336,12 +336,11 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
     
     /// Clear the list, optionally calling some callbacks on each element of the
     /// list, for example a function that frees newly-unused memory.
-    void clear(callbacks...)(){
+    void clear() nothrow @nogc{
         if(!this.empty){
             Node* current = this.frontnode;
             do{
                 auto next = current.next;
-                foreach(callback; callbacks) callback(current.value);
                 Allocator.instance.dispose(current);
                 current = next;
             } while(current != this.frontnode);
@@ -401,7 +400,7 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
     
     /// Get a range for iterating over this list whose contents can be mutated.
     auto asrange()() pure nothrow @safe @nogc{
-        return this.asrange!true;
+        return this.asrange!(isMutable!(typeof(this)));
     }
     /// ditto
     auto asrange(bool mutable)() pure nothrow @safe @nogc if(mutable){
@@ -420,12 +419,12 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
         return array;
     }
     
+    /// Get a range representing the values in this list.
+    alias values = this.asrange!false;
     /// Get a range representing the nodes in this list.
     auto nodes() pure const nothrow @safe @nogc{
         return Nodes(this.frontnode, this.backnode, this.length);
     }
-    /// Get a range representing the values in this list.
-    alias values = this.asrange!false;
     
     /// Get the element at an index.
     /// Please note, this is not especially efficient.
@@ -446,10 +445,10 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
     }
     
     /// Get a list containing elements of this one from a low until a high index.
-    auto ref slice()(in size_t low, in size_t high) const nothrow in{
+    auto ref opSlice()(in size_t low, in size_t high) nothrow in{
         assert(low >= 0 && high >= low && high <= this.length);
     }body{
-        auto slice = new Unqual!(typeof(this));
+        auto slice = new typeof(this);
         size_t index = 0;
         foreach(value; this.values){
             if(index >= low){
@@ -459,12 +458,6 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
             index++;
         }
         return slice;
-    }
-    /// ditto
-    auto ref opSlice(in size_t low, in size_t high) const in{
-        assert(low >= 0 && high >= low && high <= this.length);
-    }body{
-        return this.slice(low, high);
     }
     
     /// Append some value to this list.
@@ -501,12 +494,18 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
         return this.contains(value);
     }
     
-    override string toString() const{
+    override string toString() @safe pure const nothrow{
         import std.conv : to;
         string str = "";
+        string append;
         for(auto range = this.asrange!false; !range.empty; range.popFront()){
             if(str.length) str ~= ", ";
-            str ~= range.front.to!string;
+            try{
+                append = range.front.to!string;
+            }catch(Exception){
+                append = "";
+            }
+            str ~= append;
         }
         return "[" ~ str ~ "]";
     }
@@ -543,9 +542,9 @@ struct LinkedListNode(T, Allocator = DefaultLinkedListAllocator){
 
 struct LinkedListNodes(T, Allocator){
     alias Node = LinkedListNode!(T, Allocator);
-    Node* front;
-    Node* back;
-    size_t length;
+    Node* front = null;
+    Node* back = null;
+    size_t length = 0;
     
     this(const(Node*) front, const(Node*) back, in size_t length) @trusted @nogc nothrow{
         this(cast(Node*) front, cast(Node*) back, cast(size_t) length);
@@ -575,10 +574,10 @@ struct LinkedListRange(List){
     alias Element = ElementType!List;
     alias Node = List.Node;
     
-    List list;
-    Node* frontnode;
-    Node* backnode;
-    bool empty;
+    List list = null;
+    Node* frontnode = null;
+    Node* backnode = null;
+    bool empty = true;
     
     this(List list) @trusted{
         this(list, cast(Node*) list.frontnode, cast(Node*) list.backnode, list.empty);
@@ -760,6 +759,11 @@ unittest{
             foreach(i; 0 .. input.length){
                 testeq(list[i], input[i]);
             }
+        });
+        tests("Start blank", {
+            auto list = new LinkedList!int;
+            list.append(1, 2);
+            testeq(list.asarray, [1, 2]);
         });
     });
 }
