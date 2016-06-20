@@ -2,8 +2,9 @@ module mach.range.top;
 
 private:
 
+import std.functional : not;
 import mach.traits : ElementType, isFiniteIterable, isPredicate;
-import mach.collect : LinkedList;
+import mach.collect : SortedList;
 
 public:
 
@@ -23,49 +24,44 @@ alias DefaultTopComparison = (a, b) => (a > b);
 
 
 
-/// Get the top-most element given a comparison function.
-auto top(alias compare = DefaultTopComparison, Iter)(
-    auto ref Iter iter
-) if(canTop!(Iter, compare)){
-    alias Element = ElementType!Iter;
-    bool first = true;
-    Element top;
-    foreach(element; iter){
-        if(first || compare(element, top)){
-            top = element;
-            first = false;
+template top(alias compare = DefaultTopComparison){
+    auto top(Iter)(
+        auto ref Iter iter
+    ) if(canTop!(Iter, compare)){
+        alias Element = ElementType!Iter;
+        bool first = true;
+        Element top;
+        foreach(element; iter){
+            if(first || compare(element, top)){
+                top = element;
+                first = false;
+            }
         }
+        return top;
     }
-    return top;
-}
-
-/// Get the n top-most elements given a comparison function.
-auto top(alias compare = DefaultTopComparison, Iter)(
-    auto ref Iter iter, size_t count
-) if(canTop!(Iter, compare)){
-    alias Element = ElementType!Iter;
-    auto list = new LinkedList!Element;
-    foreach(element; iter){
-        list.insertsorted((a, b) => (compare(a, b)), element);
-        if(list.length > count) list.removelast();
+    auto top(Iter)(
+        auto ref Iter iter, size_t count
+    ) if(canTop!(Iter, compare)){
+        SortedList!(ElementType!Iter, compare) list;
+        foreach(element; iter){
+            list.insert(element);
+            if(list.length > count) list.removeback();
+        }
+        return list;
     }
-    return list;
 }
 
-
-
-/// Get the bottom-most element given a comparison function.
-auto bottom(alias compare = (a, b) => (a > b), Iter)(
-    auto ref Iter iter
-) if(canTop!(Iter, compare)){
-    return top!((a, b) => (compare(b, a)))(iter);
-}
-
-/// Get the n bottom-most elements given a comparison function.
-auto bottom(alias compare = (a, b) => (a > b), Iter)(
-    auto ref Iter iter, size_t count
-) if(canTop!(Iter, compare)){
-    return top!((a, b) => (compare(b, a)))(iter, count);
+template bottom(alias compare = DefaultTopComparison){
+    auto bottom(Iter)(
+        auto ref Iter iter
+    ) if(canTop!(Iter, compare)){
+        return top!(not!compare)(iter);
+    }
+    auto bottom(Iter)(
+        auto ref Iter iter, size_t count
+    ) if(canTop!(Iter, compare)){
+        return top!(not!compare)(iter, count);
+    }
 }
 
 
