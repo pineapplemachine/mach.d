@@ -119,32 +119,6 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
             this.backnode.value = value;
         }
     }
-        
-    @property Node* firstnode()(in bool delegate(in Node* value) pred) const{
-        for(auto range = this.asrange!false; !range.empty; range.popFront()){
-            if(pred(range.frontnode)) return range.frontnode;
-        }
-        return null;
-    }
-    @property Node* lastnode()(in bool delegate(in Node* value) pred) const{
-        for(auto range = this.asrange!false; !range.empty; range.popBack()){
-            if(pred(range.backnode)) return range.backnode;
-        }
-        return null;
-    }
-    
-    @property auto first(in bool delegate(in T value) pred, T fallback = T.init) const{
-        for(auto range = this.asrange!false; !range.empty; range.popFront()){
-            if(pred(range.front)) return range.front;
-        }
-        return fallback;
-    }
-    @property auto last(in bool delegate(in T value) pred, T fallback = T.init) const{
-        for(auto range = this.asrange!false; !range.empty; range.popBack()){
-            if(pred(range.back)) return range.back;
-        }
-        return fallback;
-    }
     
     bool contains(in Node* node) const pure @safe nothrow @nogc{
         foreach(listnode; this.nodes){
@@ -238,12 +212,6 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
             return nodes;
         }
         
-        auto action(in bool delegate(in T value) pred, T value){
-            auto node = this.firstnode(node => pred(node.value));
-            if(node !is null) return action(node, value);
-            else return this.append(value);
-        }
-        
         void action(N)(size_t index, N nodes) pure nothrow @safe @nogc if(
             isNodes!N
         ) in{
@@ -290,19 +258,6 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
         }
         
         alias AddAtAction = action;
-    }
-    
-    // TODO: Remove (delegate functionality to SortedList)
-    auto insertsorted(T value){
-        return this.insertsorted((a, b) => (a > b), value);
-    }
-    auto insertsorted(in bool delegate(in T a, in T b) compare, T value){
-        auto node = this.firstnode(node => compare(value, node.value));
-        if(node is null){
-            return this.append(value);
-        }else{
-            return this.insertbefore(node, value);
-        }
     }
     
     /// Remove some node from this list.
@@ -725,14 +680,6 @@ unittest{
             testeq(range.length, list.length);
             foreach(i; 0 .. list.length) range.popFront();
             test(range.empty);
-        });
-        tests("Maintaining order", {
-            auto sorted = new LinkedList!int(0, 4);
-            foreach(value; [5, 1, 3, 2]) sorted.insertsorted((a, b) => (a < b), value);
-            testeq(sorted.asarray, [0, 1, 2, 3, 4, 5]);
-            sorted.clear();
-            foreach(value; [5, 1, 4, 0, 3, 2]) sorted.insertsorted((a, b) => (a < b), value);
-            testeq(sorted.asarray, [0, 1, 2, 3, 4, 5]);
         });
         tests("Contains", {
             test(0 in list);
