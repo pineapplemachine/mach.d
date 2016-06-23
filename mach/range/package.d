@@ -22,6 +22,7 @@ import mach.range.include : include, exclude;
 import mach.range.indexof : indexof, indexofiter, indexofelement;
 import mach.range.interpolate : interpolate, lerp, coslerp;
 import mach.range.intersperse : intersperse;
+import mach.range.join : join;
 import mach.range.logical : any, all, none, first, last, count, exactly, more, less, atleast, atmost;
 import mach.range.map : map;
 import mach.range.mutate : mutate;
