@@ -2,6 +2,7 @@ module mach.range.intersperse;
 
 private:
 
+import std.traits : isIntegral, isImplicitlyConvertible;
 import mach.traits : isRange, isFiniteRange, isIterableOf, ElementType;
 import mach.range.asrange : asrange, validAsRange;
 
@@ -10,12 +11,20 @@ public:
 
 
 template canIntersperse(Iter, Element, Interval){
-    enum bool canIntersperse = true; // TODO
+    static if(validAsRange!Iter && validIntersperseInterval!Interval){
+        enum bool canIntersperse = (
+            isImplicitlyConvertible!(Element, ElementType!Iter)
+        );
+    }else{
+        enum bool canIntersperse = false;
+    }
 }
 
 enum canIntersperseRange(Range, Interval) = (
     isRange!Range && canIntersperse!(Range, ElementType!Range, Interval)
 );
+
+alias validIntersperseInterval = isIntegral;
 
 alias DefaultIntersperseInterval = size_t;
 
@@ -25,7 +34,7 @@ auto intersperse(
     bool frontinterval = false, bool backinterval = false,
     Iter, Element, Interval = DefaultIntersperseInterval
 )(
-    Iter iter, Element interrupt, Interval interval
+    auto ref Iter iter, auto ref Element interrupt, Interval interval
 ) if(
     canIntersperse!(Iter, Element, Interval)
 ){
@@ -93,6 +102,10 @@ version(unittest){
     import mach.range.compare : equals;
 }
 unittest{
+    static assert(canIntersperse!(string, char, size_t));
+    static assert(canIntersperse!(int[], int, int));
+    static assert(canIntersperse!(double[], int, size_t));
+    static assert(!canIntersperse!(int[], string, size_t));
     tests("Intersperse", {
         test("hello".intersperse!(false, false)('_', 2).equals("h_e_l_l_o"));
         test("hello".intersperse!(true, false)('_', 2).equals("_h_e_l_l_o"));
