@@ -26,6 +26,7 @@ import mach.range.join : join;
 import mach.range.logical : any, all, none, first, last, count, exactly, more, less, atleast, atmost;
 import mach.range.map : map;
 import mach.range.mutate : mutate;
+import mach.range.next : next, nextfront, nextback;
 import mach.range.ngrams : ngrams;
 import mach.range.pad : pad, padleft, padright, padleftcount, padrightcount;
 import mach.range.pluck : pluck;
