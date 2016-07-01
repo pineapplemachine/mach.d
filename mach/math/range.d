@@ -2,15 +2,15 @@ module mach.math.range;
 
 private:
 
-import mach.traits : ElementType, isFiniteIterable, hasBinaryOp, hasComparison;
+import mach.traits : ElementType, isFiniteIterable, hasBinaryOp, canCompare;
 
 public:
 
 
 
 enum isValidRangeElement(Element) = (
-    hasComparison!(Element, ">") &&
-    hasComparison!(Element, "<") &&
+    canCompare!(Element, ">") &&
+    canCompare!(Element, "<") &&
     hasBinaryOp!(Element, "-")
 );
 enum hasRange(Iter) = (
