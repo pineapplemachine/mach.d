@@ -12,17 +12,19 @@ public:
 
 alias canMakeArray = isIterable;
 
-enum canMakeArrayOf(Iter, Element) = (
-    canMakeArray!Iter &&
-    canCast!(ElementType!Iter, Element)
-);
+template canMakeArrayOf(Iter, Element){
+    static if(canMakeArray!Iter){
+        enum bool canMakeArrayOf = canCast!(ElementType!Iter, Element);
+    }else{
+        enum bool canMakeArrayOf = false;
+    }
+};
 
-enum canMakeKnownLengthArray(Iter) = (
-    canMakeArray!Iter &&
-    isFiniteIterable!Iter &&
-    hasNumericLength!Iter &&
-    canCast!(LengthType!Iter, size_t)
-);
+template canMakeKnownLengthArray(Iter){
+    enum bool canMakeKnownLengthArray = (
+        canMakeArray!Iter && isFiniteIterable!Iter && hasNumericLength!Iter
+    );
+};
 
 enum canMakeKnownLengthArrayOf(Iter, Element) = (
     canMakeKnownLengthArray!Iter &&
