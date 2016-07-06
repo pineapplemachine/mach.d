@@ -115,7 +115,7 @@ template isMutableRandomRange(Range){
 /// The added element should not be included in the range's iteration.
 /// The addition should persist in whatever collection backs the range, if any.
 template isMutableInsertRange(Range){
-    enum bool isMutableInsertFrontRange = isMutableRange!Range && is(typeof((inout int = 0){
+    enum bool isMutableInsertRange = isMutableRange!Range && is(typeof((inout int = 0){
         Range range = Range.init;
         auto front = range.front;
         range.insert(front);
@@ -123,6 +123,7 @@ template isMutableInsertRange(Range){
 }
 
 /// Determine if a range can have the current front element safely removed.
+/// Calling removeFront should also implicitly popFront.
 /// The removal should persist in whatever collection backs the range, if any.
 template isMutableRemoveFrontRange(Range){
     enum bool isMutableRemoveFrontRange = isMutableRange!Range && is(typeof((inout int = 0){
@@ -132,9 +133,12 @@ template isMutableRemoveFrontRange(Range){
 }
 
 /// Determine if a range can have the current back element safely removed.
+/// Calling removeBack should also implicitly popBack.
 /// The removal should persist in whatever collection backs the range, if any.
 template isMutableRemoveBackRange(Range){
-    enum bool isMutableRemoveBackRange = isMutableRange!Range && is(typeof((inout int = 0){
+    enum bool isMutableRemoveBackRange = (
+        isMutableRange!Range && isBidirectionalRange!Range
+    ) && is(typeof((inout int = 0){
         Range range = Range.init;
         range.removeBack();
     }));
