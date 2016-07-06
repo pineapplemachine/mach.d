@@ -94,11 +94,11 @@ struct SortedList(
     }body{
         return this.list.backnode.value;
     }
-    auto contains(in T value) const pure @safe nothrow @nogc{
-        return !this.empty && this.list.contains(value);
-    }
     auto contains(in Node* node) const pure @safe nothrow @nogc{
         return !this.empty && this.list.contains(node);
+    }
+    auto contains(in T value) const{
+        return !this.empty && this.list.contains(value);
     }
     auto remove(Node* node) nothrow @nogc in{
         assert(!this.empty);
@@ -206,7 +206,7 @@ struct SortedList(
         return true;
     }
     
-    string toString() @safe pure const nothrow{
+    string toString() const nothrow{
         return this.empty ? "" : this.list.toString();
     }
 }

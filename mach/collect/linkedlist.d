@@ -126,7 +126,7 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
         }
         return false;
     }
-    bool contains(in T value) const pure @safe nothrow @nogc{
+    bool contains(in T value) const{
         foreach(listvalue; this.values){
             if(listvalue == value) return true;
         }
@@ -288,6 +288,8 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
     auto removeback() nothrow @nogc in{assert(!this.empty);} body{
         return this.remove(this.backnode);
     }
+    alias popfront = removefront;
+    alias popback = removeback;
     
     /// Clear the list, optionally calling some callbacks on each element of the
     /// list, for example a function that frees newly-unused memory.
@@ -449,7 +451,7 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
         return this.contains(value);
     }
     
-    override string toString() @safe pure const nothrow{
+    override string toString() const nothrow{
         import std.conv : to;
         string str = "";
         string append;
@@ -548,16 +550,16 @@ struct LinkedListRange(List){
         return this.list.length;
     }
     
-    @property Element front() const{
-        return this.frontnode.value;
+    @property Element front() pure @trusted const nothrow{
+        return cast(Element) this.frontnode.value;
     }
     void popFront(){
         this.frontnode = this.frontnode.next;
         this.empty = this.frontnode.prev is this.backnode;
     }
     
-    @property Element back() const{
-        return this.backnode.value;
+    @property Element back() pure @trusted const nothrow{
+        return cast(Element) this.backnode.value;
     }
     void popBack(){
         this.backnode = this.backnode.prev;
@@ -568,33 +570,33 @@ struct LinkedListRange(List){
         enum bool mutable = true;
         
         static if(isMutable!Element){
-            @property void front(ref Element value){
+            @property void front(Element value){
                 this.frontnode.value = value;
             }
-            @property void back(ref Element value){
+            @property void back(Element value){
                 this.backnode.value = value;
             }
         }
         
-        auto insert(ref Element value){
+        auto insert(Element value){
             this.backnode = this.list.append(value);
         }
         
-        auto removeFront(callbacks...)(){
+        auto removeFront(){
             auto next = this.frontnode.next;
-            this.list.remove!callbacks(this.frontnode);
+            this.list.remove(this.frontnode);
             this.frontnode = next;
         }
-        auto insertFront(ref Element value){
+        auto insertFront(Element value){
             this.frontnode = this.list.insertbefore(this.frontnode, value);
         }
         
-        auto removeBack(callbacks...)(){
+        auto removeBack(){
             auto prev = this.backnode.prev;
-            this.list.remov!callbackse(this.backnode);
+            this.list.remove(this.backnode);
             this.backnode = prev;
         }
-        auto insertBack(ref Element value){
+        auto insertBack(Element value){
             this.backnode = this.list.insertafter(this.backnode, value);
         }
     }
