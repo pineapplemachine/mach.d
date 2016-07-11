@@ -6,7 +6,10 @@ import std.algorithm : canFind;
 
 public:
 
-static immutable char[] Vowels = ['a', 'e', 'i', 'o', 'u', 'y'];
+static immutable char[] Vowels = [
+    'a', 'e', 'i', 'o', 'u', 'y',
+    'A', 'E', 'I', 'O', 'U', 'Y'
+];
 
 bool isVowel(in char ch){
     return Vowels.canFind(ch);
@@ -20,12 +23,14 @@ version(unittest) import mach.error.unit;
 unittest{
     tests("Vowels", {
         test('a'.isVowel);
+        test('A'.isVowel);
         test('e'.isVowel);
         test('i'.isVowel);
         test('o'.isVowel);
         test('u'.isVowel);
         test('y'.isVowel); // Sometimes
         testf('b'.isVowel);
+        testf('B'.isVowel);
         testf('c'.isVowel);
         testf('d'.isVowel);
         testf('z'.isVowel);
