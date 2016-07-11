@@ -8,6 +8,7 @@ import mach.range.associate : associate, group, distribution;
 import mach.range.chain : chain, chainiter, chainranges;
 import mach.range.chunk : chunk;
 import mach.range.compare : compare, equals, iterequals, recursiveequals;
+import mach.range.compareends : headis, tailis;
 import mach.range.consume : consume, consumereverse;
 import mach.range.contains : contains, containsiter, containselement;
 import mach.range.distinct : distinct;
