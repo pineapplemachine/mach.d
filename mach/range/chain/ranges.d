@@ -193,7 +193,7 @@ unittest{
             auto saved = range.save;
             range.popFront();
             range.popBack();
-            test(range.equals("odaw"));
+            test(range.equals!false("odaw"));
             test(saved.equals("yodawg"));
         });
         tests("Slices", {

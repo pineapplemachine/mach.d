@@ -4,12 +4,13 @@ private:
 
 import mach.range.asrange : asrange, validAsRange;
 import mach.traits : ElementType, isFiniteIterable, isFiniteRange, canCompare;
-import mach.traits : isPredicate;
+import mach.traits : hasNumericLength, isPredicate;
 
 public:
 
 
 
+/// Determine whether two iterables can be compared using a predicate.
 enum canCompareIterables(alias pred, IterA, IterB) = (
     validAsRange!(isFiniteIterable, IterA) &&
     validAsRange!(isFiniteIterable, IterB) &&
@@ -28,11 +29,20 @@ enum canCompareIterablesRecursiveEquality(IterA, IterB) = (
 
 
 
+/// Compares the contents of two iterables until one or both of them has been
+/// exhausted using the given predicate. If length is true, then when both
+/// iterables have length and their lengths are unequal the function returns
+/// false. If exhaust is true, then if one iterable is exhausted before the
+/// other then false is returned, even if all of their elements satisfied the
+/// predicate. By default, both length and exhaust are true.
 bool compare(
-    alias pred, bool length = true, IterA, IterB
+    alias pred, bool length = true, bool exhaust = true, IterA, IterB
 )(
-    IterA itera, IterB iterb
+    auto ref IterA itera, auto ref IterB iterb
 ) if(canCompareIterables!(pred, IterA, IterB)){
+    static if(length && hasNumericLength!IterA && hasNumericLength!IterB){
+        if(itera.length != iterb.length) return false;
+    }
     auto rangea = itera.asrange;
     auto rangeb = iterb.asrange;
     while(!rangea.empty && !rangeb.empty){
@@ -42,7 +52,7 @@ bool compare(
         rangea.popFront();
         rangeb.popFront();
     }
-    static if(length){
+    static if(exhaust){
         return rangea.empty && rangeb.empty;
     }else{
         return true;
@@ -53,27 +63,33 @@ bool compare(
 
 /// Determine whether the values in two iterables are equal,
 /// optionally ignoring length.
-bool equals(bool length = true, IterA, IterB)(IterA itera, IterB iterb) if(
+bool equals(bool length = true, bool exhaust = true, IterA, IterB)(
+    auto ref IterA itera, auto ref IterB iterb
+) if(
     canCompareIterablesEquality!(IterA, IterB) ||
     canCompareIterablesRecursiveEquality!(IterA, IterB)
 ){
     static if(canCompareIterablesEquality!(IterA, IterB)){
-        return iterequals!(length, IterA, IterB)(itera, iterb);
+        return iterequals!(length, exhaust, IterA, IterB)(itera, iterb);
     }else{
-        return recursiveequals!(length, IterA, IterB)(itera, iterb);
+        return recursiveequals!(length, exhaust, IterA, IterB)(itera, iterb);
     }
 }
 
-bool iterequals(bool length = true, IterA, IterB)(IterA itera, IterB iterb) if(
+bool iterequals(bool length = true, bool exhaust = true, IterA, IterB)(
+    auto ref IterA itera, auto ref IterB iterb
+) if(
     canCompareIterablesEquality!(IterA, IterB)
 ){
-    return compare!(EqualityComparison, length, IterA, IterB)(itera, iterb);
+    return compare!(EqualityComparison, length, exhaust, IterA, IterB)(itera, iterb);
 }
 
-bool recursiveequals(bool length = true, IterA, IterB)(IterA itera, IterB iterb) if(
+bool recursiveequals(bool length = true, bool exhaust = true, IterA, IterB)(
+    auto ref IterA itera, auto ref IterB iterb
+) if(
     canCompareIterablesRecursiveEquality!(IterA, IterB)
 ){
-    return compare!(RecursiveEqualityComparison, length, IterA, IterB)(itera, iterb);
+    return compare!(RecursiveEqualityComparison, length, exhaust, IterA, IterB)(itera, iterb);
 }
 
 
@@ -102,7 +118,7 @@ unittest{
         });
         tests("Differing lengths", {
             testf([1, 2, 3].equals!true([1, 2, 3, 4]));
-            test([1, 2, 3].equals!false([1, 2, 3, 4]));
+            test([1, 2, 3].equals!(false, false)([1, 2, 3, 4]));
         });
         tests("Ranges", {
             test(TestRange(2, 6).equals(TestRange(2, 6)));

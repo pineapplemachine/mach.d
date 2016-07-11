@@ -501,7 +501,7 @@ unittest{
             tests("Bidirectionality", {
                 auto range = input.repeatrandomaccess(3);
                 range.popBack();
-                test(range.equals(thrice[0 .. $-1]));
+                test(range.equals!false(thrice[0 .. $-1]));
             });
         });
     });
