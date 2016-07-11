@@ -13,27 +13,36 @@ public:
 
 
 
-alias validEndRangeCount = isIntegral;
+alias DefaultEndCount = size_t;
+
+alias validEndCount = isIntegral;
 
 enum canGetEnd(Iter, Count) = (
-    validAsRandomAccessRange!Iter && hasNumericLength!Iter && validEndRangeCount!Count
+    validAsRandomAccessRange!Iter && hasNumericLength!Iter && validEndCount!Count
 );
 enum canGetEndRange(Range, Count) = (
     isRandomAccessRange!Range && canGetEnd!(Range, Count)
 );
 
 enum canGetSimpleHead(Iter, Count) = (
-    validAsRange!Iter && validEndRangeCount!Count
+    validAsRange!Iter && validEndCount!Count
 );
 
 enum canGetSimpleHeadRange(Range, Count) = (
     isRange!Range && canGetSimpleHead!(Range, Count)
 );
 
+enum canGetHead(Iter, Count = DefaultEndCount) = (
+    canGetEnd!(Iter, Count) || canGetSimpleHead!(Iter, Count)
+);
+enum canGetTail(Iter, Count = DefaultEndCount) = (
+    canGetEnd!(Iter, Count)
+);
+
 
 
 /// Get as a range the first count elements of some iterable.
-auto head(Iter, Count)(Iter iter, Count count) if(
+auto head(Iter, Count = DefaultEndCount)(Iter iter, Count count) if(
     canGetSimpleHead!(Iter, Count) && !canGetEnd!(Iter, Count)
 ){
     auto range = iter.asrange;
@@ -41,30 +50,30 @@ auto head(Iter, Count)(Iter iter, Count count) if(
 }
 
 /// ditto
-auto head(Iter, Count)(Iter iter, Count count) if(canGetEnd!(Iter, Count)){
+auto head(Iter, Count = DefaultEndCount)(Iter iter, Count count) if(canGetEnd!(Iter, Count)){
     auto range = iter.asrange;
     return HeadRange!(typeof(range), Count)(range, count);
 }
 
 /// Get as a range the trailing count elements of some iterable.
-auto tail(Iter, Count)(Iter iter, Count count) if(canGetEnd!(Iter, Count)){
+auto tail(Iter, Count = DefaultEndCount)(Iter iter, Count count) if(canGetEnd!(Iter, Count)){
     auto range = iter.asrange;
     return TailRange!(typeof(range), Count)(range, count);
 }
 
 
 
-template HeadRange(Range, Count = size_t) if(canGetEndRange!(Range, Count)){
+template HeadRange(Range, Count = DefaultEndCount) if(canGetEndRange!(Range, Count)){
     alias HeadRange = EndRange!(Range, Count, false);
 }
 
-template TailRange(Range, Count = size_t) if(canGetEndRange!(Range, Count)){
+template TailRange(Range, Count = DefaultEndCount) if(canGetEndRange!(Range, Count)){
     alias TailRange = EndRange!(Range, Count, true);
 }
 
 
 
-struct SimpleHeadRange(Range, Count = size_t) if(canGetSimpleHeadRange!(Range, Count)){
+struct SimpleHeadRange(Range, Count = DefaultEndCount) if(canGetSimpleHeadRange!(Range, Count)){
     Range source;
     Count index;
     Count limit;
@@ -107,7 +116,7 @@ struct SimpleHeadRange(Range, Count = size_t) if(canGetSimpleHeadRange!(Range, C
     }
 }
 
-struct EndRange(Range, Count = size_t, bool tail) if(canGetEndRange!(Range, Count)){
+struct EndRange(Range, Count = DefaultEndCount, bool tail) if(canGetEndRange!(Range, Count)){
     Range source;
     Count frontindex;
     Count backindex;
