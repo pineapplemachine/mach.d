@@ -39,6 +39,7 @@ import mach.range.repeat : repeat, repeatrandomaccess, repeatsaving, repeateleme
 import mach.range.retro : retro;
 import mach.range.rotate : rotate;
 import mach.range.select : select, from, until;
+import mach.range.skipindexes : skipindexes, skipindex;
 import mach.range.split : split;
 import mach.range.stride : stride;
 import mach.range.tap : tap;
