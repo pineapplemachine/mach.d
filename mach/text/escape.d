@@ -9,8 +9,10 @@ public:
 
 class Escaper{
     
+    alias Escapes = char[2][];
+    
     const char escapechar;
-    const char[][] escapes;
+    const Escapes escapes;
     
     static const Escaper D = new Escaper(
         '\\', [
@@ -72,7 +74,10 @@ class Escaper{
         ]
     );
     
-    this(char escapechar, char[][] escapes){
+    this(Escapes escapes){
+        this('\\', escapes);
+    }
+    this(char escapechar, Escapes escapes){
         this.escapechar = escapechar;
         this.escapes = escapes;
     }
