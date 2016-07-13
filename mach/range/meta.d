@@ -73,7 +73,7 @@ template MetaRangeSaveMixin(Range, string source) if(isRange!Range){
             foreach(param; Params){
                 if(args.length) args ~= `, `;
                 args ~= `this.` ~ param;
-                if(param == `source`) args ~= `.save`;
+                if(param == source) args ~= `.save`;
             }
             return `return typeof(this)(` ~ args ~ `);`;
         }
