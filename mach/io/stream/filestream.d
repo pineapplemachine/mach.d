@@ -1,4 +1,4 @@
-module mach.io.filestream;
+module mach.io.stream.filestream;
 
 private:
 
@@ -6,7 +6,7 @@ import core.exception : AssertError;
 import core.stdc.stdio : SEEK_CUR, SEEK_END, SEEK_SET;
 import std.stdio : File, LockType;
 
-import mach.io.stream : IOStream, StreamSupportMixin;
+import mach.io.stream.stream : IOStream, StreamSupportMixin;
 
 public:
     
@@ -97,12 +97,14 @@ class FileStream : IOStream {
     }
 }
 
+
+
 version(unittest) import mach.error.unit;
 unittest{
     tests("FileStream", {
         tests("Read", {
             auto stream = new FileStream(__FILE__, "rb");
-            string header = "module mach.io.filestream"; // First line of this file
+            string header = "module mach.io.stream.filestream"; // First line of this file
             char[] buffer = new char[header.length];
             stream.readbuffer(buffer);
             testeq(header, buffer);

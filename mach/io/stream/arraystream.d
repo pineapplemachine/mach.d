@@ -1,14 +1,14 @@
-module mach.io.arraystream;
+module mach.io.stream.arraystream;
 
 private:
 
-import mach.io.stream : IOStream, StreamSupportMixin;
+import mach.io.stream.stream : IOStream, StreamSupportMixin;
 
 public:
 
 class ArrayStream(T) : IOStream {
     mixin(StreamSupportMixin(
-        "ends", "haslength", "hasposition", "canseek", "canreset"
+        "haseof", "haslength", "hasposition", "canseek", "canreset"
     ));
     
     size_t index;

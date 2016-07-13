@@ -1,4 +1,4 @@
-module mach.io.stream;
+module mach.io.stream.stream;
 
 private:
 
@@ -11,7 +11,7 @@ static string StreamSupportMixin(string[] supported...){
     import std.string : join;
     import std.algorithm : map, canFind;
     static immutable string[] SUPPORT_OPTIONS = [
-        "ends", "haslength", "hasposition", "canseek", "canreset"
+        "haseof", "haslength", "hasposition", "canseek", "canreset"
     ];
     return join(
         map!((support) => ("static bool " ~ support ~ " = " ~ (
@@ -23,7 +23,7 @@ static string StreamSupportMixin(string[] supported...){
 /// A common streaming interface for interacting with different forms of storage.
 interface Stream{
     /// Is eof a meaningful operation for this stream?
-    static bool ends = false;
+    static bool haseof = false;
     /// Get whether the end of the stream has been reached.
     @property bool eof();
     
@@ -53,7 +53,7 @@ interface Stream{
     void close();
     
     final bool opCast(T: bool)(){
-        return this.active & !this.eof;
+        return this.active & !(this.haseof && this.eof);
     }
 }
 
