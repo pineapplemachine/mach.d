@@ -25,6 +25,25 @@ template hasProperty(alias pred, T, string property){
     }
 }
 
+
+template hasMutableProperty(T, string property){
+    enum bool hasMutableProperty = is(typeof((inout int = 0){
+        mixin(`
+            auto property = T.init.` ~ property ~ `;
+            T.init.` ~ property ~ ` = property;
+        `);
+    }));
+}
+
+template hasMutableProperty(alias pred, T, string property){
+    static if(hasMutableProperty!(T, property)){
+        enum bool hasMutableProperty = pred!(PropertyType!(T, property));
+    }else{
+        enum bool hasMutableProperty = false;
+    }
+}
+
+
 enum hasNumericProperty(T, string property) = (
     hasProperty!(isNumeric, T, property)
 );
