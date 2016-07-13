@@ -99,19 +99,19 @@ class Pluralizer{
             string suffix = "s"; // String to append
             size_t trimright = 0; // Number of chars to trim from right of string
             
-            if(word[$-1] == 'o'){
+            if(ends(word, "o")){
                 if(
                     word.length > 3 && !word[$-2].isVowel &&
                     !PluralOSuffixExceptions.canFind(word.toLower)
                 ){
                     suffix = "es";
                 }
-            }else if(word[$-1] == 'y'){
+            }else if(ends(word, "y")){
                 if(!word[$-2].isVowel || ends(word, "-by")){
                     suffix = "ies";
                     trimright = 1;
                 }
-            }else if(word[$-1] == 'f'){
+            }else if(ends(word, "f")){
                 if(!PluralFSuffixExceptions.canFind(word.toLower)){
                     suffix = "ves";
                     trimright = 1;
@@ -122,11 +122,11 @@ class Pluralizer{
             }else if(!allcaps && word[0].isUpper && ends(word, "ese")){
                 // Assume a nationality e.g. Chinese, Japanese
                 suffix = "";
-            }else if(word[$-1] == 's' && word.length <= 3){
+            }else if(ends(word, "s") && word.length <= 3){
                 // TODO: More reliably check for a single syllable
                 suffix = "ses"; // e.g. "busses"
             }else if(
-                word[$-1] == 's' || word[$-1] == 'z' || word[$-1] == 'x' ||
+                ends(word, "s") || ends(word, "z") || ends(word, "x") ||
                 ends(word, "sh") || ends(word, "ch")
             ){
                 suffix = "es";
