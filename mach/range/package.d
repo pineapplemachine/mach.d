@@ -29,7 +29,7 @@ import mach.range.map : map;
 import mach.range.mutate : mutate;
 import mach.range.next : next, nextfront, nextback;
 import mach.range.ngrams : ngrams;
-import mach.range.pad : pad, padleft, padright, padleftcount, padrightcount;
+import mach.range.pad : pad, padfront, padback, padfrontcount, padbackcount;
 import mach.range.pluck : pluck;
 import mach.range.random : lcong, mersenne, xorshift, shuffle;
 import mach.range.recur : recur;
@@ -50,6 +50,13 @@ import mach.range.zip : zip;
 
 
 
+alias lpad = padfront;
+alias rpad = padback;
+alias lstrip = stripfront;
+alias rstrip = stripback;
+
+
+
 version(unittest){
     private:
     import std.stdio;
@@ -62,7 +69,7 @@ unittest{
             auto input = "hello world";
             auto rev = input.retro;
             test(rev.equals("dlrow olleh"));
-            auto padded = rev.padleftcount('_', 2);
+            auto padded = rev.padfrontcount('_', 2);
             test(padded.equals("__dlrow olleh"));
             auto distro = padded.distribution;
             testeq(distro['h'], 1);

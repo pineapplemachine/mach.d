@@ -74,61 +74,61 @@ auto pad(Iter, Element, Count = size_t)(
 }
 
 /// Pad a range on the left such that it is at least as long as the given length.
-auto padleft(Iter, Element, Count = size_t)(
+auto padfront(Iter, Element, Count = size_t)(
     Iter iter, Element padding, Count length
 ) if(canPadLength!(Iter, Element, Count)){
     auto left = length <= iter.length ? 0 : length - iter.length;
-    return padleftcount(iter, padding, left);
+    return padfrontcount(iter, padding, left);
 }
 /// ditto
-auto padleft(Iter, Count = size_t)(
+auto padfront(Iter, Count = size_t)(
     Iter iter, Count length
 ) if(canPadLength!(Iter, Count)){
-    return padleft(iter, ElementType!Iter.init, length);
+    return padfront(iter, ElementType!Iter.init, length);
 }
 
 /// Pad a range on the right such that it is at least as long as the given length.
-auto padright(Iter, Element, Count = size_t)(
+auto padback(Iter, Element, Count = size_t)(
     Iter iter, Element padding, Count length
 ) if(canPadLength!(Iter, Element, Count)){
     auto right = length <= iter.length ? 0 : length - iter.length;
-    return padrightcount(iter, padding, right);
+    return padbackcount(iter, padding, right);
 }
 /// ditto
-auto padright(Iter, Count = size_t)(
+auto padback(Iter, Count = size_t)(
     Iter iter, Count length
 ) if(canPadLength!(Iter, Count)){
-    return padright(iter, ElementType!Iter.init, length);
+    return padback(iter, ElementType!Iter.init, length);
 }
 
 
 /// Pad a range on the left by the specified amount.
-auto padleftcount(Iter, Element, Count = size_t)(
+auto padfrontcount(Iter, Element, Count = size_t)(
     Iter iter, Element padding, Count left
 ) if(canPad!(Iter, Element, Count)){
     auto range = iter.asrange;
     return PadRange!(typeof(range), Count)(range, padding, left, Count.init);
 }
 /// ditto
-auto padleftcount(Iter, Count = size_t)(
+auto padfrontcount(Iter, Count = size_t)(
     Iter iter, Count left
 ) if(canPadLength!(Iter, Count)){
-    return padleftcount(iter, ElementType!Iter.init, left);
+    return padfrontcount(iter, ElementType!Iter.init, left);
 }
 
 
 /// Pad a range on the right by the specified amount.
-auto padrightcount(Iter, Element, Count = size_t)(
+auto padbackcount(Iter, Element, Count = size_t)(
     Iter iter, Element padding, Count right
 ) if(canPad!(Iter, Element, Count)){
     auto range = iter.asrange;
     return PadRange!(typeof(range), Count)(range, padding, Count.init, right);
 }
 /// ditto
-auto padrightcount(Iter, Count = size_t)(
+auto padbackcount(Iter, Count = size_t)(
     Iter iter, Count right
 ) if(canPadLength!(Iter, Count)){
-    return padrightcount(iter, ElementType!Iter.init, right);
+    return padbackcount(iter, ElementType!Iter.init, right);
 }
 
 
@@ -281,8 +281,8 @@ version(unittest){
 unittest{
     tests("Pad", {
         auto input = "hi";
-        tests("Left", {
-            auto range = input.padleft('_', 4);
+        tests("Front", {
+            auto range = input.padfront('_', 4);
             testeq("Length", range.length, 4);
             test("Iteration", range.equals("__hi"));
             tests("Random access", {
@@ -292,8 +292,8 @@ unittest{
                 testeq(range[$-1], 'i');
             });
         });
-        tests("Right", {
-            auto range = input.padright('_', 4);
+        tests("Back", {
+            auto range = input.padback('_', 4);
             testeq("Length", range.length, 4);
             test("Iteration", range.equals("hi__"));
             tests("Random access", {
@@ -303,7 +303,7 @@ unittest{
                 testeq(range[$-1], '_');
             });
         });
-        tests("Left and right", {
+        tests("Both", {
             auto range = input.pad('F', 'B', 2, 3);
             testeq("Length", range.length, 7);
             test("Iteration", range.equals("FFhiBBB"));
