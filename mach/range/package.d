@@ -42,6 +42,7 @@ import mach.range.select : select, from, until;
 import mach.range.skipindexes : skipindexes, skipindex;
 import mach.range.split : split;
 import mach.range.stride : stride;
+import mach.range.strip : stripfront, stripback, stripboth;
 import mach.range.tap : tap;
 import mach.range.top : top, bottom;
 import mach.range.walk : walk;
