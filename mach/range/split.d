@@ -158,15 +158,18 @@ unittest{
             tests("Longer-than-one", {
                 auto range = "hello..there..world".split("..");
                 test(range.equals(["hello", "there", "world"]));
+                static assert(isFiniteIterable!(typeof(range)));
             });
             tests("Single length", {
                 auto range = "hello.there.world".split(".");
                 test(range.equals(["hello", "there", "world"]));
+                static assert(isFiniteIterable!(typeof(range)));
             });
         });
         tests("Element delimiter", {
             auto range = "hello.there.world".split('.');
             test(range.equals(["hello", "there", "world"]));
+            static assert(isFiniteIterable!(typeof(range)));
         });
         tests("No delimiters", {
             auto range = "test".split(", ");
