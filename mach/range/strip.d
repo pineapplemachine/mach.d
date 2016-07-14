@@ -1,8 +1,14 @@
+module mach.range.strip;
+
+private:
+
 import mach.traits : isRange, isBidirectionalRange, isElementPredicate;
 import mach.traits : isMutableRange, isMutableFrontRange, isMutableBackRange;
 import mach.traits : hasNumericLength;
 import mach.range.asrange : asrange, validAsRange, validAsBidirectionalRange;
 import mach.range.meta : MetaRangeMixin;
+
+public:
 
 
 
