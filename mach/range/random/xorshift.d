@@ -43,7 +43,7 @@ struct XorshiftRange(T) if(canXorshift!T){
     static immutable ubyte[] Primes = [
         2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37
     ];
-    immutable ubyte[3] Shift = [
+    static immutable ubyte[3] Shift = [
         Primes[flog2(T.sizeof) + 2],
         Primes[flog2(T.sizeof) + 0],
         Primes[flog2(T.sizeof) + 3],
