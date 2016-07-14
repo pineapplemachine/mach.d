@@ -45,7 +45,7 @@ import mach.range.stride : stride;
 import mach.range.strip : stripfront, stripback, stripboth;
 import mach.range.tap : tap;
 import mach.range.top : top, bottom;
-import mach.range.walk : walk;
+import mach.range.walklength : walklength;
 import mach.range.zip : zip;
 
 
