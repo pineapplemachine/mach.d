@@ -98,8 +98,8 @@ auto asarray(Element, Iter)(auto ref Iter iter) if(
         return iter;
     }else static if(canMakeKnownLengthArrayOf!(Iter, Element)){
         return asknownlengtharray!(Element, Iter)(iter, cast(size_t) iter.length);
-    }else static if(canMakeDefaultLengthArrayOf!(Iter, Element)){
-        return asarray!(Element, Iter)(iter, size_t.max);
+    }else static if(canMakeFiniteLengthArrayOf!(Iter, Element)){
+        return asarray!(Element, false, Iter)(iter, size_t.max);
     }else{
         assert(false); // This shouldn't happen
     }
