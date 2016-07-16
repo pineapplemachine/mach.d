@@ -1,4 +1,4 @@
-module mach.error.errno;
+module mach.error.enforce.errno;
 
 private:
 

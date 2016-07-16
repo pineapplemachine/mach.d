@@ -1,4 +1,4 @@
-module mach.error.valuebounds;
+module mach.error.enforce.bounds;
 
 private:
 
