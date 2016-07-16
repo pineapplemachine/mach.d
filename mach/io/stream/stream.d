@@ -60,15 +60,46 @@ interface Stream{
 /// A stream which can be read from.
 interface InputStream : Stream{
     void flush();
-    size_t readbuffer(T)(T[] buffer);
+    size_t readbuffer(void* buffer, size_t size, size_t count);
+    final size_t readbuffer(T)(T* buffer, size_t count){
+        return this.readbuffer(buffer, T.sizeof, count);
+    }
+    final size_t readbuffer(T)(T[] buffer){
+        return this.readbuffer!T(buffer.ptr, buffer.length);
+    }
 }
 /// A stream which can be written to.
 interface OutputStream : Stream{
     void sync();
-    size_t writebuffer(T)(in T[] buffer);
+    size_t writebuffer(void* buffer, size_t size, size_t count);
+    final size_t writebuffer(T)(T* buffer, size_t count){
+        return this.writebuffer(buffer, T.sizeof, count);
+    }
+    final size_t writebuffer(T)(T[] buffer){
+        return this.writebuffer!T(buffer.ptr, buffer.length);
+    }
 }
 
 /// A stream which can be both read from and written to.
 interface IOStream : InputStream, OutputStream {
     //
+}
+
+
+
+struct StreamRange(Source, Element) if(is(Source: Stream)){
+    Source source;
+    Unqual!Element cachedfront;
+    
+    static if(is(Source: InputStream)){
+        @property Element front(){
+            return this.cachedfront;
+        }
+        void popFront(){
+            this.source.readbuffer(&this.cachedfront);
+        }
+    }
+    static if(is(Source: OutputStream)){
+        
+    }
 }
