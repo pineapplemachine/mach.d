@@ -3,7 +3,8 @@ module mach.range.skipindexes;
 private:
 
 import std.traits : isIntegral;
-import mach.traits : isRange, isBidirectionalRange, hasNumericLength, isIterableOf;
+import mach.traits : isRange, isBidirectionalRange, hasNumericLength;
+import mach.traits : ElementType, isIterableOf;
 import mach.range.contains : contains;
 import mach.range.meta : MetaRangeMixin;
 import mach.range.asrange : asrange, validAsRange;
@@ -34,10 +35,10 @@ auto skipindexes(Iter, Index = DefaultSkipIndex)(
 }
 
 auto skipindexes(Iter, Indexes)(
-    auto ref Iter iter, Indexes
+    auto ref Iter iter, Indexes indexes
 ) if(canSkipIndexes!Iter && isIterableOf!(Indexes, validSkipIndex)){
     auto range = iter.asrange;
-    return SkipIndexesRange!(typeof(range), Index)(range, indexes);
+    return SkipIndexesRange!(typeof(range), ElementType!Indexes)(range, indexes);
 }
 
 
@@ -151,5 +152,6 @@ unittest{
         test(input.skipindexes(4).equals([0, 1, 2, 3]));
         test(input.skipindexes(0, 1, 2, 3, 4).equals(new int[0]));
         test(input.skipindexes().equals(input));
+        test(input.skipindexes([1, 3]).equals([0, 2, 4]));
     });
 }
