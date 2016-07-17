@@ -17,8 +17,6 @@ auto enforcebounds(I = size_t, L = size_t, H = size_t)(
     return index;
 }
 
-
-
 auto enforcebounds(I = size_t, In)(
     I index, In inobj, size_t line = __LINE__, string file = __FILE__
 ) if(isNumeric!I && hasNumericLength!In){
@@ -53,7 +51,8 @@ class OutOfBoundsException(I = size_t, L = size_t, H = size_t): Exception if(
     I index;
     L low;
     H high;
-    bool haslow, hashigh;
+    bool haslow;
+    bool hashigh;
     
     this(I index, size_t line = __LINE__, string file = __FILE__){
         this(index, 0, 0, false, false, line, file);
