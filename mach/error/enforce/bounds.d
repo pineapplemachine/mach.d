@@ -3,51 +3,69 @@ module mach.error.enforce.bounds;
 private:
 
 import std.format : format;
-import mach.traits : canCompare;
+import std.traits : isNumeric;
+import mach.traits : canCompare, hasNumericLength, LengthType;
 
 public:
 
 
 
-auto enforcebounds(T = size_t)(
-    T index, T low, T high, size_t line = __LINE__, string file = __FILE__
-){
-    OutOfBoundsException!T.enforce(index, low, high, line, file);
-    return index;
-}
-
-auto enforcelowbound(T = size_t)(
-    T index, T low, size_t line = __LINE__, string file = __FILE__
-){
-    OutOfBoundsException!T.enforcelow(index, low, line, file);
-    return index;
-}
-
-auto enforcehighbound(T = size_t)(
-    T index, T high, size_t line = __LINE__, string file = __FILE__
-){
-    OutOfBoundsException!T.enforcehigh(index, high, line, file);
+auto enforcebounds(I = size_t, L = size_t, H = size_t)(
+    I index, L low, H high, size_t line = __LINE__, string file = __FILE__
+) if(isNumeric!I && isNumeric!L && isNumeric!H){
+    OutOfBoundsException!(I, L, H).enforce(index, low, high, line, file);
     return index;
 }
 
 
 
-class OutOfBoundsException(T = size_t): Exception if(canCompare!T){
-    T index;
-    T low, high;
+auto enforcebounds(I = size_t, In)(
+    I index, In inobj, size_t line = __LINE__, string file = __FILE__
+) if(isNumeric!I && hasNumericLength!In){
+    return enforcebounds(index, cast(LengthType!In) 0, inobj.length, line, file);
+}
+
+
+
+auto enforcelowbound(I = size_t, L = size_t,)(
+    I index, L low, size_t line = __LINE__, string file = __FILE__
+) if(isNumeric!I && isNumeric!L){
+    OutOfBoundsException!(I, L, L).enforcelow(index, low, line, file);
+    return index;
+}
+
+auto enforcehighbound(I = size_t, H = size_t)(
+    I index, H high, size_t line = __LINE__, string file = __FILE__
+) if(isNumeric!I && isNumeric!H){
+    OutOfBoundsException!(I, H, H).enforcehigh(index, high, line, file);
+    return index;
+}
+
+
+
+private enum CanOOB(I = size_t, L = size_t, H = size_t) = (
+    canCompare!(I, L, ">=") && canCompare!(I, H, "<")
+);
+
+class OutOfBoundsException(I = size_t, L = size_t, H = size_t): Exception if(
+    CanOOB!(I, L, H)
+){
+    I index;
+    L low;
+    H high;
     bool haslow, hashigh;
     
-    this(T index, size_t line = __LINE__, string file = __FILE__){
+    this(I index, size_t line = __LINE__, string file = __FILE__){
         this(index, 0, 0, false, false, line, file);
     }
     this(
-        T index, T low, T high,
+        I index, L low, H high,
         size_t line = __LINE__, string file = __FILE__
     ){
         this(index, low, high, true, true, line, file);
     }
     this(
-        T index, T low, T high, bool haslow, bool hashigh,
+        I index, L low, H high, bool haslow, bool hashigh,
         size_t line = __LINE__, string file = __FILE__
     ){
         this.index = index; this.low = low; this.high = high;
@@ -66,7 +84,7 @@ class OutOfBoundsException(T = size_t): Exception if(canCompare!T){
     }
     
     static void enforce(
-        T index, T low, T high,
+        I index, L low, H high,
         size_t line = __LINE__, string file = __FILE__
     ){
         if((index < low) | (index >= high)){
@@ -74,19 +92,19 @@ class OutOfBoundsException(T = size_t): Exception if(canCompare!T){
         }
     }
     static void enforcelow(
-        T index, T low,
+        I index, L low,
         size_t line = __LINE__, string file = __FILE__
     ){
         if(index < low){
-            throw new OutOfBoundsException(index, low, 0, true, false, line, file);
+            throw new OutOfBoundsException(index, low, H.init, true, false, line, file);
         }
     }
     static void enforcehigh(
-        T index, T high,
-        T line = __LINE__, string file = __FILE__
+        I index, H high,
+        size_t line = __LINE__, string file = __FILE__
     ){
         if(index >= high){
-            throw new OutOfBoundsException(index, 0, high, false, true, line, file);
+            throw new OutOfBoundsException(index, L.init, high, false, true, line, file);
         }
     }
 }
