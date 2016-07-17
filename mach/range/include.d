@@ -3,18 +3,26 @@ module mach.range.include;
 private:
 
 import mach.range.filter : filter;
-import mach.range.contains : contains;
+import mach.range.logical : any, none;
 
 public:
 
 
 
-auto include(Iter, Element)(Iter iter, Element[] inclusions...){
-    return iter.filter!((element) => (inclusions.contains(element)));
+alias DefaultIncludePredicate = (a, b) => (a == b);
+
+
+
+auto include(alias pred = DefaultIncludePredicate, Iter, Element)(
+    auto ref Iter iter, Element[] inclusions...
+){
+    return iter.filter!(a => inclusions.any!(b => pred(a, b)));
 }
 
-auto exclude(Iter, Element)(Iter iter, Element[] exclusions...){
-    return iter.filter!((element) => (!exclusions.contains(element)));
+auto exclude(alias pred = DefaultIncludePredicate, Iter, Element)(
+    auto ref Iter iter, Element[] exclusions...
+){
+    return iter.filter!(a => exclusions.none!(b => pred(a, b)));
 }
 
 
@@ -39,4 +47,3 @@ unittest{
         });
     });
 }
-
