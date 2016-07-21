@@ -32,7 +32,31 @@ template canSplit(alias pred, Index, Iter, Delim){
 
 
 
-auto split(alias pred = DefaultSplitPredicate, Index = DefaultSplitIndex, Iter, Delim)(
+/// Indicates whether to include the delimiter at the beginning of each element
+/// of a split range, and the front, both, or neither.
+enum SplitInclusionMode{
+    Neither, Front, Back, Both
+}
+
+alias DefaultSplitInclusionMode = SplitInclusionMode.Neither;
+
+
+
+auto split(
+    SplitInclusionMode mode, Index = DefaultSplitIndex, Iter, Delim
+)(
+    auto ref Iter iter, auto ref Delim delimiter
+) if(canSplit!(DefaultSplitPredicate, Index, Iter, Delim)){
+    return split!(
+        DefaultSplitPredicate, mode, Index, Iter, Delim
+    )(iter, delimiter);
+}
+
+auto split(
+    alias pred = DefaultSplitPredicate,
+    SplitInclusionMode mode = DefaultSplitInclusionMode,
+    Index = DefaultSplitIndex, Iter, Delim
+)(
     auto ref Iter iter, auto ref Delim delimiter
 ) if(canSplit!(pred, Index, Iter, Delim)){
     static if(validAsRange!Iter){
@@ -57,14 +81,25 @@ auto split(alias pred = DefaultSplitPredicate, Index = DefaultSplitIndex, Iter, 
     }else{
         assert(false); // Also shouldn't happen
     }
-    return SplitIterableRange!(Source, typeof(indexes))(
+    enum bool beginwithdelim = (
+        mode is SplitInclusionMode.Front || mode is SplitInclusionMode.Both
+    );
+    enum bool endwithdelim = (
+        mode is SplitInclusionMode.Back || mode is SplitInclusionMode.Both
+    );
+    return SplitIterableRange!(
+        Source, typeof(indexes), Index, beginwithdelim, endwithdelim
+    )(
         source, indexes, delimlength
     );
 }
 
 
 
-struct SplitIterableRange(Iter, Delims, Index = DefaultSplitIndex){
+struct SplitIterableRange(
+    Iter, Delims, Index = DefaultSplitIndex,
+    bool beginwithdelim = false, bool endwithdelim = false
+){
     enum bool Finite = isFiniteIterable!Delims;
     
     Iter source;
@@ -112,10 +147,14 @@ struct SplitIterableRange(Iter, Delims, Index = DefaultSplitIndex){
     }
     
     @property auto ref front() in{assert(!this.empty);} body{
-        return this.source[
-            this.segmentbegin ..
-            this.delimindexes.empty ? this.source.length : this.delimindexes.front
-        ];
+        Index high = void;
+        if(this.delimindexes.empty){
+            high = this.source.length;
+        }else{
+            static if(!endwithdelim) high = this.delimindexes.front;
+            else high = this.delimindexes.front + this.delimlength;
+        }
+        return this.source[this.segmentbegin .. high];
     }
     void popFront() in{assert(!this.empty);} body{
         static if(Finite){
@@ -124,7 +163,8 @@ struct SplitIterableRange(Iter, Delims, Index = DefaultSplitIndex){
                 return;
             }
         }
-        this.segmentbegin = this.delimindexes.front + this.delimlength;
+        static if(beginwithdelim) this.segmentbegin = this.delimindexes.front;
+        else this.segmentbegin = this.delimindexes.front + this.delimlength;
         this.delimindexes.popFront();
     }
     
@@ -153,6 +193,7 @@ version(unittest){
     import mach.range.compare : equals;
 }
 unittest{
+    import std.stdio;
     tests("Split", {
         tests("Range delimiter", {
             tests("Longer-than-one", {
@@ -183,6 +224,11 @@ unittest{
             test("hi.".split(".").equals(["hi", ""]));
             test(".hi".split(".").equals(["", "hi"]));
             test(".hi.".split(".").equals(["", "hi", ""]));
+        });
+        tests("Elements begin/end with delim", {
+            test("hi.hi".split!(SplitInclusionMode.Front)('.').equals(["hi", ".hi"]));
+            test("hi.hi".split!(SplitInclusionMode.Back)('.').equals(["hi.", "hi"]));
+            test("hi.hi".split!(SplitInclusionMode.Both)('.').equals(["hi.", ".hi"]));
         });
     });
 }
