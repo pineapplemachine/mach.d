@@ -50,8 +50,11 @@ auto shuffleeager(Iter)(Iter iter) if(canShuffle!Iter){
 auto shuffleeager(Iter, RNG)(Iter iter, RNG rng) if(canShuffle!(Iter, RNG)){
     alias Element = Unqual!(ElementType!Iter);
     alias KnownLength = hasNumericLength!Iter;
-    Element[] array;
-    static if(KnownLength) array.reserve(iter.length);
+    static if(KnownLength){
+        Element[] array = new Element[iter.length];
+    }else{
+        Element[] array;
+    }
     size_t i = 0;
     foreach(element; iter){
         size_t j = rng.random!size_t(i + 1);
