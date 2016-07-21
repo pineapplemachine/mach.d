@@ -40,10 +40,18 @@ auto pluck(Index, Iter)(Iter iter, Index index) if(canPluckIndex!(Iter, Index)){
     return map!(element => element[index])(iter);
 }
 
+private template MakePluckTransformation(alias property){
+    alias MakePluckTransformation = property;
+}
+private template MakePluckTransformation(string property){
+    mixin(`alias MakePluckTransformation = element => element.` ~ property ~ `;`);
+}
 /// ditto
-auto pluck(string property, Iter)(Iter iter) if(canPluckProperty!(Iter, property)){
-    mixin(`alias transform = element => element.` ~ property ~ `;`);
-    return map!transform(iter);
+template pluck(properties...) if(properties.length){
+    import std.meta : staticMap;
+    auto pluck(Iter)(Iter iter){
+        return map!(staticMap!(MakePluckTransformation, properties))(iter);
+    }
 }
 
 
@@ -64,37 +72,46 @@ unittest{
         
         int[][] input;
         foreach(i; 0 .. 4) input ~= [0, i, i+i, i*i];
-
-        tests("Single index", {
-            tests("Numeric", {
-                testeq(input.pluck(0).length, 4);
-                test(input.pluck(0).equals([0, 0, 0, 0]));
-                test(input.pluck(1).equals([0, 1, 2, 3]));
-                test(input.pluck(2).equals([0, 2, 4, 6]));
-                test(input.pluck(3).equals([0, 1, 4, 9]));
-            });
-            tests("Associative array strings", {
-                string[string][] data = [
-                    ["a": "apple", "b": "bear"],
-                    ["a": "attack", "b": "bumblebee"],
-                    ["a": "airplane", "b": "bin"]
-                ];
-                test(data.pluck("a").equals(["apple", "attack", "airplane"]));
-            });
-            tests("Property name", {
-                PropertyPluckTest[] data = [
-                    PropertyPluckTest(0, 2),
-                    PropertyPluckTest(2, 4),
-                    PropertyPluckTest(4, 6)
-                ];
-                test(canPluckProperty!(typeof(data), `x`));
-                test(canPluckProperty!(typeof(data), `y`));
-                test(canPluckProperty!(typeof(data), `z`));
-                testf(canPluckProperty!(typeof(data), `w`));
-                test(data.pluck!`x`.equals([0, 2, 4]));
-                test(data.pluck!`y`.equals([2, 4, 6]));
-                test(data.pluck!`z`.equals([2, 6, 10]));
-            });
+        tests("Numeric index", {
+            testeq(input.pluck(0).length, 4);
+            test(input.pluck(0).equals([0, 0, 0, 0]));
+            test(input.pluck(1).equals([0, 1, 2, 3]));
+            test(input.pluck(2).equals([0, 2, 4, 6]));
+            test(input.pluck(3).equals([0, 1, 4, 9]));
+        });
+        tests("Associative array strings", {
+            string[string][] data = [
+                ["a": "apple", "b": "bear"],
+                ["a": "attack", "b": "bumblebee"],
+                ["a": "airplane", "b": "bin"]
+            ];
+            test(data.pluck("a").equals(["apple", "attack", "airplane"]));
+        });
+        tests("Property name", {
+            PropertyPluckTest[] data = [
+                PropertyPluckTest(0, 2),
+                PropertyPluckTest(2, 4),
+                PropertyPluckTest(4, 6)
+            ];
+            test(canPluckProperty!(typeof(data), `x`));
+            test(canPluckProperty!(typeof(data), `y`));
+            test(canPluckProperty!(typeof(data), `z`));
+            testf(canPluckProperty!(typeof(data), `w`));
+            test(data.pluck!`x`.equals([0, 2, 4]));
+            test(data.pluck!`y`.equals([2, 4, 6]));
+            test(data.pluck!`z`.equals([2, 6, 10]));
+        });
+        tests("Transformation", {
+            // Note: This is a pointless use case. Please use map instead.
+            auto input = [0, 1, 2];
+            test(input.pluck!(e => e+1).equals([1, 2, 3]));
+        });
+        tests("Multiple properties", {
+            auto input = [[0, 1], [1, 2], [2, 3]];
+            auto range = input.pluck!(`length`, `sizeof`, (e) => (e[0] + e[1]));
+            testeq(range.front[0], input[0].length);
+            testeq(range.front[1], input[0].sizeof);
+            testeq(range.front[2], 1);
         });
     });
 }
