@@ -33,7 +33,8 @@ template RNGMixin(T){
         
         /// ditto
         @property As random(As)() if(isFloatingPoint!As){
-            return cast(As) this.front / ((cast(As) T.max) + 1);
+            scope(exit) this.popFront();
+            return (cast(As) this.front) / (cast(As) T.max);
         }
         
         /// Get the front of a RNG as an integer. Not guaranteed to be unbiased,
@@ -44,6 +45,7 @@ template RNGMixin(T){
         ) in{
             assert(high - low <= T.max);
         }body{
+            scope(exit) this.popFront();
             return low + this.front % (high - low);
         }
         
@@ -51,6 +53,7 @@ template RNGMixin(T){
         As random(As)(As high) if(
             isIntegral!As && As.sizeof <= T.sizeof
         ){
+            scope(exit) this.popFront();
             return cast(As) (this.front % high);
         }
         
@@ -58,6 +61,7 @@ template RNGMixin(T){
         @property As random(As)() if(
             isIntegral!As && As.sizeof <= T.sizeof
         ){
+            scope(exit) this.popFront();
             return cast(As) this.front; // Assumes overflow wraps around
         }
     }
