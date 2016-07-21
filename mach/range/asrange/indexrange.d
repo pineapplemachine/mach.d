@@ -9,79 +9,84 @@ public:
 
 
 
-enum bool canMakeIndexRange(Base) = (
-    hasNumericIndex!Base &&
-    hasNumericLength!Base
-);
+alias DefaultIndexRangeIndex = size_t;
 
-enum bool canMakeIndexRange(Base, Index) = (
-    canMakeIndexRange!Base &&
-    isIntegral!Index
-);
+alias validIndexRangeIndex = isIntegral;
+
+template canMakeIndexRange(Subject, Index = DefaultIndexRangeIndex){
+    enum bool canMakeIndexRange = (
+        hasNumericIndex!Subject && validIndexRangeIndex!Index
+    );
+}
 
 
 
-/// Make a range from some object implementing opIndex(Index) and length where
-/// length is also of type Index and can be decremented. Start the front index
-/// at Index.init and back index at length-1 and keep popping until the front
-/// index exceeds the back index.
-struct IndexRange(Base, Index = size_t) if(canMakeIndexRange!(Base, Index)){
-    Base source;
+auto asindexrange(Subject, Index = DefaultIndexRangeIndex)(auto ref Subject subject) if(
+    canMakeIndexRange!(Subject, Index)
+){
+    return IndexRange!(Subject, Index)(subject);
+}
+
+
+
+struct IndexRange(
+    Subject, Index = DefaultIndexRangeIndex
+){
+    alias isBidirectional = hasNumericLength!Subject;
+    
+    Subject subject;
     Index frontindex;
-    Index backindex;
+    static if(isBidirectional) Index backindex;
     
-    this(typeof(this) range){
-        this(range.source, range.frontindex, range.backindex);
+    this(Subject subject, Index frontindex = 0){
+        static if(isBidirectional){
+            this(subject, frontindex, subject.length);
+        }else{
+            this.subject = subject;
+            this.frontindex = frontindex;
+        }
     }
-    this(Base source, Index frontindex = Index.init){
-        this(source, frontindex, cast(Index) source.length);
-    }
-    this(Base source, Index frontindex, Index backindex){
-        this.source = source;
-        this.frontindex = frontindex;
-        this.backindex = backindex;
+    static if(isBidirectional){
+        this(Subject subject, Index frontindex, Index backindex){
+            this.subject = subject;
+            this.frontindex = frontindex;
+            this.backindex = backindex;
+        }
+        @property auto length(){
+            return this.subject.length;
+        }
+        alias opDollar = length;
+        @property bool empty(){
+            return this.frontindex >= this.backindex;
+        }
+        @property auto back() in{assert(!this.empty);} body{
+            return this.subject[this.backindex - 1];
+        }
+        void popBack() in{assert(!this.empty);} body{
+            this.backindex--;
+        }
+    }else{
+        enum bool empty = false;
     }
     
-    @property bool empty() const{
-        return this.frontindex >= this.backindex;
+    @property auto ref front() in{assert(!this.empty);} body{
+        return this.subject[frontindex];
     }
-    @property auto remaining() const{
-        return this.backindex - this.frontindex;
-    }
-    
-    @property auto length(){
-        return this.source.length;
-    }
-    alias opDollar = length;
-    
     void popFront() in{assert(!this.empty);} body{
         this.frontindex++;
     }
-    @property auto ref front(){
-        return this.source[this.frontindex];
+    auto opIndex(Index index){
+        return this.subject[index];
     }
     
-    void popBack() in{assert(!this.empty);} body{
-        this.backindex--;
-    }
-    @property auto ref back(){
-        auto index = this.backindex;
-        index--;
-        return this.source[index];
-    }
-    
-    auto ref opIndex(Index index){
-        return this.source[index];
-    }
-    
-    static if(canSliceSame!(Base, Index)){
+    static if(canSliceSame!Subject){
         typeof(this) opSlice(Index low, Index high){
-            return typeof(this)(this.source[low .. high]);
+            return typeof(this)(this.subject[low .. high]);
         }
     }
     
     @property typeof(this) save(){
-        return typeof(this)(this);
+        return typeof(this)(this.subject, this.frontindex, this.backindex);
     }
 }
 
@@ -90,19 +95,18 @@ struct IndexRange(Base, Index = size_t) if(canMakeIndexRange!(Base, Index)){
 version(unittest){
     private:
     import mach.error.unit;
-    private struct Indexed{
-        int value, length;
-        auto opIndex(in int index) const{
-            return this.value + index;
-        }
-        typeof(this) opSlice(in int low, in int high){
-            return Indexed(low, high - low);
-        }
-    }
+    import mach.range.compare : equals;
 }
 unittest{
-    tests("Range from indexed type", {
-        // TODO
+    tests("Index Range", {
+        auto input = "hello";
+        auto range = input.asindexrange;
+        testeq("Length", range.length, input.length);
+        testeq(range.front, input[0]);
+        testeq(range.back, input[$-1]);
+        testeq("Random access", range[1], input[1]);
+        test("Slicing", range[1 .. $-1].equals(input[1 .. $-1]));
+        size_t i = 0;
+        foreach(e; range) testeq(e, input[i++]);
     });
 }
-
