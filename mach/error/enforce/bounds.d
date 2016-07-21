@@ -71,11 +71,11 @@ class OutOfBoundsException(I = size_t, L = size_t, H = size_t): Exception if(
         this.haslow = haslow; this.hashigh = hashigh;
         string message = void;
         if(haslow & hashigh){
-            message = "Value %s is out of bounds %s..%s.".format(index, low, high);
+            message = "Value %s is out of bounds %s..%s".format(index, low, high);
         }else if(haslow){
-            message = "Value %s is out of bounds, must be at least %s.".format(index, low);
+            message = "Value %s is out of bounds, must be at least %s".format(index, low);
         }else if(hashigh){
-            message = "Value %s is out of bounds, must be no greater than %s.".format(index, high);
+            message = "Value %s is out of bounds, must be no greater than %s".format(index, high);
         }else{
             message = "Value %s is out of bounds.".format(index);
         }
