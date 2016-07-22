@@ -4,7 +4,7 @@ public:
 
 import mach.range.asarray : asarray;
 import mach.range.asrange : asrange, asindexrange;
-import mach.range.associate : associate, group, distribution;
+import mach.range.associate : associate, aagroup, aadistribution;
 import mach.range.cache : cache;
 import mach.range.chain : chain, chainiter, chainranges;
 import mach.range.chunk : chunk;
@@ -20,6 +20,7 @@ import mach.range.fill : fill;
 import mach.range.filter : filter;
 import mach.range.find : find, findfirst, findlast, findall;
 import mach.range.flatten : flatten;
+import mach.range.group : group, distribution;
 import mach.range.include : include, exclude;
 import mach.range.indexof : indexof, indexofiter, indexofelement;
 import mach.range.interpolate : interpolate, lerp, coslerp;
@@ -66,20 +67,20 @@ version(unittest){
 }
 unittest{
     tests("Combinations of functions", {
-        tests("Retro, Pad, Distribution, Count", {
+        tests("retro, pad, aadistribution, count", {
             auto input = "hello world";
             auto rev = input.retro;
             test(rev.equals("dlrow olleh"));
             auto padded = rev.padfrontcount('_', 2);
             test(padded.equals("__dlrow olleh"));
-            auto distro = padded.distribution;
+            auto distro = padded.aadistribution;
             testeq(distro['h'], 1);
             testeq(distro['l'], 3);
             testeq(distro['o'], 2);
             testeq(distro['_'], 2);
             foreach(key, value; distro) testeq(padded.count(key), value);
         });
-        tests("Lerp, Tap, Sum", {
+        tests("lerp, tap, sum", {
             real counter = 0;
             real summed = lerp(0, 1, 32).tap!((e){counter += e;}).sum;
             testeq(counter, 16.0);

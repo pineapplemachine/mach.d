@@ -66,25 +66,25 @@ auto associate(Keys, Values)(Keys keys, Values values){
 
 
 /// Map keys to values one to many. A list of values is recorded for every key.
-auto group(Iter)(Iter iter){
+auto aagroup(Iter)(Iter iter){
     return associate!((first) => ([first]), (acc, next){(*acc) ~= next;})(iter);
 }
 
 /// ditto
-auto group(alias by, Iter)(Iter iter){
-    return group(iter.map!(e => tuple(by(e), e)));
+auto aagroup(alias by, Iter)(Iter iter){
+    return aagroup(iter.map!(e => tuple(by(e), e)));
 }
 
 /// ditto
-auto group(Keys, Values)(Keys keys, Values values){
-    return group(zip(keys, values));
+auto aagroup(Keys, Values)(Keys keys, Values values){
+    return aagroup(zip(keys, values));
 }
 
 
 
 /// Records a count of the number of values encountered with some key, but does
 /// not record the values themselves.
-auto distribution(Iter)(Iter iter){
+auto aadistribution(Iter)(Iter iter){
     return associate!((first) => (1), (acc, next){(*acc)++;})(
         iter.map!(e => e, e => e)
     );
@@ -103,7 +103,7 @@ unittest{
         auto inputb = [0, 1, 2, 3, 4, 5];
         tests("Distribution", {
             testeq(
-                inputa.distribution, [0:2, 1:2, 2:2]
+                inputa.aadistribution, [0:2, 1:2, 2:2]
             );
         });
         tests("Association", {
@@ -117,7 +117,7 @@ unittest{
         });
         tests("Group", {
             testeq(
-                group(inputa, inputb), [0:[0,1], 1:[2,3], 2:[4,5]]
+                aagroup(inputa, inputb), [0:[0,1], 1:[2,3], 2:[4,5]]
             );
         });
     });
