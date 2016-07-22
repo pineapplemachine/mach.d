@@ -13,6 +13,8 @@ public:
 
 
 
+/// Construct a map range accepting multiple input iterables and at least one
+/// transformation.
 template mapplural(transformations...) if(transformations.length){
     alias transform = AdjoinTransformations!transformations;
     auto mapplural(Iters...)(Iters iters) if(canMap!(transform, Iters)){
@@ -34,6 +36,8 @@ private static string MergeAttributeMixin(string callname, string attribute, Ran
 
 
 
+/// Map range which accepts multiple input ranges and transforms each group of
+/// elements into a single element belonging to the output range.
 struct MapPluralRange(alias transform, Ranges...) if(canMapRanges!(transform, Ranges)){
     mixin MetaMultiRangeSaveMixin!(`sources`, Ranges);
     mixin MetaMultiRangeEmptyMixin!(
@@ -53,6 +57,8 @@ struct MapPluralRange(alias transform, Ranges...) if(canMapRanges!(transform, Ra
     }
     
     static if(anySatisfy!(hasNumericLength, Ranges)){
+        /// Get the length of this range, which is the shortest of any of its
+        /// input ranges.
         @property auto length(){
             return getSmallestLength(this.sources);
         }
@@ -96,7 +102,7 @@ version(unittest){
     import mach.range.retro : retro;
 }
 unittest{
-    tests("Merge", {
+    tests("Plural Map", {
         alias sumtwo = (a, b) => (a + b);
         alias sumthree = (a, b, c) => (a + b + c);
         alias product = (a, b) => (a * b);

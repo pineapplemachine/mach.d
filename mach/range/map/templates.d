@@ -10,6 +10,7 @@ public:
 
 
 
+/// Whether a sequence of iterables can be mapped with a given transformation.
 template canMap(alias transform, Iters...){
     static if(allSatisfy!(validAsRange, Iters)){
         enum bool canMap = isElementTransformation!(transform, Iters);
@@ -18,6 +19,7 @@ template canMap(alias transform, Iters...){
     }
 }
 
+/// Whether a sequence of ranges can be mapped with a given transformation.
 template canMapRanges(alias transform, Ranges...){
     static if(allSatisfy!(isRange, Ranges)){
         enum bool canMapRanges = isElementTransformation!(transform, Ranges);
@@ -26,10 +28,15 @@ template canMapRanges(alias transform, Ranges...){
     }
 }
 
+/// Whether a given range can be mapped with a given transformation.
 enum canMapRange(alias transform, Range) = (
     canMapRanges!(transform, Range)
 );
 
+/// Take a sequence of transformation functions and, when there is a single
+/// transformation, return it; when there are multiple transformations, adjoin
+/// them into a single transformation function which returns a tuple wherein
+/// each element is the result of its corresponding transformation.
 template AdjoinTransformations(transformations...){
     static if(transformations.length == 0){
         alias AdjoinTransformations = (e) => (e);

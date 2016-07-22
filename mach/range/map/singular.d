@@ -12,7 +12,7 @@ public:
 
 
 /// Returns a range whose elements are those of the given iterable transformed
-/// by some function.
+/// by some function or functions.
 template mapsingular(transformations...) if(transformations.length){
     alias transform = AdjoinTransformations!transformations;
     auto mapsingular(Iter)(Iter iter) if(canMap!(transform, Iter)){
