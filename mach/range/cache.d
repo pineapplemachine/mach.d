@@ -14,13 +14,22 @@ alias DefaultCacheIndex = size_t;
 
 
 
-auto cache(Iter, Index = DefaultCacheIndex)(auto ref Iter iter, Index size = 1){
+/// Creates a range which accesses the front of the source iterable only once
+/// and will store the most recent values for retrieval, by default just one.
+/// This may be useful for ranges whose fronts are expensive to evaluate and so
+/// should not be evaluated multiple times, or for ranges that are transient in
+/// that evaluating the front of the range also consumes it.
+auto cache(Iter, Index = DefaultCacheIndex)(auto ref Iter iter, Index size = 1) in{
+    assert(size > 0);
+}body{
     auto range = iter.asrange;
     return CacheRange!(typeof(range), Index)(range, size);
 }
 
 
 
+/// Used internally by the CacheRange type to store and access values taken from
+/// its source range.
 struct Cache(Element, Index = DefaultCacheIndex){
     alias Array = Element[];
     
@@ -28,7 +37,9 @@ struct Cache(Element, Index = DefaultCacheIndex){
     Array array; /// Backing array, contains elements known to the cache.
     
     /// Construct a cache of a given size.
-    this(Index size){
+    this(Index size) in{
+        assert(size > 0);
+    }body{
         this(0, new Element[size]);
     }
     this(Index count, Array array){
@@ -44,9 +55,16 @@ struct Cache(Element, Index = DefaultCacheIndex){
     @property Index length() const{
         return this.count < this.size ? this.count : this.size;
     }
+    /// ditto
     alias opDollar = length;
+    /// True when the cache has no values in it.
     @property bool empty() const{
         return this.count == 0;
+    }
+    
+    /// Empty the cache of values.
+    void clear(){
+        this.count = 0;
     }
     
     /// Get a copy of the cache object.
@@ -140,13 +158,22 @@ struct CacheRange(Range, Index = DefaultCacheIndex){
         this.cache.add(this.source.front);
     }
     
-    @property auto latest(){
+    /// Get the most recent value in the cache. In the majority of cases, a call
+    /// to latest will behave the same as a call to front. But where front will
+    /// fail when the range is empty, this will only fail when the cache is
+    /// empty. Practically speaking, that should be never.
+    @property auto latest() in{assert(!this.cache.empty);} body{
         return this.cache.latest;
     }
-    @property auto oldest(){
+    /// Get the oldest value in the cache.
+    @property auto oldest() in{assert(!this.cache.empty);} body{
         return this.cache.oldest;
     }
-    @property auto get(Index index){
+    /// Get a value from the cache, where 0 is the most recent and cache.length-1
+    /// is the oldest.
+    @property auto get(Index index) in{
+        assert(index >= 0 && index < this.cache.length);
+    }body{
         return this.cache.get(index);
     }
     
