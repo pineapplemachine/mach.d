@@ -120,9 +120,10 @@ struct Cache(Element, Index = DefaultCacheIndex){
     }
     
     /// Get the cache object as a range that can be iterated over.
+    /// Not the same as a CacheRange.
     @property auto asrange(){
         import mach.range.asrange : asindexrange;
-        return this.asindexrange;
+        return this.asindexrange!Index;
     }
 }
 
