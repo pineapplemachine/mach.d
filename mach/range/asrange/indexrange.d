@@ -21,7 +21,7 @@ template canMakeIndexRange(Subject, Index = DefaultIndexRangeIndex){
 
 
 
-auto asindexrange(Subject, Index = DefaultIndexRangeIndex)(auto ref Subject subject) if(
+auto asindexrange(Index = DefaultIndexRangeIndex, Subject)(auto ref Subject subject) if(
     canMakeIndexRange!(Subject, Index)
 ){
     return IndexRange!(Subject, Index)(subject);
