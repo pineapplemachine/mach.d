@@ -8,6 +8,7 @@ public:
 
 
 
+/// Repeat a list of aliases some given number of times.
 template Repeat(size_t count, T...){
     static if(count == 0){
         alias Repeat = Aliases!();
