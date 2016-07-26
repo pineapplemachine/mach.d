@@ -71,7 +71,7 @@ struct SkipIndexesRange(Range, Index = DefaultSkipIndex) if(
             this(range.source, range.skips, range.frontindex, range.backindex);
         }
         this(Range source, Indexes skips, Index frontindex = 0){
-            this(source, skips, frontindex, source.length);
+            this(source, skips, frontindex, cast(Index) source.length);
         }
         this(Range source, Indexes skips, Index frontindex, Index backindex){
             this.source = source;
