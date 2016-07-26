@@ -5,6 +5,7 @@ public:
 import mach.traits.allocator;
 import mach.traits.array;
 import mach.traits.common;
+import mach.traits.call;
 import mach.traits.ctor;
 import mach.traits.element;
 import mach.traits.hash;
