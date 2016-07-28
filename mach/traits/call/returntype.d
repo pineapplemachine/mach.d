@@ -19,6 +19,21 @@ template ReturnType(Tx...) if(Tx.length == 1 && isCallable!(Tx[0])){
 
 
 
+/// Determine whether some callable type returns a value of the given type.
+template Returns(alias T, Ret){
+    enum bool Returns = Returns!(CallableType!T, Ret);
+}
+/// ditto
+template Returns(T, Ret){
+    static if(isCallable!(CallableType!T)){
+        enum bool Returns = is(ReturnType!(CallableType!T) == Ret);
+    }else{
+        enum bool Returns = false;
+    }
+}
+
+
+
 unittest{
     void fn1(){}
     int fn2(){return 0;}
@@ -36,4 +51,14 @@ unittest{
     struct InstanceCall{int opCall(int){return 0;}}
     static assert(is(ReturnType!StaticCall == int));
     static assert(is(ReturnType!InstanceCall == int));
+}
+
+unittest{
+    void fn1(){}
+    int fn2(){return 0;}
+    static assert(Returns!(fn1, void));
+    static assert(Returns!(typeof(fn1), void));
+    static assert(Returns!(fn2, int));
+    static assert(!Returns!(fn1, int));
+    static assert(!Returns!(int, int));
 }
