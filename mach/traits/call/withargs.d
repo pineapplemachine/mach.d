@@ -11,7 +11,7 @@ public:
 /// Determine whether some type can be called with the given argument types.
 template isCallableWith(alias T, Args...){
     static if(isCallable!T){
-        enum bool isCallableWith = is(typeof((inout int = 0){T(Args.init);}));
+        enum bool isCallableWith = is(typeof((){Args args = Args.init; T(args);}));
     }else{
         enum bool isCallableWith = false;
     }
@@ -19,7 +19,7 @@ template isCallableWith(alias T, Args...){
 /// ditto
 template isCallableWith(T, Args...){
     static if(isCallable!T){
-        enum bool isCallableWith = is(typeof((inout int = 0){T(Args.init);}));
+        enum bool isCallableWith = is(typeof((){Args args = Args.init; T(args);}));
     }else{
         enum bool isCallableWith = false;
     }
@@ -27,11 +27,24 @@ template isCallableWith(T, Args...){
 
 /// Get the return type of a callable when invoked with the given argument types.
 template ReturnTypeWith(alias T, Args...) if(isCallableWith!(T, Args)){
-    alias ReturnTypeWith = typeof({return T(Args.init);}());
+    alias ReturnTypeWith = typeof({Args args = Args.init; return T(args);}());
 }
 /// ditto
 template ReturnTypeWith(T, Args...) if(isCallableWith!(T, Args)){
-    alias ReturnTypeWith = typeof({return T(Args.init);}());
+    alias ReturnTypeWith = typeof({Args args = Args.init; return T(args);}());
+}
+
+
+
+template ReturnsWith(alias T, Ret, Args...){
+    enum bool ReturnsWith = ReturnsWith!(CallableType!T, Ret, Args);
+}
+template ReturnsWith(T, Ret, Args...){
+    static if(isCallableWith!(T, Args)){
+        enum bool ReturnsWith = is(ReturnTypeWith!(CallableType!T, Args) == Ret);
+    }else{
+        enum bool ReturnsWith = false;
+    }
 }
 
 
@@ -46,7 +59,6 @@ unittest{
     static assert(isCallableWith!(fn2, int));
     static assert(isCallableWith!(fn3));
     static assert(isCallableWith!(fn4, int));
-    static assert(isCallableWith!(fn4, 0));
     static assert(!isCallableWith!(fn1, int));
     static assert(!isCallableWith!(fn1, int, int));
     static assert(!isCallableWith!(fn2));
@@ -63,6 +75,14 @@ unittest{
     static assert(!isCallableWith!(del));
     static assert(!isCallableWith!(fptr, string));
     static assert(!isCallableWith!(del, string));
+}
+unittest{
+    alias del0 = int delegate(ref int);
+    alias del1 = int delegate(ref int) @system;
+    alias del2 = int delegate(ref int) pure @nogc;
+    static assert(isCallableWith!(del0, int));
+    static assert(isCallableWith!(del1, int));
+    static assert(isCallableWith!(del2, int));
 }
 unittest{
     struct OneCall{static void opCall(int x){}}
@@ -89,4 +109,8 @@ unittest{
     static assert(is(ReturnTypeWith!(fptr, int) == int));
     static assert(is(ReturnTypeWith!(OpCall, int) == void));
     static assert(is(ReturnTypeWith!(OpCall, string) == int));
+    static assert(ReturnsWith!(fn1, void));
+    static assert(ReturnsWith!(fptr, int, int));
+    static assert(!ReturnsWith!(fn1, int));
+    static assert(!ReturnsWith!(fptr, int, int, int));
 }
