@@ -51,11 +51,11 @@ enum canDecrement(T) = hasUnaryOp!(T, "--");
 
 
 
-template hasOpApply(T){
-    enum bool hasOpApply = is(typeof(T.opApply));
+template hasOpApply(Tx...) if(Tx.length == 1){
+    enum bool hasOpApply = is(typeof(Tx[0].opApply));
 }
-template hasOpApplyReverse(T){
-    enum bool hasOpApplyReverse = is(typeof(T.opApplyReverse));
+template hasOpApplyReverse(Tx...) if(Tx.length == 1){
+    enum bool hasOpApplyReverse = is(typeof(Tx[0].opApplyReverse));
 }
 
 
