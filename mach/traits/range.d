@@ -195,7 +195,10 @@ template isMutableRemoveBackRange(T){
 
 
 // TODO: Put this stuff somewhere else
-enum hasEmptyEnum(T) = hasEnumType!(T, bool, `empty`);
+template hasEmptyEnum(T){
+    import mach.traits.property : hasEnumType;
+    enum bool hasEmptyEnum = hasEnumType!(T, bool, `empty`);
+}
 
 template hasEmptyEnum(T, bool value){
     static if(hasEmptyEnum!T){
