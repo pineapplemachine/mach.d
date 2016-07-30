@@ -4,7 +4,7 @@ private:
 
 import mach.traits : isRange, isBidirectionalRange, isElementPredicate;
 import mach.traits : isMutableRange, isMutableFrontRange, isMutableBackRange;
-import mach.traits : hasNumericLength;
+import mach.traits : isSlicingRange, isRandomAccessRange, hasNumericLength;
 import mach.range.asrange : asrange, validAsRange, validAsBidirectionalRange;
 import mach.range.meta : MetaRangeMixin;
 
@@ -105,11 +105,25 @@ struct StripRange(alias pred, Range){
     );
     
     Range source;
-    size_t stripped; /// Number of elements stripped from source range
+    /// Number of elements stripped from the front of the source range
+    size_t strippedfront;
+    /// Number of elements stripped from the back of the source range
+    static if(isBidirectional) size_t strippedback;
     
-    this(Range source, size_t stripped = 0){
-        this.source = source;
-        this.stripped = stripped;
+    this(Range source, size_t strippedfront = 0){
+        static if(isBidirectional){
+            this(source, strippedfront, 0);
+        }else{
+            this.source = source;
+            this.strippedfront = strippedfront;
+        }
+    }
+    static if(isBidirectional){
+        this(Range source, size_t strippedfront, size_t strippedback){
+            this.source = source;
+            this.strippedfront = strippedfront;
+            this.strippedback = strippedback;
+        }
     }
     
     @property auto front(){
@@ -121,7 +135,7 @@ struct StripRange(alias pred, Range){
     void stripFront(){
         while(!this.source.empty && pred(this.source.front)){
             this.source.popFront();
-            this.stripped++;
+            this.strippedfront++;
         }
     }
     
@@ -135,14 +149,39 @@ struct StripRange(alias pred, Range){
         void stripBack(){
             while(!this.source.empty && pred(this.source.back)){
                 this.source.popBack();
-                this.stripped++;
+                this.strippedback++;
             }
         }
     }
     
     static if(hasNumericLength!Range){
         @property auto length(){
-            return this.source.length - this.stripped;
+            static if(isBidirectional){
+                return this.source.length - this.strippedfront - this.strippedback;
+            }else{
+                return this.source.length - this.strippedfront;
+            }
+        }
+        alias opDollar = length;
+    }
+    
+    static if(isRandomAccessRange!Range){
+        auto opIndex(size_t index) in{
+            assert(index >= 0);
+            static if(hasNumericLength!(typeof(this))) assert(index < this.length);
+        }body{
+            return this.source[index + this.strippedfront];
+        }
+    }
+    
+    static if(isSlicingRange!Range){
+        auto opSlice(size_t low, size_t high) in{
+            assert(low >= 0 && high >= low);
+            static if(hasNumericLength!(typeof(this))) assert(high <= this.length);
+        }body{
+            return typeof(this)(this.source[
+                low + this.strippedfront .. high + this.strippedfront
+            ]);
         }
     }
     
@@ -172,6 +211,7 @@ version(unittest){
     import std.ascii : isDigit;
     import mach.error.unit;
     import mach.range.compare : equals;
+    import mach.range.next : nextback;
 }
 unittest{
     tests("Strip", {
@@ -183,6 +223,9 @@ unittest{
             test(input.stripfront('0').equals("11hi1100"));
             test(input.stripfront!isDigit.equals("hi1100"));
             testeq(input.stripfront('0').length, input.length - 2);
+            testeq(input.stripfront('0')[0], '1');
+            testeq(input.stripfront('0')[$-1], '0');
+            test(input.stripfront('0')[1 .. $-1].equals("1hi110"));
         });
         tests("Back", {
             test(blank.stripback('0').equals(blank));
@@ -190,6 +233,9 @@ unittest{
             test(input.stripback('0').equals("0011hi11"));
             test(input.stripback!isDigit.equals("0011hi"));
             testeq(input.stripback('0').length, input.length - 2);
+            testeq(input.stripback('0')[0], '0');
+            testeq(input.stripback('0')[$-1], '1');
+            test(input.stripback('0')[1 .. $-1].equals("011hi1"));
         });
         tests("Both", {
             test(blank.stripboth('0').equals(blank));
@@ -197,6 +243,23 @@ unittest{
             test(input.stripboth('0').equals("11hi11"));
             test(input.stripboth!isDigit.equals("hi"));
             testeq(input.stripboth('0').length, input.length - 4);
+            testeq(input.stripboth('0')[0], '1');
+            testeq(input.stripboth('0')[$-1], '1');
+            test(input.stripboth('0')[1 .. $-1].equals("1hi1"));
+        });
+        tests("Bidirectionality", {
+            auto range = input.stripfront('0');
+            testeq(range.front, '1');
+            testeq(range.back, '0');
+            testeq(range.nextback, '0');
+            testeq(range.nextback, '0');
+            testeq(range.nextback, '1');
+            testeq(range.nextback, '1');
+            testeq(range.nextback, 'i');
+            testeq(range.nextback, 'h');
+            testeq(range.nextback, '1');
+            testeq(range.nextback, '1');
+            test(range.empty);
         });
     });
 }
