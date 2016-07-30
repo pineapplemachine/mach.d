@@ -88,14 +88,24 @@ struct LinearCongruentialRange(T) if(canLinearCongruential!T){
 version(unittest){
     private:
     import mach.error.unit;
+    import mach.range.consume : consume;
     import mach.range.ends : head;
-    import mach.range.map : map;
 }
 unittest{
     tests("LCG", {
-        foreach(n; lcong.map!(n => n % 10).head(10)){
-            testgte(n, 0);
-            testlt(n, 10);
-        }
+        tests("Iteration", {
+            lcong.head(10).consume;
+        });
+        tests("Saving", {
+            auto range = lcong();
+            auto saved = range.save;
+            auto first = range.front;
+            range.popFront();
+            auto second = range.front;
+            testeq(saved.front, first);
+            saved.popFront();
+            testeq(saved.front, second);
+            testeq(saved.front, range.front);
+        });
     });
 }
