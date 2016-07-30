@@ -82,7 +82,7 @@ unittest{
     static assert(isFunctionPointer!fptr2);
     static assert(isFunctionPointer!(typeof(fptr1)));
     static assert(isFunctionPointer!(typeof(fptr2)));
-    // TODO: Phobos' FunctionTypeOf fail these for the same reason - why?
+    // TODO: Phobos' FunctionTypeOf fails these for the same reason - why?
     //static assert(is(FunctionPointerType!fptr1 == typeof(fptr1)));
     //static assert(is(FunctionPointerType!(typeof(fptr1)) == typeof(fptr1)));
     static assert(!isFunctionPointer!delptr);
