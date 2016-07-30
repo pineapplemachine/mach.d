@@ -2,8 +2,8 @@ module mach.range.asrange.arrayrange;
 
 private:
 
-import std.traits : isArray, isIntegral, isMutable;
-import mach.traits : ArrayElementType;
+import std.traits : isArray, isIntegral;
+import mach.traits : ArrayElementType, canReassign;
 
 public:
 
@@ -17,8 +17,16 @@ enum canMakeArrayRange(Array, Index) = (
 
 
 
+auto asarrayrange(Array, Index = size_t)(Array array) if(
+    canMakeArrayRange!(Array, Index)
+){
+    return ArrayRange!(Array, Index)(array);
+}
+
+
+
 /// Range based on an array.
-struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!Array){
+struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!(Array, Index)){
     alias Element = ArrayElementType!Array;
     
     Array array;
@@ -68,8 +76,8 @@ struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!Array){
         return typeof(this)(this.array[low .. high]);
     }
     
-    static if(isMutable!Array){
-        static if(isMutable!Element){
+    static if(canReassign!Array){
+        static if(canReassign!Element){
             enum bool mutable = true;
             @property void front(Element value){
                 this.array[this.frontindex] = value;
@@ -155,6 +163,27 @@ unittest{
             testeq(range.back, 'o');
             range.front = 'i';
             testeq(data[1], 'i');
+        });
+        tests("Immutability", {
+            tests("Const int", {
+                const int[] data = [0, 1, 2];
+                auto range = data.asarrayrange;
+                testeq(range[0], data[0]);
+                testeq(range.front, data[0]);
+                range.popFront();
+                testeq(range.front, data[1]);
+            });
+            tests("Immutable members", {
+                struct ConstMember{const int x;}
+                auto data = [ConstMember(0), ConstMember(1)];
+                import mach.traits;
+                auto range = data.asarrayrange;
+                testeq(range.front.x, 0);
+                range.popFront();
+                testeq(range.front.x, 1);
+                range.popFront();
+                test(range.empty);
+            });
         });
         tests("Saving", {
             auto range = ArrayRange!(int[])([1, 2, 3]);

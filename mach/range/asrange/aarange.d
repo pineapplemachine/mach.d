@@ -4,7 +4,7 @@ private:
 
 import std.traits : isAssociativeArray, KeyType, ValueType, isImplicitlyConvertible;
 import std.typecons : Tuple;
-import mach.traits : isMutable;
+import mach.traits : canReassign;
 import mach.range.asrange.arrayrange : ArrayRange;
 
 public:
