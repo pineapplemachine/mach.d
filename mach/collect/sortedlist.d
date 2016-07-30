@@ -131,7 +131,7 @@ struct SortedList(
     }
     
     auto asrange()() pure nothrow @safe @nogc{
-        return this.asrange!(isMutable!(typeof(this)));
+        return this.asrange!(canReassign!(typeof(this)));
     }
     auto asrange(bool mutable)() pure nothrow @safe @nogc if(mutable){
         if(!this.empty){

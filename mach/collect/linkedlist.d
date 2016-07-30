@@ -105,7 +105,7 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
         return this.backnode.value;
     }
     
-    static if(isMutable!T){
+    static if(canReassign!T){
         /// Set the frontmost value in the list.
         @property void front(ref T value) pure nothrow @safe @nogc in{
             assert(!this.empty);
@@ -357,7 +357,7 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
     
     /// Get a range for iterating over this list whose contents can be mutated.
     auto asrange()() pure nothrow @safe @nogc{
-        return this.asrange!(isMutable!(typeof(this)));
+        return this.asrange!(canReassign!(typeof(this)));
     }
     /// ditto
     auto asrange(bool mutable)() pure nothrow @safe @nogc if(mutable){
@@ -391,7 +391,7 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
         return this.nodeat(index).value;
     }
     
-    static if(isMutable!T){
+    static if(canReassign!T){
         /// Assign the element at an index.
         /// Please note, this is not especially efficient.
         void opIndexAssign(T value, in size_t index) pure nothrow @trusted @nogc in{
@@ -566,10 +566,10 @@ struct LinkedListRange(List){
         this.empty = this.frontnode.prev is this.backnode;
     }
     
-    static if(isMutable!List){
+    static if(canReassign!List){
         enum bool mutable = true;
         
-        static if(isMutable!Element){
+        static if(canReassign!Element){
             @property void front(Element value){
                 this.frontnode.value = value;
             }

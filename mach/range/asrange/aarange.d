@@ -76,7 +76,7 @@ struct AssociativeArrayRange(Array) if(canMakeAssociativeArrayRange!Array){
         return typeof(this)(this.array, this.keys[low .. high]);
     }
     
-    static if(isMutable!Array){
+    static if(canReassign!Array){
         enum bool mutable = true;
         
         @property void front(Element element){

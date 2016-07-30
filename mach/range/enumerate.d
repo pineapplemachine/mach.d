@@ -116,7 +116,7 @@ struct EnumerationRange(Index = size_t, Range) if(canEnumerateRange!(Range, Inde
         }
     }
         
-    static if(isMutable!Range){
+    static if(canReassign!Range){
         enum bool mutable = true;
         static if(isMutableFrontRange!Range){
             @property void front(Element element) in{
