@@ -61,9 +61,6 @@ struct RandomAccessStrideRange(Range, Stride = DefaultStride){
     
     alias index = frontindex;
     
-    this(typeof(this) range){
-        this(range.source, range.stride, range.frontindex, range.backindex);
-    }
     this(Range source, Stride stride, Stride frontindex = Stride.init) in{
         assert(stride > 0);
     }body{
@@ -136,9 +133,6 @@ struct PoppingStrideRange(Range, Stride = DefaultStride){
     
     static if(isBidirectional){
         bool preparedback;
-        this(typeof(this) range){
-            this(range.source, range.stridelength, range.preparedback);
-        }
         this(Range source, Stride stridelength, bool preparedback = false) in{
             assert(stridelength > 0);
         }body{
@@ -147,9 +141,6 @@ struct PoppingStrideRange(Range, Stride = DefaultStride){
             this.preparedback = preparedback;
         }
     }else{
-        this(typeof(this) range){
-            this(range.source, range.stridelength);
-        }
         this(Range source, Stride stridelength) in{
             assert(stridelength > 0);
         }body{
