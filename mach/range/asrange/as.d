@@ -3,7 +3,7 @@ module mach.range.asrange.as;
 private:
 
 import mach.traits : hasProperty, isRange, isSavingRange, isRandomAccessRange;
-import mach.traits : isBidirectionalRange, isSlicingRange, isMutable;
+import mach.traits : isBidirectionalRange, isSlicingRange, canReassign;
 import mach.traits : isMutableFrontRange, isMutableBackRange, isMutableRandomRange;
 import mach.range.asrange.aarange;
 import mach.range.asrange.arrayrange;

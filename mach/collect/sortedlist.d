@@ -3,7 +3,7 @@ module mach.collect.sortedlist;
 private:
 
 import std.meta : AliasSeq;
-import mach.traits : isMutable, isIterableOf;
+import mach.traits : canReassign, isIterableOf;
 import mach.collect.linkedlist : LinkedList, LinkedListRange, LinkedListNodes;
 import mach.collect.linkedlist : DefaultLinkedListAllocator;
 

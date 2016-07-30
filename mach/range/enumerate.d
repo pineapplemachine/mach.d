@@ -6,7 +6,7 @@ import std.typecons : Tuple;
 import std.traits : isImplicitlyConvertible;
 import mach.traits : canIncrement, canDecrement, canCast, ElementType;
 import mach.traits : isRange, isSavingRange, isRandomAccessRange, isSlicingRange;
-import mach.traits : isMutable, isMutableFrontRange, isMutableBackRange;
+import mach.traits : canReassign, isMutableFrontRange, isMutableBackRange;
 import mach.traits : isMutableRandomRange, isMutableInsertRange;
 import mach.traits : isMutableRemoveFrontRange, isMutableRemoveBackRange;
 import mach.traits : hasLength, LengthType, canIndex, canSliceSame;
