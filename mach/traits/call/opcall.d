@@ -51,3 +51,11 @@ unittest{
     static assert(!hasOpCall!string);
     static assert(!hasOpCall!hasOpCall);
 }
+unittest{
+    struct InstanceCall{int opCall(int){return 0;}}
+    struct StaticCall{static int opCall(int){return 0;}}
+    static assert(hasOpCall!InstanceCall);
+    static assert(hasOpCall!StaticCall);
+    static assert(is(OpCallType!InstanceCall == typeof(InstanceCall.opCall)));
+    static assert(is(OpCallType!StaticCall == typeof(StaticCall.opCall)));
+}
