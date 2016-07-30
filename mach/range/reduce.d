@@ -4,9 +4,8 @@ private:
 
 import std.traits : Unqual, isImplicitlyConvertible;
 import mach.traits : isIterable, isFiniteIterable, ElementType;
-import mach.traits : isRange, hasNumericLength;
+import mach.traits : isRange, isSavingRange, hasNumericLength;
 import mach.range.asrange : asrange, validAsRange;
-import mach.range.meta : MetaRangeMixin;
 
 public:
 
@@ -100,28 +99,47 @@ auto reducelazy(alias func, Acc, Iter)(auto ref Iter iter) if(canReduceLazy!(Ite
 
 
 
-struct ReduceRange(Range, Acc, alias func, bool seed = true) if(
+struct ReduceRange(Range, Acc, alias func, bool seeded = true) if(
     canReduceLazyRange!(Range, Acc, func) &&
-    (seed || isImplicitlyConvertible!(ElementType!Range, Acc))
+    (seeded || isImplicitlyConvertible!(ElementType!Range, Acc))
 ){
-    mixin MetaRangeMixin!(
-        Range, `source`, `Save`
-    );
+    import core.stdc.stdlib : malloc, free;
+    import core.stdc.string : memcpy;
     
     Range source;
-    Unqual!Acc value;
+    Acc* valueptr;
     bool empty;
     
-    this(typeof(this) range){
-        this(range.source, range.value);
-    }
     this(Range source, Acc value, bool empty = false){
         this.source = source;
         this.value = value;
         this.empty = empty;
     }
+    this(Range source, Acc* valueptr, bool empty = false){
+        this.source = source;
+        this.valueptr = valueptr;
+        this.empty = empty;
+    }
     
-    static if(!seed){
+    // Makes unittests fail with a "pointer being freed was not allocated" error?
+    //~this(){
+    //    if(this.valueptr){
+    //        free(this.valueptr);
+    //        this.valueptr = null;
+    //    }
+    //}
+    
+    @property Acc value() const{
+        return *(this.valueptr);
+    }
+    @property void value()(in Acc value){
+        if(this.valueptr) free(cast(void*) this.valueptr);
+        this.valueptr = cast(Acc*) malloc(Acc.sizeof);
+        assert(this.valueptr !is null, "Failed to allocate memory.");
+        memcpy(cast(void*) this.valueptr, &value, Acc.sizeof);
+    }
+    
+    static if(!seeded){
         this(Range source){
             this.source = source;
             this.empty = false;
@@ -148,9 +166,15 @@ struct ReduceRange(Range, Acc, alias func, bool seed = true) if(
     
     static if(hasNumericLength!Range){
         @property auto length(){
-            return this.source.length + seed;
+            return this.source.length + seeded;
         }
         alias opDollar = length;
+    }
+    
+    static if(isSavingRange!Range){
+        @property typeof(this) save(){
+            return typeof(this)(this.source.save, this.value, this.empty);
+        }
     }
 }
 
@@ -164,7 +188,7 @@ version(unittest){
 }
 unittest{
     tests("Reduce", {
-        auto array = [1, 2, 3, 4];
+        int[] array = [1, 2, 3, 4];
         alias sum = (acc, next) => (acc + next);
         alias concat = (acc, next) => (to!string(acc) ~ to!string(next));
         tests("Eager", {
@@ -177,6 +201,9 @@ unittest{
             testeq("Disparate types",
                 array.reduceeager!concat(""), "1234"
             );
+            fail("Empty source, no seed", {
+                array[0 .. 0].reduceeager!((a, n) => (a));
+            });
         });
         tests("Lazy", {
             tests("No seed", {
@@ -195,6 +222,20 @@ unittest{
                 range.popFront();
                 testeq(range.front, 3);
                 testeq(saved.front, 1);
+            });
+            tests("Const elements", {
+                tests("Ints", {
+                    auto range = (cast(const int[]) array).reducelazy!sum;
+                    test(range.equals([1, 3, 6, 10]));
+                });
+                tests("Struct with const member", {
+                    struct ConstMember{const int x;}
+                    auto input = [ConstMember(0), ConstMember(1), ConstMember(2)];
+                    auto range = input.reducelazy!((a, n) => (a + n.x))(0);
+                });
+            });
+            fail("Empty source, no seed", {
+                array[0 .. 0].reducelazy!((a, n) => (a));
             });
         });
     });
