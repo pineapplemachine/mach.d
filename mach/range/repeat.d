@@ -127,15 +127,13 @@ private template RepeatSavingRangeMixin(Range, string popfrontstr){
     Range original;
     
     import core.stdc.stdlib : malloc, free;
+    import core.stdc.string : memcpy;
     
-    @nogc void repeat(Range from){ // TODO: this really should not be necessary
-        if(this.source) free(this.source);
-        ubyte* newptr = cast(ubyte*) malloc(Range.sizeof);
-        assert(newptr !is null, "Failed to allocate memory.");
-        
-        ubyte* fromptr = cast(ubyte*) &from;
-        for(size_t i; i < Range.sizeof; i++) newptr[i] = fromptr[i];
-        this.source = cast(Range*) newptr;
+    @nogc void repeat(in Range from){ // TODO: Is there a better way to do this?
+        if(this.source) free(cast(void*) this.source);
+        this.source = cast(Range*) malloc(Range.sizeof);
+        assert(this.source !is null, "Failed to allocate memory.");
+        memcpy(cast(void*) this.source, &from, Range.sizeof);
     }
     
     this(this){
@@ -144,7 +142,10 @@ private template RepeatSavingRangeMixin(Range, string popfrontstr){
         this.repeat(from);
     }
     ~this(){
-        if(this.source) free(this.source);
+        if(this.source){
+            free(this.source);
+            this.source = null;
+        }
     }
     
     @property auto ref front(){
