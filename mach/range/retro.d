@@ -78,21 +78,33 @@ struct RetroRange(Range) if(canRetroRange!Range){
 version(unittest){
     import mach.error.unit;
     import mach.range.compare : equals;
+    import mach.range.next : nextback;
 }
 unittest{
     tests("Reversed", {
         auto input = [0, 1, 2, 3];
-        test(input.retro.equals([3, 2, 1, 0]));
+        test("Iteration",
+            input.retro.equals([3, 2, 1, 0])
+        );
         tests("Random access", {
             testeq(input.retro[0], 3);
             testeq(input.retro[3], 0);
             testeq(input.retro[$-1], 0);
         });
         tests("Slicing", {
-            import std.stdio;
             test(input.retro[0 .. $-1].equals([3, 2, 1]));
             test(input.retro[1 .. $-1].equals([2, 1]));
             test(input.retro[1 .. $].equals([2, 1, 0]));
+        });
+        tests("Bidirectionality", {
+            auto range = input.retro;
+            testeq(range.front, 3);
+            testeq(range.back, 0);
+            testeq(range.nextback, 0);
+            testeq(range.nextback, 1);
+            testeq(range.nextback, 2);
+            testeq(range.nextback, 3);
+            test(range.empty);
         });
     });
 }
