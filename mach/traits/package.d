@@ -16,6 +16,7 @@ import mach.traits.mutability;
 import mach.traits.op;
 import mach.traits.parameters;
 import mach.traits.property;
+import mach.traits.range;
 import mach.traits.slice;
 import mach.traits.templates;
 import mach.traits.transform;
