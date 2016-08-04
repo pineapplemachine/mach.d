@@ -211,16 +211,34 @@ template hasEmptyEnum(T, bool value){
 enum hasTrueEmptyEnum(T) = hasEmptyEnum!(T, true);
 enum hasFalseEmptyEnum(T) = hasEmptyEnum!(T, false);
 
-enum isFiniteRange(T) = isRange!T && !hasTrueEmptyEnum!T;
-enum isInfiniteRange(T) = isRange!T && hasTrueEmptyEnum!T;
+enum isFiniteRange(T) = isRange!T && !hasFalseEmptyEnum!T;
+enum isInfiniteRange(T) = isRange!T && hasFalseEmptyEnum!T;
+
+unittest{
+    struct TrueEnum{enum empty = true;}
+    struct FalseEnum{enum empty = false;}
+    struct NoEnum{enum x = false;}
+    static assert(hasEmptyEnum!TrueEnum);
+    static assert(hasEmptyEnum!FalseEnum);
+    static assert(!hasEmptyEnum!NoEnum);
+    static assert(!hasEmptyEnum!int);
+    static assert(hasTrueEmptyEnum!TrueEnum);
+    static assert(!hasTrueEmptyEnum!FalseEnum);
+    static assert(!hasTrueEmptyEnum!NoEnum);
+    static assert(!hasTrueEmptyEnum!int);
+    static assert(!hasFalseEmptyEnum!TrueEnum);
+    static assert(hasFalseEmptyEnum!FalseEnum);
+    static assert(!hasFalseEmptyEnum!NoEnum);
+    static assert(!hasFalseEmptyEnum!int);
+}
 
 
 
 version(unittest){
     private:
     
-    template FwdMixin(){
-        enum bool empty = false;
+    template FwdMixin(bool emptyenum = false){
+        enum bool empty = emptyenum;
         @property int front(){return 0;}
         void popFront();
     }
@@ -272,6 +290,14 @@ version(unittest){
         mixin FwdMixin;
         mixin RandomMixin;
     }
+    struct EmptyRange{
+        mixin FwdMixin!true;
+    }
+    struct FiniteRange{
+        @property bool empty(){return true;}
+        @property int front(){return 0;}
+        void popFront();
+    }
 }
 unittest{
     FwdRange fwd;
@@ -280,6 +306,8 @@ unittest{
     static assert(isRange!BiRange);
     static assert(isRange!SaveRange);
     static assert(isRange!RandomRange);
+    static assert(isRange!EmptyRange);
+    static assert(isRange!FiniteRange);
     static assert(!isRange!int);
     static assert(!isRange!NotARange);
     static assert(isBidirectionalRange!BiRange);
@@ -291,5 +319,13 @@ unittest{
     static assert(isRandomAccessRange!RandomRange);
     static assert(!isRandomAccessRange!FwdRange);
     static assert(!isRandomAccessRange!int);
+    static assert(isInfiniteRange!FwdRange);
+    static assert(!isInfiniteRange!EmptyRange);
+    static assert(!isInfiniteRange!FiniteRange);
+    static assert(!isInfiniteRange!int);
+    static assert(isFiniteRange!EmptyRange);
+    static assert(isFiniteRange!FiniteRange);
+    static assert(!isFiniteRange!FwdRange);
+    static assert(!isFiniteRange!int);
     // TODO: More tests
 }
