@@ -79,6 +79,10 @@ struct RecurRange(alias func, Element) if(validRecurFunction!(Element, func)){
     void popFront(){
         this.value = func(this.value);
     }
+    
+    @property typeof(this) save(){
+        return typeof(this)(this.value);
+    }
 }
 
 
@@ -112,6 +116,10 @@ struct RecurUntilRange(
             this.empty = until(this.value);
         }
     }
+    
+    @property typeof(this) save(){
+        return typeof(this)(this.value, this.empty);
+    }
 }
 
 
@@ -127,6 +135,13 @@ unittest{
         alias increment = (int n) => (n + 1);
         test(recur!increment.head(4).equals([0, 1, 2, 3]));
         test(recur!increment(10).head(4).equals([10, 11, 12, 13]));
+        tests("Saving", {
+            auto a = 0.recur!increment;
+            auto b = a.save;
+            a.popFront();
+            testeq(a.front, 1);
+            testeq(b.front, 0);
+        });
     });
     tests("Recur until", {
         auto collatz(bool inclusive, N)(N n){
@@ -142,6 +157,13 @@ unittest{
         tests("Exclusive", {
             test(collatz!false(5).equals([5, 16, 8, 4, 2]));
             test(collatz!false(6).equals([6, 3, 10, 5, 16, 8, 4, 2]));
+        });
+        tests("Saving", {
+            auto a = 0.recur!((n) => (n+1), (n) => (n > 10));
+            auto b = a.save;
+            a.popFront();
+            testeq(a.front, 1);
+            testeq(b.front, 0);
         });
     });
 }
