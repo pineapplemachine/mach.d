@@ -53,7 +53,7 @@ struct RefCounter(T){
     }
     
     /// Determine whether a given value is being tracked by the reference counter.
-    const(T)* contains(in T value) const{
+    auto contains(in T value) const{
         return value in this.counter;
     }
     
@@ -82,8 +82,8 @@ struct RefCounter(T){
         T[] expired = new T[counter.length];
         size_t expiredcount = 0;
         
-        foreach(T value; this.counter){
-            if(this.counter[value] <= 0){
+        foreach(value, count; this.counter){
+            if(count <= 0){
                 expired[expiredcount] = value;
                 expiredcount++;
             }
