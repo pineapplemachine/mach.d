@@ -2,7 +2,7 @@ module mach.io.file;
 
 private:
 
-import mach.io.stream.filestream;
+import mach.io.stream.filestream : FileStream;
 
 public:
 
@@ -20,6 +20,9 @@ class File{
     }
     static auto append(string path){
         return File.open(path, "ab");
+    }
+    static auto temp(){
+        return FileStream.temp();
     }
 }
 
