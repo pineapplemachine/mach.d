@@ -56,21 +56,25 @@ template isIterableOf(T, alias pred){
 
 /// This logic is meaningless when not combined with something like isIterable 
 /// or isRange. If an `empty` enum is present, then its boolean value is used.
-template isFinite(alias T) if(isIterable!T){
+template isFinite(alias T){
     enum bool isFinite = isFinite!(typeof(T));
 }
 /// ditto
-template isFinite(T) if(isIterable!T){
-    import mach.traits.range : isRange, hasEmptyEnum; // TODO: Better organization
-    static if(isArray!T){
-        enum bool isFinite = true;
-    }else static if(hasEmptyEnum!T){
-        enum bool isFinite = T.empty;
-    }else static if(isRange!T){
-        // Assumes that a valid range without empty defined as an enum is finite.
-        enum bool isFinite = true;
+template isFinite(T){
+    static if(isIterable!T){
+        import mach.traits.range : isRange, hasEmptyEnum; // TODO: Better organization
+        static if(isArray!T){
+            enum bool isFinite = true;
+        }else static if(hasEmptyEnum!T){
+            enum bool isFinite = T.empty;
+        }else static if(isRange!T){
+            // Assumes that a valid range without empty defined as an enum is finite.
+            enum bool isFinite = true;
+        }else{
+            static assert(false, "Failed to determine finiteness.");
+        }
     }else{
-        static assert(false, "Failed to determine finiteness.");
+        enum bool isFinite = false;
     }
 }
 
