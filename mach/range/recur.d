@@ -8,6 +8,10 @@ public:
 
 
 
+private enum bool DefaultRecurUntilInclusive = false;
+
+
+
 enum validRecurFunction(alias func) = (
     validRecurFunction!(ReturnType!func, func)
 );
@@ -45,16 +49,18 @@ auto recur(alias func, Element)(Element initial) if(validRecurFunction!(Element,
 }
 
 /// ditto
-auto recur(alias func, alias until)() if(validRecurFunction!(func, until)){
+auto recur(alias func, alias until, bool inclusive = DefaultRecurUntilInclusive)() if(
+    validRecurFunction!(func, until)
+){
     alias Element = ReturnType!func;
-    return RecurUntilRange!(func, until, Element)(Element.init);
+    return RecurUntilRange!(func, until, inclusive, Element)(Element.init);
 }
 
 /// ditto
-auto recur(alias func, alias until, Element)(Element initial) if(
-    validRecurFunction!(Element, func, until)
-){
-    return RecurUntilRange!(func, until, Element)(initial);
+auto recur(alias func, alias until, bool inclusive = DefaultRecurUntilInclusive, Element)(
+    Element initial
+) if(validRecurFunction!(Element, func, until)){
+    return RecurUntilRange!(func, until, inclusive, Element)(initial);
 }
 
 
@@ -75,23 +81,36 @@ struct RecurRange(alias func, Element) if(validRecurFunction!(Element, func)){
     }
 }
 
-struct RecurUntilRange(alias func, alias until, Element) if(validRecurFunction!(Element, func, until)){
+
+
+struct RecurUntilRange(
+    alias func, alias until, bool inclusive = DefaultRecurUntilInclusive, Element
+) if(
+    validRecurFunction!(Element, func, until)
+){
     Element value;
+    bool empty;
     
     this(Element value){
+        static if(inclusive) this(value, false);
+        else this(value, until(value));
+    }
+    this(Element value, bool empty){
         this.value = value;
+        this.empty = empty;
     }
     
-    @property bool empty() const{
-        return until(this.front);
-    }
-    @property auto ref front() const{
+    @property auto ref front() const in{assert(!this.empty);} body{
         return this.value;
     }
-    void popFront() in{
-        assert(!this.empty);
-    }body{
-        this.value = func(this.value);
+    void popFront() in{assert(!this.empty);}body{
+        static if(inclusive){
+            this.empty = until(this.value);
+            if(!this.empty) this.value = func(this.value);
+        }else{
+            this.value = func(this.value);
+            this.empty = until(this.value);
+        }
     }
 }
 
@@ -110,10 +129,19 @@ unittest{
         test(recur!increment(10).head(4).equals([10, 11, 12, 13]));
     });
     tests("Recur until", {
-        alias collatzfunc = (in uint n) => (n % 2 == 0 ? n / 2 : n * 3 + 1);
-        alias collatzuntil = (in n) => (n <= 1);
-        auto collatz = (uint n) => (recur!(collatzfunc, collatzuntil)(n));
-        test(collatz(5).equals([5, 16, 8, 4, 2]));
-        test(collatz(6).equals([6, 3, 10, 5, 16, 8, 4, 2]));
+        auto collatz(bool inclusive, N)(N n){
+            return n.recur!(
+                (in N n) => (n % 2 == 0 ? n / 2 : n * 3 + 1),
+                (in N n) => (n <= 1), inclusive
+            );
+        }
+        tests("Inclusive", {
+            test(collatz!true(5).equals([5, 16, 8, 4, 2, 1]));
+            test(collatz!true(6).equals([6, 3, 10, 5, 16, 8, 4, 2, 1]));
+        });
+        tests("Exclusive", {
+            test(collatz!false(5).equals([5, 16, 8, 4, 2]));
+            test(collatz!false(6).equals([6, 3, 10, 5, 16, 8, 4, 2]));
+        });
     });
 }
