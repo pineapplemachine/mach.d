@@ -23,13 +23,15 @@ template hasMutableElement(Tx...) if(Tx.length == 1 && canGetElementType!(Tx[0])
     enum bool canHashElement = hasElementType!(isMutable, Tx[0]);
 }
 
-enum isElementPredicate(alias pred, T...) = (
-    isPredicate!(pred, Map!(ElementType, T))
-);
+template isElementPredicate(alias pred, T...){
+    import mach.traits.transform : isPredicate;
+    enum bool isElementPredicate = isPredicate!(pred, Map!(ElementType, T));
+}
 
-enum isElementTransformation(alias pred, T...) = (
-    isTransformation!(pred, Map!(ElementType, T))
-);
+template isElementTransformation(alias pred, T...){
+    import mach.traits.transform : isTransformation;
+    enum bool isElementTransformation = isTransformation!(pred, Map!(ElementType, T));
+}
 
 
 
