@@ -2,6 +2,7 @@ module mach.sdl.glenum;
 
 private:
 
+//import derelict.opengl3.gl3;
 import derelict.opengl3.gl;
 import std.traits : isFloatingPoint;
 
@@ -79,25 +80,6 @@ enum bool validvertextype(Type) = (
     is(Type == float) || is(Type == double)
 );
 
-static immutable glenum[16] ColorAttachment = [
-    GL_COLOR_ATTACHMENT0,
-    GL_COLOR_ATTACHMENT1,
-    GL_COLOR_ATTACHMENT2,
-    GL_COLOR_ATTACHMENT3,
-    GL_COLOR_ATTACHMENT4,
-    GL_COLOR_ATTACHMENT5,
-    GL_COLOR_ATTACHMENT6,
-    GL_COLOR_ATTACHMENT7,
-    GL_COLOR_ATTACHMENT8,
-    GL_COLOR_ATTACHMENT9,
-    GL_COLOR_ATTACHMENT10,
-    GL_COLOR_ATTACHMENT11,
-    GL_COLOR_ATTACHMENT12,
-    GL_COLOR_ATTACHMENT13,
-    GL_COLOR_ATTACHMENT14,
-    GL_COLOR_ATTACHMENT15,
-];
-
 // https://www.opengl.org/sdk/docs/man/html/glReadBuffer.xhtml
 enum ColorBufferMode : glenum {
     FrontLeft = GL_FRONT_LEFT, 
@@ -108,23 +90,42 @@ enum ColorBufferMode : glenum {
     Back = GL_BACK, 
     Left = GL_LEFT, 
     Right = GL_RIGHT,
-    ColorAttachment00 = ColorAttachment[0x0],
-    ColorAttachment01 = ColorAttachment[0x1],
-    ColorAttachment02 = ColorAttachment[0x2],
-    ColorAttachment03 = ColorAttachment[0x3],
-    ColorAttachment04 = ColorAttachment[0x4],
-    ColorAttachment05 = ColorAttachment[0x5],
-    ColorAttachment06 = ColorAttachment[0x6],
-    ColorAttachment07 = ColorAttachment[0x7],
-    ColorAttachment08 = ColorAttachment[0x8],
-    ColorAttachment09 = ColorAttachment[0x9],
-    ColorAttachment10 = ColorAttachment[0xa],
-    ColorAttachment11 = ColorAttachment[0xb],
-    ColorAttachment12 = ColorAttachment[0xc],
-    ColorAttachment13 = ColorAttachment[0xd],
-    ColorAttachment14 = ColorAttachment[0xe],
-    ColorAttachment15 = ColorAttachment[0xf],
+    ColorAttachment00 = GL_COLOR_ATTACHMENT0,
+    ColorAttachment01 = GL_COLOR_ATTACHMENT1,
+    ColorAttachment02 = GL_COLOR_ATTACHMENT2,
+    ColorAttachment03 = GL_COLOR_ATTACHMENT3,
+    ColorAttachment04 = GL_COLOR_ATTACHMENT4,
+    ColorAttachment05 = GL_COLOR_ATTACHMENT5,
+    ColorAttachment06 = GL_COLOR_ATTACHMENT6,
+    ColorAttachment07 = GL_COLOR_ATTACHMENT7,
+    ColorAttachment08 = GL_COLOR_ATTACHMENT8,
+    ColorAttachment09 = GL_COLOR_ATTACHMENT9,
+    ColorAttachment10 = GL_COLOR_ATTACHMENT10,
+    ColorAttachment11 = GL_COLOR_ATTACHMENT11,
+    ColorAttachment12 = GL_COLOR_ATTACHMENT12,
+    ColorAttachment13 = GL_COLOR_ATTACHMENT13,
+    ColorAttachment14 = GL_COLOR_ATTACHMENT14,
+    ColorAttachment15 = GL_COLOR_ATTACHMENT15,
 }
+
+static immutable glenum[16] ColorAttachment = [
+    ColorBufferMode.ColorAttachment00,
+    ColorBufferMode.ColorAttachment01,
+    ColorBufferMode.ColorAttachment02,
+    ColorBufferMode.ColorAttachment03,
+    ColorBufferMode.ColorAttachment04,
+    ColorBufferMode.ColorAttachment05,
+    ColorBufferMode.ColorAttachment06,
+    ColorBufferMode.ColorAttachment07,
+    ColorBufferMode.ColorAttachment08,
+    ColorBufferMode.ColorAttachment09,
+    ColorBufferMode.ColorAttachment10,
+    ColorBufferMode.ColorAttachment11,
+    ColorBufferMode.ColorAttachment12,
+    ColorBufferMode.ColorAttachment13,
+    ColorBufferMode.ColorAttachment14,
+    ColorBufferMode.ColorAttachment15,
+];
 
 // https://www.opengl.org/sdk/docs/man/html/glTexImage2D.xhtml
 enum TextureTarget : glenum {
@@ -269,7 +270,7 @@ enum TextureParam : glenum {
     SwizzleRGBA = GL_TEXTURE_SWIZZLE_RGBA,
 }
 
-enum GLParam : glenum {
+enum Param : glenum {
     ActiveTexture = GL_ACTIVE_TEXTURE,
     AliasedLineWidthRange = GL_ALIASED_LINE_WIDTH_RANGE,
     ArrayBufferBinding = GL_ARRAY_BUFFER_BINDING,
@@ -310,8 +311,23 @@ enum GLParam : glenum {
     Dither = GL_DITHER,
     DoubleBuffer = GL_DOUBLEBUFFER,
     DrawBuffer = GL_DRAW_BUFFER,
-    //= GL_DRAW_BUFFER i, // TODO: How many are there?
-    DrawFrameBufferBinding = GL_DRAW_FRAMEBUFFER_BINDING,
+    DrawBuffer00 = GL_DRAW_BUFFER0,
+    DrawBuffer01 = GL_DRAW_BUFFER1,
+    DrawBuffer02 = GL_DRAW_BUFFER2,
+    DrawBuffer03 = GL_DRAW_BUFFER3,
+    DrawBuffer04 = GL_DRAW_BUFFER4,
+    DrawBuffer05 = GL_DRAW_BUFFER5,
+    DrawBuffer06 = GL_DRAW_BUFFER6,
+    DrawBuffer07 = GL_DRAW_BUFFER7,
+    DrawBuffer08 = GL_DRAW_BUFFER8,
+    DrawBuffer09 = GL_DRAW_BUFFER9,
+    DrawBuffer10 = GL_DRAW_BUFFER10,
+    DrawBuffer11 = GL_DRAW_BUFFER11,
+    DrawBuffer12 = GL_DRAW_BUFFER12,
+    DrawBuffer13 = GL_DRAW_BUFFER13,
+    DrawBuffer14 = GL_DRAW_BUFFER14,
+    DrawBuffer15 = GL_DRAW_BUFFER15,
+    DrawFrameBu0fferBinding = GL_DRAW_FRAMEBUFFER_BINDING,
     ReadFrameBufferBinding = GL_READ_FRAMEBUFFER_BINDING,
     ElementArrayBufferBinding = GL_ELEMENT_ARRAY_BUFFER_BINDING,
     FragmentShaderDerivativeHint = GL_FRAGMENT_SHADER_DERIVATIVE_HINT,
@@ -498,6 +514,25 @@ enum GLParam : glenum {
     MaxElementIndex = GL_MAX_ELEMENT_INDEX,
 }
 
+static immutable glenum[16] DrawBuffer = [
+    Param.DrawBuffer00,
+    Param.DrawBuffer01,
+    Param.DrawBuffer02,
+    Param.DrawBuffer03,
+    Param.DrawBuffer04,
+    Param.DrawBuffer05,
+    Param.DrawBuffer06,
+    Param.DrawBuffer07,
+    Param.DrawBuffer08,
+    Param.DrawBuffer09,
+    Param.DrawBuffer10,
+    Param.DrawBuffer11,
+    Param.DrawBuffer12,
+    Param.DrawBuffer13,
+    Param.DrawBuffer14,
+    Param.DrawBuffer15,
+];
+
 // https://www.opengl.org/sdk/docs/man/html/glDrawArrays.xhtml
 enum Primitive : glenum {
     Points = GL_POINTS,
@@ -513,3 +548,120 @@ enum Primitive : glenum {
     TrianglesAdjacency = GL_TRIANGLES_ADJACENCY,
     Patches = GL_PATCHES,
 }
+
+// https://www.opengl.org/sdk/docs/man/html/glBlendFunc.xhtml
+enum BlendFactor : glenum {
+    Zero = GL_ZERO,
+    One = GL_ONE,
+    SrcColor = GL_SRC_COLOR,
+    OneMinusSrcColor = GL_ONE_MINUS_SRC_COLOR,
+    DstColor = GL_DST_COLOR,
+    OneMinusDstColor = GL_ONE_MINUS_DST_COLOR,
+    SrcAlpha = GL_SRC_ALPHA,
+    OneMinusSrcAlpha = GL_ONE_MINUS_SRC_ALPHA,
+    DstAlpha = GL_DST_ALPHA,
+    OneMinusDstAlpha = GL_ONE_MINUS_DST_ALPHA,
+    ConstantColor = GL_CONSTANT_COLOR,
+    OneMinusConstantColor = GL_ONE_MINUS_CONSTANT_COLOR,
+    ConstantAlpha = GL_CONSTANT_ALPHA,
+    OneMinusConstantAlpha = GL_ONE_MINUS_CONSTANT_ALPHA,
+}
+
+// http://docs.gl/gl3/glMatrixMode
+enum MatrixMode : glenum {
+    ModelView = GL_MODELVIEW,
+    Projection = GL_PROJECTION,
+    Texture = GL_TEXTURE,
+    Color = GL_COLOR
+}
+
+// https://www.opengl.org/sdk/docs/man2/xhtml/glEnable.xml
+enum Capability : glenum {
+    //AlphaTest = GL_ALPHA_TEST, // Deprecated
+    //AutoNormal = GL_AUTO_NORMAL, // Deprecated
+    Blend = GL_BLEND,
+    //ClipPlanei = GL_CLIP_PLANEi, // TODO: Not real?
+    ColorLogicOp = GL_COLOR_LOGIC_OP,
+    //ColorMaterial = GL_COLOR_MATERIAL, // Deprecated
+    //ColorSum = GL_COLOR_SUM, // Deprecated
+    //ColorTable = GL_COLOR_TABLE, // Deprecated
+    //Convolution1D = GL_CONVOLUTION_1D, // Deprecated
+    //Convolution2D = GL_CONVOLUTION_2D, // Deprecated
+    CullFace = GL_CULL_FACE,
+    DepthTest = GL_DEPTH_TEST,
+    Dither = GL_DITHER,
+    //Fog = GL_FOG, // Deprecated
+    //Histogram = GL_HISTOGRAM, // Deprecated
+    //IndexLogicOp = GL_INDEX_LOGIC_OP, // Deprecated
+    //Light0 = GL_LIGHT0, // Deprecated
+    //Light1 = GL_LIGHT1, // Deprecated
+    //Light2 = GL_LIGHT2, // Deprecated
+    //Light3 = GL_LIGHT3, // Deprecated
+    //Light4 = GL_LIGHT4, // Deprecated
+    //Light5 = GL_LIGHT5, // Deprecated
+    //Light6 = GL_LIGHT6, // Deprecated
+    //Light7 = GL_LIGHT7, // Deprecated
+    //Lighting = GL_LIGHTING, // Deprecated
+    LineSmooth = GL_LINE_SMOOTH,
+    //LineStipple = GL_LINE_STIPPLE, // Deprecated
+    //Map1Color4 = GL_MAP1_COLOR_4, // Deprecated
+    //Map1Index = GL_MAP1_INDEX, // Deprecated
+    //Map1Normal = GL_MAP1_NORMAL, // Deprecated
+    //Map1TextureCoord1 = GL_MAP1_TEXTURE_COORD_1, // Deprecated
+    //Map1TextureCoord2 = GL_MAP1_TEXTURE_COORD_2, // Deprecated
+    //Map1TextureCoord3 = GL_MAP1_TEXTURE_COORD_3, // Deprecated
+    //Map1TextureCoord4 = GL_MAP1_TEXTURE_COORD_4, // Deprecated
+    //Map1Vertex3 = GL_MAP1_VERTEX_3, // Deprecated
+    //Map1Vertex4 = GL_MAP1_VERTEX_4, // Deprecated
+    //Map2Color4 = GL_MAP2_COLOR_4, // Deprecated
+    //Map2Index = GL_MAP2_INDEX, // Deprecated
+    //Map2Normal = GL_MAP2_NORMAL, // Deprecated
+    //Map2TextureCoord1 = GL_MAP2_TEXTURE_COORD_1, // Deprecated
+    //Map2TextureCoord2 = GL_MAP2_TEXTURE_COORD_2, // Deprecated
+    //Map2TextureCoord3 = GL_MAP2_TEXTURE_COORD_3, // Deprecated
+    //Map2TextureCoord4 = GL_MAP2_TEXTURE_COORD_4, // Deprecated
+    //Map2Vertex3 = GL_MAP2_VERTEX_3, // Deprecated
+    //Map2Vertex4 = GL_MAP2_VERTEX_4, // Deprecated
+    //Minmax = GL_MINMAX, // Deprecated
+    Multisample = GL_MULTISAMPLE,
+    //Normalize = GL_NORMALIZE, // Deprecated
+    //PointSmooth = GL_POINT_SMOOTH, // Deprecated
+    //PointSprite = GL_POINT_SPRITE, // Deprecated
+    PolygonOffsetFill = GL_POLYGON_OFFSET_FILL,
+    PolygonOffsetLine = GL_POLYGON_OFFSET_LINE,
+    PolygonOffsetPoint = GL_POLYGON_OFFSET_POINT,
+    PolygonSmooth = GL_POLYGON_SMOOTH,
+    //PolygonStipple = GL_POLYGON_STIPPLE, // Deprecated
+    //PostColorMatrixColorTable = GL_POST_COLOR_MATRIX_COLOR_TABLE, // Deprecated
+    //PostConvolutionColorTable = GL_POST_CONVOLUTION_COLOR_TABLE, // Deprecated
+    //RescaleNormal = GL_RESCALE_NORMAL, // Deprecated
+    SampleAlphaToCoverage = GL_SAMPLE_ALPHA_TO_COVERAGE,
+    SampleAlphaToOne = GL_SAMPLE_ALPHA_TO_ONE,
+    SampleCoverage = GL_SAMPLE_COVERAGE,
+    //Separable2D = GL_SEPARABLE_2D, // Deprecated
+    ScissorTest = GL_SCISSOR_TEST,
+    StencilTest = GL_STENCIL_TEST,
+    Texture1D = GL_TEXTURE_1D,
+    Texture2D = GL_TEXTURE_2D,
+    Texture3D = GL_TEXTURE_3D,
+    TextureCubeMap = GL_TEXTURE_CUBE_MAP,
+    //TextureGenQ = GL_TEXTURE_GEN_Q, // Deprecated
+    //TextureGenR = GL_TEXTURE_GEN_R, // Deprecated
+    //TextureGenS = GL_TEXTURE_GEN_S, // Deprecated
+    //TextureGenT = GL_TEXTURE_GEN_T, // Deprecated
+    VertexProgramPointSize = GL_VERTEX_PROGRAM_POINT_SIZE,
+    //VertexProgramTwoSide = GL_VERTEX_PROGRAM_TWO_SIDE, // Deprecated
+}
+
+/+ Deprecated
+static immutable glenum[8] Light = [
+    Capability.Light0,
+    Capability.Light1,
+    Capability.Light2,
+    Capability.Light3,
+    Capability.Light4,
+    Capability.Light5,
+    Capability.Light6,
+    Capability.Light7,
+];
++/
