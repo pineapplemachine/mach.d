@@ -37,10 +37,10 @@ string series(bool oxford = true, Args...)(in Args items){
 version(unittest) import mach.error.unit;
 unittest{
     tests("English series", {
-        testeq(list("abc"), "abc");
-        testeq(list("abc", "xyz"), "abc and xyz");
-        testeq(list!true("one", "two", "three"), "one, two, and three");
-        testeq(list!false("one", "two", "three"), "one, two and three");
-        testeq(list("one, two", "three, four", "five, six"), "one, two; three, four; and five, six");
+        testeq(series("abc"), "abc");
+        testeq(series("abc", "xyz"), "abc and xyz");
+        testeq(series!true("one", "two", "three"), "one, two, and three");
+        testeq(series!false("one", "two", "three"), "one, two and three");
+        testeq(series("one, two", "three, four", "five, six"), "one, two; three, four; and five, six");
     });
 }
