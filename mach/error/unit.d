@@ -149,22 +149,22 @@ void testnotnear(N)(
 
 
 /// Verify that a condition is true.
-void testtrue(size_t line = __LINE__, string file = __FILE__)(in bool value){
+void testtrue(size_t line = __LINE__, string file = __FILE__, Bool)(in Bool value){
     testtrue(DefaultMessage.True, value, line, file);
 }
 /// ditto
-void testtrue(
-    in string message, in bool value, in size_t line = __LINE__, in string file = __FILE__
+void testtrue(Bool)(
+    in string message, in Bool value, in size_t line = __LINE__, in string file = __FILE__
 ){
     if(!value)throw new TestFailureError(message, null, line, file);
 }
 /// Verify that a condition is false.
-void testfalse(size_t line = __LINE__, string file = __FILE__)(in bool value){
+void testfalse(size_t line = __LINE__, string file = __FILE__, Bool)(in Bool value){
     testfalse(DefaultMessage.False, value, line, file);
 }
 /// ditto
-void testfalse(
-    in string message, in bool value, in size_t line = __LINE__, in string file = __FILE__
+void testfalse(Bool)(
+    in string message, in Bool value, in size_t line = __LINE__, in string file = __FILE__
 ){
     if(value) throw new TestFailureError(message, null, line, file);
 }
@@ -295,8 +295,10 @@ unittest{
     testlt("message", "abc", "xyz");
     
     test(true);
+    test(1);
     test("message", true);
     testf(false);
+    testf(0);
     testf("message", false);
     
     tests("group", {
