@@ -6,8 +6,10 @@ import std.ascii : toLower;
 
 public:
 
-/// Relatively simple implementation for wildcard characters in strings
-class Matcher{
+
+
+/// Relatively simple implementation for wildcard characters in strings.
+class WildMatcher{
     
     /// Escape a metacharacter in a pattern
     char escapechar = '\\';
@@ -110,10 +112,12 @@ class Matcher{
     
 }
 
+
+
 version(unittest) import mach.error.unit;
 unittest{
     tests("Wildcards", {
-        Matcher wild = new Matcher();
+        WildMatcher wild = new WildMatcher();
         tests("Match single character", {
             test (wild.match("test", "test"));
             testf(wild.match("test", "toast"));
