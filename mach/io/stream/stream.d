@@ -87,19 +87,21 @@ interface IOStream : InputStream, OutputStream {
 
 
 
-struct StreamRange(Source, Element) if(is(Source: Stream)){
-    Source source;
-    Unqual!Element cachedfront;
+// TODO
+
+//struct StreamRange(Source, Element) if(is(Source: Stream)){
+//    Source source;
+//    Unqual!Element cachedfront;
     
-    static if(is(Source: InputStream)){
-        @property Element front(){
-            return this.cachedfront;
-        }
-        void popFront(){
-            this.source.readbuffer(&this.cachedfront);
-        }
-    }
-    static if(is(Source: OutputStream)){
+//    static if(is(Source: InputStream)){
+//        @property Element front(){
+//            return this.cachedfront;
+//        }
+//        void popFront(){
+//            this.source.readbuffer(&this.cachedfront);
+//        }
+//    }
+//    static if(is(Source: OutputStream)){
         
-    }
-}
+//    }
+//}

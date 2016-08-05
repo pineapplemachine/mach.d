@@ -3,12 +3,9 @@ module mach.io.stream.filestream;
 private:
 
 import core.exception : AssertError;
-import core.stdc.stdio : SEEK_CUR, SEEK_END, SEEK_SET;
-import core.stdc.stdio : fopen, fclose, fread, fwrite, fflush, fseek, ftell, feof;
-import core.stdc.stdio : tmpfile, rewind, File = FILE;
-import mach.error.errno : enforceerrno;
-import mach.io.fileutil : fsync;
-
+import mach.error : enforceerrno;
+import mach.io.file.sys : FileHandle, Seek;
+import mach.io.file.sys : dfopen, fclose, fread, fwrite, fflush, fsync, fseek, ftell, feof, tmpfile, rewind;
 import mach.io.stream.stream : IOStream, StreamSupportMixin;
 
 public:
@@ -16,28 +13,19 @@ public:
 
 
 class FileStream: IOStream{
+    alias Seek = .Seek;
+    
     mixin(StreamSupportMixin(
         "haseof", "haslength", "hasposition", "canseek", "canreset"
     ));
     
-    File* target;
+    FileHandle target;
     
-    this(File* target){
+    this(FileHandle target){
         this.target = target;
     }
     this(string path, in char[] mode = "rb"){
-        import std.internal.cstring : tempCString;
-        version(Windows) alias FSChar = wchar;
-        else version(Posix) alias FSChar = char;
-        else static assert(false);
-        auto cpath = path.tempCString!FSChar();
-        auto cmode = mode.tempCString!FSChar();
-        version(Windows){
-            extern(C) nothrow @nogc File* _wfopen(in wchar* filename, in wchar* mode);
-            this(enforceerrno(_wfopen(cpath, cmode), "Failed to open file."));
-        }else{
-            this(enforceerrno(fopen(cpath, cmode), "Failed to open file."));
-        }
+        this(enforceerrno(dfopen(path, mode), "Failed to open file."));
     }
     
     static FileStream temp(){
@@ -106,11 +94,6 @@ class FileStream: IOStream{
         this.seek(index, Seek.Set);
     }
     
-    enum Seek : int {
-        Cur = SEEK_CUR, /// Relative to the current position in the file
-        Set = SEEK_SET, /// Relative to the beginning of the file
-        End = SEEK_END, /// Relative to the end of the file (Support dubious)
-    }
     void seek(size_t offset, Seek origin = Seek.Set) in{
         assert(this.active);
     }body{
@@ -140,7 +123,7 @@ class FileStream: IOStream{
 
 
 
-version(unittest) import mach.error.unit;
+version(unittest) private import mach.error.unit;
 unittest{
     tests("FileStream", {
         tests("Read", {

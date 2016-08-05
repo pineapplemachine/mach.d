@@ -1,4 +1,4 @@
-module mach.io.file;
+module mach.io.file.file;
 
 private:
 
@@ -25,5 +25,3 @@ class File{
         return FileStream.temp();
     }
 }
-
-
