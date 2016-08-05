@@ -19,9 +19,11 @@
 docs.json
 __dummy.html
 
-test.d
-wip_*.d
-test.py
-bin/
+# Project files
+*.sublime-project
+*.sublime-workspace
 
-!mach/error/test.d
+test.d
+test.py
+wip_*.d
+bin/
