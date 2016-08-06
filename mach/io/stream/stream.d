@@ -2,9 +2,18 @@ module mach.io.stream.stream;
 
 private:
 
-//
+import mach.traits : isArray;
+import mach.error : ThrowableClassMixin;
 
 public:
+    
+
+
+mixin(ThrowableClassMixin!(`StreamException`, `Exception`, `Failure performing stream operation.`));
+mixin(ThrowableClassMixin!(`StreamReadException`, `StreamException`, `Failure reading from stream.`));
+mixin(ThrowableClassMixin!(`StreamWriteException`, `StreamException`, `Failure writing to stream.`));
+
+
 
 /// Convenience mixin for stream interfaces.
 static string StreamSupportMixin(string[] supported...){
@@ -67,16 +76,38 @@ interface InputStream : Stream{
     final size_t readbuffer(T)(T[] buffer){
         return this.readbuffer!T(buffer.ptr, buffer.length);
     }
+    /// Read a single value of an arbitrary type. Not an especially meaningful
+    /// operation for anything other than primitives and structs.
+    final T read(T)(){
+        T value;
+        auto result = this.readbuffer!T(&value, 1);
+        if(result != T.sizeof) throw new StreamReadException();
+        return value;
+    }
+    /// ditto
+    final T[] read(T)(size_t count){
+        T[] values;
+        values.reserve(count);
+        foreach(size_t i; 0 .. count) values ~= this.read!T;
+        return values;
+    }
 }
 /// A stream which can be written to.
 interface OutputStream : Stream{
     void sync();
     size_t writebuffer(void* buffer, size_t size, size_t count);
-    final size_t writebuffer(T)(T* buffer, size_t count){
-        return this.writebuffer(buffer, T.sizeof, count);
+    final size_t writebuffer(T)(in T* buffer, size_t count){
+        return this.writebuffer(cast(void*) buffer, T.sizeof, count);
     }
-    final size_t writebuffer(T)(T[] buffer){
+    final size_t writebuffer(T)(in T[] buffer){
         return this.writebuffer!T(buffer.ptr, buffer.length);
+    }
+    final void write(T)(in T value) if(!isArray!T){
+        auto result = this.writebuffer(&value, 1);
+        if(result != T.sizeof) throw new StreamWriteException();
+    }
+    final void write(T)(in T[] values){
+        foreach(value; values) this.write!T(value);
     }
 }
 

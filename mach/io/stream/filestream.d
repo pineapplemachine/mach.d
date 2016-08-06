@@ -140,6 +140,8 @@ unittest{
             char[] writebuffer = cast(char[]) "HelloWorld";
             char[5] readbuffer;
             stream.writebuffer(writebuffer);
+            stream.write('X');
+            stream.write("XX");
             stream.reset();
             stream.readbuffer(readbuffer);
             testeq(readbuffer, "Hello");
@@ -148,6 +150,10 @@ unittest{
             stream.position = 2;
             stream.readbuffer(readbuffer);
             testeq(readbuffer, "lloWo");
+            stream.readbuffer(readbuffer);
+            testeq(readbuffer, "rldXX");
+            testeq(stream.read!char, 'X');
+            fail({stream.read!char;});
             stream.close();
         });
     });
