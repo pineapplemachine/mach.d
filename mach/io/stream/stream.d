@@ -15,6 +15,14 @@ mixin(ThrowableClassMixin!(`StreamWriteException`, `StreamException`, `Failure w
 
 
 
+
+enum bool isStream(T) = is(T: Stream);
+enum bool isInputStream(T) = is(T: InputStream);
+enum bool isOutputStream(T) = is(T: OutputStream);
+enum bool isIOStream(T) = isInputStream!T && isOutputStream!T;
+
+
+
 /// Convenience mixin for stream interfaces.
 static string StreamSupportMixin(string[] supported...){
     import std.string : join;
@@ -23,7 +31,7 @@ static string StreamSupportMixin(string[] supported...){
         "haseof", "haslength", "hasposition", "canseek", "canreset"
     ];
     return join(
-        map!((support) => ("static bool " ~ support ~ " = " ~ (
+        map!((support) => ("static enum bool " ~ support ~ " = " ~ (
             supported.canFind(support) ? "true" : "false"
         ) ~ ";"))(SUPPORT_OPTIONS)
     );
@@ -70,7 +78,7 @@ interface Stream{
 interface InputStream : Stream{
     void flush();
     size_t readbuffer(void* buffer, size_t size, size_t count);
-    final size_t readbuffer(T)(T* buffer, size_t count){
+    final size_t readbuffer(T)(T* buffer, size_t count = 1){
         return this.readbuffer(buffer, T.sizeof, count);
     }
     final size_t readbuffer(T)(T[] buffer){
@@ -96,13 +104,13 @@ interface InputStream : Stream{
 interface OutputStream : Stream{
     void sync();
     size_t writebuffer(void* buffer, size_t size, size_t count);
-    final size_t writebuffer(T)(in T* buffer, size_t count){
+    final size_t writebuffer(T)(in T* buffer, size_t count = 1){
         return this.writebuffer(cast(void*) buffer, T.sizeof, count);
     }
     final size_t writebuffer(T)(in T[] buffer){
         return this.writebuffer!T(buffer.ptr, buffer.length);
     }
-    final void write(T)(in T value) if(!isArray!T){
+    final void write(T)(in auto ref T value) if(!isArray!T){
         auto result = this.writebuffer(&value, 1);
         if(result != T.sizeof) throw new StreamWriteException();
     }
@@ -115,24 +123,3 @@ interface OutputStream : Stream{
 interface IOStream : InputStream, OutputStream {
     //
 }
-
-
-
-// TODO
-
-//struct StreamRange(Source, Element) if(is(Source: Stream)){
-//    Source source;
-//    Unqual!Element cachedfront;
-    
-//    static if(is(Source: InputStream)){
-//        @property Element front(){
-//            return this.cachedfront;
-//        }
-//        void popFront(){
-//            this.source.readbuffer(&this.cachedfront);
-//        }
-//    }
-//    static if(is(Source: OutputStream)){
-        
-//    }
-//}
