@@ -35,7 +35,7 @@ public:
 
 
 
-mixin(ErrorClassMixin(
+mixin(ErrorClassMixin!(
     "TestFailureError", "Encountered unit test failure."
 ));
 

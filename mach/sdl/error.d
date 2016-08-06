@@ -10,10 +10,10 @@ import mach.error.mixins : ThrowableClassMixin, ErrorClassMixin;
 
 public:
     
-mixin(ErrorClassMixin("GraphicsError", "Graphics Error"));
+mixin(ErrorClassMixin!("GraphicsError", "Graphics Error"));
 
 // SDL
-mixin(ThrowableClassMixin(
+mixin(ThrowableClassMixin!(
     "SDLError", "GraphicsError", "SDL error", "
         string error = null;
     ", "nothrow", "
