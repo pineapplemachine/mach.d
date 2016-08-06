@@ -123,16 +123,22 @@ class FileStream: IOStream{
 
 
 
-version(unittest) private import mach.error.unit;
+version(unittest){
+    private:
+    import std.path;
+    import mach.error.unit;
+    enum string TestPath = __FILE__.dirName ~ "/filestream.txt";
+}
 unittest{
     tests("FileStream", {
         tests("Read", {
-            auto stream = new FileStream(__FILE__, "rb");
-            string header = "module mach.io.stream.filestream"; // First line of this file
+            auto stream = new FileStream(TestPath, "rb");
+            string header = "I am used to validate unittests.";
             char[] buffer = new char[header.length];
             stream.readbuffer(buffer);
             testeq(header, buffer);
             testf(stream.eof);
+            //testeq(stream.length, 86); // TODO: Why does this fail?
             stream.close();
         });
         tests("Write", {
