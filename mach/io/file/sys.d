@@ -5,8 +5,14 @@ private:
 import core.stdc.stdio : FILE;
 import core.stdc.stdio : SEEK_CUR, SEEK_END, SEEK_SET;
 import core.sys.windows.windows : HANDLE;
+import std.internal.cstring : tempCString;
+import mach.error : ThrowableClassMixin;
 
 public:
+
+
+
+mixin(ThrowableClassMixin!(`FileException`, `Exception`, `Failed to perform file operation.`));
 
 
 
@@ -29,16 +35,37 @@ version(Windows){
     public import core.sys.posix.stdio : fopen;
     alias FSChar = char;
 }else{
-    pragma(msg, "Unknown file system. IO utilities not guaranteed to act as expected.");
+    pragma(msg, "Unrecognized platform. IO utilities not guaranteed to act as expected.");
     public import core.stdc.stdio : fopen;
     alias FSChar = char;
 }
 
 auto dfopen(string path, in char[] mode = "rb"){
-    import std.internal.cstring : tempCString;
     auto cpath = path.tempCString!FSChar();
     auto cmode = mode.tempCString!FSChar();
     return fopen(cpath, cmode);
+}
+
+
+
+version(Windows){
+    public import core.sys.windows.stat : stat, fstat, Stat = struct_stat;
+}else{
+    public import core.sys.posix.sys.stat : stat, fstat, Stat = stat_t;
+}
+
+auto dstat(string path){
+    Stat st = void;
+    version(Windows) stat(cast(char*) path.ptr, &st);
+    else stat(path.ptr, &st);
+    return st;
+}
+
+auto dfstat(FileHandle file){
+    Stat st = void;
+    auto result = fstat(file.fileno, &st);
+    if(result < 0) throw new FileException;
+    return st;
 }
 
 
@@ -86,7 +113,7 @@ version(unittest){
     private:
     import std.path;
     import mach.error.unit;
-    enum string TestPath = __FILE__.dirName ~ "/test.txt";
+    enum string TestPath = __FILE__.dirName ~ "/sys.txt";
 }
 unittest{
     tests("fsync", {
@@ -99,5 +126,11 @@ unittest{
         file.fclose;
         fail("Attempt to sync closed file", {fsync(file);});
         fail("Attempt to sync nonexistent file", {fsync(FileHandle.init);});
+    });
+    tests("stat", {
+        testeq("dstat", dstat(TestPath).st_size, 86);
+        auto file = dfopen(TestPath, "rb");
+        testeq("dfstat", dfstat(file).st_size, 86);
+        file.fclose;
     });
 }
