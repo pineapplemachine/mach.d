@@ -4,7 +4,6 @@ private:
 
 import core.stdc.stdio : FILE;
 import core.stdc.stdio : SEEK_CUR, SEEK_END, SEEK_SET;
-import core.sys.windows.windows : HANDLE;
 import std.internal.cstring : tempCString;
 import mach.error : ThrowableClassMixin;
 
@@ -23,7 +22,21 @@ public import core.stdc.stdio : fileno, tmpfile, rewind;
 
 alias FileHandle = FILE*;
 
-alias WinHandle = HANDLE;
+version(Windows){
+    import core.sys.windows.windows : HANDLE;
+    alias WinHandle = HANDLE;
+    WinHandle winhandle(FileHandle file){
+        version(CRuntime_DigitalMars){
+            import core.stdc.stdio : _fdToHandle;
+            return _fdToHandle(file.fileno);
+        }else version(CRuntime_Microsoft){
+            import core.stdc.stdio : _get_osfhandle;
+            return _get_osfhandle(file.fileno);
+        }else{
+            assert(false);
+        }
+    }
+}
 
 
 
@@ -70,20 +83,6 @@ auto dfstat(FileHandle file){
 
 
 
-WinHandle winhandle(FileHandle file){
-    version(CRuntime_DigitalMars){
-        import core.stdc.stdio : _fdToHandle;
-        return _fdToHandle(file.fileno);
-    }else version(CRuntime_Microsoft){
-        import core.stdc.stdio : _get_osfhandle;
-        return _get_osfhandle(file.fileno);
-    }else{
-        assert(false);
-    }
-}
-
-
-
 enum Seek: int{
     Cur = SEEK_CUR, /// Relative to the current position in the file
     Set = SEEK_SET, /// Relative to the beginning of the file
@@ -103,7 +102,7 @@ void fsync(FileHandle file) @trusted in{
     }else{
         import core.sys.posix.unistd : fsync;
         auto result = fsync(file.fileno);
-        assert(result, "Failed to sync file, error code %s.".format(result));
+        assert(result == 0, "Failed to sync file, error code %s.".format(result));
     }
 }
 
