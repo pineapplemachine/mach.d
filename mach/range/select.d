@@ -43,6 +43,12 @@ auto from(alias pred, bool inclusive = true, Iter)(Iter iter) if(
     auto range = iter.asrange;
     return SelectFromRange!(typeof(range), pred, inclusive)(range);
 }
+/// ditto
+auto from(bool inclusive = true, Iter, From)(Iter iter, From element) if(
+    canSelectFrom!(Iter, (e) => (e == element))
+){
+    return from!((e) => (e == element), inclusive, Iter)(iter);
+}
 
 /// Iterate over elements in a range ending with the first element matching a
 /// predicate.
@@ -52,19 +58,36 @@ auto until(alias pred, bool inclusive = false, Iter)(Iter iter) if(
     auto range = iter.asrange;
     return SelectUntilRange!(typeof(range), pred, inclusive)(range);
 }
+/// ditto
+auto until(bool inclusive = true, Iter, Until)(Iter iter, Until element) if(
+    canSelectUntil!(Iter, (e) => (e == element))
+){
+    return until!((e) => (e == element), inclusive, Iter)(iter);
+}
 
 /// Iterate over elements in a range starting with the first element matching a
 /// from predicate and ending with the first following element matching an until
 /// predicate.
 auto select(
     alias from, alias until,
-    bool frominclusive = true, bool untilinclusive = false, Iter
+    bool frominclusive = true, bool untilinclusive = false,
+    Iter
 )(Iter iter) if(canSelectFromUntil!(Iter, from, until)){
     auto range = iter.asrange;
     return SelectFromUntilRange!(
         typeof(range), from, until,
         frominclusive, untilinclusive
     )(range);
+}
+/// ditto
+auto select(
+    bool frominclusive = true, bool untilinclusive = false, Iter, From, Until
+)(Iter iter, From from, Until until) if(
+    canSelectFromUntil!(Iter, (e) => (e == from), (e) => (e == until))
+){
+    return select!(
+        (e) => (e == from), (e) => (e == until), frominclusive, untilinclusive, Iter
+    )(iter);
 }
 
 
@@ -81,10 +104,10 @@ struct SelectFromRange(Range, alias from, bool inclusive = true) if(
         this.prepareFront();
     }
     
-    @property auto ref front(){
+    @property auto ref front() in{assert(!this.empty);} body{
         return this.source.front;
     }
-    void popFront(){
+    void popFront() in{assert(!this.empty);} body{
         this.source.popFront();
     }
     void prepareFront(){
@@ -104,7 +127,7 @@ struct SelectUntilRange(Range, alias until, bool inclusive = false) if(
     
     Range source;
     
-    @property auto ref front(){
+    @property auto ref front() in{assert(!this.empty);} body{
         return this.source.front;
     }
     
@@ -119,19 +142,19 @@ struct SelectUntilRange(Range, alias until, bool inclusive = false) if(
             this.founduntil = founduntil;
             this.empty = empty;
         }
-        void popFront() in{assert(!this.empty);}body{
+        void popFront() in{assert(!this.empty);} body{
             this.source.popFront();
-            if(this.founduntil){
+            if(this.founduntil || this.source.empty){
                 this.empty = true;
             }else{
-                this.founduntil = !this.source.empty && until(this.source.front);
+                this.founduntil = until(this.source.front);
             }
         }
     }else{
         this(Range source){
             this.source = source;
         }
-        void popFront() in{assert(!this.empty);}body{
+        void popFront() in{assert(!this.empty);} body{
             this.source.popFront();
         }
         @property bool empty(){
@@ -144,7 +167,7 @@ struct SelectFromUntilRange(
     Range, alias from, alias until,
     bool frominclusive = true, bool untilinclusive = false
 ) if(canSelectFromUntilRange!(Range, from, until)){
-    mixin MetaRangeMixin!(Range, `source`, `Empty`);
+    mixin MetaRangeMixin!(Range, `source`, `Save`);
     
     Range source;
     
@@ -160,12 +183,12 @@ struct SelectFromUntilRange(
             this.empty = empty;
             this.prepareFront();
         }
-        void popFront() in{assert(!this.empty);}body{
+        void popFront() in{assert(!this.empty);} body{
             this.source.popFront();
-            if(this.founduntil){
+            if(this.founduntil || this.source.empty){
                 this.empty = true;
             }else{
-                this.founduntil = !this.source.empty && until(this.source.front);
+                this.founduntil = until(this.source.front);
             }
         }
     }else{
@@ -173,7 +196,7 @@ struct SelectFromUntilRange(
             this.source = source;
             this.prepareFront();
         }
-        void popFront() in{assert(!this.empty);}body{
+        void popFront() in{assert(!this.empty);} body{
             this.source.popFront();
         }
         @property bool empty(){
@@ -181,7 +204,7 @@ struct SelectFromUntilRange(
         }
     }
     
-    @property auto ref front(){
+    @property auto ref front() in{assert(!this.empty);} body{
         return this.source.front;
     }
     void prepareFront(){
@@ -218,6 +241,12 @@ unittest{
                 test("Iteration", input.from!(even, false).equals([3, 4]));
                 test("Empty source", empty.from!(even, false).equals(empty));
             });
+            test("No beginning",
+                input.from!(e => e == 10).equals(empty)
+            );
+            test("Default predicate", 
+                input.from!true(2).equals([2, 3, 4])
+            );
         });
         tests("Until", {
             auto input = [1, 2, 3, 4];
@@ -229,6 +258,12 @@ unittest{
                 test("Iteration", input.until!(even, false).equals([1]));
                 test("Empty source", empty.until!(even, false).equals(empty));
             });
+            test("No end",
+                input.until!(e => e == 10).equals(input)
+            );
+            test("Default predicate", 
+                input.until!true(3).equals([1, 2, 3])
+            );
         });
         tests("From and until", {
             auto input = [1, 1, 2, 2, 1, 1, 2, 2];
@@ -264,6 +299,18 @@ unittest{
                     empty.select!(even, odd, false, false).equals(empty)
                 );
             });
+            test("No beginning",
+                input.select!(e => e == 10, odd).equals(empty)
+            );
+            test("No end",
+                input.select!(e => true, e => e == 10).equals(input)
+            );
+            // TODO: Why doesn't this work?
+            //test("Default predicate",
+            //    input.select!(true, true)(2, 3).equals([2, 3])
+            //);
+            import std.stdio;
+            input.select!(true, true)(2, 3).writeln;
         });
     });
 }
