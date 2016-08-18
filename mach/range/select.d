@@ -305,12 +305,9 @@ unittest{
             test("No end",
                 input.select!(e => true, e => e == 10).equals(input)
             );
-            // TODO: Why doesn't this work?
-            //test("Default predicate",
-            //    input.select!(true, true)(2, 3).equals([2, 3])
-            //);
-            import std.stdio;
-            input.select!(true, true)(2, 3).writeln;
+            test("Default predicate",
+                input.select!(true, true)(2, 1).equals([2, 2, 1])
+            );
         });
     });
 }
