@@ -5,7 +5,7 @@ private:
 import core.exception : AssertError;
 import mach.error : enforceerrno;
 import mach.io.file.sys : FileHandle, Seek;
-import mach.io.file.sys : dfopen, fclose, fread, fwrite, fflush, fsync, fseek, ftell, feof, tmpfile, rewind;
+import mach.io.file.sys : dfstat, dfopen, fclose, fread, fwrite, fflush, fsync, fseek, ftell, feof, tmpfile, rewind;
 import mach.io.stream.stream : IOStream, StreamSupportMixin;
 
 public:
@@ -72,14 +72,7 @@ class FileStream: IOStream{
     override @property size_t length() in{
         assert(this.canseek && this.hasposition);
     }body{
-        if(this.active){
-            return 0;
-        }else{
-            size_t pos = cast(size_t) this.position;
-            scope(exit) this.position = pos;
-            this.seek(Seek.End);
-            return cast(size_t) this.position;
-        }
+        return this.active ? cast(size_t) this.stat.st_size : 0;
     }
     override @property size_t position() in{
         assert(this.active);
@@ -119,6 +112,10 @@ class FileStream: IOStream{
         enforceerrno(fclose(this.target) == 0);
         this.target = null;
     }
+    
+    @property auto stat(){
+        return dfstat(this.target);
+    }
 }
 
 
@@ -138,7 +135,8 @@ unittest{
             stream.readbuffer(buffer);
             testeq(header, buffer);
             testf(stream.eof);
-            //testeq(stream.length, 86); // TODO: Why does this fail?
+            testeq(stream.position, header.length);
+            testeq(stream.length, 86);
             stream.close();
         });
         tests("Write", {
