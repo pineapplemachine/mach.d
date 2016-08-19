@@ -9,6 +9,7 @@ import mach.text.parse.match : matchflat;
 import mach.range : map, pluck, skipindexes;
 import mach.text.parse.ini.exceptions;
 import mach.text.parse.ini.properties;
+import mach.text.parse.ini.settings;
 
 public:
 
@@ -17,85 +18,7 @@ public:
 class IniFile{
     
     
-    static struct Settings{
-        import mach.text.escape : Escaper;
-        
-        static enum DuplicateNameBehavior{Abort, Ignore, Overwrite, List}
-        static enum InvalidSyntaxBehavior{Abort, Ignore}
-        
-        /// What character sequence to use for name/value delimiting?
-        /// Most common are '=' or ':'.
-        string assignment = "=";
-        /// What character sequence denotes the beginning of a comment?
-        /// Most common are ';' or '#'.
-        string comment = ";";
-        /// Determines whether a comment character not appearing at the
-        /// beginning of a line may denote a comment, or if it's interpreted
-        /// as part of the value.
-        bool allow_end_of_line_comments = false;
-        /// Whether to allow blank lines.
-        bool allow_blank_lines = true;
-        /// How to handle duplicate property names.
-        DuplicateNameBehavior duplicate_name_behavior = DuplicateNameBehavior.List;
-        /// How to handle lines that are neither comments nor valid assignments.
-        InvalidSyntaxBehavior invalid_syntax_behavior = InvalidSyntaxBehavior.Abort;
-        /// Which characters may denote the beginning and end of a name, if
-        /// any. If the array is empty, then values may not be quoted.
-        string quotes = "\"'";
-        /// Whether whitespace at the beginning of a line is ignored.
-        bool ignore_line_leading_whitespace = true;
-        /// Whether whitespace following a name definition is ignored.
-        bool ignore_name_trailing_whitespace = true;
-        /// Whether whitespace prior to a value definition is ignored.
-        bool ignore_value_leading_whitespace = true;
-        /// Whether whitespace at the end of a line is ignored.
-        bool ignore_line_trailing_whitespace = true;
-        /// Whether names under no section are legal.
-        bool allow_globals = true;
-        /// Name of section in which to place names that have no explicitly-
-        /// declared section.
-        string default_section_name = "globals";
-        /// Whether names of keys and sections are case-sensitive.
-        bool case_sensitive_names = true;
-        /// Whether properties within sections should be ordered or unordered.
-        bool ordered = true;
-        /// Character to begin section names
-        char begin_section_name = '[';
-        /// Character to end section names
-        char end_section_name = ']';
-        
-        /// Determines which escape sequences are valid and what they map to.
-        Escaper escaper = null;
-        
-        /// Constructs a probably correct default Escaper object based on the
-        /// current settings.
-        auto defaultescaper(){
-            import mach.range : each;
-            Escaper.Escapes escapes = [
-                ['\'', '\''],
-                [char(0x00), '0'],
-                [char(0x07), 'a'],
-                [char(0x08), 'b'],
-                [char(0x0A), 'n'],
-                [char(0x0D), 'r'],
-                [char(0x09), 't'],
-            ];
-            this.assignment.each!((char ch) => (escapes ~= [ch, ch]));
-            this.quotes.each!((char ch) => (escapes ~= [ch, ch]));
-            if(this.allow_end_of_line_comments){
-                this.comment.each!((char ch) => (escapes ~= [ch, ch]));
-            }
-            return new Escaper(escapes);
-        }
-        auto escape(in string text){
-            if(this.escaper is null) this.escaper = this.defaultescaper;
-            return this.escaper.escape(text);
-        }
-        auto unescape(in string text){
-            if(this.escaper is null) this.escaper = this.defaultescaper;
-            return this.escaper.unescape(text);
-        }
-    }
+
     
     
     static class Section{
@@ -116,11 +39,11 @@ class IniFile{
         //}
     }
     
-    Settings settings;
+    IniSettings settings;
     Section[] sections;
     
     static IniFile parse(
-        in string data, Settings settings,
+        in string data, IniSettings settings,
         string path = null, bool ordered = true
     ){ // TODO: also ranges
         import std.ascii : isWhite;
@@ -146,7 +69,7 @@ class IniFile{
                 auto sectionname = line[1 .. nameend.index];
                 section = new Section(file, sectionname);
                 file.sections ~= section;
-            }else if(settings.invalid_syntax_behavior == Settings.InvalidSyntaxBehavior.Abort){
+            }else if(settings.invalid_syntax_behavior == IniSettings.InvalidSyntaxBehavior.Abort){
                 throw new IniParseException(
                     "Encountered malformed section declaration.", linenumber, path
                 );
@@ -174,7 +97,7 @@ class IniFile{
                     key = settings.unescape(key);
                     value = settings.unescape(value);
                     section.properties.add(key, value);
-                }else if(settings.invalid_syntax_behavior == Settings.InvalidSyntaxBehavior.Abort){
+                }else if(settings.invalid_syntax_behavior == IniSettings.InvalidSyntaxBehavior.Abort){
                     throw new IniParseException(
                         "Encountered malformed property assignment.", linenumber, path
                     );
