@@ -12,9 +12,30 @@ import mach.range : map;
 public:
 
 
-class OrderedAA(K, V) if(canHash!K){
+
+// TODO: This probably has a place in mach.traits I'm just not sure where
+private template isItemsIterable(T, K, V){
+    import mach.traits : isIterable, ElementType;
+    static if(isIterable!T){
+        enum bool isItemsIterable = (
+            is(typeof(ElementType!T[0]) == K) &&
+            is(typeof(ElementType!T[1]) == V)
+        );
+    }else{
+        enum bool isItemsIterable = false;
+    }
+}
+
+
+
+/// A collection which associates keys to values, and remembers the order in
+/// which keys are added.
+class OrderedAA(K, V, alias ListTemplate = LinkedList) if(canHash!K){
+    /// Node type used to represent key, value pairs.
     alias Node = Tuple!(K, `key`, V, `value`);
-    alias List = LinkedList!Node;
+    /// List type used to preserve order of key, value pairs.
+    alias List = ListTemplate!Node;
+    /// Associative array type used to associate keys to values.
     alias Dict = List.Node*[K];
     
     List list;
@@ -23,13 +44,9 @@ class OrderedAA(K, V) if(canHash!K){
     this(){
         this.list = new List;
     }
-    this(V[K] array){
+    this(Items)(Items items) if(is(typeof(this.extend(items)))){
         this();
-        this.extend(array);
-    }
-    this(typeof(this) array){
-        this();
-        this.extend(array);
+        this.extend(items);
     }
     
     ~this(){
@@ -48,18 +65,34 @@ class OrderedAA(K, V) if(canHash!K){
     alias opDollar = length;
     
     /// Add a key, value entry to the array or, if that key already exists,
-    /// overwrite the previous value for that key.
-    void set(bool prepend = false)(K key, V value){
-        this.set!prepend(Node(key, value));
+    /// overwrite the previous value for that key. The resulting key, value
+    /// pair will be placed at the front of the array if the key doesn't
+    /// already exist.
+    void setfront(K key, V value){
+        this.setfront(Node(key, value));
     }
     /// ditto
-    void set(bool prepend = false)(Node node){
+    void setfront(Node node){
         if(auto current = node.key in this.dict){
             (**current).value.value = node.value;
         }else{
-            static if(prepend) auto listnode = this.list.prepend(node);
-            else auto listnode = this.list.append(node);
-            this.dict[node.key] = listnode;
+            this.dict[node.key] = this.list.prepend(node);
+        }
+    }
+    
+    /// Add a key, value entry to the array or, if that key already exists,
+    /// overwrite the previous value for that key. The resulting key, value
+    /// pair will be placed at the back of the array if the key doesn't
+    /// already exist.
+    void setback(K key, V value){
+        this.setback(Node(key, value));
+    }
+    /// ditto
+    void setback(Node node){
+        if(auto current = node.key in this.dict){
+            (**current).value.value = node.value;
+        }else{
+            this.dict[node.key] = this.list.append(node);
         }
     }
     /// ditto
@@ -69,20 +102,47 @@ class OrderedAA(K, V) if(canHash!K){
     
     /// Add many key, value entries to the array at once. Order of resulting
     /// key, values pairs not guaranteed.
-    auto extend(bool prepend = false)(V[K] array){
-        foreach(K key, V value; array) this.set!prepend(key, value);
+    auto extendfront(in V[K] array){
+        foreach(K key, V value; array) this.setfront(key, value);
     }
+    /// ditto
+    auto extendback(in V[K] array){
+        foreach(K key, V value; array) this.setback(key, value);
+    }
+    
     /// Add many key, value entries to the array at once. Order of resulting
     /// key, value pairs guaranteed to be the same as in the given array.
-    auto extend(bool prepend = false)(typeof(this) array){
-        static if(!prepend) foreach(node; array.list.values) this.set!prepend(node);
-        else foreach_reverse(node; array.list.values) this.set!prepend(node);
+    auto extendfront(in typeof(this) array){
+        foreach_reverse(node; array.list.values) this.setfront(node);
     }
+    /// ditto
+    auto extendback(in typeof(this) array){
+        foreach(node; array.list.values) this.setback(node);
+    }
+    
+    /// Add many key, value entries to the array at once. Order of resulting
+    /// key, value pairs guaranteed to be the same as in the given iterable,
+    /// which should contain tuples where the item at the first index is a key
+    /// and the item at the second index is a value.
+    auto extendfront(Items)(auto ref Items items) if(isItemsIterable!(Items, K, V)){
+        auto frontnode = this.list.frontnode;
+        foreach(K key, V value; items){
+            this.dict[key] = this.list.insertbefore(frontnode, Node(key, value));
+        }
+    }
+    /// ditto
+    auto extendback(Items)(auto ref Items items) if(isItemsIterable!(Items, K, V)){
+        foreach(K key, V value; items) this.setback(key, value);
+    }
+    
+    alias set = setback;
+    alias extend = extendback;
+    
     /// Extend this array with key, value pairs from another array.
-    auto opOpAssign(string op: "~", Array)(Array array) if(
-        is(Array == V[K]) || is(Array == typeof(this))
+    auto opOpAssign(string op: "~", Items)(Items items) if(
+        is(typeof(this.extend(items)))
     ){
-        this.extend(array);
+        this.extend(items);
     }
     
     /// Get the value associated with some key.
@@ -120,12 +180,14 @@ class OrderedAA(K, V) if(canHash!K){
     
     /// Remove some key from the array. Fails if the key is not contained within
     /// the array.
-    auto remove(in K key) in{
-        assert(this.has(key));
-    }body{
+    auto removekey(in K key) in{assert(this.has(key));} body{
         auto node = this.dict[key];
         this.dict.remove(key);
         this.list.remove(node);
+    }
+    /// ditto
+    auto remove(in K key) in{assert(this.has(key));} body{
+        return this.removekey(key);
     }
     
     /// Remove the front key, value pair from the array.
@@ -139,18 +201,40 @@ class OrderedAA(K, V) if(canHash!K){
         this.list.removeback();
     }
     
+    /// Remove the key, pair value at an index.
+    auto removeindex(in size_t index) in{assert(!this.empty);} body{
+        auto node = this.list.nodeat(index);
+        this.dict.remove(node.value.key);
+        this.list.remove(node);
+    }
+    static if(!isImplicitlyConvertible!(K, size_t)){
+        /// ditto
+        auto remove(in size_t index) in{
+            assert(index >= 0 && index < this.length);
+        }body{
+            return this.removeindex(index);
+        }
+    }
+    
     /// Remove all key, value pairs from the array.
     auto clear(){
         this.list.clear();
         this.dict.clear();
     }
     
+    /// Create a shallow copy of the array.
+    @property typeof(this) dup(){
+        auto array = new typeof(this);
+        array.extend(this);
+        return array;
+    }
+    
     /// Get the front key, value pair in the array.
-    @property auto front(){
+    @property auto front() const{
         return this.list.front;
     }
     /// Get the back key, value pair in the array.
-    @property auto back(){
+    @property auto back() const{
         return this.list.back;
     }
     
@@ -168,13 +252,15 @@ class OrderedAA(K, V) if(canHash!K){
     }
     
     /// Compare two ordered associative arrays for equality. Key, value pairs
-    /// must be in the same order in each array in order for them to be
+    /// must be in the same order in each array for them to be
     /// considered equal.
     override bool opEquals(Object object) const{
         import mach.range : compare;
         auto array = cast(typeof(this)) object;
         if(array){
-            return compare!((a, b) => (a.key == b.key && a.value == b.value))(this.asrange!false, array.asrange!false);
+            return compare!((a, b) => (a.key == b.key && a.value == b.value))(
+                this.asrange, array.asrange
+            );
         }else{
             return false;
         }
@@ -184,38 +270,41 @@ class OrderedAA(K, V) if(canHash!K){
     bool opEquals(in V[K] array) const{
         import mach.range : all;
         if(this.length == array.length){
-            return this.asrange!false.all!(e => array[e.key] == e.value);
+            return this.asrange.all!(e => array[e.key] == e.value);
         }else{
             return false;
         }
     }
+    /// Compare equality with an iterable of key, value pairs. Key, value pairs
+    /// must be in the same order in each collection for them to be considered
+    /// equal.
+    bool opEquals(Items)(auto ref Items items) const if(isItemsIterable!(Items, K, V)){
+        auto range = this.items;
+        foreach(K key, V value; items){
+            if(range.empty) return false;
+            auto item = range.front; range.popFront();
+            if(item.key != key || item.value != value) return false;
+        }
+        return range.empty;
+    }
     
-    /// Get a range for iterating over the key, value pairs of this array whose
-    /// contents can be mutated.
-    auto asrange()() pure nothrow @safe @nogc{
-        return this.list.asrange!mutable;
-    }
-    /// ditto
-    auto asrange(bool mutable)() pure nothrow @safe @nogc if(mutable){
-        return this.list.asrange!mutable;
-    }
     /// Get a range for iterating over the contents of this array which may not
     /// itself alter the array.
-    auto asrange(bool mutable)() pure nothrow @safe @nogc const if(!mutable){
-        return this.list.asrange!mutable;
+    auto asrange() pure nothrow @safe @nogc const{
+        return this.list.asrange!false; // TODO: Also a mutable range
     }
     
     /// ditto
-    @property auto items(bool mutable = false)(){
-        return this.asrange!mutable;
+    @property auto items() pure nothrow @safe @nogc const{
+        return this.asrange;
     }
     /// Get the keys of this array as a range.
-    @property auto keys(bool mutable = false)(){
-        return this.asrange!mutable.map!(e => e.key);
+    @property auto keys() pure nothrow @safe @nogc const{
+        return this.asrange.map!(e => e.key);
     }
     /// Get the values of this array as a range.
-    @property auto values(bool mutable = false)(){
-        return this.asrange!mutable.map!(e => e.value);
+    @property auto values() pure nothrow @safe @nogc const{
+        return this.asrange.map!(e => e.value);
     }
     
     // TODO: Figure out how to make this not broken
@@ -232,7 +321,9 @@ class OrderedAA(K, V) if(canHash!K){
     override string toString() const{
         import std.conv : to;
         import mach.range : map, join, asarray;
-        return "[" ~ join(this.asrange!false.map!(e => e.key.to!string ~ ": " ~ e.value.to!string), ", ").asarray ~ "]";
+        return "[" ~ join(
+            this.asrange.map!(e => e.key.to!string ~ ": " ~ e.value.to!string), ", "
+        ).asarray ~ "]";
     }
 }
 
@@ -261,38 +352,18 @@ unittest{
             test("a" in array);
             test("b" !in array);
         });
-        tests("Extend", {
-            auto array = new OrderedAA!(string, int);
-            tests("Append unordered AA", {
-                array.extend(["a": 1, "b": 2, "c": 3]);
-                testeq(array.length, 3);
-                testeq(array["a"], 1);
-            });
-            tests("Append OrderedAA", {
-                auto extension = new OrderedAA!(string, int)(["d": 4]);
-                array.extend(extension);
-                testeq(extension.length, 1);
-                testeq(array.length, 4);
-                extension["d"] = 10;
-                testeq(extension["d"], 10);
-                testeq(array["d"], 4);
-                testeq(array[3].key, "d");
-            });
-            tests("Prepend unordered AA", {
-                test(["a", "b", "c"].contains(array[0].key));
-                array.extend!true(["x": 0]);
-                testeq(array["x"], 0);
-                testeq(array[0].key, "x");
-            });
-            tests("Prepend OrderedAA", {
-                auto extension = new OrderedAA!(string, int);
-                extension["z"] = 0;
-                extension["w"] = 1;
-                array.extend!true(extension);
-                testeq(array[0].key, extension[0].key);
-                testeq(array[1].key, extension[1].key);
-                testeq(array[2].key, "x");
-            });
+        tests("Copying", {
+            auto a = new OrderedAA!(char, char);
+            a['x'] = 'y';
+            auto b = a.dup;
+            a['z'] = 'w';
+            b['i'] = 'j';
+            test('x' in a);
+            test('x' in b);
+            test('z' in a);
+            test('z' !in b);
+            test('i' !in a);
+            test('i' in b);
         });
         tests("Iteration", {
             auto array = new OrderedAA!(string, string);
@@ -313,6 +384,65 @@ unittest{
                 ])
             );
         });
+        tests("Extend", {
+            auto array = new OrderedAA!(string, int)(["a": 1]);
+            auto zw = new OrderedAA!(string, int);
+            zw["z"] = 0; zw["w"] = 1;
+            tests("Append unordered AA", {
+                auto copy = array.dup;
+                copy.extend(["b": 2, "c": 3]);
+                testeq(copy.length, 3);
+                testeq(copy["a"], 1);
+                testeq(copy["b"], 2);
+            });
+            tests("Append OrderedAA", {
+                auto copy = array.dup;
+                auto extension = new OrderedAA!(string, int)(["b": 2]);
+                copy.extend(extension);
+                testeq(extension.length, 1);
+                testeq(copy.length, 2);
+                extension["b"] = 10;
+                testeq(extension["b"], 10);
+                testeq(copy["b"], 2);
+                testeq(copy[$-1].key, "b");
+            });
+            tests("Prepend unordered AA", {
+                auto copy = array.dup;
+                testeq(copy[0].key, "a");
+                copy.extendfront(["x": 0]);
+                testeq(copy.length, 2);
+                testeq(copy["x"], 0);
+                testeq(copy[0].key, "x");
+            });
+            tests("Prepend OrderedAA", {
+                auto copy = array.dup;
+                alias extension = zw;
+                copy.extendfront(extension);
+                testeq(copy[0].key, extension[0].key);
+                testeq(copy[1].key, extension[1].key);
+                testeq(copy[2].key, "a");
+            });
+            tests("Append items", {
+                auto copy = array.dup;
+                alias extension = zw;
+                copy.extend(extension.items);
+                testeq(copy.length, 3);
+                testeq(copy[0].key, "a");
+                testeq(copy[1].key, "z");
+                testeq(copy[2].key, "w");
+                testeq(copy["z"], 0);
+            });
+            tests("Prepend items", {
+                auto copy = array.dup;
+                alias extension = zw;
+                copy.extendfront(extension.items);
+                testeq(copy.length, 3);
+                testeq(copy[0].key, "z");
+                testeq(copy[1].key, "w");
+                testeq(copy[2].key, "a");
+                testeq(copy["z"], 0);
+            });
+        });
         tests("Removal", {
             auto array = new OrderedAA!(string, int);
             array["a"] = 1;
@@ -323,20 +453,37 @@ unittest{
             testeq(array[0].key, "a");
             testeq(array[$-1].key, "d");
             test("a" in array);
-            array.removefront();
-            testeq(array.length, 3);
-            testeq(array[0].key, "b");
-            testeq(array[$-1].key, "d");
-            test("a" !in array);
-            array.removeback();
-            testeq(array.length, 2);
-            testeq(array[0].key, "b");
-            testeq(array[$-1].key, "c");
-            array.remove("b");
-            testeq(array.length, 1);
-            testeq(array[0].key, "c");
-            array.remove("c");
-            test(array.empty);
+            tests("Front", {
+                auto copy = array.dup;
+                copy.removefront();
+                testeq(copy.length, 3);
+                testeq(copy[0].key, "b");
+                testeq(copy[$-1].key, "d");
+                test("a" !in copy);
+            });
+            tests("Back", {
+                auto copy = array.dup;
+                copy.removeback();
+                testeq(copy.length, 3);
+                testeq(copy[0].key, "a");
+                testeq(copy[$-1].key, "c");
+            });
+            tests("By key", {
+                auto copy = array.dup;
+                copy.remove("b");
+                testeq(copy.length, 3);
+                testeq(copy[0].key, "a");
+                testeq(copy[$-1].key, "d");
+                test("b" !in copy);
+            });
+            tests("By index", {
+                auto copy = array.dup;
+                copy.remove(1);
+                testeq(copy.length, 3);
+                testeq(copy[0].key, "a");
+                testeq(copy[$-1].key, "d");
+                test("b" !in copy);
+            });
         });
         tests("Clear", {
             auto array = new OrderedAA!(string, int)(["a": 1]);
@@ -367,6 +514,13 @@ unittest{
                 testeq(b, a);
                 testneq(a, c);
                 testneq(b, c);
+            });
+            tests("With items", {
+                auto array = new OrderedAA!(char, char)(['a': 'b', 'c': 'd']);
+                testeq(array, array.items);
+                testeq(array.items, array);
+                testeq(array, array.dup.items);
+                testeq(array.dup, array.items);
             });
         });
     });
