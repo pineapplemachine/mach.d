@@ -84,12 +84,12 @@ void testcomparison(A, B)(
 
 template TestCompTemplate(string condition, string defaultmessage){
     void func(A, B, size_t line = __LINE__, string file = __FILE__)(
-        in A lhs, in B rhs
+        auto ref A lhs, auto ref B rhs
     ){
         func(defaultmessage, lhs, rhs, line, file);
     }
     void func(A, B)(
-        in string message, in A lhs, in B rhs, in size_t line = __LINE__, in string file = __FILE__
+        in string message, auto ref A lhs, auto ref B rhs, in size_t line = __LINE__, in string file = __FILE__
     ){
         mixin(`testcomparison(lhs, rhs, ` ~ condition ~ `, message, line, file);`);
     }
