@@ -11,11 +11,18 @@ public:
 
 
 /// Determine whether two iterables can be compared using a predicate.
-enum canCompareIterables(alias pred, IterA, IterB) = (
-    validAsRange!(isFiniteIterable, IterA) &&
-    validAsRange!(isFiniteIterable, IterB) &&
-    isPredicate!(pred, ElementType!IterA, ElementType!IterB)
-);
+template canCompareIterables(alias pred, IterA, IterB){
+    static if(
+        validAsRange!(isFiniteIterable, IterA) &&
+        validAsRange!(isFiniteIterable, IterB)
+    ){
+        enum bool canCompareIterables = isPredicate!(
+            pred, ElementType!IterA, ElementType!IterB
+        );
+    }else{
+        enum bool canCompareIterables = false;
+    }
+}
 
 private alias EqualityComparison = (a, b) => (a == b);
 private alias RecursiveEqualityComparison = (a, b) => (a.equals(b));
