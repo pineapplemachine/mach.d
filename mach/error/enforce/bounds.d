@@ -135,5 +135,10 @@ unittest{
             fail({enforcebounds(11, -10, 10);});
             fail({enforcebounds(0, 1, 10);});
         });
+        tests("In object", {
+            struct Obj{size_t length;}
+            testeq(enforcebounds(10, Obj(20)), 10);
+            fail({enforcebounds(10, Obj(1));});
+        });
     });
 }
