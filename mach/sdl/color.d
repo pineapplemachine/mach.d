@@ -4,8 +4,12 @@ private:
 
 import derelict.sdl2.sdl;
 import derelict.sdl2.types : SDL_Color;
+import derelict.opengl3.gl;
 import std.traits : isNumeric, isIntegral, isFloatingPoint;
 import mach.math.round : round;
+import mach.sdl.error : GLError;
+
+import mach.io.log;
 
 public:
     
@@ -14,50 +18,42 @@ public:
 struct Color(T = float) if(isNumeric!T){
     
     T red, green, blue, alpha;
-    //alias r = red, g = green, b = blue, a = alpha;
     
     static if(isFloatingPoint!T){
-        static enum T MAX = 1; // Highest allowed value for any dimension
-        static enum T TOBYTE = 255; // Multiply dimensions to get bytes
+        static enum T Max = 1; // Highest allowed value for any dimension
+        static enum T ToByte = 255; // Multiply dimensions to get bytes
     }else{
-        static enum T MAX = 255;
-        static enum T TOBYTE = 1;
+        static enum T Max = 255;
+        static enum T ToByte = 1;
     }
     
     static immutable Black = Color(0, 0, 0);
-    static immutable White = Color(MAX, MAX, MAX);
-    static immutable Red = Color(MAX, 0, 0);
-    static immutable Green = Color(0, MAX, 0);
-    static immutable Blue = Color(0, 0, MAX);
-    static immutable Yellow = Color(MAX, MAX, 0);
-    static immutable Cyan = Color(0, MAX, MAX);
-    static immutable Magenta = Color(MAX, 0, MAX);
+    static immutable White = Color(this.Max, this.Max, this.Max);
+    static immutable Red = Color(this.Max, 0, 0);
+    static immutable Green = Color(0, this.Max, 0);
+    static immutable Blue = Color(0, 0, this.Max);
+    static immutable Yellow = Color(this.Max, this.Max, 0);
+    static immutable Cyan = Color(0, this.Max, this.Max);
+    static immutable Magenta = Color(this.Max, 0, this.Max);
     
-    //this(in T r, in T g, in T b, in T a = MAX){
-    //    this.red = r; this.green = g;
-    //    this.blue = b; this.alpha = a;
-    //}
-    this(N)(N r, N g, N b, N a = cast(N) MAX) if(isNumeric!N){
-        //this(cast(T) r, cast(T) g, cast(T) b, cast(T) a);
+    this(N)(N r, N g, N b, N a = cast(N) this.Max) if(isNumeric!N){
         this.red = cast(T) r; this.green = cast(T) g;
         this.blue = cast(T) b; this.alpha = cast(T) a;
     }
     this(in uint hex){
-        const T a = cast(T) (((hex >> 24) & 255) / TOBYTE);
-        const T b = cast(T) (((hex >> 16) & 255) / TOBYTE);
-        const T c = cast(T) (((hex >> 8) & 255) / TOBYTE);
-        const T d = cast(T) ((hex & 255) / TOBYTE);
+        const T a = cast(T) (((hex >> 24) & 255) / this.ToByte);
+        const T b = cast(T) (((hex >> 16) & 255) / this.ToByte);
+        const T c = cast(T) (((hex >> 8) & 255) / this.ToByte);
+        const T d = cast(T) ((hex & 255) / this.ToByte);
         version(LittleEndian) this(a, b, c, d);
         else this(d, c, b, a);
     }
-    this(in Color!T color){
-        this(color.r, color.g, color.b, color.a);
-    }
-    this(N)(in Color!N color) if(!is(N == T)){
-        this(color.r!T, color.g!T, color.b!T, color.a!T);
+    this(N)(in Color!N color){
+        static if(is(N == T)) this(color.r, color.g, color.b, color.a);
+        else this(color.r!T, color.g!T, color.b!T, color.a!T);
     }
     this(SDL_Color color){
-        this(color.r / TOBYTE, color.g / TOBYTE, color.b / TOBYTE, color.a / TOBYTE);
+        this(color.r / this.ToByte, color.g / this.ToByte, color.b / this.ToByte, color.a / this.ToByte);
     }
     this(in uint value, in SDL_PixelFormat* format){
         ubyte r, g, b, a;
@@ -70,9 +66,9 @@ struct Color(T = float) if(isNumeric!T){
             static if(is(As == T)){
                 return this.` ~ name ~ `;
             }else static if(isFloatingPoint!T && isIntegral!As){
-                return round!As(this.` ~ name ~ ` * TOBYTE);
+                return round!As(this.` ~ name ~ ` * this.ToByte);
             }else static if(isIntegral!T && isFloatingPoint!As){
-                return (cast(As) this.` ~ name ~ `) / TOBYTE;
+                return (cast(As) this.` ~ name ~ `) / this.Max;
             }else{
                 return cast(As) this.` ~ name ~ `;
             }
@@ -83,9 +79,9 @@ struct Color(T = float) if(isNumeric!T){
             static if(is(As == T)){
                 this.` ~ name ~ ` = value;
             }else static if(isFloatingPoint!T && isIntegral!As){
-                this.` ~ name ~ ` = value / cast(T) TOBYTE;
+                this.` ~ name ~ ` = value / cast(T) this.ToByte;
             }else static if(isIntegral!T && isFloatingPoint!As){
-                this.` ~ name ~ ` = round!T(value * TOBYTE);
+                this.` ~ name ~ ` = round!T(value * this.Max);
             }else{
                 this.` ~ name ~ ` = cast(T) value;
             }
@@ -120,7 +116,7 @@ struct Color(T = float) if(isNumeric!T){
     }
     
     void clamp(){
-        this.clamp(0, MAX);
+        this.clamp(0, this.Max);
     }
     void clamp(N)(in N max) if(isNumeric!N){
         this.clamp(0, max);
@@ -134,6 +130,26 @@ struct Color(T = float) if(isNumeric!T){
             else if(this[i] > max) this[i] = max;
         }
     }
+    
+    static auto getgl(){
+        float[4] params;
+        glGetFloatv(GL_CURRENT_COLOR, params.ptr);
+        return typeof(this)(params[0], params[1], params[2], params[3]);
+    }
+    
+    /// Set glColor to the RGB color represented by this object.
+    /// Reference: https://www.opengl.org/sdk/docs/man2/xhtml/glColor.xml
+    void setgl3(){
+        scope(exit) GLError.enforce();
+        glColor3ub(this.r!ubyte, this.g!ubyte, this.b!ubyte);
+    }
+    /// Set glColor to the RGBA color represented by this object.
+    /// Reference: https://www.opengl.org/sdk/docs/man2/xhtml/glColor.xml
+    void setgl4(){
+        scope(exit) GLError.enforce();
+        glColor4ub(this.r!ubyte, this.g!ubyte, this.b!ubyte, this.a!ubyte);
+    }
+    alias setgl = setgl4;
     
     Color!N opCast(Type: Color!N, N)() const{
         return Color!N(this);
@@ -226,6 +242,8 @@ unittest{
     tests("Color", {
         tests("Equality", {
             testeq(Colorf(0.25, 1.0, 0.75, 0.5), Colorf(0.25, 1.0, 0.75, 0.5));
+            testeq(Colorb(1, 1, 2, 2), Colorb(1, 1, 2, 2));
+            testeq(Color!ubyte(1, 2, 3, 4), Color!uint(1, 2, 3, 4));
             testeq(Colorf(1, 0.5, 0), Colorb(255, 128, 0));
         });
         tests("Hex conversion", {
@@ -233,13 +251,34 @@ unittest{
             testeq(Colorf.White.hex(), WHITE_HEX);
             testeq(Colorf(RED_HEX), RED_HEX);
         });
+        tests("Indexing", {
+            Colorb col = Colorb(0, 1, 2, 3);
+            testeq(col[0], 0);
+            testeq(col[1], 1);
+            testeq(col[2], 2);
+            testeq(col[3], 3);
+            col[0] = 4;
+            testeq(col[0], 4);
+            fail({col[4];});
+            fail({col[4] = 4;});
+        });
         tests("Casting", {
-            Colorb colb = Colorb(0, 255, 0, 255);
-            Colorf colf = cast(Colorf) colb;
-            testeq(colf.red, 0.0);
-            testeq(colf.green, 1.0);
-            testeq(colf.blue, 0.0);
-            testeq(colf.alpha, 1.0);
+            tests("Integral to float", {
+                Colorb colb = Colorb(0, 255, 0, 255);
+                Colorf colf = cast(Colorf) colb;
+                testeq(colf.red, 0.0);
+                testeq(colf.green, 1.0);
+                testeq(colf.blue, 0.0);
+                testeq(colf.alpha, 1.0);
+            });
+            tests("Float to integral", {
+                Colorf colf = Colorf(0, 1.0, 0, 1.0);
+                Colorb colb = cast(Colorb) colf;
+                testeq(colb.red, 0);
+                testeq(colb.green, 255);
+                testeq(colb.blue, 0);
+                testeq(colb.alpha, 255);
+            });
         });
     });
 }
