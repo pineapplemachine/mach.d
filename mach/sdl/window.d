@@ -27,7 +27,7 @@ import mach.io.log;
 
 public:
 
-struct Window{
+class Window{
     
     static enum string DEFAULT_TITLE = "D Application";
     
@@ -58,7 +58,7 @@ struct Window{
         LateSwapTearing = -1
     }
     
-    static size_t instances = 0; // Number of active windows
+    static typeof(this.window) currentwindow = null; // Currently active window
     
     SDL_Window* window;
     SDL_GLContext context;
@@ -89,47 +89,27 @@ struct Window{
     ){
         log();
         initSDL();
-        log();
         
         settings.setattributes(); // Set OpenGL attributes
         
-        log;
         // Actually create the window
         this.window = SDL_CreateWindow(
             toStringz(title),
             view.x, view.y, view.width, view.height,
             style | SDL_WINDOW_OPENGL
         );
-        
-        log;
-        
         if(!window) throw new SDLError("Failed to create SDL_Window.");
         
-        log;
         this.context = SDL_GL_CreateContext(window);
-        log;
-        
         if(!this.context) throw new SDLError("Failed to create SDL_GLContext.");
         
-        log;
-        if(SDL_GL_MakeCurrent(this.window, this.context) != 0){
-            throw new SDLError("Failed to set GLContext for rending to window.");
-        }
-        log;
+        this.use();
         
-        log;
         initGL();
-        log;
         
-        log;
         this.projection(Box!int(view.width, view.height));
-        log;
         this.clearcolor(1, 1, 1, 1);
-        log;
         this.vsync(vsync);
-        log;
-        
-        Window.instances++;
     }
     
     this(SDL_Window* window, SDL_GLContext context){
@@ -142,13 +122,29 @@ struct Window{
         }
         this.project();
         this.clearcolor(1, 1, 1, 1);
-        Window.instances++;
     }
     
     ~this(){
-        SDL_GL_DeleteContext(this.context);  
-        SDL_DestroyWindow(this.window);
-        Window.instances--;
+        this.free();
+    }
+    
+    void free(){
+        log;
+        this.freecontext();
+        this.freewindow();
+        log;
+    }
+    void freecontext(){
+        if(this.context !is null){
+            SDL_GL_DeleteContext(this.context);
+            this.context = null;
+        }
+    }
+    void freewindow(){
+        if(this.window !is null){
+            SDL_DestroyWindow(this.window);
+            this.window = null;
+        }
     }
     
     @property void projection(N)(in Vector2!N size){
@@ -210,15 +206,23 @@ struct Window{
         glClearColor(cast(float) r, cast(float) g, cast(float) b, cast(float) a);
     }
     
+    @property bool current(){
+        return this.currentwindow !is null && this.window == this.currentwindow;
+    }
+    
     /// Swap buffers and make changes visible
     void swap(){
-        if(Window.instances > 1) this.use();
+        this.use();
         SDL_GL_SwapWindow(this.window);
     }
     
     void use(){
-        if(SDL_GL_MakeCurrent(this.window, this.context) != 0){
-            throw new SDLError("Failed to make window context current.");
+        if(!this.current){
+            if(SDL_GL_MakeCurrent(this.window, this.context) == 0){
+                this.currentwindow = this.window;
+            }else{
+                throw new SDLError("Failed to make window context current.");
+            }
         }
     }
     
