@@ -38,7 +38,10 @@ struct Texture{
     static enum string AtomicMethodMixin = `
         static if(atomic){
             this.bind();
-            scope(exit) GLError.enforce();
+            scope(exit){
+                this.unbind();
+                GLError.enforce();
+            }
         }
     `;
     
