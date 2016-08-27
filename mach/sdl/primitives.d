@@ -63,10 +63,8 @@ enum isVector2(T) = isTemplateOf!(T, Vector2);
 
 
 
-auto primitives(alias mode, C, Vectors...)(Color!C color, Vectors vectors) if(
-    All!(isVector2, Vectors)
-){
-    static if(vectors.length){
+auto primitives(uint  mode, C, T)(Color!C color, Vector2!T[] vectors...){
+    if(vectors && vectors.length){
         scope(exit) GLError.enforce();
         color.glset();
         glBegin(mode);
@@ -74,35 +72,65 @@ auto primitives(alias mode, C, Vectors...)(Color!C color, Vectors vectors) if(
         glEnd();
     }
 }
-//auto primitives(alias mode, C, T)(Color!C color, Vector2!T[] vectors){
-//    if(vectors && vectors.length){
-//        scope(exit) GLError.enforce();
-//        color.glset();
-//        glBegin(mode);
-//        foreach(vector; vectors) vector.glset();
-//        glEnd();
-//    }
-//}
 
 
 
-auto points(C, Vectors...)(Color!C color, Vectors vectors) if(
-    All!(isVector2, Vectors)
-){
-    primitives!(GL_POINTS, C, Vectors)(color, vectors);
+
+// Reference: https://www.opengl.org/sdk/docs/man2/xhtml/glBegin.xml
+// Note: Remember to use glLineWidth somewhere
+
+auto points(C, T)(Color!C color, Vector2!T[] vectors...){
+    primitives!GL_POINTS(color, vectors);
 }
 
-auto lines(C, Vectors...)(Color!C color, float width, Vectors vectors) if(
-    All!(isVector2, Vectors)
-)in{
-    assert(vectors.length % 2 == 0);
+auto lines(C, T)(Color!C color, Vector2!T[] vectors...) in{
+    assert(vectors.length >= 2 && vectors.length % 2 == 0);
 }body{
-    glLineWidth(width);
-    primitives!(GL_LINES, C, Vectors)(color, vectors);
+    primitives!GL_LINES(color, vectors);
 }
 
+auto linestrip(C, T)(Color!C color, Vector2!T[] vectors...) in{
+    assert(vectors.length >= 2);
+}body{
+    primitives!GL_LINE_STRIP(color, vectors);
+}
 
+auto lineloop(C, T)(Color!C color, Vector2!T[] vectors...) in{
+    assert(vectors.length >= 2);
+}body{
+    primitives!GL_LINE_LOOP(color, vectors);
+}
 
+auto triangles(C, T)(Color!C color, Vector2!T[] vectors...) in{
+    assert(vectors.length >= 3 && vectors.length % 3 == 0);
+}body{
+    primitives!GL_TRIANGLES(color, vectors);
+}
 
+auto trianglestrip(C, T)(Color!C color, Vector2!T[] vectors...) in{
+    assert(vectors.length >= 3);
+}body{
+    primitives!GL_TRIANGLE_STRIP(color, vectors);
+}
 
+auto trianglefan(C, T)(Color!C color, Vector2!T[] vectors...) in{
+    assert(vectors.length >= 3);
+}body{
+    primitives!GL_TRIANGLE_FAN(color, vectors);
+}
 
+auto quads(C, T)(Color!C color, Vector2!T[] vectors...) in{
+    assert(vectors.length >= 4 && vectors.length % 4 == 0);
+}body{
+    primitives!GL_QUADS(color, vectors);
+}
+
+auto quadstrip(C, T)(Color!C color, Vector2!T[] vectors...) in{
+    assert(vectors.length >= 4);
+}body{
+    primitives!GL_QUAD_STRIP(color, vectors);
+}
+
+auto polygon(C, T)(Color!C color, Vector2!T[] vectors...){
+    primitives!GL_POLYGON(color, vectors);
+}

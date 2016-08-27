@@ -547,6 +547,9 @@ enum Primitive : glenum {
     TriangleStripAdjacency = GL_TRIANGLE_STRIP_ADJACENCY,
     TrianglesAdjacency = GL_TRIANGLES_ADJACENCY,
     Patches = GL_PATCHES,
+    Quads = GL_QUADS,
+    QuadStrip = GL_QUAD_STRIP,
+    Polygon = GL_POLYGON
 }
 
 // https://www.opengl.org/sdk/docs/man/html/glBlendFunc.xhtml
