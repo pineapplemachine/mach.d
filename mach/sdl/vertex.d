@@ -102,23 +102,20 @@ struct Vertexes(Pos = float, Tex = float, Col = float) if(
     
     /// Set GL vertex pointers in preparation for a glDrawArrays call.
     void setglpointers() const{
-        // Deprecated
-        //glVertexPointer(2, getvertextype!(Pos), Vert.sizeof, &this.verts[0].position);
-        //glTexCoordPointer(2, getvertextype!(Tex), Vert.sizeof, &this.verts[0].texcoord);
-        //glColorPointer(4, getvertextype!(Col), Vert.sizeof, &this.verts[0].color);
-        
-        
-        
-        GLError.enforce();
+        // Deprecated?
+        glVertexPointer(2, getvertextype!(Pos), Vert.sizeof, &this.verts[0].position);
+        glTexCoordPointer(2, getvertextype!(Tex), Vert.sizeof, &this.verts[0].texcoord);
+        glColorPointer(4, getvertextype!(Col), Vert.sizeof, &this.verts[0].color);
     }
     
     static uint getvertexbuffer(){
         static bool vertexbufferinit = false;
         static uint vertexbuffer;
         if(!vertexbufferinit){
+            // https://solarianprogrammer.com/2013/05/13/opengl-101-drawing-primitives/
             glGenBuffers(1, &vertexbuffer);
             glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-            //glBufferData(GL_ARRAY_BUFFER, 
+            //glBufferData(GL_ARRAY_BUFFER, Vert.sizeof * this.verts.length, this.verts, GL_STATIC_DRAW);
             vertexbufferinit = true;
         }
         return vertexbuffer;

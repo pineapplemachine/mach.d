@@ -200,10 +200,10 @@ struct Texture{
     void draw(N)(in N x, in N y){
         this.draw(Vector2!N(x, y));
     }
-    void draw(A, B = float)(in Vector2!A position){
+    void draw(T)(in Vector2!T position){
         this.draw(Vertexesf.rect(position, this.size));
     }
-    void draw(A, B = float)(in Box!A target){
+    void draw(T, bool atomic = true)(in Box!T target){
         this.draw(Vertexesf.rect(target));
     }
     void draw(A, B, C, bool atomic = true)(
@@ -214,5 +214,4 @@ struct Texture{
         verts.setglpointers();
         glDrawArrays(primitive, 0, cast(uint) verts.length);
     }
-    
 }
