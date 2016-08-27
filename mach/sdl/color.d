@@ -131,7 +131,7 @@ struct Color(T = float) if(isNumeric!T){
         }
     }
     
-    static auto getgl(){
+    static auto glget(){
         float[4] params;
         glGetFloatv(GL_CURRENT_COLOR, params.ptr);
         return typeof(this)(params[0], params[1], params[2], params[3]);
@@ -139,17 +139,17 @@ struct Color(T = float) if(isNumeric!T){
     
     /// Set glColor to the RGB color represented by this object.
     /// Reference: https://www.opengl.org/sdk/docs/man2/xhtml/glColor.xml
-    void setgl3(){
+    void glset3(){
         scope(exit) GLError.enforce();
         glColor3ub(this.r!ubyte, this.g!ubyte, this.b!ubyte);
     }
     /// Set glColor to the RGBA color represented by this object.
     /// Reference: https://www.opengl.org/sdk/docs/man2/xhtml/glColor.xml
-    void setgl4(){
+    void glset4(){
         scope(exit) GLError.enforce();
         glColor4ub(this.r!ubyte, this.g!ubyte, this.b!ubyte, this.a!ubyte);
     }
-    alias setgl = setgl4;
+    alias glset = glset4;
     
     Color!N opCast(Type: Color!N, N)() const{
         return Color!N(this);
