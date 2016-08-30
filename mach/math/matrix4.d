@@ -54,6 +54,10 @@ struct Matrix4(T = real) if(isNumeric!T){
         this.values = [
             a, b, c, d, e, f, g, h,
             i, j, k, l, m, n, o, p
+            //a, e, i, m,
+            //b, f, j, n,
+            //c, g, k, o,
+            //d, h, l, p
         ];
     }
     
@@ -217,6 +221,7 @@ struct Matrix4(T = real) if(isNumeric!T){
             "Coordinates (%d, %d) are out of bounds.", x, y
         );
         return x + (y << 2);
+        //return y + (x << 2);
     }
     
     Matrix4!T opBinary(string op : "*", N)(in Matrix4!N rhs) const{
@@ -264,7 +269,20 @@ struct Matrix4(T = real) if(isNumeric!T){
             this[0x4], this[0x5], this[0x6], this[0x7],
             this[0x8], this[0x9], this[0xa], this[0xb],
             this[0xc], this[0xd], this[0xe], this[0xf]
+            //this[0x0], this[0x4], this[0x8], this[0xc],
+            //this[0x1], this[0x5], this[0x9], this[0xd],
+            //this[0x2], this[0x6], this[0xa], this[0xe],
+            //this[0x3], this[0x7], this[0xb], this[0xf]
         );
+    }
+    
+    auto aligned() const{ // TODO: Just make it aligned this way by default
+        return [
+            this[0x0], this[0x4], this[0x8], this[0xc],
+            this[0x1], this[0x5], this[0x9], this[0xd],
+            this[0x2], this[0x6], this[0xa], this[0xe],
+            this[0x3], this[0x7], this[0xb], this[0xf]
+        ];
     }
     
 }
