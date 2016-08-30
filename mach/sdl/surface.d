@@ -14,6 +14,8 @@ import mach.sdl.mask : Mask;
 import mach.math.box : Box;
 import mach.math.vector2 : Vector2;
 
+import mach.io.log;
+
 public:
 
 enum BlendMode : int {
@@ -31,7 +33,7 @@ Box!int toBox(in SDL_Rect rect){
 }
 
 /// Wraps an SDL_Surface, which stores image data in RAM.
-struct Surface {
+struct Surface{
     
     /// The underlying SDL_Surface
     SDL_Surface* surface;
@@ -58,7 +60,7 @@ struct Surface {
     }
     this(
         void* pixels, int width, int height,
-        ref SDL_PixelFormat format, int pitch = -1
+        SDL_PixelFormat* format, int pitch = -1
     ){
         this(pixels, width, height, format.BitsPerPixel, Mask(format), pitch);
     }
@@ -81,7 +83,7 @@ struct Surface {
         this(width, height, format.bits, format.mask, flags);
     }
     this(
-        in int width, in int height, in ref SDL_PixelFormat format,
+        in int width, in int height, in SDL_PixelFormat* format,
         in uint flags = DEFAULT_CREATION_FLAGS
     ){
         this(width, height, format.BitsPerPixel, Mask(format), flags);
@@ -114,11 +116,15 @@ struct Surface {
     }
     /// Throw an exception if this surface isn't valid.
     void enforcevalid(size_t line = __LINE__, string file = __FILE__) const{
-        if(!this.surface){
-            throw new SDLError("Invalid surface.", null, line, file);
-        }
+        this.enforceexists(line, file);
         if(!this.surface.pixels){
             throw new SDLError("Invalid pixel data for surface.", null, line, file);
+        }
+    }
+    /// Throw an exception if there is no underlying SDL_Surface.
+    void enforceexists()(size_t line = __LINE__, string file = __FILE__) const{
+        if(!this.surface){
+            throw new SDLError("Invalid surface.", null, line, file);
         }
     }
     
@@ -127,7 +133,9 @@ struct Surface {
         if(!this.surface){
             throw new SDLError("Can't free invalid surface.");
         }
+        log;
         SDL_FreeSurface(this.surface); // Respects reference counts
+        log;
         this.surface = null;
     }
     
@@ -147,18 +155,23 @@ struct Surface {
         }
     }
     
+    /// Convert this surface to the same format as another.
     Surface convert(in Surface surface, in uint flags = 0){
         return this.convert(surface.pixelformat, flags);
     }
-    Surface convert(PixelFormat format, uint flags = 0){
-        return this.convert(cast(SDL_PixelFormat) format, flags);
+    /// Return another surface which is the same as this surface, but in another format.
+    Surface convert(in PixelFormat format, uint flags = 0){
+        return this.convert(format.pixelformat, flags);
     }
-    Surface convert(in SDL_PixelFormat format, uint flags = 0){
-        return this.convert(&format, flags);
-    }
-    /// Return another surface which is this surface in another format.
+    /// ditto
     Surface convert(in SDL_PixelFormat* format, uint flags = 0){
         SDL_Surface* result = SDL_ConvertSurface(this.surface, format, flags);
+        if(!result) throw new SDLError("Failed to convert surface to new format.");
+        return Surface(result);
+    }
+    /// ditto
+    Surface convert(in PixelFormat.Format format, uint flags = 0){
+        SDL_Surface* result = SDL_ConvertSurfaceFormat(this.surface, format, flags);
         if(!result) throw new SDLError("Failed to convert surface to new format.");
         return Surface(result);
     }
@@ -262,39 +275,31 @@ struct Surface {
         this.cliprect(clip);
     }
     
-    static string SurfaceAttributeMixin(string type, string name, string attribute){
-        import std.format : format;
-        return `
-            @property %s %s() const @trusted{
-                if(!this.surface){
-                    throw new SDLError("Can't retrieve %s of invalid surface.");
-                }
-                return this.surface.%s;
-            }
-        `.format(type, name, name, attribute);
+    @property auto width() const @trusted in{this.enforceexists();} body{
+        return this.surface.w;
     }
-    
-    mixin(SurfaceAttributeMixin("int", "width", "w"));
-    mixin(SurfaceAttributeMixin("int", "height", "h"));
-    mixin(SurfaceAttributeMixin("int", "pitch", "pitch"));
-    mixin(SurfaceAttributeMixin("ubyte", "bits", "format.BitsPerPixel"));
-    mixin(SurfaceAttributeMixin("ubyte", "bytes", "format.BytesPerPixel"));
-    
-    @property PixelFormat pixelformat() const{
-        if(!this.surface) throw new SDLError("Can't retrieve format of invalid surface.");
-        return PixelFormat(*this.surface.format);
+    @property auto height() const @trusted in{this.enforceexists();} body{
+        return this.surface.h;
     }
-    @property Mask mask() const{
-        if(!this.surface) throw new SDLError("Can't retrieve masks of invalid surface.");
-        return Mask(
-            this.surface.format.Rmask,
-            this.surface.format.Gmask,
-            this.surface.format.Bmask,
-            this.surface.format.Amask
-        );
+    @property auto pitch() const @trusted in{this.enforceexists();} body{
+        return this.surface.pitch;
     }
-    @property Vector2!int size() const{
-        if(!this.surface) throw new SDLError("Can't retrieve size of invalid surface.");
+    @property auto pixels() const @trusted in{this.enforceexists();} body{
+        return this.surface.pixels;
+    }
+    @property auto bitsperpixel() const @trusted in{this.enforceexists();} body{
+        return this.surface.format.BitsPerPixel;
+    }
+    @property auto bytesperpixel() const @trusted in{this.enforceexists();} body{
+        return this.surface.format.BytesPerPixel;
+    }
+    @property auto pixelformat() const @trusted in{this.enforceexists();} body{
+        return PixelFormat(this.surface.format);
+    }
+    @property auto pixelformatmask() const @trusted in{this.enforceexists();} body{
+        return Mask(this.surface.format);
+    }
+    @property auto size() const @trusted in{this.enforceexists();} body{
         return Vector2!int(this.surface.w, this.surface.h);
     }
     
@@ -306,8 +311,10 @@ struct Surface {
     void blit(Surface source, in Box!int from){
         this.blit(source, from, Box!int(from.size));
     }
-    void blit(Surface source, in Box!int from, in Box!int to){
-        this.enforcevalid(); source.enforcevalid();
+    void blit(Surface source, in Box!int from, in Box!int to) in{
+        this.enforcevalid();
+        source.enforcevalid();
+    }body{
         SDL_Rect fromrect = from.toSDLrect();
         SDL_Rect torect = to.toSDLrect();
         bool result = (from.size == to.size) ? (
@@ -323,9 +330,8 @@ struct Surface {
         return this.sub(Box!int(this.size));
     }
     /// Get a rectangular portion of this surface as another surface.
-    Surface sub(in Box!int box){
-        this.enforcevalid();
-        Surface sub = Surface(box.width, box.height, *this.surface.format);
+    Surface sub(in Box!int box) in{this.enforcevalid();} body{
+        Surface sub = Surface(box.width, box.height, this.surface.format);
         SDL_Rect rect = box.toSDLrect();
         if(SDL_BlitSurface(this.surface, &rect, sub.surface, null) != 0){
             throw new SDLError("Failed to blit surface.");
