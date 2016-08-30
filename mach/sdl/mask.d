@@ -7,7 +7,6 @@ import derelict.sdl2.sdl;
 public:
 
 struct Mask{
-    
     static immutable Mask Zero = Mask(0, 0, 0, 0);
     version(LittleEndian){
         static immutable Mask Default = Mask(0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
@@ -20,13 +19,13 @@ struct Mask{
     uint red, green, blue, alpha;
     alias r = red, g = green, b = blue, a = alpha;
     
-    this(in uint[4] rgba){
+    this(uint[4] rgba){
         this(rgba[0], rgba[1], rgba[2], rgba[3]);
     }
-    this(in uint r, in uint g, in uint b, in uint a){
+    this(uint r, uint g, uint b, uint a){
         this.r = r; this.g = g; this.b = b; this.a = a;
     }
-    this(in SDL_PixelFormat format){
+    this(in SDL_PixelFormat* format){
         this.r = format.Rmask;
         this.g = format.Gmask;
         this.b = format.Bmask;
@@ -40,5 +39,4 @@ struct Mask{
         else if(index == 3) return this.a;
         else assert(false);
     }
-    
 }
