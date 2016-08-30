@@ -141,13 +141,14 @@ struct Color(T = float) if(isNumeric!T){
     /// Reference: https://www.opengl.org/sdk/docs/man2/xhtml/glColor.xml
     void glset3(){
         scope(exit) GLError.enforce();
-        glColor3ub(this.r!ubyte, this.g!ubyte, this.b!ubyte);
+        glColor3f(this.r!float, this.g!float, this.b!float);
     }
     /// Set glColor to the RGBA color represented by this object.
     /// Reference: https://www.opengl.org/sdk/docs/man2/xhtml/glColor.xml
     void glset4(){
         scope(exit) GLError.enforce();
-        glColor4ub(this.r!ubyte, this.g!ubyte, this.b!ubyte, this.a!ubyte);
+        // TODO: Why does glColor4ub work on Win7 but not OSX?
+        glColor4f(this.r!float, this.g!float, this.b!float, this.a!float);
     }
     alias glset = glset4;
     
