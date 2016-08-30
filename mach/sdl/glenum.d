@@ -534,7 +534,7 @@ static immutable glenum[16] DrawBuffer = [
 ];
 
 // https://www.opengl.org/sdk/docs/man/html/glDrawArrays.xhtml
-enum Primitive : glenum {
+enum GLPrimitive : glenum {
     Points = GL_POINTS,
     LineStrip = GL_LINE_STRIP,
     LineLoop = GL_LINE_LOOP,

@@ -12,9 +12,11 @@ import mach.sdl.error : GraphicsError, GLError;
 import mach.sdl.glenum : TextureTarget, TextureParam;
 import mach.sdl.glenum : PixelsType, PixelsFormat;
 import mach.sdl.glenum : TextureMinFilter, TextureMagFilter;
-import mach.sdl.glenum : Primitive, VertexType, getvertextype, validvertextype;
+import mach.sdl.glenum : GLPrimitive, VertexType, getvertextype, validvertextype;
 import mach.sdl.pixelformat : SDLPixelFormat = PixelFormat;
 import mach.sdl.vertex : Vertex, Vertexes, Vertexesf;
+
+import mach.io.log;
 
 public:
 
@@ -51,18 +53,9 @@ struct Texture{
         this(surface, mipmap);
     }
     this(Surface surface, in bool mipmap = false){
-        Surface formatted;
-        if(surface.pixelformat.glcompatible){
-            formatted = surface;
-        }else{
-            formatted = surface.convert(
-                SDLPixelFormat(SDLPixelFormat.Format.ARGB8888, 32)
-            );
-        }
-        this(
-            formatted.surface.pixels, formatted.width, formatted.height,
-            mipmap, cast(PixelsFormat) formatted.pixelformat
-        );
+        log(surface.pixelformat.format);
+        auto converted = surface.convert(SDLPixelFormat.Format.RGBA8888); // TODO: only convert when necessary
+        this(converted.pixels, converted.width, converted.height, mipmap, PixelsFormat.RGBA);
     }
     this(bool atomic = true, bool expire = true)(
         in void* pixels, int width, int height,
@@ -81,13 +74,13 @@ struct Texture{
         glGenTextures(1, &this.name);
         refcounter.increment(this.name);
         
-        mixin(AtomicMethodMixin);
+        mixin(AtomicMethodMixin); // Binds the texture
         
         this.wrap!false(TextureWrap.Repeat);
         this.filter!false(TextureFilter.Nearest);
         glTexImage2D(
             TextureTarget.Texture2D, 0, format,
-            width, height, 0, format, PixelsType.Ubyte, pixels
+            width, height, 0, format, GL_UNSIGNED_INT_8_8_8_8, pixels
         );
         
         if(mipmap) this.mipmap!false();
@@ -208,7 +201,7 @@ struct Texture{
     }
     void draw(A, B, C, bool atomic = true)(
         in Vertexes!(A, B, C) verts,
-        in Primitive primitive = Primitive.TriangleStrip
+        in uint primitive = GLPrimitive.TriangleStrip
     ){
         mixin(AtomicMethodMixin);
         verts.setglpointers();
