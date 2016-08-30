@@ -9,8 +9,9 @@ import mach.sdl.error : GraphicsError;
 
 public:
 
+// Reference: https://wiki.libsdl.org/SDL_PixelFormat
+
 struct PixelFormat{ // Corresponds to SDL_PixelFormat
-    
     static enum Format{ // Corresponds to SDL_PixelFormatEnum
         Unknown = SDL_PIXELFORMAT_UNKNOWN,
         Index1LSB = SDL_PIXELFORMAT_INDEX1LSB,
@@ -50,36 +51,33 @@ struct PixelFormat{ // Corresponds to SDL_PixelFormat
         YVYU = SDL_PIXELFORMAT_YVYU,
     }
     
-    // TODO: Just wrap a pointer to SDL_PixelFormat instead of handling all this crap
-    Format format;
-    const SDL_Palette* palette;
-    ubyte bits; // per pixel
-    ubyte bytes; // per pixel
-    Mask mask = Mask.Default;
+    const(SDL_PixelFormat*) pixelformat; // Read-only
     
-    this(
-        in Format format, in ubyte bits,
-        in SDL_Palette* palette = null, in Mask mask = Mask.Default
-    ){
-        this.format = format;
-        this.palette = palette;
-        this.bits = bits;
-        this.bytes = bits >> 3;
-        this.mask = mask;
+    this(in SDL_Surface surface){
+        this.pixelformat = surface.format;
     }
-    this(in SDL_PixelFormat sdlformat){
-        this.format = cast(Format) sdlformat.format;
-        this.palette = sdlformat.palette;
-        this.bits = sdlformat.BitsPerPixel;
-        this.bytes = sdlformat.BytesPerPixel;
-        this.mask = Mask(sdlformat);
+    this(in SDL_PixelFormat* pixelformat){
+        this.pixelformat = pixelformat;
     }
     
-    SDL_PixelFormat opCast(T: SDL_PixelFormat)(){
-        return SDL_PixelFormat(
-            this.format, cast(SDL_Palette*) this.palette, this.bits, this.bytes,
-            [0, 0], this.mask.r, this.mask.g, this.mask.b, this.mask.a
-        );
+    @property Format format() const{
+        return cast(Format) this.pixelformat.format;
+    }
+    @property const(SDL_Palette*) palette() const{ // TODO: Also make a wrapper for SDL_Palette
+        return this.pixelformat.palette;
+    }
+    @property ubyte bits() const{
+        return this.pixelformat.BitsPerPixel;
+    }
+    @property ubyte bytes() const{
+        return this.pixelformat.BytesPerPixel;
+    }
+    @property Mask mask() const{
+        return Mask(this.pixelformat);
+    }
+        
+    auto opCast(T: SDL_PixelFormat*)(){
+        return this.pixelformat;
     }
     GLPixelsFormat opCast(T: GLPixelsFormat)() const{
         import std.conv : to;
@@ -107,5 +105,4 @@ struct PixelFormat{ // Corresponds to SDL_PixelFormat
             (this.format == Format.ARGB8888)
         );
     }
-    
 }
