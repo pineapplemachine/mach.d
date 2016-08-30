@@ -394,39 +394,30 @@ void initGL(){
 void forceinitGL(){
     scope(exit) initializedGL = true;
     
-    log;
     verifyGLversion();
     
-    log;
     glDisable(GL_DITHER);
     glDisable(GL_LIGHTING); // Deprecated?
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_ALPHA_TEST); // Deprecated?
 
-    log;
     glEnable(GL_TEXTURE_2D);
     
-    log;
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
-    log;
     glEnable(GL_CULL_FACE);
     glCullFace(GL_FRONT);
 
-    log;
     glEnable(GL_MULTISAMPLE);
     
     // Deprecated? http://stackoverflow.com/questions/11806823/glenableclientstate-deprecated
-    log;
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     
-    log;
-    glBlendFunc(BlendFactor.SrcAlpha, BlendFactor.OneMinusSrcAlpha); // TODO: Works?
+    glBlendFunc(BlendFactor.SrcAlpha, BlendFactor.OneMinusSrcAlpha); // TODO: Does this work?
     
-    log;
     GLError.enforce();
 }
 void verifyGLversion(){
@@ -442,6 +433,8 @@ void verifyGLversion(){
     if(glversion < MINIMUM_GL_VERSION){
         throw new GLVersionError(glversion, MINIMUM_GL_VERSION);
     }
+    
+    log("OpenGL version ", glversion);
 }
 
 version(unittest) import mach.error.unit;
