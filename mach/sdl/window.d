@@ -151,22 +151,17 @@ class Window{
         this.projection(Box!N(size));
     }
     @property void projection(N)(in Box!N screen){
-        this.projection(Matrix4!float.identity.orthographic(screen));
         glViewport(screen.x, screen.y, screen.width, screen.height);
+        this.projection(Matrix4!float.identity.orthographic(screen));
     }
     @property void projection(in Matrix4!float matrix){
-        log;
         glMatrixMode(GL_PROJECTION);
-        log;
-        
-        // TODO: ?
-        glLoadIdentity();
-        glOrtho(0, this.width, this.height, 0, -1f, 1f);
-        glTranslatef(this.x, this.y, 0f);
-        return;
-        
-        glLoadMatrixf(matrix.values.ptr);
+        glLoadMatrixf(matrix.aligned.ptr); // TODO: see matrix4.aligned
         glMatrixMode(GL_MODELVIEW);
+        // Alternative: Works on Win7 but not OSX:
+        //glLoadIdentity();
+        //glOrtho(0, this.width, this.height, 0, -1f, 1f);
+        //glTranslatef(this.x, this.y, 0f);
     }
     void project(){
         this.projection = this.size;
