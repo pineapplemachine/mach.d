@@ -15,11 +15,11 @@ enum validDistinctBy(Iter, alias by) = (
     canHash!(typeof(by(ElementType!Iter.init)))
 );
 
-enum canDistinct(Iter, alias by) = (
+enum canDistinct(Iter, alias by = DefaultDistinctBy) = (
     validAsRange!Iter && validDistinctBy!(Iter, by)
 );
 
-enum canDistinctRange(Range, alias by) = (
+enum canDistinctRange(Range, alias by = DefaultDistinctBy) = (
     isRange!Range && validDistinctBy!(Range, by)
 );
 
@@ -33,7 +33,7 @@ alias DefaultDistinctBy = (element) => (element);
 /// for uniqueness by providing a different by alias. For example,
 ///     input.distinct!((e) => (e.name))
 /// would iterate over those elements of input with distinct names.
-auto distinct(alias by = DefaultDistinctBy, Iter)(Iter iter) if(canDistinct!(Iter, by)){
+auto distinct(alias by = DefaultDistinctBy, Iter)(auto ref Iter iter) if(canDistinct!(Iter, by)){
     auto range = iter.asrange;
     return DistinctRange!(typeof(range), by)(range);
 }
@@ -84,7 +84,6 @@ version(unittest){
     private:
     import mach.error.unit;
     import mach.range.compare : equals;
-    import mach.range.retro : retro;
 }
 unittest{
     tests("Distinct", {
