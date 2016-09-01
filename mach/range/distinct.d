@@ -2,28 +2,65 @@ module mach.range.distinct;
 
 private:
 
-import mach.traits : isRange, isSavingRange;
-import mach.traits : canHash, ElementType;
+import mach.traits : ElementType, isIterable, isRange, isSavingRange;
+import mach.traits : hasNumericLength, canHash, ElementType;
 import mach.range.asrange : asrange, validAsRange;
 import mach.range.meta : MetaRangeMixin;
+import mach.collect : DenseHashSet;
 
 public:
 
 
 
+/// Determine whether a `by` function is valid for some iterable.
 enum validDistinctBy(Iter, alias by) = (
     canHash!(typeof(by(ElementType!Iter.init)))
 );
 
-enum canDistinct(Iter, alias by = DefaultDistinctBy) = (
-    validAsRange!Iter && validDistinctBy!(Iter, by)
+/// Determine whether a `makehistory` function is valid for some iterable.
+template validDistinctMakeHistory(Iter, alias by, alias makehistory){
+    static if(isIterable!Iter){
+        alias ByType = typeof(by(ElementType!Iter.init));
+        enum bool validDistinctMakeHistory = is(typeof({
+            auto history = makehistory!by(Iter.init);
+            history.add(ByType.init);
+            if(ByType.init in history) return;
+        }));
+    }else{
+        enum bool validDistinctMakeHistory = false;
+    }
+}
+
+enum canDistinct(
+    Iter, alias by = DefaultDistinctBy,
+    alias makehistory = DefaultDistinctMakeHistory
+) = (
+    validAsRange!Iter && validDistinctBy!(Iter, by) &&
+    validDistinctMakeHistory!(Iter, by, makehistory)
 );
 
-enum canDistinctRange(Range, alias by = DefaultDistinctBy) = (
-    isRange!Range && validDistinctBy!(Range, by)
+enum canDistinctRange(
+    Range, alias by = DefaultDistinctBy,
+    alias makehistory = DefaultDistinctMakeHistory
+) = (
+    isRange!Range && canDistinct!(Range, by, makehistory)
 );
 
 alias DefaultDistinctBy = (element) => (element);
+
+
+
+/// Default for makehistory argument of distinct range. Given an iterable and
+/// a `by` function, any function passed for that argument should return an
+/// object supporting both `history.add(element)` and `element in history`
+/// syntax, such as a set.
+auto DefaultDistinctMakeHistory(alias by, Iter)(auto ref Iter iter){
+    alias ByType = typeof(by(ElementType!Iter.init));
+    enum hasLength = hasNumericLength!Iter;
+    DenseHashSet!(ByType, !hasLength) history;
+    static if(hasLength) history.reserve(iter.length * 4);
+    return history;
+}
 
 
 
@@ -31,29 +68,29 @@ alias DefaultDistinctBy = (element) => (element);
 /// that are distinct from all previous values. By default, each element itself
 /// is tested for uniqueness; however an attribute of some element can be tested
 /// for uniqueness by providing a different by alias. For example,
-///     input.distinct!((e) => (e.name))
-/// would iterate over those elements of input with distinct names.
-auto distinct(alias by = DefaultDistinctBy, Iter)(auto ref Iter iter) if(canDistinct!(Iter, by)){
+/// `input.distinct!((e) => (e.name))` would iterate over those elements of
+/// input having distinct names.
+auto distinct(alias by = DefaultDistinctBy, alias makehistory = DefaultDistinctMakeHistory, Iter)(
+    auto ref Iter iter
+) if(canDistinct!(Iter, by, makehistory)){
     auto range = iter.asrange;
-    return DistinctRange!(typeof(range), by)(range);
+    return DistinctRange!(typeof(range), by, makehistory)(range);
 }
 
 
 
-struct DistinctRange(Range, alias by = DefaultDistinctBy) if(canDistinctRange!(Range, by)){
+struct DistinctRange(
+    Range, alias by = DefaultDistinctBy,
+    alias makehistory = DefaultDistinctMakeHistory
+) if(canDistinctRange!(Range, by, makehistory)){
     mixin MetaRangeMixin!(Range, `source`, `Empty Save`);
-    alias ByType = typeof(by(ElementType!Range.init));
-    
-    alias History = bool[ByType]; // TODO: Proper set?
+    alias History = typeof(makehistory!by(Range.init));
     
     Range source;
     History history;
     
-    this(typeof(this) range){
-        this(range.source, range.history);
-    }
     this(Range source){
-        this.source = source;
+        this(source, makehistory!by(source));
     }
     this(Range source, History history){
         this.source = source;
@@ -64,7 +101,7 @@ struct DistinctRange(Range, alias by = DefaultDistinctBy) if(canDistinctRange!(R
         return this.source.front;
     }
     void popFront(){
-        this.history[by(this.source.front)] = true;
+        this.history.add(by(this.source.front));
         this.source.popFront();
         while(!this.source.empty && by(this.source.front) in this.history){
             this.source.popFront();
