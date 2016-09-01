@@ -27,10 +27,13 @@ template validUniqueMakeHistory(Iter, alias by, alias makehistory){
     }else{
         enum bool validUniqueMakeHistory = false;
     }
-};
+}
 
 /// Determine whether it's possible to call unique with the given input types.
-enum canUnique(Iter, alias by = DefaultUniqueBy, alias makehistory = DefaultUniqueMakeHistory) = (
+enum canUnique(
+    Iter, alias by = DefaultUniqueBy,
+    alias makehistory = DefaultUniqueMakeHistory
+) = (
     isFiniteIterable!Iter && validUniqueBy!(Iter, by) &&
     validUniqueMakeHistory!(Iter, by, makehistory)
 );
