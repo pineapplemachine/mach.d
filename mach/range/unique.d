@@ -2,7 +2,8 @@ module mach.range.unique;
 
 private:
 
-import mach.traits : canHash, ElementType, isIterable, hasNumericLength;
+import mach.traits : canHash, hasNumericLength;
+import mach.traits : isIterable, isFiniteIterable, ElementType;
 import mach.collect : DenseHashSet;
 
 public:
@@ -14,10 +15,24 @@ enum validUniqueBy(Iter, alias by) = (
     canHash!(typeof(by(ElementType!Iter.init)))
 );
 
-/// Determine whether it's possible to call unique given an iterable type and a
-/// `by` function.
-enum canUnique(Iter, alias by = DefaultUniqueBy) = (
-    isIterable!Iter && validUniqueBy!(Iter, by)
+/// Determine whether a `makehistory` function is valid for some iterable.
+template validUniqueMakeHistory(Iter, alias by, alias makehistory){
+    static if(isIterable!Iter){
+        alias ByType = typeof(by(ElementType!Iter.init));
+        enum bool validUniqueMakeHistory = is(typeof({
+            auto history = makehistory!by(Iter.init);
+            history.add(ByType.init);
+            if(ByType.init in history) return;
+        }));
+    }else{
+        enum bool validUniqueMakeHistory = false;
+    }
+};
+
+/// Determine whether it's possible to call unique with the given input types.
+enum canUnique(Iter, alias by = DefaultUniqueBy, alias makehistory = DefaultUniqueMakeHistory) = (
+    isFiniteIterable!Iter && validUniqueBy!(Iter, by) &&
+    validUniqueMakeHistory!(Iter, by, makehistory)
 );
 
 /// The default `by` function.
@@ -46,7 +61,7 @@ auto DefaultUniqueMakeHistory(alias by, Iter)(auto ref Iter iter){
 /// the uniqueness of the result of calling that function for each element.
 auto unique(alias by = DefaultUniqueBy, alias makehistory = DefaultUniqueMakeHistory, Iter)(
     auto ref Iter iter
-) if(canUnique!(Iter, by)){
+) if(canUnique!(Iter, by, makehistory)){
     
     auto history = makehistory!by(iter);
     foreach(element; iter){
