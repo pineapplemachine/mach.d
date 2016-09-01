@@ -2,19 +2,35 @@ module mach.collect.set.densehash;
 
 private:
 
+import std.traits : Unqual, isImplicitlyConvertible;
 import mach.collect.set.templates;
-import mach.traits : isIterableOf, hasNumericLength, hash, canHash;
+import mach.traits : isIterable, isIterableOf, ElementType;
+import mach.traits : hasNumericLength, hash, canHash;
 import mach.math.log2 : clog2;
+
+import std.stdio;
 
 public:
 
 
 
+/// Get the contents of some iterable as a set.
+auto asdensehashset(bool dynamic = true, Iter)(auto ref Iter iter) if(
+    isIterable!Iter
+){
+    return DenseHashSet!(ElementType!Iter, dynamic)(iter);
+}
+
+
+
 struct DenseHashSetBucket(T){
-    T value = void;
+    Unqual!T rawvalue = void;
     bool empty = true;
-    void setvalue(T value){
-        this.value = value;
+    @property T value() const{
+        return cast(T) this.rawvalue;
+    }
+    @property void value(T value){
+        this.rawvalue = cast(Unqual!T) value;
         this.empty = false;
     }
 }
@@ -22,9 +38,10 @@ struct DenseHashSetBucket(T){
 
 
 /// Implementation for a Set type.
-/// When dynamic is true, the hash automatically resizes up and down to
+/// When dynamic is true, the set automatically resizes up and down to
 /// accommodate usage. Otherwise an error is produced if too many values are
-/// added to the set.
+/// added to the set. Static sets can still be resized, but unlike dynamic sets
+/// they will not be resized automatically.
 /// upsize_factor, downsize_factor, upsize_at, downsize_at define the behavior
 /// of dynamically-sized sets.
 struct DenseHashSet(
@@ -32,8 +49,12 @@ struct DenseHashSet(
     real upsize_factor = 2.0, real downsize_factor = 0.5,
     real upsize_at = 0.75, real downsize_at = 0.25
 ){
+    alias Element = T;
+    
     static assert(upsize_factor > 1);
     static assert(downsize_factor < 1);
+    static assert(upsize_at <= 1);
+    static assert(downsize_at >= 0);
     static assert(upsize_at > downsize_at);
     
     mixin SetMixin!T;
@@ -43,10 +64,12 @@ struct DenseHashSet(
     alias Bucket = DenseHashSetBucket!T;
     alias Buckets = Bucket[];
     static enum size_t DefaultSize = 64;
-    static enum size_t MinSize = 64;
+    static enum size_t MinDynamicSize = 64;
     
-    this(in size_t size){
-        this.resize_unsafe(size);
+    static if(!isImplicitlyConvertible!(T, size_t)){
+        this(in size_t size){
+            return typeof(this).ofsize(size);
+        }
     }
     this(Values)(auto ref Values values) if(isIterableOf!(Values, T)){
         static if(hasNumericLength!Values){
@@ -61,10 +84,22 @@ struct DenseHashSet(
         this.add(values);
     }
     
-    private size_t suggestsize(size_t length){
-        auto base = cast(size_t)(length / upsize_at);
-        if(base < MinSize) base = MinSize;
-        return 1 << clog2(base);
+    static auto ofsize(in size_t size){
+        typeof(this) set;
+        set.resize_unsafe(size);
+        return set;
+    }
+    
+    static auto expectedlength(in size_t length){
+        return typeof(this).ofsize(typeof(this).suggestsize(length));
+    }
+    static size_t suggestsize(in size_t length, size_t line = __LINE__){
+        import mach.io.log;
+        auto size = cast(size_t)(length * upsize_factor);
+        static if(dynamic){
+            if(size < MinDynamicSize) size = MinDynamicSize;
+        }
+        return size <= 0 ? 0 : 1 << clog2(size);
     }
     
     Buckets buckets = null;
@@ -83,7 +118,7 @@ struct DenseHashSet(
     }
     /// Return a measurement of how full the backing array is, 0 for completely
     /// empty and 1 for completely full.
-    @property real fullproportion() const{
+    @property real density() const{
         return (cast(real) this.values) / this.size;
     }
     
@@ -94,10 +129,12 @@ struct DenseHashSet(
         this.resize(size);
     }
     void reserve(in size_t size){
-        if(size > this.size) this.resize(size);
+        if(this.buckets is null || size > this.buckets.length){
+            this.resize(size);
+        }
     }
     void resize(in size_t size){
-        if(size != this.size){
+        if(this.buckets is null || size != this.buckets.length){
             if(this.empty){
                 this.resize_unsafe(size);
             }else{
@@ -113,7 +150,7 @@ struct DenseHashSet(
     /// Resize the set's backing array, but preserve the values in the set.
     void rehash(in size_t size){
         Buckets newbuckets = new Bucket[size];
-        foreach(ref T value; this){
+        foreach(value; this){
             this.addin(newbuckets, value);
         }
         this.buckets = newbuckets;
@@ -125,7 +162,7 @@ struct DenseHashSet(
         auto bucket = typeof(this).getbucketin(buckets, value);
         assert(bucket !is null);
         if(bucket.empty){
-            bucket.setvalue(value);
+            bucket.value = value;
             return true;
         }else{
             assert(bucket.value == value);
@@ -148,7 +185,7 @@ struct DenseHashSet(
     }body{
         auto startindex = (cast(size_t) value.hash) % buckets.length;
         auto index = startindex;
-        while(!buckets[index].empty && !buckets[index].value == value){
+        while(!buckets[index].empty && buckets[index].value != value){
             index = index == 0 ? buckets.length - 1 : index - 1;
             if(index == startindex) return null;
         }
@@ -170,7 +207,7 @@ struct DenseHashSet(
         }
     }body{
         static if(dynamic){
-            if(this.fullproportion >= upsize_at){
+            if(this.density >= upsize_at){
                 this.resize(cast(size_t)(this.size * upsize_factor));
                 assert(!this.full);
             }
@@ -188,9 +225,9 @@ struct DenseHashSet(
         if(this.buckets !is null && this.removein(this.buckets, value)){
             this.values--;
             static if(dynamic){
-                if(this.fullproportion <= downsize_at){
+                if(this.density <= downsize_at){
                     auto size = cast(size_t)(this.size * downsize_factor);
-                    if(size >= this.MinSize) this.resize(size);
+                    if(size >= this.MinDynamicSize) this.resize(size);
                 }
             }
             return true;
@@ -243,23 +280,16 @@ struct DenseHashSet(
     }
     
     // TODO: god dammit opApply stop being so dumb
-    private static enum string opApplyMixin = `
+    int opApply(in int delegate(in ref T value) apply) const{
         if(!this.empty){
             for(size_t index = 0; index < this.size; index++){
                 if(!this.buckets[index].empty){
-                    if(auto result = apply(this.buckets[index].value)){
-                        return result;
-                    }
+                    auto value = this.buckets[index].value;
+                    if(auto result = apply(value)) return result;
                 }
             }
         }
         return 0;
-    `;
-    int opApply(in int delegate(ref T value) apply){
-        mixin(opApplyMixin);
-    }
-    int opApply(in int delegate(in ref T value) apply) const{
-        mixin(opApplyMixin);
     }
 }
 
@@ -267,21 +297,21 @@ struct DenseHashSet(
 
 /// Range type for iterating over a DenseHashSet object.
 struct DenseHashSetRange(T){
-    alias Set = DenseHashSet!T;
+    alias Set = const(DenseHashSet!T);
     
-    const(Set) source;
+    Set source;
     size_t frontindex;
     size_t backindex;
     bool empty;
     
-    this(Set)(in Set source){
+    this(Set)(Set source){
         this(source, 0, source.size, source.empty);
         if(!this.empty){
             this.nextFront();
             this.nextBack();
         }
     }
-    this(Set)(in Set source, size_t frontindex, size_t backindex, bool empty){
+    this(Set)(Set source, size_t frontindex, size_t backindex, bool empty){
         this.source = source;
         this.frontindex = frontindex;
         this.backindex = backindex;
@@ -292,16 +322,16 @@ struct DenseHashSetRange(T){
         return this.source.length;
     }
     
-    @property auto frontbucket() in{assert(!this.empty);} body{
+    @property auto frontbucket() const in{assert(!this.empty);} body{
         return this.source.buckets[this.frontindex];
     }
-    @property auto front() in{assert(!this.empty);} body{
+    @property auto front() const in{assert(!this.empty);} body{
         return this.frontbucket.value;
     }
-    @property auto backbucket() in{assert(!this.empty);} body{
+    @property auto backbucket() const in{assert(!this.empty);} body{
         return this.source.buckets[this.backindex - 1];
     }
-    @property auto back() in{assert(!this.empty);} body{
+    @property auto back() const in{assert(!this.empty);} body{
         return this.backbucket.value;
     }
     
@@ -334,7 +364,7 @@ struct DenseHashSetRange(T){
     
     @property typeof(this) save(){
         return typeof(this)(
-            this.source, this.frontindex, this.backindex, this.empty
+            cast(Set) this.source, this.frontindex, this.backindex, this.empty
         );
     }
 }
@@ -380,11 +410,6 @@ unittest{
             test(2 in set);
             test(3 in set);
             testeq(set.add(0, 1, 2), 0);
-            tests("Lots", {
-                foreach(int i; 0 .. 1001) set.add(i);
-                test(500 in set);
-                test(1000 in set);
-            });
         });
         tests("Remove", {
             auto set = Set!int(0, 1, 2);
@@ -509,6 +534,37 @@ unittest{
             test(0 !in b);
             test(3 in a);
             test(3 !in b);
+        });
+        tests("As set", {
+            auto set = asdensehashset([0, 1, 2]);
+            testeq(set.length, 3);
+            test(0 in set);
+            test(1 in set);
+            test(2 in set);
+            testf(3 in set);
+        });
+        tests("Static", {
+            Set!(int, false) set;
+            set.reserve(4);
+            testeq(set.length, 0);
+            testeq(set.add(0, 1, 2, 3), 4);
+            testeq(set.length, 4);
+            fail({set.add(4);});
+            testeq(set.length, 4);
+            test(set.remove(0));
+            test(set.add(4));
+            fail({set.add(5);});
+        });
+        tests("Stress", {
+            Set!int set;
+            foreach(value; 0 .. 500){
+                test(set.add(value * 4));
+            }
+            foreach(value; 0 .. 500){
+                test(value * 4 in set);
+                testf(value * 4 + 1 in set);
+                testf(value * 4 - 1 in set);
+            }
         });
     });
 }

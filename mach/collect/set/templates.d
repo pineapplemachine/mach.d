@@ -45,14 +45,14 @@ template SetMixin(T){
     /// added values that had not previously been in the set.
     size_t add(Values)(auto ref Values values) if(isIterableOf!(Values, T)){
         size_t sum = 0;
-        foreach(ref T value; values) sum += this.add(value);
+        foreach(value; values) sum += this.add(value);
         return sum;
     }
     /// Add multiple values at once. Return the number of added values that had
     /// not previously been in the set.
     size_t add(T[] values...){
         size_t sum = 0;
-        foreach(ref T value; values) sum += this.add(value);
+        foreach(value; values) sum += this.add(value);
         return sum;
     }
     
@@ -66,14 +66,14 @@ template SetMixin(T){
     /// removed values that had previously been in the set.
     size_t remove(Values)(auto ref Values values) if(isIterableOf!(Values, T)){
         size_t sum = 0;
-        foreach(ref T value; values) sum += this.remove(value);
+        foreach(value; values) sum += this.remove(value);
         return sum;
     }
     /// Remove multiple values at once. Return the number of removed values that
     /// had previously been in the set.
     size_t remove(T[] values...){
         size_t sum = 0;
-        foreach(ref T value; values) sum += this.remove(value);
+        foreach(value; values) sum += this.remove(value);
         return sum;
     }
     
@@ -103,7 +103,7 @@ template SetMixin(T){
         isIterableOf!(Values, T) /* TODO: && can use in op */
     ){
         auto result = this.dup;
-        foreach(ref T value; result){
+        foreach(value; result){
             if(value !in values) result.remove(value);
         }
         return result;
@@ -139,7 +139,7 @@ template SetMixin(T){
     auto asarray(){
         T[] array;
         array.reserve(this.length);
-        foreach(ref T value; this) array ~= value;
+        foreach(value; this) array ~= value;
         return array;
     }
     
@@ -177,7 +177,7 @@ template SetMixin(T){
     string toString() const{
         import std.conv : to;
         string str = "";
-        foreach(const ref T value; this){
+        foreach(value; this){
             if(str.length) str ~= ", ";
             str ~= value.to!string;
         }
