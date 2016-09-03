@@ -4,22 +4,43 @@ private:
 
 import std.stdio : writeln, stdout;
 import std.conv : to;
+import std.path : baseName;
 import mach.traits : hash;
 
 public:
 
 
 
+/// Immediately writes a line to stdout together with a file name and line
+/// number. Intended to help debug misbehaving code.
+void log(
+    size_t line = __LINE__, string file = __FILE__
+)(){
+    log!(line, file)("log");
+}
+
+/// ditto
+void log(
+    size_t line = __LINE__, string file = __FILE__, Args...
+)(
+    auto ref Args args
+){
+    writeln(args, " in " ~ file.baseName ~ "(" ~ to!string(line) ~ ")");
+    stdout.flush();
+}
+
+
+
 /// Immediately writes a line to stdout together with a file path, function
 /// identifier, and line number. Intended to help debug misbehaving code.
-void log(
+void logv(
     size_t line = __LINE__, string file = __FILE__, string func = __FUNCTION__
 )(){
     log!(line, file, func)("log");
 }
 
 /// ditto
-void log(
+void logv(
     size_t line = __LINE__, string file = __FILE__, string func = __FUNCTION__, Args...
 )(
     auto ref Args args
