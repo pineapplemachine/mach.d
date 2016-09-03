@@ -3,7 +3,6 @@ module mach.collect.set.templates;
 private:
 
 import mach.traits : isIterableOf, hasNumericLength, hasEnumValue;
-import mach.range : all;
 
 public:
 
