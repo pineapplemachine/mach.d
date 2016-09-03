@@ -4,10 +4,14 @@ private:
 
 import std.typecons : Tuple;
 import std.traits : isImplicitlyConvertible;
+import std.conv : to;
 import mach.traits : canHash, isIterableOf, hasNumericLength;
 import mach.error : enforcebounds;
-import mach.collect : LinkedList;
-import mach.range : map;
+import mach.range : map, join, asarray, compare, all;
+import mach.collect.linkedlist : LinkedList;
+
+// For isItemsIterable
+import mach.traits : isIterable, ElementType;
 
 public:
 
@@ -15,7 +19,6 @@ public:
 
 // TODO: This probably has a place in mach.traits I'm just not sure where
 private template isItemsIterable(T, K, V){
-    import mach.traits : isIterable, ElementType;
     static if(isIterable!T){
         enum bool isItemsIterable = (
             is(typeof(ElementType!T[0]) == K) &&
@@ -50,15 +53,15 @@ class OrderedAA(K, V, alias ListTemplate = LinkedList) if(canHash!K){
     }
     
     ~this(){
-        this.clear();
+        if(this.list !is null && !this.empty) this.clear();
     }
     
     /// Determine whether the array is empty.
-    @property bool empty() const{
+    @property bool empty() const in{assert(this.list !is null);} body{
         return this.list.empty;
     }
     /// Get the number of elements in the array.
-    @property auto length() const{
+    @property auto length() const in{assert(this.list !is null);} body{
         return this.list.length;
     }
     /// ditto
@@ -103,11 +106,11 @@ class OrderedAA(K, V, alias ListTemplate = LinkedList) if(canHash!K){
     /// Add many key, value entries to the array at once. Order of resulting
     /// key, values pairs not guaranteed.
     auto extendfront(in V[K] array){
-        foreach(K key, V value; array) this.setfront(key, value);
+        foreach(key, value; array) this.setfront(key, value);
     }
     /// ditto
     auto extendback(in V[K] array){
-        foreach(K key, V value; array) this.setback(key, value);
+        foreach(key, value; array) this.setback(key, value);
     }
     
     /// Add many key, value entries to the array at once. Order of resulting
@@ -126,13 +129,13 @@ class OrderedAA(K, V, alias ListTemplate = LinkedList) if(canHash!K){
     /// and the item at the second index is a value.
     auto extendfront(Items)(auto ref Items items) if(isItemsIterable!(Items, K, V)){
         auto frontnode = this.list.frontnode;
-        foreach(K key, V value; items){
+        foreach(key, value; items){
             this.dict[key] = this.list.insertbefore(frontnode, Node(key, value));
         }
     }
     /// ditto
     auto extendback(Items)(auto ref Items items) if(isItemsIterable!(Items, K, V)){
-        foreach(K key, V value; items) this.setback(key, value);
+        foreach(key, value; items) this.setback(key, value);
     }
     
     alias set = setback;
@@ -217,7 +220,7 @@ class OrderedAA(K, V, alias ListTemplate = LinkedList) if(canHash!K){
     }
     
     /// Remove all key, value pairs from the array.
-    auto clear(){
+    auto clear() in{assert(this.list !is null);} body{
         this.list.clear();
         this.dict.clear();
     }
@@ -255,7 +258,6 @@ class OrderedAA(K, V, alias ListTemplate = LinkedList) if(canHash!K){
     /// must be in the same order in each array for them to be
     /// considered equal.
     override bool opEquals(Object object) const{
-        import mach.range : compare;
         auto array = cast(typeof(this)) object;
         if(array){
             return compare!((a, b) => (a.key == b.key && a.value == b.value))(
@@ -268,7 +270,6 @@ class OrderedAA(K, V, alias ListTemplate = LinkedList) if(canHash!K){
     /// Compare equality with an unordered associative array. Equality is simply
     /// determined by having the same keys and values; order is irrelevant.
     bool opEquals(in V[K] array) const{
-        import mach.range : all;
         if(this.length == array.length){
             return this.asrange.all!(e => array[e.key] == e.value);
         }else{
@@ -280,7 +281,7 @@ class OrderedAA(K, V, alias ListTemplate = LinkedList) if(canHash!K){
     /// equal.
     bool opEquals(Items)(auto ref Items items) const if(isItemsIterable!(Items, K, V)){
         auto range = this.items;
-        foreach(K key, V value; items){
+        foreach(key, value; items){
             if(range.empty) return false;
             auto item = range.front; range.popFront();
             if(item.key != key || item.value != value) return false;
@@ -319,8 +320,6 @@ class OrderedAA(K, V, alias ListTemplate = LinkedList) if(canHash!K){
     
     /// Get a string representation.
     override string toString() const{
-        import std.conv : to;
-        import mach.range : map, join, asarray;
         return "[" ~ join(
             this.asrange.map!(e => e.key.to!string ~ ": " ~ e.value.to!string), ", "
         ).asarray ~ "]";
@@ -332,7 +331,7 @@ class OrderedAA(K, V, alias ListTemplate = LinkedList) if(canHash!K){
 version(unittest){
     private:
     import mach.error.unit;
-    import mach.range : contains, equals;
+    import mach.range.compare : equals;
 }
 unittest{
     tests("Ordered associative array", {
