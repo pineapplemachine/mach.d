@@ -8,6 +8,7 @@ import derelict.opengl3.gl;
 import std.traits : isNumeric;
 import std.string : toStringz, fromStringz;
 import core.sync.mutex : Mutex;
+import mach.range : filter, asarray;
 
 import mach.sdl.init : initSDL, initGL;
 import mach.sdl.error : SDLError, GLError;
@@ -27,10 +28,12 @@ import mach.io.log;
 
 public:
 
+
+
 class Window{
-    
     static enum string DEFAULT_TITLE = "D Application";
     
+    alias ID = uint;
     alias Style = uint;
     static enum Style DEFAULT_STYLE = StyleFlag.Shown;
     static enum Style FULLSCREEN_STYLES = StyleFlag.Fullscreen | StyleFlag.Desktop;
@@ -60,6 +63,30 @@ class Window{
     
     static typeof(this.window) currentwindow = null; // Currently active window
     
+    // Please don't hate me
+    static Window[] instances;
+    void register(){
+        this.instances ~= this;
+    }
+    void unregister(){
+        this.instances = this.instances.filter!(e => e !is this).asarray;
+    }
+    @property ID id(){
+        return SDL_GetWindowID(this.window);
+    }
+    static typeof(this) byid(in ID id){
+        foreach(window; typeof(this).instances){
+            if(window.id == id) return window;
+        }
+        return null;
+    }
+    static typeof(this) byptr(in SDL_Window* ptr){
+        foreach(window; typeof(this).instances){
+            if(window.window is ptr) return window;
+        }
+        return null;
+    }
+    
     SDL_Window* window;
     SDL_GLContext context;
     
@@ -87,7 +114,6 @@ class Window{
         in VSync vsync = VSync.Disabled,
         in GLSettings settings = GLSettings.DEFAULT_SETTINGS
     ){
-        log();
         initSDL();
         
         settings.setattributes(); // Set OpenGL attributes
@@ -110,6 +136,7 @@ class Window{
         this.projection(Box!int(view.width, view.height));
         this.clearcolor(1, 1, 1, 1);
         this.vsync(vsync);
+        this.register();
     }
     
     this(SDL_Window* window, SDL_GLContext context){
@@ -122,17 +149,17 @@ class Window{
         }
         this.project();
         this.clearcolor(1, 1, 1, 1);
+        this.register();
     }
     
     ~this(){
         this.free();
+        this.unregister();
     }
     
     void free(){
-        log;
         this.freecontext();
         this.freewindow();
-        log;
     }
     void freecontext(){
         if(this.context !is null){
@@ -225,6 +252,8 @@ class Window{
         return cast(string) fromStringz(SDL_GetWindowTitle(this.window));
     }
     @property void title(string title){
+        // TODO: Make sure the string returned by toStringz doesn't get eaten
+        // by the GC and cause an error
         SDL_SetWindowTitle(this.window, toStringz(title));
     }
     
