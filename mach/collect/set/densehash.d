@@ -94,7 +94,6 @@ struct DenseHashSet(
         return typeof(this).ofsize(typeof(this).suggestsize(length));
     }
     static size_t suggestsize(in size_t length, size_t line = __LINE__){
-        import mach.io.log;
         auto size = cast(size_t)(length * upsize_factor);
         static if(dynamic){
             if(size < MinDynamicSize) size = MinDynamicSize;
