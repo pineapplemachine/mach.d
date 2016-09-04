@@ -146,7 +146,7 @@ struct Controller{
     /// Get the current position of an axis, from -1.0 to 1.0.
     /// https://wiki.libsdl.org/SDL_GameControllerGetAxis
     @property auto axis(Axis axis){
-        return normalizejoyaxis(this.axisraw(axis));
+        return Joystick.normalizeaxis(this.axisraw(axis));
     }
     /// Get axis position as a signed short.
     @property auto axisraw(Axis axis){

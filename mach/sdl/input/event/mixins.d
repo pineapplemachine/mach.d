@@ -224,7 +224,7 @@ template ControllerEventMixin(){
 
 /// For events including joystick or controller axis data.
 template JoyAxisEventMixin(AxisType){
-    import mach.sdl.input.joystick : normalizejoyaxis, denormalizejoyaxis;
+    import mach.sdl.input.joystick : Joystick;
     alias Axis = AxisType;
     /// Get the identifier for the axis associated with the event.
     @property Axis axis() const{
@@ -245,12 +245,12 @@ template JoyAxisEventMixin(AxisType){
     /// Get the position on the axis, normalized to a floating point value
     /// from -1.0 to 1.0.
     @property real position() const{
-        return normalizejoyaxis(this.positionraw);
+        return Joystick.normalizeaxis(this.positionraw);
     }
     /// Set the position on the axis, normalized to a floating point value
     /// from -1.0 to 1.0.
     @property void position(real value){
-        this.positionraw = denormalizejoyaxis(value);
+        this.positionraw = Joystick.denormalizeaxis(value);
     }
 }
 

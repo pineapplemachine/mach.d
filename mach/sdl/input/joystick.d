@@ -13,18 +13,6 @@ public:
 
 
 
-/// Joystick and controller axis positions are represented by signed shorts.
-/// This function can be used to normalize these values to a floating point
-/// from -1.0 to 1.0.
-real normalizejoyaxis(T)(T value) pure @safe @nogc nothrow if(isSigned!T && isIntegral!T){
-    return value >= 0 ? cast(real) value / T.max : cast(real) value / -T.min;
-}
-short denormalizejoyaxis(T)(T value) pure @safe @nogc nothrow if(isNumeric!T){
-    return cast(short)(value >= 0 ? value * short.max : value * -short.min);
-}
-
-
-
 struct Joystick{
     /// Various levels of power or battery charge.
     static enum Power{
@@ -98,6 +86,16 @@ struct Joystick{
     
     this(Joy joy){
         this.joy = joy;
+    }
+    
+    /// Joystick and controller axis positions are represented by signed shorts.
+    /// This function can be used to normalize these values to a floating point
+    /// from -1.0 to 1.0.
+    static real normalizeaxis(T)(T value) pure @safe @nogc nothrow if(isSigned!T && isIntegral!T){
+        return value >= 0 ? cast(real) value / T.max : cast(real) value / -T.min;
+    }
+    static short denormalizeaxis(T)(T value) pure @safe @nogc nothrow if(isNumeric!T){
+        return cast(short)(value >= 0 ? value * short.max : value * -short.min);
     }
     
     /// Get the number of attached joystick devices.
@@ -206,7 +204,7 @@ struct Joystick{
     /// more axes.
     /// https://wiki.libsdl.org/SDL_JoystickGetAxis
     @property auto axis(int index){
-        return normalizejoyaxis(this.axisraw(index));
+        return this.normalizeaxis(this.axisraw(index));
     }
     /// Get axis position as a signed short.
     @property auto axisraw(int index){
