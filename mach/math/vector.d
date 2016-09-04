@@ -12,15 +12,6 @@ public:
 
 
 
-auto Vector(N)(N x, N y) if(isNumeric!N){
-    return Vector2!N(x, y);
-}
-auto Vector(N)(N x, N y, N z) if(isNumeric!N){
-    return Vector3!N(x, y, z);
-}
-
-
-
 enum VectorPositionAxes = VectorAxes!4(`x`, `y`, `z`, `w`);
 enum VectorSizeAxes = VectorAxes!3(`width`, `height`, `depth`);
 struct VectorAxes(size_t dimensions){

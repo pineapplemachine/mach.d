@@ -10,6 +10,14 @@ import mach.error.assertf : assertf;
 
 public:
 
+
+
+auto Vector(N)(N x, N y, N z) if(isNumeric!N){
+    return Vector3!N(x, y, z);
+}
+
+
+
 struct Vector3(T) if(isNumeric!T){
     
     T x, y, z;

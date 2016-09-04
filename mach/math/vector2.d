@@ -12,6 +12,12 @@ public:
 
 
 
+auto Vector(N)(N x, N y) if(isNumeric!N){
+    return Vector2!N(x, y);
+}
+
+
+
 struct Vector2(T) if(isNumeric!T){
     
     static enum Zero = Vector2!T(0);
