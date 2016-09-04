@@ -42,6 +42,17 @@ struct KeyMod{
         this.mod = cast(SDL_Keymod) mod;
     }
     
+    /// Get an object representing the current modifier state for the keyboard.
+    /// https://wiki.libsdl.org/SDL_GetModState
+    static typeof(this) current(){
+        return typeof(this)(SDL_GetModState());
+    }
+    /// Set SDL's internal keyboard modifier state to the state represented by
+    /// this object.
+    void setcurrent(){
+        SDL_SetModState(this);
+    }
+    
     /// Determine whether no modifier keys are being pressed.
     @property bool none(){
         return this.mod == 0;
