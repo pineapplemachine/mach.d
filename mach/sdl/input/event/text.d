@@ -35,7 +35,7 @@ struct TextInputEvent{
     }
     /// Controls where the candidate list will open, if supported.
     /// https://wiki.libsdl.org/SDL_SetTextInputRect
-    static @property void inputrect(int x, int y, int w, int h){
+    static void inputrect(int x, int y, int w, int h){
         auto rect = SDL_Rect(x, y, w, h);
         SDL_SetTextInputRect(&rect);
     }

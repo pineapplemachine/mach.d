@@ -30,13 +30,6 @@ public:
 
 
 
-/// Allocate an SDL_Event.
-SDL_Event* allocevent(Allocator = GCAllocator)(){
-    return Allocator.instance.make!SDL_Event;
-}
-
-
-
 struct Event{
     /// Timestamps measure the number of milliseconds since the SDL library
     /// was initialized.
@@ -48,6 +41,11 @@ struct Event{
     alias Timestamp = uint;
     /// https://wiki.libsdl.org/SDL_Event
     alias Type = EventType;
+    
+    /// Allocate an SDL_Event.
+    static SDL_Event* allocevent(Allocator = GCAllocator)(){
+        return Allocator.instance.make!SDL_Event;
+    }
     
     SDL_Event* event;
     

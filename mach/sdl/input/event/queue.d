@@ -3,6 +3,7 @@ module mach.sdl.input.event.queue;
 private:
 
 import derelict.sdl2.sdl;
+import mach.sdl.error : SDLError;
 import mach.sdl.input.event.type;
 import mach.sdl.input.event.event;
 
@@ -40,24 +41,24 @@ interface EventQueue{
     
     /// Remove all events of the given type from the queue.
     /// https://wiki.libsdl.org/SDL_FlushEvent
-    static void flush(Type type){
+    static void flush(EventType type){
         SDL_FlushEvent(type);
     }
     
     /// Add an event to the queue. Return false if the event was filtered, true
     /// otherwise.
     /// https://wiki.libsdl.org/SDL_PushEvent
-    bool push(){
-        auto result = SDL_PushEvent(this.event);
+    static bool push(Event event){
+        auto result = SDL_PushEvent(event.event);
         if(result < 0) throw new SDLError("Failed to add event to queue.");
         return result == 1;
     }
     /// Remove and return the foremost event from the queue. If the queue is
     /// empty, then the `exists` property of the returned object will be false.
-    static typeof(this) pop(){
-        SDL_Event* event = typeof(this).allocevent();
+    static Event pop(){
+        SDL_Event* event = Event.allocevent();
         auto result = SDL_PollEvent(event);
-        return typeof(this)(event);
+        return Event(event);
     }
     
     /// Wait indefinitely for an event to be added to the queue.
