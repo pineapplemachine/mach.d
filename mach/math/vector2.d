@@ -10,6 +10,8 @@ import mach.error.assertf : assertf;
 
 public:
 
+
+
 struct Vector2(T) if(isNumeric!T){
     
     static enum Zero = Vector2!T(0);
@@ -201,7 +203,7 @@ struct Vector2(T) if(isNumeric!T){
     
 }
 
-version(unittest) import mach.error.unit;
+version(unittest) private import mach.error.unit;
 unittest{
     // TODO: More thorough unit testing
     
