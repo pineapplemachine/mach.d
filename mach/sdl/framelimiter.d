@@ -40,6 +40,10 @@ struct FrameLimiter{
     /// Current frame, incremented every time update is called.
     ulong frame = 0;
     
+    this(ulong fpslimit){
+        this.fpslimit = fpslimit;
+    }
+    
     /// Get target frames per second.
     @property ulong fpslimit() const{
         return cast(ulong)(1000 / this.mspflimit);
@@ -58,6 +62,10 @@ struct FrameLimiter{
     /// Most recent milliseconds spent for a frame.
     @property auto lastactualms() const{
         return this.lastrenderms + this.lastsleepms;
+    }
+    /// Estimated frame rate.
+    @property auto actualfps() const{
+        return 1000 / this.actualmspf;
     }
     
     /// To be called once per rendering loop. Keeps track of the amount of time
