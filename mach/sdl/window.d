@@ -134,7 +134,7 @@ class Window{
         initGL();
         
         this.projection(Box!int(view.width, view.height));
-        this.clearcolor(1, 1, 1, 1);
+        this.clearcolor(0, 0, 0, 1);
         this.vsync(vsync);
         this.register();
     }
@@ -148,7 +148,7 @@ class Window{
             throw new SDLError("Failed to set GLContext for rending to window.");
         }
         this.project();
-        this.clearcolor(1, 1, 1, 1);
+        this.clearcolor(0, 0, 0, 1);
         this.register();
     }
     
@@ -249,7 +249,7 @@ class Window{
     }
     
     @property string title(){
-        return cast(string) fromStringz(SDL_GetWindowTitle(this.window));
+        return cast(string) fromStringz(SDL_GetWindowTitle(this.window)).dup;
     }
     @property void title(string title){
         // TODO: Make sure the string returned by toStringz doesn't get eaten
