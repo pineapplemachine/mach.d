@@ -2,36 +2,57 @@ module mach.sdl.input.event.type;
 
 private:
 
-import derelict.sdl2.types;
+import derelict.sdl2.sdl;
+import mach.sdl.input.common : EventState;
 
 public:
 
 
 
+/// Get whether events of a given type are enabled.
+bool enabled(EventType type){
+    return cast(bool) SDL_GetEventState(type);
+}
+/// Get whether events of a given type are disabled.
+bool disabled(EventType type){
+    return !enabled(type);
+}
+
+/// Enable events of a given type.
+void enable(EventType type){
+    SDL_EventState(type, EventState.Enable);
+}
+/// Disable events of a given type.
+void disable(EventType type){
+    SDL_EventState(type, EventState.Disable);
+}
+
+    
+    
 /// https://wiki.libsdl.org/SDL_Event
 enum EventType: uint{
     First = SDL_FIRSTEVENT, FirstEvent = First,
     
     /// Normal stuff
     Window = SDL_WINDOWEVENT, WindowEvent = Window,
-    KeyDown = SDL_KEYDOWN,
     KeyUp = SDL_KEYUP,
+    KeyDown = SDL_KEYDOWN,
     TextEditing = SDL_TEXTEDITING,
     TextInput = SDL_TEXTINPUT,
     MouseMotion = SDL_MOUSEMOTION,
-    MouseButtonDown = SDL_MOUSEBUTTONDOWN,
     MouseButtonUp = SDL_MOUSEBUTTONUP,
+    MouseButtonDown = SDL_MOUSEBUTTONDOWN,
     MouseWheel = SDL_MOUSEWHEEL,
     JoyAxisMotion = SDL_JOYAXISMOTION,
     JoyBallMotion = SDL_JOYBALLMOTION,
     JoyHatMotion = SDL_JOYHATMOTION,
-    JoyButtonDown = SDL_JOYBUTTONDOWN,
     JoyButtonUp = SDL_JOYBUTTONUP,
+    JoyButtonDown = SDL_JOYBUTTONDOWN,
     JoyDeviceAdded = SDL_JOYDEVICEADDED,
     JoyDeviceRemoved = SDL_JOYDEVICEREMOVED,
     ControllerAxisMotion = SDL_CONTROLLERAXISMOTION,
-    ControllerButtonDown = SDL_CONTROLLERBUTTONDOWN,
     ControllerButtonUp = SDL_CONTROLLERBUTTONUP,
+    ControllerButtonDown = SDL_CONTROLLERBUTTONDOWN,
     ControllerDeviceAdded = SDL_CONTROLLERDEVICEADDED,
     ControllerDeviceRemoved = SDL_CONTROLLERDEVICEREMOVED,
     ControllerDeviceRemapped = SDL_CONTROLLERDEVICEREMAPPED,
@@ -40,8 +61,8 @@ enum EventType: uint{
     Quit = SDL_QUIT,
     User = SDL_USEREVENT, UserEvent = User,
     SysWindowManager = SDL_SYSWMEVENT, SysWindowManagerEvent = SysWindowManager,
-    FingerDown = SDL_FINGERDOWN,
     FingerUp = SDL_FINGERUP,
+    FingerDown = SDL_FINGERDOWN,
     FingerMotion = SDL_FINGERMOTION,
     MultiGesture = SDL_MULTIGESTURE,
     DollarGesture = SDL_DOLLARGESTURE,
