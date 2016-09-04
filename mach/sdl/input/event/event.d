@@ -215,21 +215,3 @@ struct Event{
         }
     }
 }
-
-/// Range for iterating over and consuming the event queue.
-/// https://wiki.libsdl.org/SDL_PollEvent
-struct EventQueueRange{
-    SDL_Event event;
-    bool empty;
-    @property auto front(){
-        return Event(&this.event);
-    }
-    void popFront(){
-        this.empty = SDL_PollEvent(&this.event) != 1;
-    }
-    static typeof(this) opCall(){
-        EventQueueRange range;
-        range.popFront();
-        return range;
-    }
-}
