@@ -116,7 +116,7 @@ struct SDL{
     }
     
     /// Attempt to initialize SDL with the given options. Returns a list of
-    /// errors that occured, if any.
+    /// errors that occurred, if any.
     static auto initialize(){
         return support.initialize();
     }
