@@ -59,20 +59,3 @@ static struct DisplayMode{
         );
     }
 }
-
-version(unittest){
-    import mach.error.unit;
-    import mach.sdl.init : initSDL;
-}
-unittest{
-    // TODO: More better tests
-    
-    // Should throw an SDL not initialized error
-    //fail((thrown) => (cast(SDLError) thrown !is null), {
-    //    DisplayMode.desktop();
-    //});
-    
-    // Should succeed
-    //initSDL();
-    //DisplayMode.desktop();
-}
