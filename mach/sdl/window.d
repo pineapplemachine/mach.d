@@ -32,8 +32,8 @@ class Window{
     
     alias ID = uint;
     alias Style = uint;
-    static enum Style DEFAULT_STYLE = StyleFlag.Shown;
-    static enum Style FULLSCREEN_STYLES = StyleFlag.Fullscreen | StyleFlag.Desktop;
+    static enum Style DefaultStyle = StyleFlag.Shown;
+    static enum Style FullscreenStyles = StyleFlag.Fullscreen | StyleFlag.Desktop;
     
     static enum StyleFlag : uint {
         Default = Shown, /// Default is Shown
@@ -69,9 +69,13 @@ class Window{
         this.instances ~= this;
     }
     void unregister(){
-        log("unregistering");
         if(this.window !is null){
-            this.instances = this.instances.filter!(e => e !is this).asarray;
+            Window[] newinstances;
+            newinstances.reserve(this.instances.length - 1);
+            foreach(instance; instances){
+                if(instance !is this) newinstances ~= instances;
+            }
+            this.instances = newinstances;
         }
     }
     @property ID id(){
@@ -97,7 +101,7 @@ class Window{
     // http://stackoverflow.com/a/15575920/3478907
     this(
         in int width, in int height,
-        in Style style = DEFAULT_STYLE,
+        in Style style = DefaultStyle,
         in VSync vsync = VSync.Disabled,
         in GLSettings settings = GLSettings.Default
     ){
@@ -105,7 +109,7 @@ class Window{
     }
     this(
         in string title, in int width, in int height,
-        in Style style = DEFAULT_STYLE,
+        in Style style = DefaultStyle,
         in VSync vsync = VSync.Disabled,
         in GLSettings settings = GLSettings.Default
     ){
@@ -113,26 +117,26 @@ class Window{
     }
     this(
         in string title, in Box!int view,
-        in Style style = DEFAULT_STYLE,
+        in Style style = DefaultStyle,
         in VSync vsync = VSync.Disabled,
         in GLSettings settings = GLSettings.Default
     ){
         // Actually create the window
-        //this.window = SDL_CreateWindow(
-        //    toStringz(title),
-        //    view.x, view.y, view.width, view.height,
-        //    style | SDL_WINDOW_OPENGL
-        //);
-        //if(!window) throw new SDLError("Failed to create SDL_Window.");
+        this.window = SDL_CreateWindow(
+            toStringz(title),
+            view.x, view.y, view.width, view.height,
+            style | SDL_WINDOW_OPENGL
+        );
+        if(!window) throw new SDLError("Failed to create SDL_Window.");
         
-        //this.context = SDL_GL_CreateContext(window);
-        //if(!this.context) throw new SDLError("Failed to create SDL_GLContext.");
+        this.context = SDL_GL_CreateContext(window);
+        if(!this.context) throw new SDLError("Failed to create SDL_GLContext.");
         
-        //this.glsettings(settings);        
-        //this.projection(Box!int(view.width, view.height));
-        //this.clearcolor(0, 0, 0, 1);
-        //this.vsync(vsync);
-        //this.register();
+        this.glsettings(settings);        
+        this.projection(Box!int(view.width, view.height));
+        this.clearcolor(0, 0, 0, 1);
+        this.vsync(vsync);
+        this.register();
     }
     
     this(SDL_Window* window, SDL_GLContext context){
@@ -149,16 +153,13 @@ class Window{
     }
     
     ~this(){
-        log("destructor");
         this.free();
         this.unregister();
     }
     
     void free(){
-        log("freeing");
         this.freecontext();
         this.freewindow();
-        log("finished freeing");
     }
     void freecontext(){
         if(this.context !is null){
@@ -416,7 +417,7 @@ class Window{
     
     bool setfullscreen(bool project = true)(in Style style){
         if(style & this.style) return true;
-        if(style & FULLSCREEN_STYLES){
+        if(style & FullscreenStyles){
             if(!SDL_SetWindowFullscreen(this.window, style)){
                 throw new SDLError("Failed to set fullscreen.");
             }
@@ -439,7 +440,7 @@ class Window{
         this.setfullscreen(fullscreen ? StyleFlag.Fullscreen : 0);
     }
     @property bool fullscreen(){
-        return (this.style & FULLSCREEN_STYLES) != 0;
+        return (this.style & FullscreenStyles) != 0;
     }
     
 }

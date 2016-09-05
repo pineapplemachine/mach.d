@@ -96,11 +96,10 @@ struct Texture{
     }
     
     void free(){
-        if(this.name == 0){
-            throw new GLError("Attempted to free nonexistent texture.");
+        if(this.name != 0){
+            if(refcounter.decrement(this.name) == 0) expirednames++;
+            this.name = 0;
         }
-        if(refcounter.decrement(this.name) == 0) expirednames++;
-        this.name = 0;
     }
     
     /// Freeing a texture only decrements a reference counter without actually

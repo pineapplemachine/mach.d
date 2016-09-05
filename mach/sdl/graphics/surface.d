@@ -130,11 +130,10 @@ struct Surface{
     
     /// Free the underlying SDL_Surface
     void free(){
-        if(!this.surface){
-            throw new SDLError("Can't free invalid surface.");
+        if(this.surface !is null){
+            SDL_FreeSurface(this.surface); // Respects reference counts
+            this.surface = null;
         }
-        SDL_FreeSurface(this.surface); // Respects reference counts
-        this.surface = null;
     }
     
     /// Get the number of references to the underlying SDL_Surface
