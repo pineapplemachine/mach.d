@@ -1,11 +1,11 @@
-module mach.sdl.pixelformat;
+module mach.sdl.graphics.pixelformat;
 
 private:
     
 import derelict.sdl2.sdl;
-import mach.sdl.mask : Mask;
 import mach.sdl.glenum : GLPixelsFormat = PixelsFormat;
 import mach.sdl.error : GraphicsError;
+import mach.sdl.graphics.mask : Mask;
 
 public:
 

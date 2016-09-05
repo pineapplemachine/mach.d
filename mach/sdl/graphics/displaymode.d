@@ -1,4 +1,4 @@
-module mach.sdl.displaymode;
+module mach.sdl.graphics.displaymode;
 
 private:
 

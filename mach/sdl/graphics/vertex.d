@@ -1,4 +1,4 @@
-module mach.sdl.vertex;
+module mach.sdl.graphics.vertex;
 
 private:
 
@@ -8,8 +8,8 @@ import std.traits : isNumeric;
 import mach.math.vector2 : Vector2;
 import mach.math.box : Box;
 import mach.sdl.error : GLError;
-import mach.sdl.color : Color;
 import mach.sdl.glenum : VertexType, getvertextype, validvertextype;
+import mach.sdl.graphics.color : Color;
 
 public:
 

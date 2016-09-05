@@ -1,4 +1,4 @@
-module mach.sdl.texture;
+module mach.sdl.graphics.texture;
 
 private:
 
@@ -7,14 +7,14 @@ import derelict.opengl3.gl;
 import mach.misc.refcounter : RefCounter;
 import mach.math.vector2 : Vector2;
 import mach.math.box : Box;
-import mach.sdl.surface : Surface;
 import mach.sdl.error : GraphicsError, GLError;
 import mach.sdl.glenum : TextureTarget, TextureParam;
 import mach.sdl.glenum : PixelsType, PixelsFormat;
 import mach.sdl.glenum : TextureMinFilter, TextureMagFilter;
 import mach.sdl.glenum : GLPrimitive, VertexType, getvertextype, validvertextype;
-import mach.sdl.pixelformat : SDLPixelFormat = PixelFormat;
-import mach.sdl.vertex : Vertex, Vertexes, Vertexesf;
+import mach.sdl.graphics.surface : Surface;
+import mach.sdl.graphics.pixelformat : SDLPixelFormat = PixelFormat;
+import mach.sdl.graphics.vertex : Vertex, Vertexes, Vertexesf;
 
 import mach.io.log;
 
@@ -55,6 +55,7 @@ struct Texture{
     this(Surface surface, in bool mipmap = false){
         log(surface.pixelformat.format);
         auto converted = surface.convert(SDLPixelFormat.Format.RGBA8888); // TODO: only convert when necessary
+        scope(exit) converted.free();
         this(converted.pixels, converted.width, converted.height, mipmap, PixelsFormat.RGBA);
     }
     this(bool atomic = true, bool expire = true)(

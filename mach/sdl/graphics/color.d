@@ -1,4 +1,4 @@
-module mach.sdl.color;
+module mach.sdl.graphics.color;
 
 private:
 
@@ -8,8 +8,6 @@ import derelict.opengl3.gl;
 import std.traits : isNumeric, isIntegral, isFloatingPoint;
 import mach.math.round : round;
 import mach.sdl.error : GLError;
-
-import mach.io.log;
 
 public:
     

@@ -1,4 +1,4 @@
-module mach.sdl.surface;
+module mach.sdl.graphics.surface;
 
 private:
 
@@ -8,15 +8,15 @@ import derelict.sdl2.image;
 import std.string : toStringz;
 
 import mach.sdl.error : SDLError;
-import mach.sdl.color : Color;
-import mach.sdl.pixelformat : PixelFormat;
-import mach.sdl.mask : Mask;
 import mach.math.box : Box;
 import mach.math.vector2 : Vector2;
-
-import mach.io.log;
+import mach.sdl.graphics.color : Color;
+import mach.sdl.graphics.pixelformat : PixelFormat;
+import mach.sdl.graphics.mask : Mask;
 
 public:
+
+
 
 enum BlendMode : int {
     None = SDL_BLENDMODE_NONE,
@@ -133,9 +133,7 @@ struct Surface{
         if(!this.surface){
             throw new SDLError("Can't free invalid surface.");
         }
-        log;
         SDL_FreeSurface(this.surface); // Respects reference counts
-        log;
         this.surface = null;
     }
     

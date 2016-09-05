@@ -1,4 +1,4 @@
-module mach.sdl.primitives;
+module mach.sdl.graphics.primitives;
 
 private:
 
@@ -12,7 +12,7 @@ import mach.math.vector3 : Vector3;
 
 import mach.sdl.error : GLError;
 import mach.sdl.window : Window;
-import mach.sdl.color : Color;
+import mach.sdl.graphics.color : Color;
 
 
 import mach.io.log;

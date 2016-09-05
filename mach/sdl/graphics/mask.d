@@ -1,4 +1,4 @@
-module mach.sdl.mask;
+module mach.sdl.graphics.mask;
 
 private:
 
