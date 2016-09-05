@@ -16,7 +16,6 @@ import mach.sdl.graphics.color : Color;
 import mach.sdl.graphics.mask : Mask;
 import mach.sdl.graphics.displaymode : DisplayMode;
 import mach.sdl.graphics.surface : Surface;
-import mach.error.mixins : ThrowableClassMixin;
 import mach.math.box : Box;
 import mach.math.vector2 : Vector2;
 import mach.math.matrix4 : Matrix4;

@@ -7,7 +7,7 @@ import derelict.opengl3.gl;
 import mach.misc.refcounter : RefCounter;
 import mach.math.vector2 : Vector2;
 import mach.math.box : Box;
-import mach.sdl.error : GraphicsError, GLError;
+import mach.sdl.error : GLError;
 import mach.sdl.glenum : TextureTarget, TextureParam;
 import mach.sdl.glenum : PixelsType, PixelsFormat;
 import mach.sdl.glenum : TextureMinFilter, TextureMagFilter;
