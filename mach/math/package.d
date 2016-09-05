@@ -1,5 +1,7 @@
 module mach.math;
 
+public:
+
 import mach.math.box;
 import mach.math.cube;
 import mach.math.log2;
