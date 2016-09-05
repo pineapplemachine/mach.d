@@ -12,7 +12,7 @@ public:
 
 
 
-/// Get ceil(log2(n)) of some integer.
+/// Get ceil(log2(n)) of some positive integer.
 auto clog2(N)(N number) if(isIntegral!N) in{
     assert(number > 0);
 }body{
@@ -23,7 +23,7 @@ auto clog2(N)(N number) if(isIntegral!N) in{
     return log;
 }
 
-/// Get floor(log2(n)) of some integer.
+/// Get floor(log2(n)) of some positive integer.
 auto flog2(N)(N number) if(isIntegral!N) in{
     assert(number > 0);
 }body{
