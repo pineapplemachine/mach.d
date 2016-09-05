@@ -19,7 +19,7 @@ struct GL{
     alias Settings = GLSettings;
     alias Version = GLVersions;
     
-    static void initialize(Settings settings = Settings.Default){
+    static void initialize(){
         Version.reload();
         Version.verify();
         
@@ -44,7 +44,5 @@ struct GL{
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         
         GLError.enforce();
-        
-        settings.load();
     }
 }

@@ -11,6 +11,7 @@ import core.sync.mutex : Mutex;
 import mach.range : filter, asarray;
 
 import mach.sdl.error : SDLError, GLError;
+import mach.sdl.init : GLSettings;
 import mach.sdl.glenum : PixelsFormat, PixelsType, ColorBufferMode;
 import mach.sdl.graphics.color : Color;
 import mach.sdl.graphics.mask : Mask;
@@ -19,7 +20,6 @@ import mach.sdl.graphics.surface : Surface;
 import mach.math.box : Box;
 import mach.math.vector2 : Vector2;
 import mach.math.matrix4 : Matrix4;
-
 
 import mach.io.log;
 
@@ -69,6 +69,7 @@ class Window{
         this.instances ~= this;
     }
     void unregister(){
+        log("unregistering");
         if(this.window !is null){
             this.instances = this.instances.filter!(e => e !is this).asarray;
         }
@@ -97,39 +98,41 @@ class Window{
     this(
         in int width, in int height,
         in Style style = DEFAULT_STYLE,
-        in VSync vsync = VSync.Disabled
+        in VSync vsync = VSync.Disabled,
+        in GLSettings settings = GLSettings.Default
     ){
         this(DefaultTitle, Box!int(width, height), style, vsync);
     }
     this(
         in string title, in int width, in int height,
         in Style style = DEFAULT_STYLE,
-        in VSync vsync = VSync.Disabled
+        in VSync vsync = VSync.Disabled,
+        in GLSettings settings = GLSettings.Default
     ){
         this(title, Box!int(width, height), style, vsync);
     }
     this(
         in string title, in Box!int view,
         in Style style = DEFAULT_STYLE,
-        in VSync vsync = VSync.Disabled
+        in VSync vsync = VSync.Disabled,
+        in GLSettings settings = GLSettings.Default
     ){
         // Actually create the window
-        this.window = SDL_CreateWindow(
-            toStringz(title),
-            view.x, view.y, view.width, view.height,
-            style | SDL_WINDOW_OPENGL
-        );
-        if(!window) throw new SDLError("Failed to create SDL_Window.");
+        //this.window = SDL_CreateWindow(
+        //    toStringz(title),
+        //    view.x, view.y, view.width, view.height,
+        //    style | SDL_WINDOW_OPENGL
+        //);
+        //if(!window) throw new SDLError("Failed to create SDL_Window.");
         
-        this.context = SDL_GL_CreateContext(window);
-        if(!this.context) throw new SDLError("Failed to create SDL_GLContext.");
+        //this.context = SDL_GL_CreateContext(window);
+        //if(!this.context) throw new SDLError("Failed to create SDL_GLContext.");
         
-        this.use();
-        
-        this.projection(Box!int(view.width, view.height));
-        this.clearcolor(0, 0, 0, 1);
-        this.vsync(vsync);
-        this.register();
+        //this.glsettings(settings);        
+        //this.projection(Box!int(view.width, view.height));
+        //this.clearcolor(0, 0, 0, 1);
+        //this.vsync(vsync);
+        //this.register();
     }
     
     this(SDL_Window* window, SDL_GLContext context){
@@ -146,13 +149,16 @@ class Window{
     }
     
     ~this(){
+        log("destructor");
         this.free();
         this.unregister();
     }
     
     void free(){
+        log("freeing");
         this.freecontext();
         this.freewindow();
+        log("finished freeing");
     }
     void freecontext(){
         if(this.context !is null){
@@ -229,6 +235,12 @@ class Window{
     void swap(){
         this.use();
         SDL_GL_SwapWindow(this.window);
+    }
+    
+    /// Set OpenGL context settings.
+    @property void glsettings(GLSettings settings){
+        this.use();
+        settings.apply();
     }
     
     void use(){

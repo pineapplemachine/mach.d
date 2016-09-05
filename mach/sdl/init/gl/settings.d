@@ -58,42 +58,42 @@ struct GLSettings {
         this.profile = profile;
     }
     
-    static void load(int attribute, int value){
+    static void apply(int attribute, int value){
         if(SDL_GL_SetAttribute(attribute, value) != 0){
             throw new GLAttributeError(cast(string) fromStringz(SDL_GetError()));
         }
     }
-    void load() const{
+    void apply() const{
         int major = GLVersions.major(this.glversion);
         int minor = GLVersions.minor(this.glversion);
         
         if(major != 0){
-            load(SDL_GL_CONTEXT_MAJOR_VERSION, major);
-            load(SDL_GL_CONTEXT_MINOR_VERSION, minor);
+            apply(SDL_GL_CONTEXT_MAJOR_VERSION, major);
+            apply(SDL_GL_CONTEXT_MINOR_VERSION, minor);
         }
         
         final switch(this.profile){
             case Profile.Core:
-                load(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-                load(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+                apply(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+                apply(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
                 break;
             case Profile.Compatibility:
-                load(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+                apply(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
                 break;
             case Profile.ES:
-                load(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+                apply(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
                 break;
             case Profile.Default:
                 break;
         }
         
         if(this.antialias > 0){
-            load(SDL_GL_MULTISAMPLEBUFFERS, 1);
-            load(SDL_GL_MULTISAMPLESAMPLES, antialias);
+            apply(SDL_GL_MULTISAMPLEBUFFERS, 1);
+            apply(SDL_GL_MULTISAMPLESAMPLES, antialias);
         }
         
-        load(SDL_GL_DOUBLEBUFFER, 1);
-        load(SDL_GL_ACCELERATED_VISUAL, 1);
+        apply(SDL_GL_DOUBLEBUFFER, 1);
+        apply(SDL_GL_ACCELERATED_VISUAL, 1);
     }
     
 }
