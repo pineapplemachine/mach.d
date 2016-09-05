@@ -215,8 +215,8 @@ class Window{
         this.clear();
     }
     
-    @property void clearcolor(in Color!float color){
-        this.clearcolor(color.r, color.g, color.b, color.a);
+    @property void clearcolor(T)(in Color!T color){
+        this.clearcolor(color.r!float, color.g!float, color.b!float, color.a!float);
     }
     @property void clearcolor(in SDL_Color color){
         this.clearcolor(color.r / 255f, color.g / 255f, color.b / 255f, color.a / 255f);
