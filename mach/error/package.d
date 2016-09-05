@@ -4,5 +4,5 @@ public:
 
 import mach.error.enforce;
 
-import mach.error.assertf : assertf;
-import mach.error.mixins : ThrowableClassMixin, ErrorClassMixin, ExceptionClassMixin;
+import mach.error.assertf;
+import mach.error.mixins;

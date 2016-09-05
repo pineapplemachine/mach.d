@@ -25,7 +25,7 @@ import std.math : abs;
 import std.string : indexOf;
 import std.traits : isNumeric, fullyQualifiedName;
 
-import mach.error.mixins : ErrorClassMixin;
+import mach.error.mixins : ThrowableMixin;
 
 bool contains(T)(in string str, in T sub){
     return str.indexOf(sub) >= 0;
@@ -35,9 +35,9 @@ public:
 
 
 
-mixin(ErrorClassMixin!(
-    "TestFailureError", "Encountered unit test failure."
-));
+class TestFailureError: Exception{
+    mixin ThrowableMixin!("Unit test failure.");
+}
 
 enum DefaultMessage : string {
     True = "Value must be true",
