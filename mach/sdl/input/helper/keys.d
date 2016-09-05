@@ -1,4 +1,4 @@
-module mach.sdl.input.keys;
+module mach.sdl.input.helper.keys;
 
 private:
 
@@ -58,6 +58,14 @@ struct Keys{
     /// The most recent state of the keyboard modifiers.
     KeyMod mod;
     
+    /// Update state when there were no polled events.
+    void update(){
+        KeyTime currenttime = KeyTime(SDL_GetTicks());
+        if(currenttime.timestamp == this.lasttime.timestamp){
+            currenttime.order = this.lasttime.order + 1;
+        }
+        this.lasttime = currenttime;
+    }
     /// Update state according to a polled event.
     /// Events should always be received in chronological order.
     void update(Event event){
@@ -142,7 +150,7 @@ struct Keys{
     /// ditto
     bool pressed(in ScanCode code) const{
         if(auto time = code in this.pressedtime){
-            return *time == this.lasttime;
+            return time.timestamp == this.lasttime.timestamp;
         }else{
             return false;
         }
@@ -152,7 +160,7 @@ struct Keys{
     /// ditto
     bool released(in ScanCode code) const{
         if(auto time = code in this.releasedtime){
-            return *time == this.lasttime;
+            return time.timestamp == this.lasttime.timestamp;
         }else{
             return false;
         }
@@ -166,5 +174,22 @@ struct Keys{
         }else{
             return false;
         }
+    }
+    
+    /// Get whether a key was just pressed and then released, with the whole
+    /// enterprise taking no more than the provided number of milliseconds.
+    bool tapped(in KeyCode code, in Timestamp time = 200){
+        return this.tapped(code.scancode, time);
+    }
+    /// ditto
+    bool tapped(in ScanCode code, in Timestamp time = 200){
+        if(auto rtime = code in this.releasedtime){
+            if(rtime.timestamp == this.lasttime.timestamp){
+                if(auto ptime = code in this.pressedtime){
+                    return *rtime > *ptime && *rtime - *ptime <= time;
+                }
+            }
+        }
+        return false;
     }
 }
