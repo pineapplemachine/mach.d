@@ -10,9 +10,7 @@ import std.string : toStringz, fromStringz;
 import core.sync.mutex : Mutex;
 import mach.range : filter, asarray;
 
-import mach.sdl.init : initSDL, initGL;
 import mach.sdl.error : SDLError, GLError;
-import mach.sdl.glsettings : GLSettings;
 import mach.sdl.color : Color;
 import mach.sdl.displaymode : DisplayMode;
 import mach.sdl.glenum : PixelsFormat, PixelsType, ColorBufferMode;
@@ -31,7 +29,7 @@ public:
 
 
 class Window{
-    static enum string DEFAULT_TITLE = "D Application";
+    static enum string DefaultTitle = "D Application";
     
     alias ID = uint;
     alias Style = uint;
@@ -65,11 +63,16 @@ class Window{
     
     // Please don't hate me
     static Window[] instances;
-    void register(){
+    void register() in{
+        // Disallow duplicates in registry
+        foreach(instance; instances) assert(this !is instance);
+    }body{
         this.instances ~= this;
     }
     void unregister(){
-        this.instances = this.instances.filter!(e => e !is this).asarray;
+        if(this.window !is null){
+            this.instances = this.instances.filter!(e => e !is this).asarray;
+        }
     }
     @property ID id(){
         return SDL_GetWindowID(this.window);
@@ -95,29 +98,22 @@ class Window{
     this(
         in int width, in int height,
         in Style style = DEFAULT_STYLE,
-        in VSync vsync = VSync.Disabled,
-        in GLSettings settings = GLSettings.DEFAULT_SETTINGS
+        in VSync vsync = VSync.Disabled
     ){
-        this(DEFAULT_TITLE, Box!int(width, height), style, vsync, settings);
+        this(DefaultTitle, Box!int(width, height), style, vsync);
     }
     this(
         in string title, in int width, in int height,
         in Style style = DEFAULT_STYLE,
-        in VSync vsync = VSync.Disabled,
-        in GLSettings settings = GLSettings.DEFAULT_SETTINGS
+        in VSync vsync = VSync.Disabled
     ){
-        this(title, Box!int(width, height), style, vsync, settings);
+        this(title, Box!int(width, height), style, vsync);
     }
     this(
         in string title, in Box!int view,
         in Style style = DEFAULT_STYLE,
-        in VSync vsync = VSync.Disabled,
-        in GLSettings settings = GLSettings.DEFAULT_SETTINGS
+        in VSync vsync = VSync.Disabled
     ){
-        initSDL();
-        
-        settings.setattributes(); // Set OpenGL attributes
-        
         // Actually create the window
         this.window = SDL_CreateWindow(
             toStringz(title),
@@ -130,8 +126,6 @@ class Window{
         if(!this.context) throw new SDLError("Failed to create SDL_GLContext.");
         
         this.use();
-        
-        initGL();
         
         this.projection(Box!int(view.width, view.height));
         this.clearcolor(0, 0, 0, 1);
