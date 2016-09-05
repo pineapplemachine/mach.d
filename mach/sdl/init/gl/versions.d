@@ -5,7 +5,7 @@ private:
 import derelict.opengl3.gl : DerelictGL, DerelictGLVersion = GLVersion;
 
 import mach.text : text;
-import mach.sdl.error : GraphicsError, GLError;
+import mach.sdl.error : GLError;
 
 import mach.io.log;
 
@@ -13,7 +13,7 @@ public:
 
 
 
-class GLVersionError: GraphicsError{
+class GLVersionError: GLError{
     this(
         in GLVersions.Version userversion, in GLVersions.Version requiredversion,
         in string file = __FILE__, in size_t line = __LINE__
@@ -22,7 +22,7 @@ class GLVersionError: GraphicsError{
             text(
                 "Incompatible OpenGL version ", GLVersions.name(userversion), ". ",
                 "At least ", GLVersions.name(requiredversion), " is required."
-            ), null, line, file
+            ), line, file
         );
     }
 }

@@ -5,16 +5,16 @@ private:
 import derelict.sdl2.sdl;
 
 import std.string : fromStringz;
-import mach.sdl.error : GraphicsError;
+import mach.sdl.error : GLError;
 import mach.sdl.init.gl.versions;
 
 public:
 
 
 
-class GLAttributeError: GraphicsError{
+class GLAttributeError: GLError{
     this(string message, string file = __FILE__, size_t line = __LINE__){
-        super("Failed to set OpenGL attribute: " ~ message, null, line, file);
+        super("Failed to set OpenGL attribute: " ~ message, line, file);
     }
 }
 
