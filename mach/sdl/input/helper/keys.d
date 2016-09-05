@@ -15,7 +15,7 @@ public:
 
 
 
-/// Used by Keys type to record when a key event occured.
+/// Used by Keys type to record when a key event occurred.
 struct KeyTime{
     /// The timestamp associated with the event
     Timestamp timestamp = 0;
