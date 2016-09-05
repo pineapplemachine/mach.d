@@ -35,7 +35,7 @@ struct KeyMod{
         Gui = KMOD_GUI,
     }
     
-    SDL_Keymod mod;
+    SDL_Keymod mod = 0;
     alias mod this;
     
     this(T)(T mod) if(isIntegral!T){
