@@ -2,6 +2,8 @@ module mach.sdl;
 
 public:
 
+import mach.sdl.application;
+
 import mach.sdl.window;
 import mach.sdl.framelimiter;
 import mach.sdl.input;
