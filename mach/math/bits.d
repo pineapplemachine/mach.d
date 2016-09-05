@@ -1,4 +1,4 @@
-module mach.misc.bits;
+module mach.math.bits;
 
 private:
 
