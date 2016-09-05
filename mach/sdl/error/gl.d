@@ -1,35 +1,17 @@
-module mach.sdl.error;
+module mach.sdl.error.gl;
 
 private:
-    
-import derelict.sdl2.sdl : SDL_GetError, SDL_ClearError;
+
 import derelict.opengl3.gl;
-import std.string : join, fromStringz;
-import std.algorithm : map;
-import mach.error.mixins : ThrowableClassMixin, ErrorClassMixin;
+import mach.error : ThrowableCtorMixin;
 
 public:
-    
-mixin(ErrorClassMixin!("GraphicsError", "Graphics Error"));
 
-// SDL
-mixin(ThrowableClassMixin!(
-    "SDLError", "GraphicsError", "SDL error", "
-        string error = null;
-    ", "nothrow", "
-        this.error = cast(string) fromStringz(SDL_GetError());
-        if(this.error.length > 0){
-            super(message ~ \" \" ~ this.error, next, line, file);
-            SDL_ClearError();
-        }else{
-            super(message, next, line, file);
-        }
-    "
-));
 
-// OpenGL
-class GLError : GraphicsError {
-    
+
+/// Class for errors which occur interfacing with OpenGL.
+class GLError : Error{
+    /// An enumeration of possible OpenGL error codes.
     static enum ErrorCode : uint{
         NoError = GL_NO_ERROR,
         InvalidEnum = GL_INVALID_ENUM,
@@ -53,13 +35,14 @@ class GLError : GraphicsError {
     }
     nothrow this(ErrorCode[] errors, size_t line = __LINE__, string file = __FILE__){
         this.errors = errors;
-        super(errorstring(errors), next, line, file);
+        super(errorstring(errors), file, line, next);
     }
     nothrow this(string message, size_t line = __LINE__, string file = __FILE__){
         this.errors = null;
-        super(message, next, line, file);
+        super(message, file, line, next);
     }
     
+    /// Get a list of errors which have occurred and so far gone unhandled.
     static ErrorCode[] geterrors() nothrow{
         ErrorCode[] errors;
         while(true){
@@ -70,6 +53,7 @@ class GLError : GraphicsError {
         return errors;
     }
     
+    /// https://www.opengl.org/wiki/OpenGL_Error
     static errorstring(in ErrorCode code) @safe pure nothrow{
         final switch(code){
             case ErrorCode.NoError:
@@ -83,7 +67,7 @@ class GLError : GraphicsError {
             case ErrorCode.StackOverflow:
                 return "Cannot perform operation because it would cause a stack overflow.";
             case ErrorCode.StackUnderflow:
-                return "Cannot perform operation because the stack is unexpectedly empty.";
+                return "Cannot perform operation because it would cause a stack underflow.";
             case ErrorCode.OutOfMemory:
                 return "Insufficient memory available to perform operation.";
             case ErrorCode.InvalidFramebuffer:
@@ -94,21 +78,26 @@ class GLError : GraphicsError {
                 return "Specified table exceeds the maximum supported table size.";
         }
     }
+    
     static string errorstring(in ErrorCode[] errors) nothrow{
         if(errors.length == 0){
             return errorstring([ErrorCode.NoError]);
         }else if(errors.length == 1){
             return errorstring(errors[0]);
         }else{
-            return "Encountered multiple errors: " ~ join(
-                map!((code) => (errorstring(code)))(errors), " "
-            );
+            string str = "";
+            foreach(error; errors){
+                if(str.length) str ~= " ";
+                str ~= errorstring(error);
+            }
+            return "Encountered multiple errors: " ~ str;
         }
     }
     
+    /// Check if any errors have occurred and, if so, throw a new GLError
+    /// reporting them.
     static void enforce(size_t line = __LINE__, string file = __FILE__){
         ErrorCode[] errors = geterrors();
         if(errors.length) throw new GLError(errors, line, file);
     }
-    
 }
