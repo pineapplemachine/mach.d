@@ -4,7 +4,6 @@ private:
     
 import derelict.sdl2.sdl;
 import mach.sdl.glenum : GLPixelsFormat = PixelsFormat;
-import mach.sdl.error : GraphicsError;
 import mach.sdl.graphics.mask : Mask;
 
 public:
@@ -78,23 +77,6 @@ struct PixelFormat{ // Corresponds to SDL_PixelFormat
         
     auto opCast(T: SDL_PixelFormat*)(){
         return this.pixelformat;
-    }
-    GLPixelsFormat opCast(T: GLPixelsFormat)() const{
-        import std.conv : to;
-        switch(this.format){
-            case(Format.RGB888): return GLPixelsFormat.BGR; // ?
-            case(Format.BGR888): return GLPixelsFormat.RGB; // ?
-            //case(Format.RGBA8888): return GLPixelsFormat.RGBA;
-            //case(Format.BGRA8888): return GLPixelsFormat.BGRA;
-            case(Format.ABGR8888): return GLPixelsFormat.RGBA; // Works: Windows
-            case(Format.RGBA8888): return GLPixelsFormat.RGBA; // OSX - RG swapped, BA swapped?
-            case(Format.ARGB8888): return GLPixelsFormat.RGBA; // Works: OSX
-            default:
-                throw new GraphicsError(
-                    "Unable to convert SDL pixel format " ~
-                    to!string(this.format) ~" to OpenGL pixel format."
-                );
-        }
     }
     
     /// Good to go or a surface must be converted before it can become a texture?
