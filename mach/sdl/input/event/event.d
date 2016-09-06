@@ -85,6 +85,30 @@ struct Event{
         if(this.type is Type.DropFile) this.dropfile.conclude();
     }
     
+    alias Window = WindowEvent;
+    alias Keyboard = KeyboardEvent;
+    alias TextEditing = TextEditingEvent;
+    alias TextInput = TextInputEvent;
+    alias MouseMotion = MouseMotionEvent;
+    alias MouseButton = MouseButtonEvent;
+    alias MouseWheel = MouseWheelEvent;
+    alias JoyAxis = JoyAxisEvent;
+    alias JoyButton = JoyButtonEvent;
+    alias JoyHat = JoyHatEvent;
+    alias JoyBall = JoyBallEvent;
+    alias JoyDevice = JoyDeviceEvent;
+    alias ControllerAxis = ControllerAxisEvent;
+    alias ControllerButton = ControllerButtonEvent;
+    alias ControllerDevice = ControllerDeviceEvent;
+    alias AudioDevice = AudioDeviceEvent;
+    alias Quit = QuitEvent;
+    alias User = UserEvent;
+    alias SysWindowManager = SysWindowManagerEvent;
+    alias TouchFinger = TouchFingerEvent;
+    alias MultiGesture = MultiGestureEvent;
+    alias DollarGesture = DollarGestureEvent;
+    alias DropFile = DropFileEvent;
+    
     @property auto win() const{return WindowEvent(cast(SDL_Event*) this.event);}
     @property auto key() const{return KeyboardEvent(cast(SDL_Event*) this.event);}
     @property auto textedit() const{return TextEditingEvent(cast(SDL_Event*) this.event);}
@@ -109,6 +133,8 @@ struct Event{
     @property auto dollargesture() const{return DollarGestureEvent(cast(SDL_Event*) this.event);}
     @property auto dropfile() const{return DropFileEvent(cast(SDL_Event*) this.event);}
     
+    /// Get the x position of the mouse.
+    /// Throws an error if this event type doesn't include the information.
     @property int mousex() const{
         switch(this.type){
             case Type.MouseButtonUp:
@@ -117,6 +143,8 @@ struct Event{
             default: assert(false, "No such property for this event type.");
         }
     }
+    /// Get the y position of the mouse.
+    /// Throws an error if this event type doesn't include the information.
     @property int mousey() const{
         switch(this.type){
             case Type.MouseButtonUp:
@@ -126,6 +154,8 @@ struct Event{
         }
     }
     
+    /// Get the x position of a touch.
+    /// Throws an error if this event type doesn't include the information.
     @property float touchx() const{
         switch(this.type){
             case Type.FingerUp:
@@ -137,6 +167,8 @@ struct Event{
             default: assert(false, "No such property for this event type.");
         }
     }
+    /// Get the y position of a touch.
+    /// Throws an error if this event type doesn't include the information.
     @property float touchy() const{
         switch(this.type){
             case Type.FingerUp:
@@ -160,8 +192,10 @@ struct Event{
         }
     }
     
-    @property Window window(){
-        return Window.byid(this.windowid);
+    /// Get the window that is associated with this event, if any.
+    /// Throws an error if this event type doesn't include the information.
+    @property auto window(){
+        return .Window.byid(this.windowid);
     }
     @property auto windowid() const{
         switch(this.type){
@@ -179,9 +213,13 @@ struct Event{
         }
     }
     
+    /// Get the joystick that is associated with this event, if any.
+    /// Throws an error if this event type doesn't include the information.
     @property Joystick joystick(){
         return Joystick.byid(this.joystickid);
     }
+    /// Get the controller that is associated with this event, if any.
+    /// Throws an error if this event type doesn't include the information.
     @property Controller controller(){
         return Controller.byid(this.joystickid);
     }
@@ -202,6 +240,16 @@ struct Event{
         switch(this.type){
             case Type.JoyAxisMotion: return this.joyaxis.position;
             case Type.ControllerAxisMotion: return this.ctrlaxis.position;
+            default: assert(false, "No such property for this event type.");
+        }
+    }
+    
+    /// Get the text data associated with this event, if any.
+    /// Throws an error if this event type doesn't include the information.
+    @property auto text() const{
+        switch(this.type){
+            case Type.TextEditing: return this.textedit.text;
+            case Type.TextInput: return this.textinput.text;
             default: assert(false, "No such property for this event type.");
         }
     }
