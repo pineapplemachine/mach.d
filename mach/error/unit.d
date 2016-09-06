@@ -125,7 +125,7 @@ void testnear(N)(
     in string message, in N lhs, in N rhs, in N epsilon,
     in size_t line = __LINE__, in string file = __FILE__
 )if(isNumeric!N){
-    testequalitybase(
+    testcomparison(
         lhs, rhs, abs(lhs - rhs) <= epsilon, message, line, file
     );
 }
@@ -141,7 +141,7 @@ void testnotnear(N)(
     in string message, in N lhs, in N rhs, in N epsilon,
     in size_t line = __LINE__, in string file = __FILE__
 )if(isNumeric!N){
-    testequalitybase(
+    testcomparison(
         lhs, rhs, abs(lhs - rhs) > epsilon, message, line, file
     );
 }
