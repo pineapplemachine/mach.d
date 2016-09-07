@@ -82,5 +82,10 @@ unittest{
             testeq(range[2][0], 9);
             testeq(range[2][1], 27);
         });
+        tests("Static array", {
+            int[3] input = [1, 2, 3];
+            auto range = input.mapsingular!(square);
+            test(range.equals([1, 4, 9]));
+        });
     });
 }
