@@ -26,6 +26,7 @@ template hasProperty(alias pred, T, string property){
 }
 
 
+
 template hasMutableProperty(T, string property){
     enum bool hasMutableProperty = is(typeof((inout int = 0){
         mixin(`
@@ -83,8 +84,7 @@ template hasEnumValue(T, string name, alias value){
 
 
 version(unittest){
-    private:
-    struct TestField{
+    private struct TestField{
         enum bool enumvalue = true;
         int x;
         const int y;
@@ -135,4 +135,32 @@ unittest{
     static assert(!hasEnumValue!(TestField, `enumvalue`, false));
     static assert(!hasEnumValue!(TestField, `x`, true));
     static assert(!hasEnumValue!(TestField, `notaproperty`, true));
+}
+
+version(unittest){
+    private enum TestEnum{
+        A, B
+    }
+}
+unittest{
+    // hasField
+    static assert(!hasField!(TestEnum, `A`));
+    static assert(!hasField!(TestEnum, `X`));
+    // hasProperty
+    static assert(hasProperty!(TestEnum, `A`));
+    static assert(hasProperty!(TestEnum, `B`));
+    static assert(!hasProperty!(TestEnum, `X`));
+    // PropertyType
+    static assert(is(PropertyType!(TestEnum, `A`) == TestEnum));
+    static assert(is(PropertyType!(TestEnum, `B`) == TestEnum));
+    // hasEnum
+    static assert(hasEnum!(TestEnum, `A`));
+    static assert(hasEnum!(TestEnum, `B`));
+    static assert(!hasEnum!(TestEnum, `X`));
+    // hasEnumType
+    static assert(hasEnumType!(TestEnum, TestEnum, `A`));
+    static assert(hasEnumType!(TestEnum, TestEnum, `B`));
+    // hasEnumValue
+    static assert(hasEnumValue!(TestEnum, `A`, TestEnum.A));
+    static assert(hasEnumValue!(TestEnum, `B`, TestEnum.B));
 }
