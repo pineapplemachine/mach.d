@@ -1,5 +1,9 @@
 module mach.range;
 
+private:
+
+import mach.range.readmetests;
+
 public:
 
 import mach.range.asarray : asarray;
