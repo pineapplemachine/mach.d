@@ -4,7 +4,7 @@ private:
 
 import derelict.sdl2.sdl;
 import mach.sdl.error : SDLError;
-import mach.sdl.init.sdl.templates;
+import mach.sdl.flags;
 
 public:
 
@@ -29,7 +29,7 @@ struct Core{
     }
     
     /// Wraps a bitmask of system options with helpful methods.
-    alias Systems = InitOptionAggregate!(7, uint, System);
+    alias Systems = BitFlagAggregate!(uint, System);
     
     /// https://wiki.libsdl.org/SDL_Init
     /// https://wiki.libsdl.org/SDL_InitSubSystem

@@ -4,7 +4,7 @@ private:
 
 import derelict.sdl2.image;
 import mach.sdl.error : SDLError;
-import mach.sdl.init.sdl.templates;
+import mach.sdl.flags;
 
 public:
 
@@ -27,7 +27,7 @@ struct Image{
     }
     
     /// Wraps a bitmask of image format options with helpful methods.
-    alias Formats = InitOptionAggregate!(4, int, Format);
+    alias Formats = BitFlagAggregate!(int, Format);
     
     /// https://www.libsdl.org/projects/SDL_image/docs/SDL_image_8.html
     static void initialize(Formats formats){

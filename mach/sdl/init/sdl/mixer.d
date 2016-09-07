@@ -5,7 +5,7 @@ private:
 import derelict.sdl2.types;
 import derelict.sdl2.mixer;
 import mach.sdl.error : SDLError;
-import mach.sdl.init.sdl.templates;
+import mach.sdl.flags;
 
 public:
 
@@ -31,7 +31,7 @@ struct Mixer{
     }
     
     /// Wraps a bitmask of audio format options with helpful methods.
-    alias Formats = InitOptionAggregate!(6, int, Format);
+    alias Formats = BitFlagAggregate!(int, Format);
     
     /// https://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer_9.html
     static void initialize(Formats formats){
@@ -82,9 +82,8 @@ struct Mixer{
         
         /// https://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer_11.html
         void open() const{
-            if(Mix_OpenAudio(this.frequency, this.format, this.channels, this.chunksize) != 0){
-                throw new SDLError("Failed to open audio.");
-            }
+            auto result = Mix_OpenAudio(this.frequency, this.format, this.channels, this.chunksize);
+            if(result != 0) throw new SDLError("Failed to open audio.");
         }
         /// Get the number of times that open has been called.
         static int countopen(){
@@ -105,8 +104,10 @@ struct Mixer{
         /// https://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer_12.html
         static void close(){
             auto count = typeof(this).countopen;
-            Mix_ReserveChannels(0); // Un-reserve all channels
-            foreach(i; 0 .. count) Mix_CloseAudio();
+            if(count){
+                Mix_ReserveChannels(0); // Un-reserve all channels
+                foreach(i; 0 .. count) Mix_CloseAudio();
+            }
         }
     }
 }
