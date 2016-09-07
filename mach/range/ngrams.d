@@ -1,13 +1,13 @@
 module mach.range.ngrams;
 
-public:
+private:
 
 import std.traits : Unqual;
 import mach.traits : hasNumericLength, ElementType, isRange, isRandomAccessRange;
 import mach.range.asrange : asrange, validAsRange;
 import mach.range.meta : MetaRangeMixin;
 
-private:
+public:
 
 
 
