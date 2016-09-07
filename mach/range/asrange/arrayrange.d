@@ -3,7 +3,7 @@ module mach.range.asrange.arrayrange;
 private:
 
 import std.traits : isArray, isIntegral;
-import mach.traits : ArrayElementType, canReassign;
+import mach.traits : ArrayElementType, canReassign, canSliceSame;
 
 public:
 
@@ -72,8 +72,10 @@ struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!(Array, Index)){
     auto ref opIndex(in Index index){
         return this.array[index];
     }
-    typeof(this) opSlice(in Index low, in Index high){
-        return typeof(this)(this.array[low .. high]);
+    static if(canSliceSame!(Array, Index)){
+        typeof(this) opSlice(in Index low, in Index high){
+            return typeof(this)(this.array[low .. high]);
+        }
     }
     
     static if(canReassign!Array){
@@ -191,6 +193,12 @@ unittest{
             range.popFront();
             testeq(saved.front, 1);
             testeq(range.front, 2);
+        });
+        tests("Static array", {
+            int[3] array = [1, 2, 3];
+            auto range = ArrayRange!(int[3])(array);
+            testeq(range.length, 3);
+            testeq(range[0], 1);
         });
     });
 }
