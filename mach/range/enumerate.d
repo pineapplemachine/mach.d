@@ -46,7 +46,7 @@ auto enumerate(Index = size_t, Iter)(
 
 
 struct EnumerationRange(Index = size_t, Range) if(canEnumerateRange!(Range, Index)){
-    alias Element = Tuple!(Index, "index", ElementType!Range, "value");
+    alias Element = Tuple!(Index, `index`, ElementType!Range, `value`);
     
     static enum bool isBidirectional = canEnumerateRangeBidirectional!(Range, Index);
     
@@ -233,6 +233,14 @@ unittest{
                 range.insert('z');
                 testeq(input.length, 2);
             });
+        });
+        tests("Static array", {
+            int[5] ints = [0, 1, 2, 3, 4];
+            foreach(x, y; ints.enumerate) testeq(x, y);
+        });
+        tests("Immutable source", {
+            const(const(int)[]) ints = [0, 1, 2, 3, 4];
+            foreach(x, y; ints.enumerate) testeq(x, y);
         });
     });
 }
