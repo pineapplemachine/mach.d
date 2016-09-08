@@ -3,12 +3,16 @@ module mach.math.vector3;
 private:
 
 import std.math : sin, cos, atan2, sqrt;
-import std.traits : isNumeric;
+import std.traits : isNumeric, Unqual;
 import std.string : replace;
 
 import mach.error.assertf : assertf;
 
 public:
+
+
+
+enum isVector3(T) = isTemplateOf!(T, Vector3);
 
 
 
@@ -20,7 +24,7 @@ auto Vector(N)(N x, N y, N z) if(isNumeric!N){
 
 struct Vector3(T) if(isNumeric!T){
     
-    T x, y, z;
+    Unqual!T x, y, z;
     
     this(N)(in N x) if(isNumeric!N){
         this(x, x, x);

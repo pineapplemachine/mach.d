@@ -3,12 +3,16 @@ module mach.math.vector2;
 private:
 
 import std.math : sin, cos, atan2, sqrt;
-import std.traits : isNumeric;
+import std.traits : isNumeric, Unqual;
 import std.string : replace;
 
 import mach.error.assertf : assertf;
 
 public:
+
+
+
+enum isVector2(T) = isTemplateOf!(T, Vector2);
 
 
 
@@ -22,7 +26,7 @@ struct Vector2(T) if(isNumeric!T){
     
     static enum Zero = Vector2!T(0);
     
-    T x, y;
+    Unqual!T x, y;
     
     this(N)(in N x) if(isNumeric!N){
         this(x, x);

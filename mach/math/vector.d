@@ -23,7 +23,6 @@ struct VectorAxes(size_t dimensions){
 
 
 
-enum isVector2(T) = isTemplateOf!(T, Vector2);
 template isVector2Like(T, alias axes = VectorPositionAxes){
     static if(
         hasProperty!(isNumeric, T, axes.names[0]) &&
@@ -37,7 +36,6 @@ template isVector2Like(T, alias axes = VectorPositionAxes){
     }
 }
 
-enum isVector3(T) = isTemplateOf!(T, Vector3);
 template isVector3Like(T, alias axes = VectorPositionAxes){
     static if(
         hasProperty!(isNumeric, T, axes.names[0]) &&
