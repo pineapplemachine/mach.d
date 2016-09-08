@@ -4,6 +4,7 @@ private:
 
 import derelict.util.exception;
 
+import mach.text : text;
 import mach.sdl.error : SDLError;
 import mach.sdl.init.sdl.core;
 import mach.sdl.init.sdl.image;
@@ -11,7 +12,7 @@ import mach.sdl.init.sdl.mixer;
 import mach.sdl.init.sdl.ttf;
 import mach.sdl.init.sdl.net;
 
-import mach.io.log;
+debug import mach.io.log;
 
 public:
 
@@ -56,6 +57,20 @@ struct SDL{
             if(this.mixererror !is null) throw this.mixererror;
             if(this.ttferror !is null) throw this.ttferror;
             if(this.neterror !is null) throw this.neterror;
+        }
+        string toString() const{
+            string status(in bool loaded, in DerelictException exception){
+                if(exception !is null) return "Error";
+                else if(loaded) return "Loaded";
+                else return "Not loaded";
+            }
+            return text(
+                "Core: ", status(this.core, this.coreerror), ", ",
+                "Image: ", status(this.image, this.imageerror), ", ",
+                "Mixer: ", status(this.mixer, this.mixererror), ", ",
+                "TTF: ", status(this.ttf, this.ttferror), ", ",
+                "Net: ", status(this.net, this.neterror)
+            );
         }
     }
     
@@ -109,6 +124,7 @@ struct SDL{
             }
             loaded.net = loaded.neterror is null;
         }
+        debug log(loaded);
         return loaded;
     }
     static void unload(){
