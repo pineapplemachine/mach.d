@@ -10,7 +10,7 @@ public:
 
 
 /// Class for errors which occur interfacing with OpenGL.
-class GLError : Error{
+class GLError: Exception{
     /// An enumeration of possible OpenGL error codes.
     static enum ErrorCode : uint{
         NoError = GL_NO_ERROR,

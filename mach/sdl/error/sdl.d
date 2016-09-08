@@ -12,7 +12,7 @@ public:
 
 
 /// Class for errors which occur interfacing with SDL.
-class SDLError: Error{
+class SDLError: Exception{
     string error = null;
     mixin(ThrowableCtorMixin!("Encountered SDL error."));
     this(string message, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
