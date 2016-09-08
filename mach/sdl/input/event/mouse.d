@@ -4,7 +4,7 @@ private:
 
 import derelict.sdl2.types;
 import mach.sdl.input.event.mixins;
-import mach.sdl.input.mouse : MouseState, MouseButton, MouseWheelDirection;
+import mach.sdl.input.mouse : Mouse;
 
 public:
 
@@ -17,21 +17,21 @@ struct MouseMotionEvent{
     mixin MouseEventMixin;
     mixin PositionEventMixin!(`x`, `y`);
     mixin RelativePositionEventMixin!(`xrel`, `yrel`);
-    /// Get a bitfield representing the state of mouse buttons.
-    @property MouseState.Buttons buttons() const{
-        return cast(MouseState.Buttons) this.eventdata.state;
+    /// Get an object representing the state of mouse buttons.
+    @property Mouse.Buttons buttons() const{
+        return Mouse.Buttons(cast(ubyte) this.eventdata.state);
     }
-    /// Set the bitfield representing the state of mouse buttons.
-    @property void buttons(MouseState.Buttons buttons){
-        this.eventdata.state = buttons;
+    /// Set the object representing the state of mouse buttons.
+    @property void buttons(Mouse.Buttons buttons){
+        this.eventdata.state = buttons.flags;
     }
-    /// Get a MouseState object representing mouse position and button state.
-    @property MouseState state() const{
-        return MouseState(this.buttons, this.x, this.y);
+    /// Get an object representing mouse position and button state.
+    @property Mouse.State state() const{
+        return Mouse.State(this.buttons, this.x, this.y);
     }
-    /// Set the mouse position and button state via a MouseState object.
-    @property void state(MouseState state){
-        this.eventdata.state = state.buttons;
+    /// Set the mouse position and button state via a Mouse.State object.
+    @property void state(Mouse.State state){
+        this.eventdata.state = state.buttons.flags;
         this.eventdata.x = state.x;
         this.eventdata.y = state.y;
     }
@@ -52,7 +52,7 @@ struct MouseMotionEvent{
 struct MouseButtonEvent{
     mixin EventMixin!SDL_MouseButtonEvent;
     mixin MouseEventMixin;
-    mixin ButtonEventMixin!MouseButton;
+    mixin ButtonEventMixin!(Mouse.Button);
     mixin PositionEventMixin!(`x`, `y`);
     /// Get the number of clicks associated with the event. 1 for single-click,
     /// 2 for double-click, etc.
@@ -104,16 +104,16 @@ struct MouseWheelEvent{
         this.eventdata.y = y;
     }
     /// Get whether raw x, y are in fact inverted.
-    @property MouseWheelDirection direction() const{
-        return cast(MouseWheelDirection) this.eventdata.direction;
+    @property Mouse.WheelDirection direction() const{
+        return cast(Mouse.WheelDirection) this.eventdata.direction;
     }
     /// Set whether raw x, y are in fact inverted.
-    @property void direction(MouseWheelDirection dir) const{
+    @property void direction(Mouse.WheelDirection dir) const{
         this.eventdata.direction = dir;
     }
     /// Return 1 when direction is normal, -1 when flipped.
     /// Multiply xraw, yraw fields by this to get actual x, y.
     @property int dirmultiplier() const{
-        return this.direction is MouseWheelDirection.Flipped ? -1 : 1;
+        return this.direction is Mouse.WheelDirection.Flipped ? -1 : 1;
     }
 }
