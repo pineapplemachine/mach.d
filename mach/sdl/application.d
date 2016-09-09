@@ -9,7 +9,7 @@ import mach.sdl.window : Window;
 import mach.sdl.graphics : Color;
 import mach.sdl.framelimiter : FrameLimiter;
 import mach.sdl.input.event : Event, EventQueue;
-import mach.sdl.input.helper : Keys;
+import mach.sdl.input.helper : KeyHelper;
 
 public:
 
@@ -45,7 +45,7 @@ abstract class Application{
     FrameLimiter framelimiter = FrameLimiter(60);
     /// The application's keyboard input handler.
     /// TODO: Make mouse, joystick, and controller handlers too.
-    Keys keys;
+    KeyHelper keys;
     
     /// Whether the application should be terminated.
     bool quitting = false;

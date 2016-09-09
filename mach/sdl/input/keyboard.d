@@ -31,8 +31,10 @@ struct Keyboard{
     /// Represents the state of keys on the keyboard.
     struct State{
         alias Keys = ubyte*;
+        alias Length = int;
         
         Keys keys;
+        Length length;
         
         /// Get an object representing the current state of the keyboard.
         /// Beware, keys pressed and released in between queue pumps will not be
@@ -40,7 +42,9 @@ struct Keyboard{
         /// and handling those events.
         /// https://wiki.libsdl.org/SDL_GetKeyboardState
         static typeof(this) current(){
-            return typeof(this)(SDL_GetKeyboardState(null));
+            typeof(this) state;
+            state.keys = SDL_GetKeyboardState(&state.length);
+            return state;
         }
         
         bool ispressed(KeyCode code) const{
@@ -61,6 +65,13 @@ struct Keyboard{
         }
         bool opIndexAssign(T)(bool pressed, T code) if(is(T == KeyCode) || is(T == ScanCode)){
             return this.setpressed(code, pressed);
+        }
+        
+        int opApply(in int delegate(in size_t scancode, in bool pressed) apply) const{
+            for(size_t i; i < this.length; i++){
+                if(auto result = apply(i, cast(bool) this.keys[i])) return result;
+            }
+            return 0;
         }
     }
 }
