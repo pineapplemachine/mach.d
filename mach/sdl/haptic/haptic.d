@@ -197,7 +197,7 @@ struct Haptic{
         if(result != 0) throw new SDLError("Failed to pause haptic device.");
     }
     /// https://wiki.libsdl.org/SDL_HapticUnpause
-    void pause(){
+    void unpause(){
         auto result = SDL_HapticUnpause(this.hap);
         if(result != 0) throw new SDLError("Failed to unpause haptic device.");
     }
