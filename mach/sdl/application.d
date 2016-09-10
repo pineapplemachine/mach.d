@@ -9,7 +9,7 @@ import mach.sdl.window : Window;
 import mach.sdl.graphics : Color;
 import mach.sdl.framelimiter : FrameLimiter;
 import mach.sdl.input.event : Event, EventQueue;
-import mach.sdl.input.helper : KeyHelper;
+import mach.sdl.input.helper : KeyHelper, MouseHelper;
 
 public:
 
@@ -35,6 +35,8 @@ abstract class Application{
         WindowClosed,
         /// Because of a nonspecific quit event.
         QuitEvent,
+        /// For some other reason not listed here.
+        Other,
     }
     
     /// The application's primary window. (TODO: Support for multiple windows?)
@@ -43,9 +45,10 @@ abstract class Application{
     SDL.Support sdlsupport = SDL.Support.Default;
     /// The application's frame limiter.
     FrameLimiter framelimiter = FrameLimiter(60);
-    /// The application's keyboard input handler.
-    /// TODO: Make mouse, joystick, and controller handlers too.
-    KeyHelper keys;
+    /// For handling keyboard input.
+    KeyHelper!() keys;
+    /// For handling mouse input.
+    MouseHelper!() mouse;
     
     /// Whether the application should be terminated.
     bool quitting = false;
@@ -204,8 +207,7 @@ abstract class Application{
     void metamain(){
         try{
             if(EventQueue.empty){
-                this.keys.update();
-                this.onnoevent();
+                this.metaevent();
             }else{
                 foreach(event; EventQueue.events){
                     this.metaevent(event);
@@ -225,9 +227,10 @@ abstract class Application{
         }
     }
     /// The application's internal event handling.
-    /// Also calls the class' event method.
+    /// Also calls the class' onevent method, and then various event callbacks.
     void metaevent(Event event){
         this.keys.update(event);
+        this.mouse.update(event);
         this.onevent(event);
         if(event.type is event.Type.Quit){
             this.onquit(event);
@@ -262,5 +265,12 @@ abstract class Application{
                 case event.win.Type.Closed: this.onclose(event); break;
             }
         }
+    }
+    /// The application's internal event handling, for when there was no event.
+    /// Also calls the class' onnoevent method.
+    void metaevent(){
+        this.keys.update();
+        this.mouse.update();
+        this.onnoevent();
     }
 }
