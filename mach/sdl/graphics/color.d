@@ -5,14 +5,24 @@ private:
 import derelict.sdl2.sdl;
 import derelict.sdl2.types : SDL_Color;
 import derelict.opengl3.gl;
+
 import std.traits : isNumeric, isIntegral, isFloatingPoint;
+import mach.traits : isTemplateOf;
 import mach.math.round : round;
 import mach.sdl.error : GLError;
 
 public:
-    
-// TODO: What even is endianness?
 
+
+
+enum isColor(T) = isTemplateOf!(T, Color);
+
+
+
+/// Represents a color.
+/// When T is integral, color ranges from 0 to 255.
+/// When T is a floating point, color ranges from 0.0 to 1.0.
+/// TODO: What even is endianness?
 struct Color(T = float) if(isNumeric!T){
     
     T red, green, blue, alpha;
