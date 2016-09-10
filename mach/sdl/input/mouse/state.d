@@ -63,7 +63,7 @@ struct MouseState{
     
     private template ButtonPropertyMixin(Button button){
         @property bool ButtonPropertyMixin() const{
-            return this.pressed(mask);
+            return this.pressed(button);
         }
         @property void ButtonPropertyMixin(bool state){
             this.buttons[button] = state;
