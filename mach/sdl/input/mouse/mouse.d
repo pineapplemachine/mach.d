@@ -46,9 +46,6 @@ struct Mouse{
         SDL_WarpMouseInWindow(window, cast(int) x, cast(int) y);
     }
     
-    alias warp = warpwindow;
-    alias warp = warpglobal;
-    
     /// Hide the cursor.
     void hide(){
         this.shown = false;
