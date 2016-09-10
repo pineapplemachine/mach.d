@@ -10,13 +10,13 @@ Current:
 
 - [Load and draw images](https://github.com/pineapplemachine/mach.d/tree/master/mach/sdl/graphics)
 - [Keyboard, mouse, and joystick input](https://github.com/pineapplemachine/mach.d/tree/master/mach/sdl/input)
+- [TTF rendering](https://github.com/pineapplemachine/mach.d/tree/master/mach/sdl/ttf)
 - [Force feedback](https://github.com/pineapplemachine/mach.d/tree/master/mach/sdl/haptic)
 
 Planned:
 
 - Input helpers for smoother input checking
 - Audio playback using SDL_mixer
-- TTF rendering via SDL_ttf
 - Spritesheets and other forms of animation
 - Cleaner interface for primitive rendering
 - Bitmap font rendering
