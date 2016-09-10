@@ -324,7 +324,7 @@ struct EventHistoryAggregation(
         auto statedat(State state)(in Key key) const in{
             assert(this.everstated!state(key), "Key has yet to enter state.");
         }body{
-            return *(this.statehistory!state)[key].recent.position;
+            return (*(this.statehistory!state))[key].recent.position;
         }
         /// Get the position where a button was most recently pressed.
         auto pressedat(in Key key) const{
