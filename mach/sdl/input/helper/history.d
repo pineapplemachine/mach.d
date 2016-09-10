@@ -2,6 +2,7 @@ module mach.sdl.input.helper.history;
 
 private:
 
+import std.traits : isNumeric;
 import mach.text : text;
 import mach.sdl.input.common : Timestamp;
 
@@ -9,15 +10,40 @@ public:
 
 
 
+enum validEventCoord(T) = is(T == void) || isNumeric!T;
+
+
+
 /// Used by helper types to record when an event occurred.
-struct EventTime{
+/// Can optionally include position data, if Coord is non-void.
+/// TODO: Since I added position this should probably not be named EventTime
+/// any more.
+struct EventTime(Coord = void) if(validEventCoord!Coord){
+    static enum bool hasPosition = !is(Coord == void);
+    
     /// The timestamp associated with the event
     Timestamp timestamp = 0;
     /// Where two objects have an identical timestamp, their relative ordering
     /// in the queue can be determined by comparing this value.
     size_t order = 0;
     
-    /// Compare two objects.
+    static if(hasPosition){
+        import mach.math : Vector2;
+        alias Position = Vector2!Coord;
+        Coord x; /// The x position where the event occurred.
+        Coord y; /// The y position where the event occurred.
+        /// Get position where the event occurred as a vector.
+        @property Position position() const{
+            return Position(this.x, this.y);
+        }
+        /// Set position where the event occurred as a vector.
+        @property void position(Position vector){
+            this.x = vector.x;
+            this.y = vector.y;
+        }
+    }
+    
+    /// Compare the time ordering of two objects.
     int opCmp(in EventTime time) const{
         if(this.timestamp > time.timestamp) return 1;
         else if(this.timestamp < time.timestamp) return -1;
@@ -25,14 +51,23 @@ struct EventTime{
         else if(this.order < time.order) return -1;
         else return 0;
     }
+    /// Get the result of an arithmetical operation performed on the timestamp
+    /// data of each event.
     Timestamp opBinary(string op)(in EventTime time) const{
         return this.opBinary!op(time.timestamp);
     }
+    /// Get the result of an arithmetical operation performed on the timestamp
+    /// data of this event.
     Timestamp opBinary(string op)(in Timestamp timestamp) const{
         mixin(`return this.timestamp ` ~ op ~ `timestamp;`);
     }
+    /// Get a string representation of the event data.
     string toString() const{
-        return text(this.timestamp, 'T', this.order);
+        static if(hasPosition){
+            return text(this.timestamp, 'T', this.order, 'N', this.x, 'X', this.y, 'Y');
+        }else{
+            return text(this.timestamp, 'T', this.order, 'N');
+        }
     }
 }
 
@@ -41,33 +76,38 @@ struct EventTime{
 /// Records a history of EventTime objects.
 /// Accepts a max length determining the maximum number of events to keep a
 /// history of.
-struct EventHistory(size_t maxlength) if(maxlength > 0){
-    EventTime[maxlength] times;
+struct EventHistory(size_t maxlength, Coord = void) if(
+    maxlength > 0 && validEventCoord!Coord
+){
+    alias Time = EventTime!Coord;
+    
+    Time[maxlength] times;
     size_t length = 0;
     
-    this(EventTime time){
+    this(Time time){
         this.add(time);
     }
     
     /// True when the object has no history data.
-    @property bool empty(){
+    @property bool empty() const{
         return this.length == 0;
     }
     /// Clear all history data from the object.
     void clear(){
         this.length = 0;
     }
-    /// Get the most recent EventTime, if any.
+    /// Get the most recent event data, if any.
     auto recent() const in{
-        assert(this.length > 0);
+        assert(!this.empty, "There is no most recent event.");
     }body{
         return this.times[0];
     }
     /// Add a new event. If the maximum history length is exceeded, the oldest
     /// event data is removed.
-    void add(EventTime time) in{
-        // Disallow adding times older than the most recent currently known.
-        if(this.length) assert(time >= this.recent);
+    void add(Time time) in{
+        if(this.length) assert(
+            time >= this.recent, "Events must be added in chronological order."
+        );
     }body{
         if(this.length){
             for(size_t i = 0; i < this.length - 1; i++){
@@ -77,15 +117,15 @@ struct EventHistory(size_t maxlength) if(maxlength > 0){
         if(this.length < maxlength) this.length++;
         this.times[0] = time;
     }
-    /// Get an EventTime. Zero index refers to most recent event, if any.
+    /// Get event data. Zero index refers to most recent event, if any.
     auto opIndex(size_t index) const in{
         assert(index >= 0 && index < this.length, "Event history index out of bounds.");
     }body{
         return this.times[index];
     }
-    /// Iterate over EventTime objects, starting with the most recent and ending
+    /// Iterate over event data objects, starting with the most recent and ending
     /// with the oldest.
-    int opApply(in int delegate(in ref EventTime) apply) const{
+    int opApply(in int delegate(in ref Time) apply) const{
         for(size_t i = 0; i < this.length; i++){
             if(auto result = apply(this.times[i])) return result;
         }
@@ -105,9 +145,11 @@ enum ButtonHistoryState{
 }
     
 /// Provides an aggregation of EventHistory objects.
-struct EventHistoryAggregation(Key, size_t historylength = 3, bool repeats = false){
-    alias Time = EventTime;
-    alias History = EventHistory!historylength;
+struct EventHistoryAggregation(
+    Key, size_t historylength = 3, Coord = void, bool repeats = false
+) if(validEventCoord!Coord){
+    alias Time = EventTime!Coord;
+    alias History = EventHistory!(historylength, Coord);
     alias State = ButtonHistoryState;
     
     /// Default argument for methods expecting an interval between events,
@@ -142,33 +184,49 @@ struct EventHistoryAggregation(Key, size_t historylength = 3, bool repeats = fal
         }
     }
     
-    /// Record a new button event at the current time.
-    void add(in Key key, in State state){
-        auto historyarray = this.statehistory(state);
-        if(auto history = key in *historyarray) history.add(this.time);
-        else (*historyarray)[key] = History(this.time);
+    static if(Time.hasPosition){
+        /// Record a new button event at the current time and a given position.
+        void add(in Key key, in State state, in Time.Position position){
+            auto historyarray = this.statehistory(state);
+            auto time = this.time;
+            time.position = position;
+            if(auto history = key in *historyarray) history.add(time);
+            else (*historyarray)[key] = History(time);
+        }
+    }else{
+        /// Record a new button event at the current time.
+        void add(in Key key, in State state){
+            auto historyarray = this.statehistory(state);
+            if(auto history = key in *historyarray) history.add(this.time);
+            else (*historyarray)[key] = History(this.time);
+        }
     }
-    
-    // TODO: Also update state using Keyboard.State, Mouse.State, etc.
-    // and call it at app startup to know the initial state of keys
-    // (only pressed keys should matter here, not released keys)
     
     /// Update state when there were no polled events.
     /// Must receive the current timestamp, ideally from SDL_GetTicks.
     void update(Timestamp timestamp){
         this.settime(timestamp);
     }
-    /// Update state according to a polled event.
-    /// Events should always be received in chronological order.
-    void update(Timestamp timestamp, in Key key, in State state){
-        this.settime(timestamp);
-        this.add(key, state);
+    static if(Time.hasPosition){
+        /// Update state according to a polled event.
+        /// Events should always be received in chronological order.
+        void update(Timestamp timestamp, in Key key, in State state, in Time.Position position){
+            this.settime(timestamp);
+            this.add(key, state, position);
+        }
+    }else{
+        /// Update state according to a polled event.
+        /// Events should always be received in chronological order.
+        void update(Timestamp timestamp, in Key key, in State state){
+            this.settime(timestamp);
+            this.add(key, state);
+        }
     }
     
     /// Set the internal representation of the current time.
     /// Called by update methods.
     void settime(Timestamp timestamp){
-        EventTime current = EventTime(timestamp);
+        auto current = Time(timestamp);
         if(current.timestamp == this.time.timestamp){
             current.order = this.time.order + 1;
         }
@@ -201,14 +259,29 @@ struct EventHistoryAggregation(Key, size_t historylength = 3, bool repeats = fal
         return !this.down(key);
     }
     
+    /// Get whether a button has ever entered a state.
+    auto everstated(State state)(in Key key) const{
+        return key in *(this.statehistory!state);
+    }
+    /// Get whether a button has ever been pressed.
+    auto everpressed(in Key key) const{
+        return this.everstated!(State.Pressed)(key);
+    }
+    /// Get whether a button has ever been released.
+    auto everreleased(in Key key) const{
+        return this.everstated!(State.Released)(key);
+    }
+    /// Get whether a button has ever been repeated.
+    static if(repeats) auto everrepeated(in Key key) const{
+        return this.everstated!(State.Repeated)(key);
+    }
+    
     /// Get the number of milliseconds since a button last entered a given state.
-    /// Returns -1 if the button has yet to be pressed.
-    auto statetime(State state)(in Key key) const{
-        if(auto history = key in *(this.statehistory!state)){
-            return this.time - history.recent;
-        }else{
-            return -1;
-        }
+    /// Fails if the button has yet to enter that state.
+    auto statetime(State state)(in Key key) const in{
+        assert(this.everstated!state(key), "Key has yet to enter state.");
+    }body{
+        return this.time - (*this.statehistory!state)[key].recent;
     }
     /// Get the number of milliseconds since a button was last pressed.
     auto pressedtime(in Key key) const{
@@ -245,6 +318,28 @@ struct EventHistoryAggregation(Key, size_t historylength = 3, bool repeats = fal
         return this.stated!(State.Repeated)(key);
     }
     
+    static if(Time.hasPosition){
+        /// Get the position where a button most recently entered a state.
+        /// Fails if the button has yet to enter that state.
+        auto statedat(State state)(in Key key) const in{
+            assert(this.everstated!state(key), "Key has yet to enter state.");
+        }body{
+            return *(this.statehistory!state)[key].recent.position;
+        }
+        /// Get the position where a button was most recently pressed.
+        auto pressedat(in Key key) const{
+            return this.statedat!(State.Pressed)(key);
+        }
+        /// Get the position where a button was most recently released.
+        auto releasedat(in Key key) const{
+            return this.statedat!(State.Released)(key);
+        }
+        /// Get the position where a button was most recently repeated.
+        static if(repeats) auto repeatedat(in Key key) const{
+            return this.statedat!(State.Repeated)(key);
+        }
+    }
+    
     /// Used by methods which get the most recent button pressed, released, or
     /// repeated.
     static struct LastEvent{
@@ -259,6 +354,9 @@ struct EventHistoryAggregation(Key, size_t historylength = 3, bool repeats = fal
         }
         @property Timestamp timestamp() const in{assert(this.exists);} body{
             return this.time.timestamp;
+        }
+        bool opCast(T: bool)() const{
+            return this.exists;
         }
     }
     /// Get the button most recently set to a given state.

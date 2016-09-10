@@ -19,12 +19,10 @@ public:
 /// Processes polled events to generate a data structure convenient for checking
 /// keyboard input.
 struct KeyHelper(size_t historylength = 3, bool repeats = false){
-    alias History = EventHistoryAggregation!(ScanCode, historylength, repeats);
+    alias History = EventHistoryAggregation!(ScanCode, historylength, void, repeats);
     
-    /// For tracking keypress and release history.
-    History history;
-    /// The most recent state of the keyboard modifiers.
-    KeyMod mod;
+    History history; /// For tracking keypress and release history.
+    KeyMod mod; /// The most recent state of the keyboard modifiers.
     
     /// Update state when there were no polled events.
     void update(){
