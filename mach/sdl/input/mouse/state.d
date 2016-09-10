@@ -56,12 +56,17 @@ struct MouseState{
         this.y = vector.y;
     }
     
-    private template ButtonPropertyMixin(Button mask){
+    /// Get whether a button is pressed.
+    bool pressed(in Button button) const{
+        return button in this.buttons;
+    }
+    
+    private template ButtonPropertyMixin(Button button){
         @property bool ButtonPropertyMixin() const{
-            return mask in this.buttons;
+            return this.pressed(mask);
         }
         @property void ButtonPropertyMixin(bool state){
-            this.buttons[mask] = state;
+            this.buttons[button] = state;
         }
     }
     
