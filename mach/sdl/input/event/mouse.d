@@ -72,34 +72,38 @@ struct MouseWheelEvent{
     mixin EventMixin!SDL_MouseWheelEvent;
     mixin MouseEventMixin;
     /// Get the amount scrolled horizontally.
+    /// Positive to the right, negative to the left.
     @property auto x() const{
         return this.xraw * this.dirmultiplier;
     }
     /// Set the amount scrolled horizontally.
+    /// Positive to the right, negative to the left.
     @property void x(in int x){
         this.xraw = x * this.dirmultiplier;
     }
     /// Get the amount scrolled vertically.
+    /// Positive away from the user, negative toward.
     @property auto y() const{
         return this.yraw * this.dirmultiplier;
     }
     /// Set the amount scrolled vertically.
+    /// Positive away from the user, negative toward.
     @property void y(in int y){
         this.yraw = y * this.dirmultiplier;
     }
-    /// Get amount scrolled horizontally. Positive to the right, negative to the left.
+    /// Get amount scrolled horizontally.
     @property int xraw() const{
         return this.eventdata.x;
     }
-    /// Set amount scrolled horizontally. Positive to the right, negative to the left.
+    /// Set amount scrolled horizontally.
     @property void xraw(int x){
         this.eventdata.x = x;
     }
-    /// Get amount scrolled vertically. Positive away from the user, negative toward.
+    /// Get amount scrolled vertically.
     @property int yraw() const{
         return this.eventdata.y;
     }
-    /// Set amount scrolled vertically. Positive away from the user, negative toward.
+    /// Set amount scrolled vertically.
     @property void yraw(int y){
         this.eventdata.y = y;
     }
