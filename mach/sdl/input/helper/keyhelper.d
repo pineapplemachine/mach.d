@@ -70,24 +70,6 @@ struct KeyHelper(size_t historylength = 3, bool repeats = false){
     /// ditto
     bool up(in ScanCode code) const{return this.history.up(code);}
     
-    /// Get the number of milliseconds since a key was last pressed.
-    /// Returns -1 if the key has yet to be pressed.
-    auto pressedtime(in KeyCode code) const{return this.pressedtime(code.scancode);}
-    /// ditto
-    auto pressedtime(in ScanCode code) const{return this.pressedtime(code);}
-    /// Get the number of milliseconds since a key was last released.
-    /// Returns -1 if the key has yet to be released.
-    auto releasedtime(in KeyCode code) const{return this.releasedtime(code.scancode);}
-    /// ditto
-    auto releasedtime(in ScanCode code) const{return this.releasedtime(code);}
-    static if(repeats){
-        /// Get the number of milliseconds since a key was last repeated.
-        /// Returns -1 if the key has yet to be repeated.
-        bool repeatedtime(in KeyCode code) const{return this.history.repeatedtime(code.scancode);}
-        /// ditto
-        bool repeatedtime(in ScanCode code) const{return this.history.repeatedtime(code);}
-    }
-    
     /// Get whether a key was just pressed.
     auto pressed(in KeyCode code) const{return this.history.pressed(code.scancode);}
     /// ditto
@@ -101,6 +83,22 @@ struct KeyHelper(size_t historylength = 3, bool repeats = false){
         auto repeated(in KeyCode code) const{return this.history.repeated(code.scancode);}
         /// ditto
         auto repeated(in ScanCode code) const{return this.history.repeated(code);}
+    }
+    
+    /// Get the number of milliseconds since a key was last pressed.
+    auto pressedtime(in KeyCode code) const{return this.pressedtime(code.scancode);}
+    /// ditto
+    auto pressedtime(in ScanCode code) const{return this.pressedtime(code);}
+    /// Get the number of milliseconds since a key was last released.
+    auto releasedtime(in KeyCode code) const{return this.releasedtime(code.scancode);}
+    /// ditto
+    auto releasedtime(in ScanCode code) const{return this.releasedtime(code);}
+    static if(repeats){
+        /// Get the number of milliseconds since a key was last repeated.
+        /// Returns -1 if the key has yet to be repeated.
+        bool repeatedtime(in KeyCode code) const{return this.history.repeatedtime(code.scancode);}
+        /// ditto
+        bool repeatedtime(in ScanCode code) const{return this.history.repeatedtime(code);}
     }
     
     /// Get the most recently pressed key.
@@ -124,11 +122,23 @@ struct KeyHelper(size_t historylength = 3, bool repeats = false){
     auto npressed(in KeyCode code, size_t count, in Timestamp time = History.DefaultTapInterval){
         return this.history.npressed(code.scancode, count, interval);
     }
+    /// ditto
+    auto npressed(in ScanCode code, size_t count, in Timestamp time = History.DefaultTapInterval){
+        return this.history.npressed(code, count, interval);
+    }
     /// Get whether a button was just double-pressed.
     auto doublepressed(in KeyCode code, in Timestamp time = History.DefaultTapInterval){
         return this.history.doublepressed(code.scancode, interval);
     }
+    /// ditto
+    auto doublepressed(in ScanCode code, in Timestamp time = History.DefaultTapInterval){
+        return this.history.doublepressed(code, interval);
+    }
     /// Get whether a button was just triple-pressed.
+    auto triplepressed(in KeyCode code, in Timestamp interval = History.DefaultTapInterval){
+        return this.history.triplepressed(code.scancode, interval);
+    }
+    /// ditto
     auto triplepressed(in ScanCode code, in Timestamp interval = History.DefaultTapInterval){
         return this.history.triplepressed(code, interval);
     }
