@@ -10,7 +10,7 @@ Current:
 
 - [Load and draw images](https://github.com/pineapplemachine/mach.d/tree/master/mach/sdl/graphics)
 - [Keyboard, mouse, and joystick input](https://github.com/pineapplemachine/mach.d/tree/master/mach/sdl/input)
-- [TTF rendering](https://github.com/pineapplemachine/mach.d/tree/master/mach/sdl/ttf)
+- [TTF rendering](https://github.com/pineapplemachine/mach.d/tree/master/mach/sdl/graphics/ttf)
 - [Force feedback](https://github.com/pineapplemachine/mach.d/tree/master/mach/sdl/haptic)
 
 Planned:

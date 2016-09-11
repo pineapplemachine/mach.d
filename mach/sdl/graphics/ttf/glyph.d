@@ -1,4 +1,4 @@
-module mach.sdl.ttf.glyph;
+module mach.sdl.graphics.ttf.glyph;
 
 private:
 

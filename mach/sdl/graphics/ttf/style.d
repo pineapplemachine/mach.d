@@ -1,4 +1,4 @@
-module mach.sdl.ttf.style;
+module mach.sdl.graphics.ttf.style;
 
 private:
 

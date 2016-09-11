@@ -1,4 +1,4 @@
-module mach.sdl.ttf.font;
+module mach.sdl.graphics.ttf.font;
 
 private:
 
@@ -7,10 +7,12 @@ import derelict.sdl2.types;
 
 import std.string : fromStringz, toStringz;
 import mach.math : Vector2;
-import mach.sdl.graphics : isColor, Surface, Texture;
+import mach.sdl.graphics.color;
+import mach.sdl.graphics.surface;
+import mach.sdl.graphics.texture;
 import mach.sdl.error : SDLError;
-import mach.sdl.ttf.glyph;
-import mach.sdl.ttf.style;
+import mach.sdl.graphics.ttf.glyph;
+import mach.sdl.graphics.ttf.style;
 
 public:
 

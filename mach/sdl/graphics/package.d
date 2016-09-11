@@ -9,4 +9,5 @@ import mach.sdl.graphics.pixelformat;
 import mach.sdl.graphics.primitives;
 import mach.sdl.graphics.surface;
 import mach.sdl.graphics.texture;
+import mach.sdl.graphics.ttf;
 import mach.sdl.graphics.vertex;
