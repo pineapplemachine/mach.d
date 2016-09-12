@@ -3,6 +3,7 @@ module mach.range.asarray;
 private:
 
 import std.traits : isArray;
+import mach.text : text;
 import mach.traits : isArrayOf, isIterable, isFiniteIterable, ElementType;
 import mach.traits : hasNumericLength, LengthType, canCast;
 
@@ -73,7 +74,9 @@ auto asarray(Element, bool enforce = false, Iter)(auto ref Iter iter, size_t max
     Element[] array;
     foreach(item; iter){
         if(array.length >= maxlength){
-            static if(enforce) assert(false, "Iterable exceeded maximum array length.");
+            static if(enforce) assert(false,
+                text("Iterable exceeded maximum expected length ", maxlength, ".")
+            );
             else break;
         }
         array ~= item;
@@ -101,7 +104,7 @@ auto asarray(Element, Iter)(auto ref Iter iter) if(
     }else static if(canMakeFiniteLengthArrayOf!(Iter, Element)){
         return asarray!(Element, false, Iter)(iter, size_t.max);
     }else{
-        assert(false); // This shouldn't happen
+        static assert(false); // This shouldn't happen
     }
 }
 
@@ -114,10 +117,14 @@ auto asknownlengtharray(Element, Iter)(auto ref Iter iter, size_t length) if(
     Element[] array;
     array.reserve(length);
     foreach(item; iter){
-        assert(array.length < length, "Iterable is longer than assumed length.");
+        assert(array.length < length,
+            text("Iterable is longer than assumed length ", length, ".")
+        );
         array ~= item;
     }
-    assert(array.length == length, "Iterable is shorter than assumed length.");
+    assert(array.length == length,
+        text("Iterable is shorter than assumed length ", length, ".")
+    );
     return array;
 }
 
@@ -135,10 +142,14 @@ auto asarray(Element, size_t length, Iter)(auto ref Iter iter) if(
     Element[length] array;
     size_t index = 0;
     foreach(item; iter){
-        assert(index < array.length, "Iterable is longer than assumed length.");
+        assert(index < array.length,
+            text("Iterable is longer than assumed length ", length, ".")
+        );
         array[index++] = item;
     }
-    assert(index == array.length, "Iterable is shorter than assumed length.");
+    assert(index == array.length,
+        text("Iterable is shorter than assumed length ", length, ".")
+    );
     return array;
 }
 
