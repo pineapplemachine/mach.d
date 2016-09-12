@@ -3,16 +3,21 @@ module mach.io.stream.stream;
 private:
 
 import mach.traits : isArray;
-import mach.error : ThrowableClassMixin;
+import mach.error : ThrowableMixin;
 
 public:
     
 
 
-mixin(ThrowableClassMixin!(`StreamException`, `Exception`, `Failure performing stream operation.`));
-mixin(ThrowableClassMixin!(`StreamReadException`, `StreamException`, `Failure reading from stream.`));
-mixin(ThrowableClassMixin!(`StreamWriteException`, `StreamException`, `Failure writing to stream.`));
-
+class StreamException: Exception{
+    mixin ThrowableMixin!`Failure performing stream operation.`;
+}
+class StreamReadException: StreamException{
+    mixin ThrowableMixin!`Failure reading from stream.`;
+}
+class StreamWriteException: StreamException{
+    mixin ThrowableMixin!`Failure writing to stream.`;
+}
 
 
 
@@ -77,9 +82,9 @@ interface Stream{
 /// A stream which can be read from.
 interface InputStream : Stream{
     void flush();
-    size_t readbuffer(void* buffer, size_t size, size_t count);
+    size_t readbufferraw(void* buffer, size_t size, size_t count);
     final size_t readbuffer(T)(T* buffer, size_t count = 1){
-        return this.readbuffer(buffer, T.sizeof, count);
+        return this.readbufferraw(buffer, T.sizeof, count);
     }
     final size_t readbuffer(T)(T[] buffer){
         return this.readbuffer!T(buffer.ptr, buffer.length);
@@ -103,9 +108,9 @@ interface InputStream : Stream{
 /// A stream which can be written to.
 interface OutputStream : Stream{
     void sync();
-    size_t writebuffer(void* buffer, size_t size, size_t count);
+    size_t writebufferraw(void* buffer, size_t size, size_t count);
     final size_t writebuffer(T)(in T* buffer, size_t count = 1){
-        return this.writebuffer(cast(void*) buffer, T.sizeof, count);
+        return this.writebufferraw(cast(void*) buffer, T.sizeof, count);
     }
     final size_t writebuffer(T)(in T[] buffer){
         return this.writebuffer!T(buffer.ptr, buffer.length);

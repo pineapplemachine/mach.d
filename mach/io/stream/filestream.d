@@ -44,8 +44,7 @@ class FileStream: IOStream{
         enforceerrno(fflush(this.target) == 0);
     }
     
-    alias readbuffer = IOStream.readbuffer;
-    override size_t readbuffer(void* buffer, size_t size, size_t count) in{
+    override size_t readbufferraw(void* buffer, size_t size, size_t count) in{
         assert(this.active);
     }body{
         return fread(buffer, size, count, this.target);
@@ -57,8 +56,7 @@ class FileStream: IOStream{
         fsync(this.target);
     }
     
-    alias writebuffer = IOStream.writebuffer;
-    override size_t writebuffer(void* buffer, size_t size, size_t count) in{
+    override size_t writebufferraw(void* buffer, size_t size, size_t count) in{
         assert(this.active);
     }body{
         return fwrite(buffer, size, count, this.target);
@@ -136,7 +134,7 @@ unittest{
             testeq(header, buffer);
             testf(stream.eof);
             testeq(stream.position, header.length);
-            testeq(stream.length, 86);
+            testeq(stream.length, 85);
             stream.close();
         });
         tests("Write", {
