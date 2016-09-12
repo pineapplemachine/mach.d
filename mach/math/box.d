@@ -5,9 +5,16 @@ private:
 import std.traits : isNumeric;
 import std.algorithm : min, max;
 
+import mach.traits : isTemplateOf;
 import mach.math.vector2 : Vector2;
 
 public:
+
+
+
+enum isBox(T) = isTemplateOf!(T, Box);
+
+
 
 struct Box(T) if(isNumeric!T){
     
@@ -121,6 +128,12 @@ struct Box(T) if(isNumeric!T){
     }
     @property Vector2!T bottomright() const{
         return Vector2!T(this.maxx, this.maxy);
+    }
+    
+    /// Get as an array the four vectors of the box
+    /// Returns an array in the form of [NW, NE, SE, SW].
+    @property Vector2!T[4] corners() const{
+        return [this.topleft, this.topright, this.bottomright, this.bottomleft];
     }
     
     @property bool nonzero() const{
