@@ -5,13 +5,15 @@ private:
 import core.stdc.stdio : FILE;
 import core.stdc.stdio : SEEK_CUR, SEEK_END, SEEK_SET;
 import std.internal.cstring : tempCString;
-import mach.error : ThrowableClassMixin;
+import mach.error : ThrowableMixin;
 
 public:
 
 
 
-mixin(ThrowableClassMixin!(`FileException`, `Exception`, `Failed to perform file operation.`));
+class FileException: Exception{
+    mixin ThrowableMixin!`Failed to perform file operation.`;
+}
 
 
 
@@ -118,18 +120,18 @@ unittest{
     tests("fsync", {
         auto file = dfopen(TestPath, "ab");
         testf(file.feof);
-        testeq(file.ftell, 86);
+        testeq(file.ftell, 85);
         fsync(file);
         testf(file.feof);
-        testeq(file.ftell, 86);
+        testeq(file.ftell, 85);
         file.fclose;
         fail("Attempt to sync closed file", {fsync(file);});
         fail("Attempt to sync nonexistent file", {fsync(FileHandle.init);});
     });
     tests("stat", {
-        testeq("dstat", dstat(TestPath).st_size, 86);
+        testeq("dstat", dstat(TestPath).st_size, 85);
         auto file = dfopen(TestPath, "rb");
-        testeq("dfstat", dfstat(file).st_size, 86);
+        testeq("dfstat", dfstat(file).st_size, 85);
         file.fclose;
     });
 }

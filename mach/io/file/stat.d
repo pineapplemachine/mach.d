@@ -87,6 +87,6 @@ unittest{
         stat.ctime;
         stat.modifiedtime;
         stat.links;
-        testeq(stat.size, 86);
+        testeq(stat.size, 85);
     });
 }
