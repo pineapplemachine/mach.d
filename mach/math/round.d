@@ -26,7 +26,7 @@ R round(R = int, N)(in N number) if(isNumeric!N && isNumeric!R){
 }
 
 /// Get the ceiling of one number divided by another.
-R ceil(R = int, N)(in N x, in N y) if(isNumeric!N && isNumeric!R){
+R divceil(R = int, N)(in N x, in N y) if(isNumeric!N && isNumeric!R){
     static if(isIntegral!N){
         auto floor = x / y;
         return cast(R) (floor + (x % y > 0));
@@ -70,22 +70,22 @@ unittest{
             testeq(round!real(-0.5), -1.0);
         });
     });
-    tests("Ceil", {
+    tests("Ceil of division", {
         tests("Integers", {
-            testeq(ceil(10, 2), 5);
-            testeq(ceil(10, 3), 4);
-            testeq(ceil(-10, 3), -3);
-            testeq(ceil!real(10, 2), 5.0);
-            testeq(ceil!real(10, 3), 4.0);
-            testeq(ceil!real(-10, 3), -3.0);
+            testeq(divceil(10, 2), 5);
+            testeq(divceil(10, 3), 4);
+            testeq(divceil(-10, 3), -3);
+            testeq(divceil!real(10, 2), 5.0);
+            testeq(divceil!real(10, 3), 4.0);
+            testeq(divceil!real(-10, 3), -3.0);
         });
         tests("Reals", {
-            testeq(ceil(10.0, 2.0), 5);
-            testeq(ceil(10.0, 3.0), 4);
-            testeq(ceil(-10.0, 3.0), -3);
-            testeq(ceil!real(10.0, 2.0), 5.0);
-            testeq(ceil!real(10.0, 3.0), 4.0);
-            testeq(ceil!real(-10.0, 3.0), -3.0);
+            testeq(divceil(10.0, 2.0), 5);
+            testeq(divceil(10.0, 3.0), 4);
+            testeq(divceil(-10.0, 3.0), -3);
+            testeq(divceil!real(10.0, 2.0), 5.0);
+            testeq(divceil!real(10.0, 3.0), 4.0);
+            testeq(divceil!real(-10.0, 3.0), -3.0);
         });
     });
 }    

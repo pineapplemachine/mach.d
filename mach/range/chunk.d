@@ -4,7 +4,7 @@ private:
 
 import std.conv : to;
 import std.traits : isIntegral;
-import mach.math.round : ceil;
+import mach.math.round : divceil;
 import mach.traits : hasNumericLength, isSlicingRange;
 import mach.range.asrange : asrange, validAsSlicingRange;
 import mach.range.meta : MetaRangeMixin;
@@ -56,7 +56,7 @@ struct ChunkRange(Range, Count = DefaultChunkCount) if(
     this(Range source, Count size, Count frontindex = Count.init) in{
         assert(size > 0);
     }body{
-        this(source, size, frontindex, ceil(source.length, size));
+        this(source, size, frontindex, divceil(source.length, size));
     }
     this(Range source, Count size, Count frontindex, Count backindex) in{
         assert(size > 0);
@@ -74,7 +74,7 @@ struct ChunkRange(Range, Count = DefaultChunkCount) if(
         return this.backindex - this.frontindex;
     }
     @property auto length(){
-        return ceil(this.source.length, this.size);
+        return divceil(this.source.length, this.size);
     }
     alias opDollar = length;
     

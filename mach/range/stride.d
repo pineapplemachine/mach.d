@@ -180,9 +180,9 @@ struct PoppingStrideRange(Range, Stride = DefaultStride){
     }
     
     static if(hasNumericLength!Range){
-        import mach.math : ceil;
+        import mach.math : divceil;
         @property auto length(){
-            return ceil(this.source.length, this.stridelength);
+            return divceil(this.source.length, this.stridelength);
         }
     }
 }
