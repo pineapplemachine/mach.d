@@ -121,10 +121,14 @@ struct Controller{
     }
     
     /// Get the joystick corresponding to an opened controller.
-    @property auto joystick(){
-        auto joy = SDL_GameControllerGetJoystick(this.ctrl);
+    static auto ctrljoy(Ctrl ctrl){
+        auto joy = SDL_GameControllerGetJoystick(ctrl);
         if(joy is null) throw new SDLError("Failed to get controller joystick.");
-        return Joystick(joy);
+        return joy;
+    }
+    /// ditto
+    @property auto joystick(){
+        return Joystick(this.ctrljoy(this.ctrl));
     }
     
     /// Open a controller for use given its device index.
@@ -135,10 +139,12 @@ struct Controller{
         return typeof(this)(ctrl);
     }
     /// Whether the controller is open.
+    /// https://wiki.libsdl.org/SDL_GameControllerGetAttached
     @property bool isopen(){
         return cast(bool) SDL_GameControllerGetAttached(this.ctrl);
     }
     /// Close a previously opened controller.
+    /// https://wiki.libsdl.org/SDL_GameControllerClose
     void close(){
         SDL_GameControllerClose(this.ctrl);
     }
