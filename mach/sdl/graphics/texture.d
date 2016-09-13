@@ -190,21 +190,42 @@ struct Texture{
         );
     }
     
-    void draw(N)(in N x, in N y){
+    /// Draw the texture at a position.
+    void draw(N)(in N x, in N y) if(isNumeric!N){
         this.draw(Vector2!N(x, y));
     }
+    /// ditto
     void draw(T)(in Vector2!T position){
         this.draw(Vertexesf.rect(position, this.size));
     }
-    void draw(T, bool atomic = true)(in Box!T target){
-        this.draw(Vertexesf.rect(target));
+    /// Draw a portion of a texture at a position.
+    /// The subrect represents floating-point texture coords from 0.0 to 1.0.
+    void draw(X, Y)(in Vector2!X position, in Box!Y sub){
+        this.draw(Vertexesf.rect(position, sub.size * this.size, sub));
     }
-    void draw(A, B, C, bool atomic = true)(
-        in Vertexes!(A, B, C) verts,
-        in uint primitive = GLPrimitive.TriangleStrip
-    ){
+    /// Draw the texture to a rectangular target.
+    void draw(bool atomic = true, T)(in Box!T target){
+        this.draw!atomic(Vertexesf.rect(target));
+    }
+    /// Draw a portion of the texture to a rectangular target.
+    /// The subrect represents floating-point texture coords from 0.0 to 1.0.
+    void draw(bool atomic = true, X, Y)(in Box!X target, in Box!Y sub){
+        this.draw!atomic(Vertexesf.rect(target.topleft, target.size, sub));
+    }
+    void draw(bool atomic = true, A, B, C)(in Vertexes!(A, B, C) verts){
         mixin(AtomicMethodMixin);
         verts.setglpointers();
-        glDrawArrays(primitive, 0, cast(uint) verts.length);
+        glDrawArrays(GLPrimitive.TriangleStrip, 0, cast(uint) verts.length);
+    }
+    
+    /// Draw a portion of the texture to a position.
+    /// The subrect represents integral pixel coordinates on the texture.
+    void drawsub(X, Y)(in Vector2!X position, in Box!Y sub){
+        this.draw(position, Box!real(sub) / this.size);
+    }
+    /// Draw a portion of the texture to a rectangular target.
+    /// The subrect represents integral pixel coordinates on the texture.
+    void drawsub(X, Y)(in Box!X target, in Box!Y sub){
+        this.draw(target, Box!real(sub) / this.size);
     }
 }

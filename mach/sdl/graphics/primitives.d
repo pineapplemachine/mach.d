@@ -5,10 +5,7 @@ private:
 import derelict.sdl2.sdl;
 import derelict.opengl3.gl;
 
-import mach.meta : All;
-import mach.traits : isTemplateOf;
-import mach.math.vector2 : Vector2;
-import mach.math.vector3 : Vector3;
+import mach.math : Vector2, isVector2, Vector3, isVector3, Box, isBox;
 
 import mach.sdl.error : GLError;
 import mach.sdl.window : Window;
@@ -51,15 +48,13 @@ void glVertex(T)(T x, T y, T z){
 }
 
 
-void glset(T)(Vector2!T vector){
+void glset(V)(V vector) if(isVector2!V){
     glVertex!T(vector.x, vector.y);
 }
 
-void glset(T)(Vector3!T vector){
+void glset(V)(V vector) if(isVector3!V){
     glVertex!T(vector.x, vector.y, vector.z);
 }
-
-enum isVector2(T) = isTemplateOf!(T, Vector2);
 
 
 
@@ -123,6 +118,13 @@ auto quads(C, T)(Color!C color, Vector2!T[] vectors...) in{
     assert(vectors.length >= 4 && vectors.length % 4 == 0);
 }body{
     primitives!GL_QUADS(color, vectors);
+}
+
+auto quads(C, T)(Color!C color, Box!T[] quads...){
+    Vector2!T[] vectors;
+    vectors.reserve(quads.length * 4);
+    foreach(quad; quads) vectors ~= quad.corners;
+    quads(color, vectors);
 }
 
 auto quadstrip(C, T)(Color!C color, Vector2!T[] vectors...) in{
