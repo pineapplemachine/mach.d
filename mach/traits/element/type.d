@@ -2,6 +2,7 @@ module mach.traits.element.type;
 
 private:
 
+import std.traits : Unqual;
 import mach.traits.array : isArray;
 import mach.traits.op : hasOpApply, hasOpApplyReverse;
 import mach.traits.range : isRange;
@@ -78,6 +79,24 @@ template hasElementType(alias pred, Tx...) if(Tx.length == 1){
     }
 }
 
+/// Determine whether some collection contains element of the given type,
+/// ignoring modifiers such as const and immutable.
+template hasUnqualElementType(Element, Tx...) if(Tx.length == 1){
+    enum bool hasUnqualElementType = is(Unqual!Element == Unqual!(ElementType!(Tx)));
+}
+
+/// Determine whether some collection contains elements implicitly-convertible
+/// to the given type.
+template hasImplicitElementType(Element, Tx...) if(Tx.length == 1){
+    static if(canGetElementType!Tx){
+        enum bool hasImplicitElementType = is(typeof({
+            Element b = ElementType!Tx.init;
+        }));
+    }else{
+        enum bool hasImplicitElementType = false;
+    }
+}
+
 
 
 unittest{
@@ -113,6 +132,12 @@ unittest{
     static assert(hasElementType!(int[], int[][]));
     static assert(!hasElementType!(string, int[]));
     static assert(!hasElementType!(int, int));
+    static assert(hasElementType!(const int, const(int)[]));
+    static assert(!hasElementType!(const int, int[]));
+    static assert(!hasElementType!(int, const int[]));
+    static assert(hasUnqualElementType!(const int, const(int)[]));
+    static assert(hasUnqualElementType!(const int, int[]));
+    static assert(hasUnqualElementType!(int, const int[]));
 }
 unittest{
     enum bool isInt(T) = is(T == int);
