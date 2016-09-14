@@ -42,12 +42,16 @@ template isRandomAccessIterable(T){
 
 
 /// Determine whether some type is an iterable of elements of the given type.
+enum bool isIterableOf(alias T, Element) = isIterableOf!(typeof(T), Element);
+/// ditto
 template isIterableOf(T, Element){
     enum bool isIterableOf = isIterable!T && hasElementType!(Element, T);
 }
 
 /// Determine whether some type is an iterable of elements whose type matches
 /// the given predicate template.
+enum bool isIterableOf(alias T, alias pred) = isIterableOf!(typeof(T), pred);
+/// ditto
 template isIterableOf(T, alias pred){
     enum bool isIterableOf = isIterable!T && hasElementType!(pred, T);
 }
@@ -173,7 +177,20 @@ unittest{
     static assert(isFiniteIterable!(int[]));
     static assert(isFiniteIterable!EmptyRange);
     static assert(isFiniteIterable!FiniteRange);
-    //static 
+}
+
+unittest{
+    struct CharRange{
+        enum bool empty = false;
+        @property char front(){return 'x';}
+        void popFront(){}
+    }
+    static assert(isIterableOf!(new int[2], int));
+    static assert(isIterableOf!(int[], int));
+    static assert(isIterableOf!(int[4], int));
+    static assert(isIterableOf!("hi", immutable char));
+    static assert(isIterableOf!(const(int)[], const int));
+    static assert(isIterableOf!(CharRange, char));
 }
 
 
