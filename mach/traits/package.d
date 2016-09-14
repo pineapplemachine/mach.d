@@ -18,6 +18,7 @@ import mach.traits.parameters;
 import mach.traits.property;
 import mach.traits.range;
 import mach.traits.slice;
+import mach.traits.string;
 import mach.traits.templates;
 import mach.traits.transform;
 import mach.traits.tuple;
