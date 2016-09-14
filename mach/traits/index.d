@@ -2,9 +2,7 @@ module mach.traits.index;
 
 private:
 
-import std.meta : AliasSeq;
-import std.traits : Parameters;
-import std.traits : isNumeric, isArray, isAssociativeArray, KeyType;
+//
 
 public:
 
