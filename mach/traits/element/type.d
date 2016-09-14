@@ -16,8 +16,7 @@ public:
 
 
 /// Determine whether getting ElementType of some type is a meaningful operation.
-template canGetElementType(Tx...) if(Tx.length == 1){
-    alias T = Tx[0];
+template canGetElementType(T...) if(T.length == 1){
     enum bool canGetElementType = (
         isArray!T || isRange!T ||
         hasElementAlias!T ||
@@ -52,18 +51,18 @@ template ElementType(T) if(canGetElementType!T){
 
 
 // TODO: Move to a more appropriate location
-template isTemplatePredicate(alias pred, Tx...) if(Tx.length == 1){
+template isTemplatePredicate(alias pred, T...) if(T.length == 1){
     enum bool isTemplatePredicate = __traits(compiles, {
-        enum bool R = pred!(Tx[0]);
+        enum bool R = pred!T;
     });
 }
 
 
 
 /// Determine whether some collection contains elements of a given type.
-template hasElementType(Element, Tx...) if(Tx.length == 1){
-    static if(canGetElementType!(Tx[0])){
-        enum bool hasElementType = is(ElementType!(Tx[0]) == Element);
+template hasElementType(Element, T...) if(T.length == 1){
+    static if(canGetElementType!T){
+        enum bool hasElementType = is(ElementType!T == Element);
     }else{
         enum bool hasElementType = false;
     }
@@ -71,9 +70,9 @@ template hasElementType(Element, Tx...) if(Tx.length == 1){
 
 /// Determine whether some collection contains elements of a type matching the
 /// given template predicate.
-template hasElementType(alias pred, Tx...) if(Tx.length == 1){
-    static if(canGetElementType!(Tx[0])){
-        enum bool hasElementType = pred!(ElementType!(Tx[0]));
+template hasElementType(alias pred, T...) if(T.length == 1){
+    static if(canGetElementType!T){
+        enum bool hasElementType = pred!(ElementType!T);
     }else{
         enum bool hasElementType = false;
     }
@@ -81,16 +80,22 @@ template hasElementType(alias pred, Tx...) if(Tx.length == 1){
 
 /// Determine whether some collection contains element of the given type,
 /// ignoring modifiers such as const and immutable.
-template hasUnqualElementType(Element, Tx...) if(Tx.length == 1){
-    enum bool hasUnqualElementType = is(Unqual!Element == Unqual!(ElementType!(Tx)));
+template hasUnqualElementType(Element, T...) if(T.length == 1){
+    static if(canGetElementType!T){
+        enum bool hasUnqualElementType = is(
+            Unqual!Element == Unqual!(ElementType!T)
+        );
+    }else{
+        enum bool hasUnqualElementType = false;
+    }
 }
 
 /// Determine whether some collection contains elements implicitly-convertible
 /// to the given type.
-template hasImplicitElementType(Element, Tx...) if(Tx.length == 1){
-    static if(canGetElementType!Tx){
+template hasImplicitElementType(Element, T...) if(T.length == 1){
+    static if(canGetElementType!T){
         enum bool hasImplicitElementType = is(typeof({
-            Element b = ElementType!Tx.init;
+            Element b = ElementType!T.init;
         }));
     }else{
         enum bool hasImplicitElementType = false;
