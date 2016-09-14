@@ -7,7 +7,6 @@ import std.traits : isIntegral;
 import mach.traits : isIterable, isFiniteIterable, isInfiniteIterable;
 import mach.traits : isFiniteRange, isRandomAccessRange, isSavingRange;
 import mach.traits : canIncrement, canCompare, hasNumericLength;
-import mach.traits : hasSingleIndexParameter, SingleIndexParameter;
 import mach.traits : hasNumericLength;
 import mach.range.asrange : asrange, validAsRange;
 import mach.range.asrange : validAsRandomAccessRange, validAsSavingRange;
@@ -156,7 +155,7 @@ private template RepeatSavingRangeMixin(Range, string popfrontstr){
     }
     
     static if(isRandomAccessRange!Range && hasNumericLength!Range){
-        auto opIndex(SingleIndexParameter!Range index){
+        auto opIndex(size_t index){
             return (*this.source)[index % this.source.length];
         }
     }

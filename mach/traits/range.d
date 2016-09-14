@@ -54,13 +54,6 @@ template isSavingRange(T){
 }
 
 
-// TODO: ???
-//enum isIndexedRange(Range) = (
-//    isRange!Range && canIndex!Range &&
-//    isImplicitlyConvertible!(ReturnType!(Range.opIndex), ElementType!Range)
-//);
-
-
 
 /// Determine whether a range supports random access. For this to be true, a
 /// range must have an opIndex method allowing a single integral argument and

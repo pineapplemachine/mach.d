@@ -10,7 +10,6 @@ import mach.traits : canReassign, isMutableFrontRange, isMutableBackRange;
 import mach.traits : isMutableRandomRange, isMutableInsertRange;
 import mach.traits : isMutableRemoveFrontRange, isMutableRemoveBackRange;
 import mach.traits : hasLength, LengthType, canIndex, canSliceSame;
-import mach.traits : hasSingleIndexParameter, SingleIndexParameter;
 import mach.range.asrange : asrange, validAsRange;
 import mach.range.meta : MetaRangeMixin;
 

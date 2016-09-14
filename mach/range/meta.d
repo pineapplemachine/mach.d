@@ -13,7 +13,6 @@ enum MetaRangeMixinComponent : string {
     Empty = `Empty`,
     Length = `Length`,
     Dollar = `Dollar`,
-    Index = `Index`,
     Slice = `Slice`,
     Save = `Save`,
     Back = `Back`,
@@ -46,16 +45,6 @@ template MetaRangeDollarMixin(Range, string source) if(isRange!Range){
     static if(hasDollar!Range){
         @property auto opDollar(){
             mixin(`return this.` ~ source ~ `.opDollar;`);
-        }
-    }
-}
-
-template MetaRangeIndexMixin(Range, string source) if(isRange!Range){
-    import mach.traits : isIndexedRange;
-    static if(isIndexedRange!Range){
-        import mach.traits : IndexParameters;
-        auto ref opIndex(IndexParameters!Range index){
-            mixin(`return this.` ~ source ~ `.opIndex(index);`);
         }
     }
 }
@@ -104,11 +93,6 @@ template MetaRangeMixin(Range, string source, string inclusions) if(isRange!Rang
     static if(inclusions.canFind(cast(string) MetaRangeMixinComponent.Dollar)){
         import mach.range.meta : MetaRangeDollarMixin;
         mixin MetaRangeDollarMixin!(Range, source);
-    }
-    
-    static if(inclusions.canFind(cast(string) MetaRangeMixinComponent.Index)){
-        import mach.range.meta : MetaRangeIndexMixin;
-        mixin MetaRangeIndexMixin!(Range, source);
     }
     
     static if(inclusions.canFind(cast(string) MetaRangeMixinComponent.Save)){
