@@ -73,12 +73,12 @@ struct RefCounter(T){
     }
     
     /// Call func for every value with no references, and delete them from the backing array.
-    void clean(in void delegate(in T value) func){
-        this.clean((in T values[]){
+    void clean(in void delegate(in T) func){
+        this.clean((in T[] values){
             foreach(value; values) func(value);
         });
     }
-    void clean(in void delegate(in T values[]) func){
+    void clean(in void delegate(in T[]) func){
         T[] expired = new T[counter.length];
         size_t expiredcount = 0;
         
