@@ -136,18 +136,14 @@ private bool isintegralrange(NumericParseSettings settings, R)(auto ref R range)
 /// To be considered valid as an integral, the string must be non-null and at
 /// least one character long.
 bool isintegralstring(
-    NumericParseSettings settings = NumericParseSettings.Default
-)(in string str){
-    if(str !is null && str.length > 0){
-        static if(settings.unicode){
-            auto range = str.byGrapheme;
-        }else{
-            auto range = str.asrange;
-        }
-        return isintegralrange!settings(range);
+    NumericParseSettings settings = NumericParseSettings.Default, S
+)(auto ref S str) if(isString!S){
+    static if(settings.unicode){
+        auto range = str.byGrapheme;
     }else{
-        return false;
+        auto range = str.asrange;
     }
+    return isintegralrange!settings(range);
 }
 
 
@@ -161,44 +157,40 @@ bool isintegralstring(
 /// To be considered valid as a floating point number, the string must be
 /// non-null and at least one character long.
 bool isfloatstring(
-    NumericParseSettings settings = NumericParseSettings.Default
-)(in string str){
-    if(str !is null && str.length > 0){
-        static if(settings.unicode){
-            auto range = str.byGrapheme;
-        }else{
-            auto range = str.asrange;
-        }
-        if(range.empty) return false;
-        if(settings.issign(range.front)){
-            range.popFront();
-            if(range.empty) return false;
-        }
-        bool decimal = false;
-        bool nondecimal = false;
-        while(!range.empty){
-            auto ch = range.front;
-            if(settings.isdecimal(ch)){
-                if(decimal) return false;
-                decimal = true;
-            }else if(settings.isexp(ch)){
-                if(nondecimal){
-                    range.popFront();
-                    return isintegralrange!settings(range);
-                }else{
-                    return false;
-                }
-            }else if(!settings.isdigit(ch)){
-                return false;
-            }else{
-                nondecimal = true;
-            }
-            range.popFront();
-        }
-        return nondecimal;
+    NumericParseSettings settings = NumericParseSettings.Default, S
+)(auto ref S str) if(isString!S){
+    static if(settings.unicode){
+        auto range = str.byGrapheme;
     }else{
-        return false;
+        auto range = str.asrange;
     }
+    if(range.empty) return false;
+    if(settings.issign(range.front)){
+        range.popFront();
+        if(range.empty) return false;
+    }
+    bool decimal = false;
+    bool nondecimal = false;
+    while(!range.empty){
+        auto ch = range.front;
+        if(settings.isdecimal(ch)){
+            if(decimal) return false;
+            decimal = true;
+        }else if(settings.isexp(ch)){
+            if(nondecimal){
+                range.popFront();
+                return isintegralrange!settings(range);
+            }else{
+                return false;
+            }
+        }else if(!settings.isdigit(ch)){
+            return false;
+        }else{
+            nondecimal = true;
+        }
+        range.popFront();
+    }
+    return nondecimal;
 }
 
 
@@ -230,9 +222,8 @@ private auto parseintegralrange(NumericParseSettings settings, T, R)(auto ref R 
 /// Throws a NumericParseException upon failure.
 /// Does not check for under/overflow.
 auto parseintegral(
-    NumericParseSettings settings = NumericParseSettings.Default, T = long
-)(in string str){
-    NumericParseException.enforce(str !is null, "Null string.");
+    NumericParseSettings settings = NumericParseSettings.Default, T = long, S
+)(auto ref S str) if(isString!S){
     static if(settings.unicode){
         auto range = str.byGrapheme;
     }else{
@@ -248,14 +239,14 @@ auto parseintegral(
 /// Liable to give incorrect results in the case of inordinately large
 /// integral, fraction, or exponent values.
 auto parsefloat(
-    NumericParseSettings settings = NumericParseSettings.Default, T = double
-)(in string str){
-    NumericParseException.enforce(str !is null && str.length > 0, "Empty string.");
+    NumericParseSettings settings = NumericParseSettings.Default, T = double, S
+)(auto ref S str) if(isString!S){
     static if(settings.unicode){
         auto range = str.byGrapheme;
     }else{
         auto range = str.asrange;
     }
+    NumericParseException.enforce(!range.empty, "Empty string.");
     // Determine sign
     bool negate = false;
     if(settings.issign(range.front)){
@@ -329,7 +320,6 @@ version(unittest){
         test(func!settings("1234567890"));
         test(func!settings("+10"));
         test(func!settings("-10"));
-        testf(func!settings(null));
         testf(func!settings(""));
         testf(func!settings(" "));
         testf(func!settings("a"));
@@ -399,7 +389,6 @@ version(unittest){
         testeq(func!settings("1234567890"), 1234567890);
         testeq(func!settings("+1"), +1);
         testeq(func!settings("-1"), -1);
-        fail({func!settings(null);});
         fail({func!settings("");});
         fail({func!settings(" ");});
         fail({func!settings("+");});
