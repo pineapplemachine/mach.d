@@ -5,6 +5,8 @@ private:
 import derelict.sdl2.ttf;
 import derelict.sdl2.types;
 
+import core.stdc.config : c_long;
+
 import std.string : fromStringz, toStringz;
 import mach.math : Vector2;
 import mach.sdl.graphics.color;
@@ -41,13 +43,13 @@ struct Font{
     this(TTF_Font* font){
         this.font = font;
     }
-    this(string path, int size, long index = 0){
+    this(string path, int size, c_long index = 0){
         this.font = TTF_OpenFontIndex(toStringz(path), size, index);
         if(this.font is null) throw new SDLError("Failed to load font from path \"" ~ path ~ "\".");
     }
     
     /// https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_16.html
-    static typeof(this) open(string path, int size, long index = 0){
+    static typeof(this) open(string path, int size, c_long index = 0){
         return typeof(this)(path, size, index);
     }
     /// https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_18.html
