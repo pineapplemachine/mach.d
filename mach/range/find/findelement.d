@@ -62,7 +62,7 @@ auto findlastelement(alias pred, Index = DefaultFindIndex, Iter)(
 ) if(canFindElementEager!(pred, Index, Iter, false)){
     alias Element = ElementType!Iter;
     alias Result = FindResultSingular!(Index, Element);
-    Index index = iter.length;;
+    Index index = iter.length;
     foreach_reverse(element; iter){
         index--;
         if(pred(element)) return Result(index, element);

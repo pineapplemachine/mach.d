@@ -156,7 +156,7 @@ struct Controller{
     }
     /// Get axis position as a signed short.
     @property auto axisraw(Axis axis){
-        return SDL_GameControllerGetAxis(this.ctrl, axis);;
+        return SDL_GameControllerGetAxis(this.ctrl, axis);
     }
     /// Get whether a button is currently pressed.
     @property bool button(Button button){

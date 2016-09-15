@@ -209,7 +209,7 @@ struct Joystick{
     }
     /// Get axis position as a signed short.
     @property auto axisraw(int index){
-        return SDL_JoystickGetAxis(this.joy, index);;
+        return SDL_JoystickGetAxis(this.joy, index);
     }
     /// Get whether a button is currently pressed.
     @property bool button(int index){
