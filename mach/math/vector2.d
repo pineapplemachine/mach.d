@@ -5,6 +5,7 @@ private:
 import std.math : sin, cos, atan2, sqrt;
 import std.traits : isNumeric, Unqual;
 import std.string : replace;
+import mach.traits : isTemplateOf;
 
 import mach.error.assertf : assertf;
 
@@ -215,10 +216,15 @@ struct Vector2(T) if(isNumeric!T){
 
 version(unittest) private import mach.error.unit;
 unittest{
+    static assert(isVector2!(Vector2!int));
+    static assert(isVector2!(Vector2!real));
+    static assert(!isVector2!int);
+    static assert(!isVector2!void);
+}
+unittest{
     // TODO: More thorough unit testing
-    
     alias Vector = Vector2!real;
-    tests("2D Vector math", {
+    tests("2D vector", {
         tests("Equality", {
             testeq(Vector(0, 0), Vector(0, 0));
             testeq(Vector(1, 0), Vector(1, 0));
@@ -240,5 +246,4 @@ unittest{
             testeq(vectori, vectorf);
         });
     });
-    
 }

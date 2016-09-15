@@ -5,6 +5,7 @@ private:
 import std.math : sin, cos, atan2, sqrt;
 import std.traits : isNumeric, Unqual;
 import std.string : replace;
+import mach.traits : isTemplateOf;
 
 import mach.error.assertf : assertf;
 
