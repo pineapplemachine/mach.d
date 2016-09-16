@@ -21,8 +21,12 @@ enum canMakeRange(Base) = (
 );
 
 /// Determine if a range can be created from a type, or if it already is a range.
+enum validAsRange(alias T) = validAsRange!(typeof(T));
+/// ditto
 enum validAsRange(T) = (
-    isRange!T || canMakeRange!T || hasProperty!(T, `asrange`)
+    isRange!T || canMakeRange!T || (
+        hasProperty!(T, `asrange`) && isRange!(typeof(T.init.asrange))
+    )
 );
 
 template validAsRange(alias isType, T){
