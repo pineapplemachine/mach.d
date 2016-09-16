@@ -156,7 +156,7 @@ unittest{
         test("hello"d.utfencode.equals("hello"));
         // Two-byte chars
         test("א"d.utfencode.equals("\xD7\x90"));
-        test("אבטיח"d.utfencode.equals("\xD7\x90\xD7\x91\xD7\x98\xD7\x99\xD7\x97"));
+        test("אֲנָנָס"d.utfencode.equals("\xD7\x90\xD6\xB2\xD7\xA0\xD6\xB8\xD7\xA0\xD6\xB8\xD7\xA1"));
         // Three-byte chars
         test("ツ"d.utfencode.equals("\xE3\x83\x84"));
         test("ザーザー"d.utfencode.equals("\xE3\x82\xB6\xE3\x83\xBC\xE3\x82\xB6\xE3\x83\xBC"));
