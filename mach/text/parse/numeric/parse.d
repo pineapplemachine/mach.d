@@ -1,13 +1,13 @@
-module mach.text.parse.numeric;
+module mach.text.parse.numeric.parse;
 
 private:
 
-import std.traits : Unqual;
-import std.uni : Grapheme, byGrapheme;
+import std.traits : Unqual, isNumeric, isFloatingPoint;
 //import std.bitmanip : FloatRep, DoubleRep; // TODO: Use this
 import std.math : pow;
 import mach.traits : isString;
-import mach.range : contains, all, indexof, walklength, asrange;
+import mach.range : asrange;
+import mach.text.parse.numeric.settings;
 
 public:
 
@@ -59,123 +59,12 @@ class NumberParseException: Exception{
 
 
 
-/// Settings struct used to define behavior of parsing functions.
-struct NumberParseSettings{
-    static enum NumberParseSettings Default = {
-        digits: "0123456789"d,
-    };
-    
-    /// Allowed digits, in ascending order of value.
-    dstring digits = "0123456789"d;
-    /// Allowed signs.
-    dstring signs = "+-"d;
-    /// Signs indicating a value is negative.
-    dstring negate = "-"d;
-    /// Allowed decimal points.
-    dstring decimals = "."d;
-    /// Allowed exponent signifiers.
-    dstring exponents = "eE"d;
-    
-    /// Get whether some character is a digit.
-    bool isdigit(in dchar ch) const @safe{
-        return this.digits.contains(ch);
-    }
-    /// Get the index of a digit, which also represents its value.
-    auto getdigit(in dchar ch) const @safe{
-        return this.digits.indexof(ch);
-    }
-    /// Get the number of digits, which also represents the numeric base.
-    @property auto base() const @safe{
-        return this.digits.length;
-    }
-    /// Get whether some character is a sign.
-    bool issign(in dchar ch) const @safe{
-        return this.signs.contains(ch);
-    }
-    /// Get whether some character is a negation sign.
-    bool isneg(in dchar ch) const @safe{
-        return this.negate.contains(ch);
-    }
-    /// Get whether some character is a decimal point.
-    bool isdecimal(in dchar ch) const @safe{
-        return this.decimals.contains(ch);
-    }
-    /// Get whether some character is an exponent signifier.
-    bool isexp(in dchar ch) const @safe{
-        return this.exponents.contains(ch);
-    }
-}
-
-
-
-/// Get whether a string represents an integral.
-/// The first character may be '-' or '+'. All following characters must be
-/// digits, by default 0-9.
-/// To be considered valid as an integral, the string must be non-null and at
-/// least one character long.
-bool isintegralstring(
-    NumberParseSettings settings = NumberParseSettings.Default, S
-)(auto ref S str) if(isString!S){
-    auto range = str.asrange;
-    if(range.empty) return false;
-    if(settings.issign(range.front)){
-        range.popFront();
-        if(range.empty) return false;
-    }
-    return range.all!(ch => settings.isdigit(ch));
-}
-
-
-
-/// Get whether a string represents a floating point number.
-/// The first character may be '-' or '+'. Following numbers may be digits,
-/// there may be one '.' among the digits, but there must be at least one
-/// other digit.
-/// The string may end with an exponent, e.g. "e+10", 'e' being case-insensitive
-/// the sign being option, and the number being an integer.
-/// To be considered valid as a floating point number, the string must be
-/// non-null and at least one character long.
-bool isfloatstring(
-    NumberParseSettings settings = NumberParseSettings.Default, S
-)(auto ref S str) if(isString!S){
-    auto range = str.asrange;
-    if(range.empty) return false;
-    if(settings.issign(range.front)){
-        range.popFront();
-        if(range.empty) return false;
-    }
-    bool decimal = false;
-    bool nondecimal = false;
-    while(!range.empty){
-        auto ch = range.front;
-        if(settings.isdecimal(ch)){
-            if(decimal) return false;
-            decimal = true;
-        }else if(settings.isexp(ch)){
-            if(nondecimal){
-                range.popFront();
-                return isintegralstring!settings(range);
-            }else{
-                return false;
-            }
-        }else if(!settings.isdigit(ch)){
-            return false;
-        }else{
-            nondecimal = true;
-        }
-        range.popFront();
-    }
-    return nondecimal;
-}
-
-
-
 /// Parse a string representing an integer.
 /// Throws a NumberParseException upon failure.
 /// Does not check for under/overflow.
 auto parseintegral(
     NumberParseSettings settings = NumberParseSettings.Default, T = long, S
-)(auto ref S str) if(isString!S){
+)(auto ref S str) if(isNumeric!T && isString!S){
     auto range = str.asrange;
     NumberParseException.enforceempty(!range.empty);
     bool negate = false;
@@ -204,7 +93,7 @@ auto parseintegral(
 /// integral, fraction, or exponent values.
 auto parsefloat(
     NumberParseSettings settings = NumberParseSettings.Default, T = double, S
-)(auto ref S str) if(isString!S){
+)(auto ref S str) if(isFloatingPoint!T && isString!S){
     auto range = str.asrange;
     NumberParseException.enforceempty(!range.empty);
     // Determine sign
@@ -215,7 +104,7 @@ auto parsefloat(
         NumberParseException.enforcedigits(!range.empty);
     }
     // Parse the rest
-    auto base = settings.base;
+    immutable auto base = settings.base;
     ulong integral;
     ulong fraction;
     ulong maxfraction = 1;
@@ -264,9 +153,9 @@ auto parsefloat(
     value += integral;
     if(hasexp){
         if(exponent > 0){
-            value *= pow(10, exponent);
+            value *= pow(base, exponent);
         }else{
-            value /= pow(10, -exponent);
+            value /= pow(base, -exponent);
         }
     }
     return cast(T)(negate ? -value : value);
@@ -285,66 +174,6 @@ version(unittest){
                 return ep !is null && ep.reason == reason;
             }, dg
         );
-    }
-    void IsIntegralTests(alias func)(){
-        test(func("0"));
-        test(func("10"));
-        test(func("1234567890"));
-        test(func("+10"));
-        test(func("-10"));
-        testf(func(""));
-        testf(func(" "));
-        testf(func("a"));
-        testf(func("+"));
-        testf(func("-"));
-        testf(func("+-"));
-        testf(func("++"));
-        testf(func("--"));
-        testf(func("+a"));
-        testf(func("1+"));
-        testf(func("1-"));
-    }
-    void IsFloatTests(alias func)(){
-        IsIntegralTests!(func);
-        test(func("0.0"));
-        test(func("0."));
-        test(func(".0"));
-        test(func("10.10"));
-        test(func("1234567890.1234567890"));
-        test(func("+0.0"));
-        test(func("-0.0"));
-        test(func("+.0"));
-        test(func("+0."));
-        test(func("1e1"));
-        test(func("1E1"));
-        test(func("1E+1"));
-        test(func("1e+1"));
-        test(func("1e-1"));
-        test(func(".1e-1"));
-        test(func("1.e-1"));
-        testf(func("."));
-        testf(func(".."));
-        testf(func("1.."));
-        testf(func("1.0."));
-        testf(func("e"));
-        testf(func("e10"));
-        testf(func(".e10"));
-        testf(func("1e+"));
-        testf(func("1e-"));
-        testf(func("1e+1.0"));
-    }
-    void IsUnicodeTests(alias func)(){
-        enum NumberParseSettings settings = {digits: "0π"d};
-        test(func!settings("0"d));
-        test(func!settings("π"d));
-        test(func!settings("0π"d));
-        test(func!settings("+0π"d));
-        test(func!settings("-0π"d));
-        testf(func!settings(""d));
-        testf(func!settings(" "d));
-        testf(func!settings("+"d));
-        testf(func!settings("-"d));
-        testf(func!settings("x"d));
     }
     void ParseIntegralTests(alias func)(){
         testeq(func("0"), 0);
@@ -402,19 +231,6 @@ version(unittest){
         fail({func!settings("-"d);});
         fail({func!settings("x"d);});
     }
-}
-unittest{
-    tests("String represents number", {
-        tests("Integral", {
-            IsIntegralTests!isintegralstring;
-            IsUnicodeTests!isintegralstring;
-        });
-        tests("Float", {
-            IsIntegralTests!isfloatstring;
-            IsFloatTests!isfloatstring;
-            IsUnicodeTests!isfloatstring;
-        });
-    });
 }
 unittest{
     tests("Parse numbers", {
