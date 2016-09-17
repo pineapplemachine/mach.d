@@ -39,6 +39,18 @@ auto integralstr(
 
 
 
+/// Convenience function for stringifying an integral as a hex number.
+auto hexstr(N)(N number) if(isNumeric!N){
+    return integralstr!(NumberParseSettings.Hex)(number);
+}
+
+/// Convenience function for stringifying an integral as a binary number.
+auto binstr(N)(N number) if(isNumeric!N){
+    return integralstr!(NumberParseSettings.Binary)(number);
+}
+
+
+
 version(unittest){
     private:
     import mach.error.unit;
@@ -67,6 +79,10 @@ unittest{
                 testeq(integralstr!hex(0xabcdef), "abcdef");
                 testeq(integralstr!hex(255), "ff");
             });
+        });
+        tests("Convenience", {
+            testeq(255.hexstr, "ff");
+            testeq(7.binstr, "111");
         });
     });
 }
