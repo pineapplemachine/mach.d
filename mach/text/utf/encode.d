@@ -47,6 +47,31 @@ auto utfencode(Element = char, Iter)(Iter iter) if(canUTFEncode!Iter){
 
 
 
+/// Type returned when calling utfencode with a dchar argument.
+/// Contains up to four bytes, the count determined by an object's length
+/// property, representing an encoding of the inputted unicode character.
+struct UTFEncodePoint(Element = char){
+    size_t length = 0;
+    Element[4] data = void;
+    this(Args...)(Args args) if(Args.length <= this.data.length){
+        foreach(i, arg; args) this.data[i] = cast(Element) arg;
+        this.length = args.length;
+    }
+    auto opIndex(in size_t index) const in{
+        assert(index >= 0 && index < this.length, "Index out of bounds.");
+    }body{
+        return this.data[index];
+    }
+    @property auto chars() const{
+        return this.data[0 .. this.length];
+    }
+    string toString() const{
+        return cast(string) this.chars;
+    }
+}
+
+
+
 /// Returns a struct containing information regarding how to encode a given
 /// UTF code point.
 auto utfencode(Element = char)(dchar ch){
@@ -75,24 +100,6 @@ auto utfencode(Element = char)(dchar ch){
         throw new UTFEncodeException(ch);
     }
 }
-
-/// Type returned when calling utfencode with a dchar argument.
-/// Contains up to four bytes, the count determined by an object's length
-/// property, representing an encoding of the inputted unicode character.
-struct UTFEncodePoint(Element = char){
-    size_t length = 0;
-    Element[4] data = void;
-    this(Args...)(Args args) if(Args.length <= this.data.length){
-        foreach(i, arg; args) this.data[i] = cast(Element) arg;
-        this.length = args.length;
-    }
-    auto opIndex(in size_t index) const in{
-        assert(index >= 0 && index < this.length, "Index out of bounds.");
-    }body{
-        return this.data[index];
-    }
-}
-
 
 
 
