@@ -5,57 +5,12 @@ private:
 import std.traits : Unqual, isNumeric, isFloatingPoint;
 //import std.bitmanip : FloatRep, DoubleRep; // TODO: Use this
 import std.math : pow;
-import mach.traits : isString;
+import mach.traits : isStringRange;
 import mach.range : asrange;
+import mach.text.parse.numeric.exceptions;
 import mach.text.parse.numeric.settings;
 
 public:
-
-
-
-/// Exception raised when a number fails to parse.
-class NumberParseException: Exception{
-    static enum Reason{
-        EmptyString,
-        NoDigits,
-        InvalidChar,
-        MultDecimals,
-        MalformedExp,
-    }
-    
-    Reason reason;
-    
-    this(Reason reason, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
-        super("Failed to parse string as number: " ~ reasonname(reason), file, line, next);
-        this.reason = reason;
-    }
-    
-    static string reasonname(in Reason reason){
-        final switch(reason){
-            case Reason.EmptyString: return "Empty string.";
-            case Reason.NoDigits: return "No digits in string.";
-            case Reason.InvalidChar: return "Encountered invalid character.";
-            case Reason.MultDecimals: return "Multiple decimal points.";
-            case Reason.MalformedExp: return "Malformed exponent.";
-        }
-    }
-    
-    static void enforce(T)(auto ref T cond, Reason reason){
-        if(!cond) throw new typeof(this)(reason);
-    }
-    static void enforceempty(T)(auto ref T cond){
-        typeof(this).enforce(cond, Reason.EmptyString);
-    }
-    static void enforcedigits(T)(auto ref T cond){
-        typeof(this).enforce(cond, Reason.NoDigits);
-    }
-    static void enforceinvalid(T)(auto ref T cond){
-        typeof(this).enforce(cond, Reason.InvalidChar);
-    }
-    static void enforcedecimals(T)(auto ref T cond){
-        typeof(this).enforce(cond, Reason.MultDecimals);
-    }
-}
 
 
 
@@ -64,7 +19,7 @@ class NumberParseException: Exception{
 /// Does not check for under/overflow.
 auto parseintegral(
     NumberParseSettings settings = NumberParseSettings.Default, T = long, S
-)(auto ref S str) if(isNumeric!T && isString!S){
+)(auto ref S str) if(isNumeric!T && isStringRange!S){
     auto range = str.asrange;
     NumberParseException.enforceempty(!range.empty);
     bool negate = false;
@@ -93,7 +48,7 @@ auto parseintegral(
 /// integral, fraction, or exponent values.
 auto parsefloat(
     NumberParseSettings settings = NumberParseSettings.Default, T = double, S
-)(auto ref S str) if(isFloatingPoint!T && isString!S){
+)(auto ref S str) if(isFloatingPoint!T && isStringRange!S){
     auto range = str.asrange;
     NumberParseException.enforceempty(!range.empty);
     // Determine sign
