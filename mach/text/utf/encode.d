@@ -68,6 +68,12 @@ struct UTFEncodePoint(Element = char){
     string toString() const{
         return cast(string) this.chars;
     }
+    int opApply(in int delegate(in Element) apply) const{
+        for(size_t i = 0; i < this.length; i++){
+            if(auto result = apply(this.data[i])) return result;
+        }
+        return 0;
+    }
 }
 
 
