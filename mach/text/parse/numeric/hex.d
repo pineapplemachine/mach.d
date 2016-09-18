@@ -33,7 +33,7 @@ auto parsehex(T = long, S)(auto ref S str) if(isString!S && isNumeric!T){
         anydigits = true;
     }
     NumberParseException.enforcedigits(anydigits);
-    return value;
+    return cast(T) value;
 }
 
 
