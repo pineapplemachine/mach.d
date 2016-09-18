@@ -31,6 +31,14 @@ template isWCharString(T...) if(T.length == 1){
 
 
 
+/// Get whether a type is an iterable valid as a range of chars, dchars, or wchars.
+template isStringRange(T...) if(T.length == 1){
+    import mach.range.asrange : validAsRange;
+    enum bool isStringRange = isString!T && validAsRange!T;
+}
+
+
+
 /// Get whether a type is valid as a random-access iterable of chars, dchars, or
 /// wchars.
 template isRandomAccessString(T...) if(T.length == 1){
