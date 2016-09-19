@@ -68,7 +68,7 @@ auto strip(bool front = true, bool back = true, Iter, Sub)(
 
 
 /// Used to define stripfront, stripback, and stripboth methods.
-private template StripMethodTemplate(bool front, bool back){
+template StripMethodTemplate(bool front, bool back){
     auto StripMethodTemplate(alias pred, Iter)(auto ref Iter iter) if(
         canStrip!(front, back, Iter, pred)
     ){
