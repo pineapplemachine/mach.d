@@ -19,6 +19,16 @@ alias DefaultSplitIndex = size_t;
 
 alias validSplitIndex = isIntegral;
 
+template canSplit(alias pred, Index, Iter){
+    static if(validAsRange!Iter) alias Source = AsRangeType!Iter;
+    else alias Source = Iter;
+    enum bool canSplit = (
+        validSplitIndex!Index && (
+            canFindAllElements!(pred, Index, Source)
+        )
+    );
+}
+
 template canSplit(alias pred, Index, Iter, Delim){
     static if(validAsRange!Iter) alias Source = AsRangeType!Iter;
     else alias Source = Iter;
@@ -50,6 +60,43 @@ auto split(
     return split!(
         DefaultSplitPredicate, mode, Index, Iter, Delim
     )(iter, delimiter);
+}
+
+// TODO: Make these two implementations cleaner, I'm doing a lot of copypasting
+// right now just to get it working.
+auto split(
+    alias pred = DefaultSplitPredicate,
+    SplitInclusionMode mode = DefaultSplitInclusionMode,
+    Index = DefaultSplitIndex, Iter
+)(
+    auto ref Iter iter
+) if(canSplit!(pred, Index, Iter)){
+    static if(validAsRange!Iter){
+        auto source = iter.asrange;
+    }else{
+        alias source = iter;
+    }
+    alias Source = typeof(source);
+    auto found = source.findallelements!(pred, Index, Source)();
+    auto delimlength = 1;
+    static if(validSplitIndex!(ElementType!(typeof(found)))){
+        alias indexes = found;
+    }else static if(hasProperty!(ElementType!(typeof(found)), `index`)){
+        auto indexes = found.pluck!`index`;
+    }else{
+        assert(false); // This shouldn't happen
+    }
+    enum bool beginwithdelim = (
+        mode is SplitInclusionMode.Front || mode is SplitInclusionMode.Both
+    );
+    enum bool endwithdelim = (
+        mode is SplitInclusionMode.Back || mode is SplitInclusionMode.Both
+    );
+    return SplitIterableRange!(
+        Source, typeof(indexes), Index, beginwithdelim, endwithdelim
+    )(
+        source, indexes, delimlength
+    );
 }
 
 auto split(
@@ -211,6 +258,10 @@ unittest{
             auto range = "hello.there.world".split('.');
             test(range.equals(["hello", "there", "world"]));
             static assert(isFiniteIterable!(typeof(range)));
+        });
+        tests("Element predicate", {
+            auto range = "hello_there world".split!(e => e == '_' || e == ' ');
+            test(range.equals(["hello", "there", "world"]));
         });
         tests("No delimiters", {
             auto range = "test".split(", ");
