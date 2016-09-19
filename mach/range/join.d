@@ -43,20 +43,32 @@ auto join(Iter)(auto ref Iter iter) if(canJoin!Iter){
 version(unittest){
     private:
     import mach.error.unit;
+    import mach.range.asrange : asrange;
     import mach.range.compare : equals;
+    import mach.range.filter: filter;
+    //import mach.range.split : split;
 }
 unittest{
     tests("Join", {
-        test(["abc", "def", "ghi"].join(", ").equals("abc, def, ghi"));
-        test(["abc", "def", "ghi"].join("").equals("abcdefghi"));
-        test(["abc", "def", "ghi"].join.equals("abcdefghi"));
-        test(["abc", "def", "ghi"].join(',').equals("abc,def,ghi"));
-        test(["a", "b"].join!(false, true)('.').equals("a.b."));
-        test(["a", "b"].join!(true, false)('.').equals(".a.b"));
-        test(["a", "b"].join!(true, true)('.').equals(".a.b."));
-        test(["abc"].join(", ").equals("abc"));
-        test(["abc"].join("").equals("abc"));
-        test((new string[0]).join(", ").equals(""));
-        test((new string[0]).join("").equals(""));
+        tests("Arrays", {
+            test(["abc", "def", "ghi"].join(", ").equals("abc, def, ghi"));
+            test(["abc", "def", "ghi"].join("").equals("abcdefghi"));
+            test(["abc", "def", "ghi"].join.equals("abcdefghi"));
+            test(["abc", "def", "ghi"].join(',').equals("abc,def,ghi"));
+            test(["a", "b"].join!(false, true)('.').equals("a.b."));
+            test(["a", "b"].join!(true, false)('.').equals(".a.b"));
+            test(["a", "b"].join!(true, true)('.').equals(".a.b."));
+            test(["abc"].join(", ").equals("abc"));
+            test(["abc"].join("").equals("abc"));
+            test((new string[0]).join(", ").equals(""));
+            test((new string[0]).join("").equals(""));
+        });
+        tests("Ranges", {
+            test(["a", "b"].asrange.join(" ").equals("a b"));
+            //test("a b c".split(" ").join(" ").equals("a b c")); // TODO: ?
+            test(["0", "0", "1", "0", "1"].filter!(e => e != "1").join(" ").equals("0 0 0"));
+            // TODO: Make this work somehow
+            //test(["a", "b"].asrange.join(' ').equals("a b"));
+        });
     });
 }
