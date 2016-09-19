@@ -16,6 +16,7 @@ class NumberParseException: Exception{
         InvalidChar,
         MultDecimals,
         MalformedExp,
+        MisplacedPadding,
     }
     
     Reason reason;
@@ -32,6 +33,7 @@ class NumberParseException: Exception{
             case Reason.InvalidChar: return "Encountered invalid character.";
             case Reason.MultDecimals: return "Multiple decimal points.";
             case Reason.MalformedExp: return "Malformed exponent.";
+            case Reason.MisplacedPadding: return "Misplaced padding character.";
         }
     }
     
@@ -49,5 +51,8 @@ class NumberParseException: Exception{
     }
     static void enforcedecimals(T)(auto ref T cond){
         typeof(this).enforce(cond, Reason.MultDecimals);
+    }
+    static void enforcepadding(T)(auto ref T cond){
+        typeof(this).enforce(cond, Reason.MisplacedPadding);
     }
 }
