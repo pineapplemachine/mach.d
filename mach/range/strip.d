@@ -12,92 +12,101 @@ public:
 
 
 
-static enum StripMode{Front, Back, Both}
-
-
-
-template canStrip(StripMode mode, Iter, alias pred){
-    static if(mode is StripMode.Front){
-        alias canStrip = canStripFront!(Iter, pred);
-    }else static if(mode is StripMode.Back){
-        alias canStrip = canStripBack!(Iter, pred);
+/// Determine whether an iterable can be stripped with the given predicate
+/// and front/back flags.
+template canStrip(bool front, bool back, Iter, alias pred){
+    static if(back){
+        enum bool canStrip = (
+            validAsBidirectionalRange!Iter && isElementPredicate!(pred, Iter)
+        );
+    }else static if(front){
+        enum bool canStrip = (
+            validAsRange!Iter && isElementPredicate!(pred, Iter)
+        );
     }else{
-        alias canStrip = canStripBoth!(Iter, pred);
+        enum bool canStrip = true;
     }
 }
-enum canStripFront(Iter, alias pred) = (
-    validAsRange!Iter && isElementPredicate!(pred, Iter)
-);
-enum canStripBack(Iter, alias pred) = (
-    validAsBidirectionalRange!Iter && isElementPredicate!(pred, Iter)
-);
-enum canStripBoth(Iter, alias pred) = (
-    canStripFront!(Iter, pred) && canStripBack!(Iter, pred)
+
+enum canStripRange(bool front, bool back, Range, alias pred) = (
+    canStrip!(front, back, Range, pred) && isRange!Range
 );
 
-enum canStripRange(StripMode mode, Iter, alias pred) = (
-    canStrip!(mode, Iter, pred) && isElementPredicate!(pred, Iter)
+enum canStripRange(Range, alias pred) = (
+    isElementPredicate!(pred, Range) && isRange!Range
 );
 
 
 
-auto stripmode(StripMode mode, alias pred, Iter)(auto ref Iter iter) if(
-    canStrip!(mode, Iter, pred)
+/// Return a range which iterates over the elements in a source iterable, with
+/// elements at the front or back matching a predicate excluded.
+/// The front and back template arguments can be used to control which ends of
+/// the range are stripped. By default, both ends of the range are stripped.
+auto strip(alias pred, bool front = true, bool back = true, Iter)(auto ref Iter iter) if(
+    canStrip!(front, back, Iter, pred)
 ){
-    auto range = iter.asrange;
-    return StripModeRange!(mode, pred, typeof(range))(range);
+    static if(front || back){
+        auto range = iter.asrange;
+        return MakeStripRange!(front, back, pred, typeof(range))(range);
+    }else{
+        return iter;
+    }
+}
+
+/// Return a range which iterates over the elements in a source iterable, with
+/// elements at the front or back being equal to the provided value excluded.
+auto strip(bool front = true, bool back = true, Iter, Sub)(
+    auto ref Iter iter, auto ref Sub sub
+) if(canStrip!(front, back, Iter, (e) => (e == sub))){
+    static if(front || back){
+        return strip!((e) => (e == sub), front, back, Iter)(iter);
+    }else{
+        return iter;
+    }
 }
 
 
 
-/// Create a range which enumerates the items of some iterable starting with the
-/// first element that doesn't match a predicate.
-auto stripfront(alias pred, Iter)(auto ref Iter iter) if(canStripFront!(Iter, pred)){
-    return stripmode!(StripMode.Front, pred, Iter)(iter);
+/// Used to define stripfront, stripback, and stripboth methods.
+private template StripMethodTemplate(bool front, bool back){
+    auto StripMethodTemplate(alias pred, Iter)(auto ref Iter iter) if(
+        canStrip!(front, back, Iter, pred)
+    ){
+        return strip!(pred, front, back, Iter)(iter);
+    }
+    auto StripMethodTemplate(Iter, Sub)(auto ref Iter iter, auto ref Sub sub) if(
+        canStrip!(front, back, Iter, (e) => (e == sub))
+    ){
+        return strip!(front, back, Iter, Sub)(iter, sub);
+    }
 }
 
-/// Create a range which enumerates the items of some iterable ending with the
-/// last element that doesn't match a predicate.
-auto stripback(alias pred, Iter)(auto ref Iter iter) if(canStripBack!(Iter, pred)){
-    return stripmode!(StripMode.Back, pred, Iter)(iter);
-}
-
-auto stripboth(alias pred, Iter)(auto ref Iter iter) if(canStripBoth!(Iter, pred)){
-    return stripmode!(StripMode.Both, pred, Iter)(iter);
-}
 
 
+/// Strip only the front of the input iterable.
+alias stripfront = StripMethodTemplate!(true, false);
+/// Strip only the back of the input iterable.
+alias stripback = StripMethodTemplate!(false, true);
+/// Strip both ends of the input iterable.
+alias stripboth = StripMethodTemplate!(true, true);
 
-auto stripfront(Iter, Sub)(auto ref Iter iter, auto ref Sub sub) if(
-    canStripFront!(Iter, (e) => (e == sub))
+
+
+/// Used to construct a StripRange object for the given arguments.
+auto MakeStripRange(bool front, bool back, alias pred, Range)(auto ref Range source) if(
+    canStripRange!(front, back, Range, pred)
 ){
-    return stripfront!((e) => (e == sub), Iter)(iter);
+    static if(front || back){
+        auto range = StripRange!(pred, Range)(source);
+        static if(front) range.stripFront();
+        static if(back) range.stripBack();
+        return range;
+    }else{
+        return source;
+    }
 }
 
-auto stripback(Iter, Sub)(auto ref Iter iter, auto ref Sub sub) if(
-    canStripBack!(Iter, (e) => (e == sub))
-){
-    return stripback!((e) => (e == sub), Iter)(iter);
-}
-
-auto stripboth(Iter, Sub)(auto ref Iter iter, auto ref Sub sub) if(
-    canStripBoth!(Iter, (e) => (e == sub))
-){
-    return stripboth!((e) => (e == sub), Iter)(iter);
-}
-
-
-
-auto StripModeRange(StripMode mode, alias pred, Range)(auto ref Range source) if(
-    canStripRange!(mode, Range, pred)
-){
-    auto range = StripRange!(pred, Range)(source);
-    static if(mode !is StripMode.Back) range.stripFront();
-    static if(mode !is StripMode.Front) range.stripBack();
-    return range;
-}
-
-struct StripRange(alias pred, Range){
+struct StripRange(alias pred, Range) if(canStripRange!(Range, pred)){
     alias isBidirectional = isBidirectionalRange!Range;
     
     mixin MetaRangeMixin!(
