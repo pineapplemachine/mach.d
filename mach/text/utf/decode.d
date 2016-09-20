@@ -2,7 +2,7 @@ module mach.text.utf.decode;
 
 private:
 
-import mach.traits : isRange;
+import mach.traits : isString, isRange, hasUnqualElementType;
 import mach.range.asrange : asrange, validAsRange;
 import mach.text.utf.common : UTFException;
 
@@ -63,14 +63,25 @@ template canUTFDecodeRange(T){
     }));
 }
 
+template isUTFDecoded(T){
+    enum bool isUTFDecoded = !canUTFDecode!T && isString!T;
+}
+
 
 
 /// Given an input iterable containing raw char or byte data, iterate over
 /// its UTF-8 encoded code points.
 /// Throws a UTFDecodeException when the input is malformed.
-auto utfdecode(CodePoint = dchar, Iter)(Iter iter) if(canUTFDecode!Iter){
+auto utfdecode(CodePoint = dchar, Iter)(auto ref Iter iter) if(
+    canUTFDecode!Iter
+){
     auto range = iter.asrange;
     return UTFDecodeRange!(typeof(range), CodePoint)(range);
+}
+
+/// In the case of an already-decoded string, just return the input itself.
+auto utfdecode(Iter)(auto ref Iter iter) if(isUTFDecoded!Iter){
+    return iter;
 }
 
 
@@ -156,27 +167,44 @@ version(unittest){
 }
 unittest{
     tests("UTF decode", {
-        // No chars
-        test("".utfdecode.equals(""d));
-        // Single-byte chars
-        test("test".utfdecode.equals("test"d));
-        test("hello".utfdecode.equals("hello"d));
-        // Two-byte chars
-        test("\xD7\x90".utfdecode.equals("א"d));
-        test("\xD7\x90\xD6\xB2\xD7\xA0\xD6\xB8\xD7\xA0\xD6\xB8\xD7\xA1".utfdecode.equals("אֲנָנָס"d));
-        // Three-byte chars
-        test("\xE3\x83\x84".utfdecode.equals("ツ"d));
-        test("\xE3\x82\xB6\xE3\x83\xBC\xE3\x82\xB6\xE3\x83\xBC".utfdecode.equals("ザーザー"d));
-        // Four-byte chars
-        test("\xF0\x9F\x98\x83".utfdecode.equals("😃"d));
-        // Mixed
-        test("!\xD7\x90\xE3\x83\x84\xF0\x9F\x98\x83".utfdecode.equals("!אツ😃"d));
-        // Byte array
-        ubyte[] bytes = [0xe3, 0x83, 0x84];
-        test(bytes.utfdecode.equals("ツ"d));
-        // Invalid
-        fail({"\xD7".utfdecode.consume;});
-        fail({"\xF0".utfdecode.consume;});
-        fail({"\xF0\x9F".utfdecode.consume;});
+        tests("Empty string", {
+            test("".utfdecode.equals(""d));
+        });
+        tests("Single-byte code points", {
+            test("test".utfdecode.equals("test"d));
+            test("hello".utfdecode.equals("hello"d));
+        });
+        tests("Two-byte code points", {
+            test("\xD7\x90".utfdecode.equals("א"d));
+            test("\xD7\x90\xD6\xB2\xD7\xA0\xD6\xB8\xD7\xA0\xD6\xB8\xD7\xA1".utfdecode.equals("אֲנָנָס"d));
+        });
+        tests("Three-byte code points", {
+            test("\xE3\x83\x84".utfdecode.equals("ツ"d));
+            test("\xE3\x82\xB6\xE3\x83\xBC\xE3\x82\xB6\xE3\x83\xBC".utfdecode.equals("ザーザー"d));
+        });
+        tests("Four-byte code points", {
+            test("\xF0\x9F\x98\x83".utfdecode.equals("😃"d));
+        });
+        tests("Mixed-size code points", {
+            test("!\xD7\x90\xE3\x83\x84\xF0\x9F\x98\x83".utfdecode.equals("!אツ😃"d));
+        });
+        tests("Range", {
+            test("\xE3\x83\x84".asrange.utfdecode.equals("ツ"d));
+        });
+        tests("Byte array", {
+            ubyte[] bytes = [0xe3, 0x83, 0x84];
+            test(bytes.utfdecode.equals("ツ"d));
+        });
+        tests("Invalid inputs", {
+            fail({"\xD7".utfdecode.consume;});
+            fail({"\xF0".utfdecode.consume;});
+            fail({"\xF0\x9F".utfdecode.consume;});
+        });
+        tests("Already decoded", {
+            auto dstr = "test"d;
+            testis(dstr.utfdecode, dstr);
+            auto wstr = "test"w;
+            testis(wstr.utfdecode, wstr);
+        });
     });
 }
