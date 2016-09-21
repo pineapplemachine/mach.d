@@ -10,8 +10,8 @@ public:
 
 
 
-template canIntersperse(Iter, Element, Interval){
-    static if(validAsRange!Iter && validIntersperseInterval!Interval){
+template canIntersperse(Iter, Element){
+    static if(validAsRange!Iter){
         enum bool canIntersperse = (
             isImplicitlyConvertible!(Element, ElementType!Iter)
         );
@@ -20,38 +20,36 @@ template canIntersperse(Iter, Element, Interval){
     }
 }
 
-enum canIntersperseRange(Range, Interval) = (
-    isRange!Range && canIntersperse!(Range, ElementType!Range, Interval)
+enum canIntersperseRange(Range) = (
+    isRange!Range && canIntersperse!(Range, ElementType!Range)
 );
 
-alias validIntersperseInterval = isIntegral;
-
-alias DefaultIntersperseInterval = size_t;
+alias IntersperseInterval = size_t;
 
 
 
 auto intersperse(
     bool frontinterval = false, bool backinterval = false,
-    Iter, Element, Interval = DefaultIntersperseInterval
+    Iter, Element
 )(
-    auto ref Iter iter, auto ref Element interrupt, Interval interval
+    auto ref Iter iter, auto ref Element interrupt, IntersperseInterval interval
 ) if(
-    canIntersperse!(Iter, Element, Interval)
+    canIntersperse!(Iter, Element)
 ){
     auto range = iter.asrange;
     return IntersperseRange!(
-        typeof(range), frontinterval, backinterval, Interval
+        typeof(range), frontinterval, backinterval
     )(range, interrupt, interval);
 }
 
 
 
 struct IntersperseRange(
-    Range, bool frontinterval = false, bool backinterval = false,
-    Interval = DefaultIntersperseInterval
-) if(canIntersperseRange!(Range, Interval)){
+    Range, bool frontinterval = false, bool backinterval = false
+) if(canIntersperseRange!(Range)){
     alias Finite = isFiniteRange!Range;
     alias Element = ElementType!Range;
+    alias Interval = IntersperseInterval;
     
     Range source;
     Element interrupt;
@@ -98,19 +96,27 @@ struct IntersperseRange(
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
+    import mach.range.asrange : asrange;
     import mach.range.compare : equals;
 }
 unittest{
-    static assert(canIntersperse!(string, char, size_t));
-    static assert(canIntersperse!(int[], int, int));
-    static assert(canIntersperse!(double[], int, size_t));
-    static assert(!canIntersperse!(int[], string, size_t));
+    static assert(canIntersperse!(string, char));
+    static assert(canIntersperse!(int[], int));
+    static assert(canIntersperse!(double[], int));
+    static assert(!canIntersperse!(int[], string));
     tests("Intersperse", {
-        test("hello".intersperse!(false, false)('_', 2).equals("h_e_l_l_o"));
-        test("hello".intersperse!(true, false)('_', 2).equals("_h_e_l_l_o"));
-        test("hello".intersperse!(false, true)('_', 2).equals("h_e_l_l_o_"));
-        test("hello".intersperse!(true, true)('_', 2).equals("_h_e_l_l_o_"));
-        test("hello".intersperse('_', 3).equals("he_ll_o"));
+        tests("Strings", {
+            test("hello".intersperse!(false, false)('_', 2).equals("h_e_l_l_o"));
+            test("hello".intersperse!(true, false)('_', 2).equals("_h_e_l_l_o"));
+            test("hello".intersperse!(false, true)('_', 2).equals("h_e_l_l_o_"));
+            test("hello".intersperse!(true, true)('_', 2).equals("_h_e_l_l_o_"));
+            test("hello".intersperse('_', 3).equals("he_ll_o"));
+            test(["a", "b", "cd"].intersperse("_", 2).equals(["a", "_", "b", "_", "cd"]));
+        });
+        tests("Ranges", {
+            test("hello".asrange.intersperse('_', 2).equals("h_e_l_l_o"));
+            test(["a", "b", "cd"].asrange.intersperse("_", 2).equals(["a", "_", "b", "_", "cd"]));
+        });
     });
 }
