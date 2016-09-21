@@ -2,7 +2,7 @@ module mach.text.utf.decode;
 
 private:
 
-import mach.traits : isString, isRange, hasUnqualElementType;
+import mach.traits : isRange, isIterable, ElementType;
 import mach.range.asrange : asrange, validAsRange;
 import mach.text.utf.common : UTFException;
 
@@ -53,18 +53,23 @@ class UTFDecodeException: UTFException{
 
 template canUTFDecode(T){
     enum bool canUTFDecode = validAsRange!T && is(typeof({
+        static assert(ElementType!T.sizeof == 1);
         char ch = T.init.asrange.front;
     }));
 }
 
 template canUTFDecodeRange(T){
     enum bool canUTFDecodeRange = isRange!T && is(typeof({
+        static assert(ElementType!T.sizeof == 1);
         char ch = T.init.front;
     }));
 }
 
 template isUTFDecoded(T){
-    enum bool isUTFDecoded = !canUTFDecode!T && isString!T;
+    enum bool isUTFDecoded = isIterable!T && is(typeof({
+        static assert(ElementType!T.sizeof > 1);
+        dchar ch = ElementType!T.init;
+    }));
 }
 
 
@@ -72,16 +77,13 @@ template isUTFDecoded(T){
 /// Given an input iterable containing raw char or byte data, iterate over
 /// its UTF-8 encoded code points.
 /// Throws a UTFDecodeException when the input is malformed.
-auto utfdecode(CodePoint = dchar, Iter)(auto ref Iter iter) if(
-    canUTFDecode!Iter
-){
-    auto range = iter.asrange;
-    return UTFDecodeRange!(typeof(range), CodePoint)(range);
-}
-
-/// In the case of an already-decoded string, just return the input itself.
-auto utfdecode(Iter)(auto ref Iter iter) if(isUTFDecoded!Iter){
-    return iter;
+auto utfdecode(Iter)(auto ref Iter iter) if(isUTFDecoded!Iter || canUTFDecode!Iter){
+    static if(isUTFDecoded!Iter){
+        return iter;
+    }else{
+        auto range = iter.asrange;
+        return UTFDecodeRange!(typeof(range), dchar)(range);
+    }
 }
 
 
@@ -161,9 +163,32 @@ struct UTFDecodeRange(Range, CodePoint = dchar) if(canUTFDecodeRange!Range){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
     import mach.range.consume : consume;
+}
+unittest{
+    static assert(isUTFDecoded!(wstring));
+    static assert(isUTFDecoded!(dstring));
+    static assert(isUTFDecoded!(wchar[]));
+    static assert(isUTFDecoded!(dchar[]));
+    static assert(isUTFDecoded!(uint[]));
+    static assert(!isUTFDecoded!(string));
+    static assert(!isUTFDecoded!(char[]));
+    static assert(!isUTFDecoded!(ubyte[]));
+}
+unittest{
+    static assert(canUTFDecode!(string));
+    static assert(canUTFDecode!(char[]));
+    static assert(canUTFDecode!(ubyte[]));
+    static assert(!canUTFDecode!(wstring));
+    static assert(!canUTFDecode!(dstring));
+    static assert(!canUTFDecode!(wchar[]));
+    static assert(!canUTFDecode!(dchar[]));
+    static assert(!canUTFDecode!(uint[]));
+    static assert(!canUTFDecode!int);
+    static assert(!canUTFDecode!uint);
+    static assert(!canUTFDecode!void);
 }
 unittest{
     tests("UTF decode", {
@@ -196,9 +221,9 @@ unittest{
             test(bytes.utfdecode.equals("ツ"d));
         });
         tests("Invalid inputs", {
-            fail({"\xD7".utfdecode.consume;});
-            fail({"\xF0".utfdecode.consume;});
-            fail({"\xF0\x9F".utfdecode.consume;});
+            testfail({"\xD7".utfdecode.consume;});
+            testfail({"\xF0".utfdecode.consume;});
+            testfail({"\xF0\x9F".utfdecode.consume;});
         });
         tests("Already decoded", {
             auto dstr = "test"d;

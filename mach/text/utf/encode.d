@@ -2,7 +2,7 @@ module mach.text.utf.encode;
 
 private:
 
-import mach.traits : isRange;
+import mach.traits : isIterable, ElementType, isRange;
 import mach.range.asrange : asrange, validAsRange;
 import mach.text.utf.common : UTFException;
 
@@ -28,21 +28,34 @@ class UTFEncodeException: UTFException{
 
 template canUTFEncode(T){
     enum bool canUTFEncode = validAsRange!T && is(typeof({
+        static assert(ElementType!T.sizeof > 1);
         dchar ch = T.init.asrange.front;
     }));
 }
 
 template canUTFEncodeRange(T){
     enum bool canUTFEncodeRange = isRange!T && is(typeof({
+        static assert(ElementType!T.sizeof > 1);
         dchar ch = T.init.front;
+    }));
+}
+
+template isUTFEncoded(T){
+    enum bool isUTFEncoded = isIterable!T && is(typeof({
+        static assert(ElementType!T.sizeof == 1);
+        char ch = ElementType!T.init;
     }));
 }
 
 
 
-auto utfencode(Element = char, Iter)(Iter iter) if(canUTFEncode!Iter){
-    auto range = iter.asrange;
-    return UTFEncodeRange!(typeof(range), Element)(range);
+auto utfencode(Iter)(auto ref Iter iter) if(isUTFEncoded!Iter || canUTFEncode!Iter){
+    static if(isUTFEncoded!Iter){
+        return iter;
+    }else{
+        auto range = iter.asrange;
+        return UTFEncodeRange!(typeof(range), char)(range);
+    }
 }
 
 
@@ -156,29 +169,69 @@ struct UTFEncodeRange(Range, Element = char) if(canUTFEncodeRange!Range){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
     import mach.range.consume : consume;
 }
 unittest{
+    static assert(isUTFEncoded!(string));
+    static assert(isUTFEncoded!(char[]));
+    static assert(isUTFEncoded!(ubyte[]));
+    static assert(!isUTFEncoded!(wstring));
+    static assert(!isUTFEncoded!(dstring));
+    static assert(!isUTFEncoded!(wchar[]));
+    static assert(!isUTFEncoded!(dchar[]));
+    static assert(!isUTFEncoded!(uint[]));
+}
+unittest{
+    static assert(canUTFEncode!(wstring));
+    static assert(canUTFEncode!(dstring));
+    static assert(canUTFEncode!(wchar[]));
+    static assert(canUTFEncode!(dchar[]));
+    static assert(canUTFEncode!(uint[]));
+    static assert(!canUTFEncode!(string));
+    static assert(!canUTFEncode!(char[]));
+    static assert(!canUTFEncode!(ubyte[]));
+    static assert(!canUTFEncode!int);
+    static assert(!canUTFEncode!uint);
+    static assert(!canUTFEncode!void);
+}
+unittest{
     tests("UTF encode", {
-        // No chars
-        test(""d.utfencode.equals(""));
-        // Single-byte chars
-        test("test"d.utfencode.equals("test"));
-        test("hello"d.utfencode.equals("hello"));
-        // Two-byte chars
-        test("א"d.utfencode.equals("\xD7\x90"));
-        test("אֲנָנָס"d.utfencode.equals("\xD7\x90\xD6\xB2\xD7\xA0\xD6\xB8\xD7\xA0\xD6\xB8\xD7\xA1"));
-        // Three-byte chars
-        test("ツ"d.utfencode.equals("\xE3\x83\x84"));
-        test("ザーザー"d.utfencode.equals("\xE3\x82\xB6\xE3\x83\xBC\xE3\x82\xB6\xE3\x83\xBC"));
-        // Four-byte chars
-        test("😃"d.utfencode.equals("\xF0\x9F\x98\x83"));
-        // Mixed
-        test("!אツ😃"d.utfencode.equals("!\xD7\x90\xE3\x83\x84\xF0\x9F\x98\x83"));
-        // Array
-        dchar[] array = ['!', 'א', 'ツ', '😃'];
-        test(array.utfencode.equals("!\xD7\x90\xE3\x83\x84\xF0\x9F\x98\x83"));
+        tests("No chars", {
+            test(""d.utfencode.equals(""));
+        });
+        tests("Single-byte chars", {
+            test("test"d.utfencode.equals("test"));
+            test("hello"d.utfencode.equals("hello"));
+        });
+        tests("Two-byte chars", {
+            test("א"d.utfencode.equals("\xD7\x90"));
+            test("אֲנָנָס"d.utfencode.equals("\xD7\x90\xD6\xB2\xD7\xA0\xD6\xB8\xD7\xA0\xD6\xB8\xD7\xA1"));
+        });
+        tests("Three-byte chars", {
+            test("ツ"d.utfencode.equals("\xE3\x83\x84"));
+            test("ザーザー"d.utfencode.equals("\xE3\x82\xB6\xE3\x83\xBC\xE3\x82\xB6\xE3\x83\xBC"));
+        });
+        tests("Four-byte chars", {
+            test("😃"d.utfencode.equals("\xF0\x9F\x98\x83"));
+        });
+        tests("Mixed", {
+            test("!אツ😃"d.utfencode.equals("!\xD7\x90\xE3\x83\x84\xF0\x9F\x98\x83"));
+        });
+        tests("Array", {
+            dchar[] array = ['!', 'א', 'ツ', '😃'];
+            test(array.utfencode.equals("!\xD7\x90\xE3\x83\x84\xF0\x9F\x98\x83"));
+        });
+        tests("Already encoded", {
+            tests("String", {
+                auto str = "hello";
+                testis(str.utfencode, str);
+            });
+            tests("Byte array", {
+                ubyte[] bytes = [0x32, 0x32, 0x32];
+                testis(bytes.utfencode, bytes);
+            });
+        });
     });
 }
