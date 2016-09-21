@@ -89,7 +89,7 @@ struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!(Array, Index)){
     }
     
     typeof(this) opSlice(in Index low, in Index high) in{
-        assert(low >= 0 && high >= low && high < this.length);
+        assert(low >= 0 && high >= low && high <= this.length);
     }body{
         return typeof(this)(this.array, low + this.startindex, high + this.startindex);
     }
@@ -218,11 +218,13 @@ unittest{
             auto range = ArrayRange!(int[3])(array);
             testeq(range.length, 3);
             testeq(range[0], 1);
-            auto slice = range[0 .. 2];
-            static assert(is(typeof(slice) == typeof(range)));
-            testeq(slice.length, 2);
-            testeq(slice[0], 1);
-            testeq(slice[$-1], 2);
+            auto partial = range[0 .. 2];
+            static assert(is(typeof(partial) == typeof(range)));
+            testeq(partial.length, 2);
+            testeq(partial[0], 1);
+            testeq(partial[$-1], 2);
+            auto full = range[0 .. $];
+            testeq(full.length, 3);
         });
     });
 }
