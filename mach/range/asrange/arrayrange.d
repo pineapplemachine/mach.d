@@ -3,7 +3,7 @@ module mach.range.asrange.arrayrange;
 private:
 
 import std.traits : isArray, isIntegral;
-import mach.traits : ArrayElementType, canReassign, canSliceSame;
+import mach.traits : ArrayElementType, canSliceSame;
 
 public:
 
@@ -29,36 +29,49 @@ auto asarrayrange(Array, Index = size_t)(Array array) if(
 struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!(Array, Index)){
     alias Element = ArrayElementType!Array;
     
+    /// The array over which this range iterates.
     Array array;
+    /// The index in the array where this range begins.
+    Index startindex;
+    /// The index in the array where this range ends.
+    Index endindex;
+    /// Index of the array where the front of the range is currently located,
+    /// as modified by the range's startindex.
     Index frontindex;
+    /// Index of the array where the back of the range is currently located,
+    /// as modified by the range's startindex.
     Index backindex;
-    Index length;
     
-    this(typeof(this) range){
-        this(range.array, range.frontindex, range.backindex, range.length);
+    this(Array array){
+        this(array, frontindex, array.length);
     }
-    this(Array array, Index frontindex = Index.init){
-        this(array, frontindex, array.length, array.length);
+    this(Array array, Index frontindex, Index backindex){
+        this(array, 0, backindex - frontindex, frontindex, backindex);
     }
-    this(Array array, Index frontindex, Index backindex, Index length){
+    this(Array array, Index frontindex, Index backindex, Index startindex, Index endindex){
         this.array = array;
         this.frontindex = frontindex;
         this.backindex = backindex;
-        this.length = length;
+        this.startindex = startindex;
+        this.endindex = endindex;
+    }
+    
+    @property auto length(){
+        return this.endindex - this.startindex;
     }
     
     void popFront(){
         this.frontindex++;
     }
     @property auto ref front(){
-        return this.array[this.frontindex];
+        return this.array[this.frontindex + this.startindex];
     }
     
     void popBack(){
         this.backindex--;
     }
     @property auto ref back(){
-        return this.array[this.backindex - 1];
+        return this.array[this.backindex + this.startindex - 1];
     }
     
     @property bool empty() const{
@@ -69,41 +82,45 @@ struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!(Array, Index)){
     }
     alias opDollar = length;
     
-    auto ref opIndex(in Index index){
-        return this.array[index];
-    }
-    static if(canSliceSame!(Array, Index)){
-        typeof(this) opSlice(in Index low, in Index high){
-            return typeof(this)(this.array[low .. high]);
-        }
+    auto ref opIndex(in Index index) in{
+        assert(index >= 0 && index < this.length);
+    }body{
+        return this.array[index + this.startindex];
     }
     
-    static if(canReassign!Array){
-        static if(canReassign!Element){
-            enum bool mutable = true;
-            @property void front(Element value){
-                this.array[this.frontindex] = value;
-            }
-            @property void back(Element value){
-                this.array[this.backindex - 1] = value;
-            }
-            void opIndexAssign(Element value, in Index index){
-                this.array[index] = value;
-            }
+    typeof(this) opSlice(in Index low, in Index high) in{
+        assert(low >= 0 && high >= low && high < this.length);
+    }body{
+        return typeof(this)(this.array, low + this.startindex, high + this.startindex);
+    }
+    
+    static if(is(typeof({this.array[0] = this.array[0];}))){
+        enum bool mutable = true;
+        @property void front(Element value){
+            this.array[this.frontindex + this.startindex] = value;
+        }
+        @property void back(Element value){
+            this.array[this.backindex + this.startindex - 1] = value;
+        }
+        void opIndexAssign(Element value, in Index index){
+            this.array[index + this.startindex] = value;
         }
     }else{
         enum bool mutable = false;
     }
     
     @property auto save(){
-        return typeof(this)(this);
+        return this;
     }
     
     bool opEquals(in Array rhs) const{
-        return this.array == rhs;
+        return this.array[this.startindex .. this.endindex] == rhs;
     }
     bool opEquals(in typeof(this) rhs) const{
-        return this.array == rhs.array;
+        return (
+            this.array[this.startindex .. this.endindex] ==
+            rhs.array[rhs.startindex .. rhs.endindex]
+        );
     }
 }
 
@@ -159,6 +176,7 @@ unittest{
         tests("Mutability", {
             char[] data = ['h', 'e', 'l', 'l', 'o'];
             auto range = ArrayRange!(char[])(data);
+            static assert(range.mutable);
             range[1] = 'a';
             range.popFront();
             testeq(range.front, 'a');
@@ -170,6 +188,7 @@ unittest{
             tests("Const int", {
                 const int[] data = [0, 1, 2];
                 auto range = data.asarrayrange;
+                static assert(!range.mutable);
                 testeq(range[0], data[0]);
                 testeq(range.front, data[0]);
                 range.popFront();
@@ -178,8 +197,8 @@ unittest{
             tests("Immutable members", {
                 struct ConstMember{const int x;}
                 auto data = [ConstMember(0), ConstMember(1)];
-                import mach.traits;
                 auto range = data.asarrayrange;
+                static assert(!range.mutable);
                 testeq(range.front.x, 0);
                 range.popFront();
                 testeq(range.front.x, 1);
@@ -199,6 +218,11 @@ unittest{
             auto range = ArrayRange!(int[3])(array);
             testeq(range.length, 3);
             testeq(range[0], 1);
+            auto slice = range[0 .. 2];
+            static assert(is(typeof(slice) == typeof(range)));
+            testeq(slice.length, 2);
+            testeq(slice[0], 1);
+            testeq(slice[$-1], 2);
         });
     });
 }
