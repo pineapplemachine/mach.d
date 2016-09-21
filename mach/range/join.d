@@ -15,7 +15,7 @@ template canJoin(Iter){
 }
 
 template canJoin(Iter, Sep){
-    enum bool canJoin = canIntersperse!(Iter, Sep, size_t);
+    enum bool canJoin = canIntersperse!(Iter, Sep);
 }
 
 
