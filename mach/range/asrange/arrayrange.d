@@ -60,17 +60,17 @@ struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!(Array, Index)){
         return this.endindex - this.startindex;
     }
     
-    void popFront(){
+    void popFront() in{assert(!this.empty);} body{
         this.frontindex++;
     }
-    @property auto ref front(){
+    @property auto ref front() in{assert(!this.empty);} body{
         return this.array[this.frontindex + this.startindex];
     }
     
-    void popBack(){
+    void popBack() in{assert(!this.empty);} body{
         this.backindex--;
     }
-    @property auto ref back(){
+    @property auto ref back() in{assert(!this.empty);} body{
         return this.array[this.backindex + this.startindex - 1];
     }
     
