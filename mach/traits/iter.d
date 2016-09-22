@@ -75,7 +75,7 @@ template isFinite(T){
             // Assumes that a valid range without empty defined as an enum is finite.
             enum bool isFinite = true;
         }else{
-            static assert(false, "Failed to determine finiteness.");
+            static assert(false, "Unable to determine finiteness.");
         }
     }else{
         enum bool isFinite = false;
@@ -120,6 +120,7 @@ unittest{
     static assert(isIterable!str);
     static assert(isIterable!string);
     static assert(isIterable!(int[]));
+    static assert(isIterable!(immutable(int[])));
     static assert(isIterable!OpApply);
     static assert(isIterable!OpApplyBoth);
     static assert(isIterable!Range);
@@ -127,6 +128,7 @@ unittest{
     static assert(isIterableReverse!str);
     static assert(isIterableReverse!string);
     static assert(isIterableReverse!(int[]));
+    static assert(isIterableReverse!(immutable(int[])));
     static assert(isIterableReverse!OpApplyRev);
     static assert(isIterableReverse!OpApplyBoth);
     static assert(isIterableReverse!BiRange);
@@ -154,6 +156,7 @@ unittest{
     static assert(isRandomAccessIterable!str);
     static assert(isRandomAccessIterable!string);
     static assert(isRandomAccessIterable!(int[]));
+    static assert(isRandomAccessIterable!(immutable(int[])));
     static assert(isRandomAccessIterable!RandomRange);
     static assert(!isRandomAccessIterable!i);
     static assert(!isRandomAccessIterable!int);
@@ -172,11 +175,26 @@ unittest{
         @property bool empty(){return true;}; @property int front(){return 0;} void popFront(){}
     }
     string str;
+    // isFiniteIterable
     static assert(isFiniteIterable!str);
     static assert(isFiniteIterable!string);
     static assert(isFiniteIterable!(int[]));
+    static assert(isFiniteIterable!(immutable(int[])));
     static assert(isFiniteIterable!EmptyRange);
     static assert(isFiniteIterable!FiniteRange);
+    static assert(!isFiniteIterable!int);
+    static assert(!isFiniteIterable!void);
+    static assert(!isFiniteIterable!InfRange);
+    // isInfiniteIterable
+    static assert(isInfiniteIterable!InfRange);
+    static assert(!isInfiniteIterable!str);
+    static assert(!isInfiniteIterable!string);
+    static assert(!isInfiniteIterable!(int[]));
+    static assert(!isInfiniteIterable!(immutable(int[])));
+    static assert(!isInfiniteIterable!EmptyRange);
+    static assert(!isInfiniteIterable!FiniteRange);
+    static assert(!isInfiniteIterable!int);
+    static assert(!isInfiniteIterable!void);
 }
 
 unittest{
