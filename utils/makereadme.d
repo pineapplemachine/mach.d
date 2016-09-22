@@ -1,6 +1,6 @@
 /// This module is used to create markdown readmes from D source files
 /// containing unittests. This way, it's easy to verify that code examples
-/// in readmes doesn't become obsolete.
+/// in readmes don't become obsolete.
 
 private:
 
