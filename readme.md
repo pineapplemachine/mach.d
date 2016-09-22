@@ -1,10 +1,10 @@
 # mach.d
 
-## Overview
-
 A general-purpose library for the D programming language.
 
 Distributed under the very permissive [zlib/libpng license](https://github.com/pineapplemachine/mach.d/blob/master/license).
+
+## Overview
 
 Be warned: "Stability" is meaningless in the context of this library. I am constantly rewriting and improving and breaking code.
 
