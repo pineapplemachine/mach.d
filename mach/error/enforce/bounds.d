@@ -61,7 +61,6 @@ abstract class OutOfBoundsException(Index): Exception{
         super(message, file, line, null);
     }
     @property Index index() const;
-    @property void index(Index i);
     @property bool toolow() const;
     @property bool toohigh() const;
 }
@@ -76,7 +75,7 @@ class LOutOfBoundsException(string lop, Index, Low): OutOfBoundsException!Index 
         immutable auto message = text(
             "Value ", index, " out of bounds; must be ", lop, " ", low, "."
         );
-        this.index = index;
+        this.idx = index;
         this.low = low;
         super(message, line, file);
     }
@@ -90,7 +89,6 @@ class LOutOfBoundsException(string lop, Index, Low): OutOfBoundsException!Index 
     }
     
     override @property Index index() const{return this.idx;}
-    override @property void index(Index i){this.idx = i;}
     override @property bool toolow() const{mixin(`
         return !(this.idx ` ~ lop ~ ` this.low);
     `);}
@@ -107,7 +105,7 @@ class HOutOfBoundsException(string hop, Index, High): OutOfBoundsException!Index
         immutable auto message = text(
             "Value ", index, " out of bounds; must be ", hop, " ", high, "."
         );
-        this.index = index;
+        this.idx = index;
         this.high = high;
         super(message, line, file);
     }
@@ -121,7 +119,6 @@ class HOutOfBoundsException(string hop, Index, High): OutOfBoundsException!Index
     }
     
     override @property Index index() const{return this.idx;}
-    override @property void index(Index i){this.idx = i;}
     override @property bool toolow() const{return false;}
     override @property bool toohigh() const{mixin(`
         return !(this.idx ` ~ hop ~ ` this.high);
@@ -140,7 +137,7 @@ class LHOutOfBoundsException(string lop, string hop, Index, Low, High): OutOfBou
             "Value ", index, " out of bounds; must be ",
             lop, " ", low, " and ", hop, " ", high, "."
         );
-        this.index = index;
+        this.idx = index;
         this.low = low;
         this.high = high;
         super(message, line, file);
@@ -155,7 +152,6 @@ class LHOutOfBoundsException(string lop, string hop, Index, Low, High): OutOfBou
     }
     
     override @property Index index() const{return this.idx;}
-    override @property void index(Index i){this.idx = i;}
     override @property bool toolow() const{mixin(`
         return !(this.idx ` ~ lop ~ ` this.low);
     `);}
