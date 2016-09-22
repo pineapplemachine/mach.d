@@ -119,9 +119,9 @@ version(unittest){
 unittest{ 
     tests("Equals", {
         tests("Arrays", {
-            test("Same type", [1, 2, 3, 4].equals([1, 2, 3, 4]));
-            test("Different types", [1, 2, 3, 4].equals([1.0, 2.0, 3.0, 4.0]));
-            test("Empty", (new int[0]).equals(new int[0]));
+            test([1, 2, 3, 4].equals([1, 2, 3, 4]));
+            test([1, 2, 3, 4].equals([1.0, 2.0, 3.0, 4.0]));
+            test((new int[0]).equals(new int[0]));
         });
         tests("Differing lengths", {
             testf([1, 2, 3].equals!true([1, 2, 3, 4]));
