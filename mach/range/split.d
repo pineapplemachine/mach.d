@@ -4,13 +4,17 @@ private:
 
 import std.traits : isIntegral;
 import mach.traits : hasProperty, hasNumericLength, ElementType;
-import mach.traits : isFiniteIterable, isSavingRange;
+import mach.traits : isFiniteIterable, isSavingRange, canSliceSame;
 import mach.range.asrange : asrange, validAsRange, AsRangeType;
 import mach.range.find : findalliter, findallelements;
 import mach.range.find : canFindAllIterable, canFindAllElements;
 import mach.range.pluck : pluck;
 
 public:
+
+
+
+// TODO: Split ranges not supporting slicing (is that even doable?)
 
 
 
@@ -22,7 +26,7 @@ alias validSplitIndex = isIntegral;
 template canSplit(alias pred, Index, Iter){
     static if(validAsRange!Iter) alias Source = AsRangeType!Iter;
     else alias Source = Iter;
-    enum bool canSplit = (
+    enum bool canSplit = canSliceSame!Source && (
         validSplitIndex!Index && (
             canFindAllElements!(pred, Index, Source)
         )
@@ -32,7 +36,7 @@ template canSplit(alias pred, Index, Iter){
 template canSplit(alias pred, Index, Iter, Delim){
     static if(validAsRange!Iter) alias Source = AsRangeType!Iter;
     else alias Source = Iter;
-    enum bool canSplit = (
+    enum bool canSplit = canSliceSame!Source && (
         validSplitIndex!Index && (
             canFindAllIterable!(pred, Index, Source, Delim) ||
             canFindAllElements!(e => pred(e, Delim.init), Index, Source)
