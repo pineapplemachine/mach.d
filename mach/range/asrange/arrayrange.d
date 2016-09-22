@@ -56,10 +56,6 @@ struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!(Array, Index)){
         this.endindex = endindex;
     }
     
-    @property auto length(){
-        return this.endindex - this.startindex;
-    }
-    
     void popFront() in{assert(!this.empty);} body{
         this.frontindex++;
     }
@@ -79,6 +75,9 @@ struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!(Array, Index)){
     }
     @property auto remaining() const{
         return this.backindex - this.frontindex;
+    }
+    @property auto length() const{
+        return this.endindex - this.startindex;
     }
     alias opDollar = length;
     
@@ -121,6 +120,26 @@ struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!(Array, Index)){
             this.array[this.startindex .. this.endindex] ==
             rhs.array[rhs.startindex .. rhs.endindex]
         );
+    }
+    
+    auto toString() const{
+        import mach.traits : isString;
+        static if(isString!Array){
+            Element[] str;
+            str.reserve(this.length);
+            for(size_t i = cast(size_t) this.startindex; i < this.endindex; i++){
+                str ~= this.array[i];
+            }
+            return str;
+        }else{
+            import std.conv : to;
+            string str = "";
+            for(size_t i = cast(size_t) this.startindex; i < this.endindex; i++){
+                if(str.length > 0) str ~= ", ";
+                str ~= this.array[i].to!string;
+            }
+            return '[' ~ str ~ ']';
+        }
     }
 }
 
@@ -225,6 +244,16 @@ unittest{
             testeq(partial[$-1], 2);
             auto full = range[0 .. $];
             testeq(full.length, 3);
+        });
+        tests("To string", {
+            testeq(ArrayRange!(int[])([]).toString(), "[]");
+            testeq(ArrayRange!(int[])([0]).toString(), "[0]");
+            testeq(ArrayRange!(int[])([0, 1, 2]).toString(), "[0, 1, 2]");
+            testeq(ArrayRange!(string)("").toString(), "");
+            testeq(ArrayRange!(string)("x").toString(), "x");
+            testeq(ArrayRange!(string)("hello").toString(), "hello");
+            testeq(ArrayRange!(wstring)("hello"w).toString(), "hello"w);
+            testeq(ArrayRange!(dstring)("hello"d).toString(), "hello"d);
         });
     });
 }
