@@ -17,7 +17,7 @@ unittest{
     tests("UTF encoding & decoding", {
         auto encoded = "!\xD7\x90\xE3\x83\x84\xF0\x9F\x98\x83";
         test(encoded.utfdecode.utfencode.equals(encoded));
-        auto decoded = "!אツ😃";
+        auto decoded = "!אツ😃"d;
         test(decoded.utfencode.utfdecode.equals(decoded));
     });
 }
