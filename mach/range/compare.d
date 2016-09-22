@@ -102,7 +102,7 @@ bool recursiveequals(bool length = true, bool exhaust = true, IterA, IterB)(
 
 
 version(unittest){
-    import mach.error.unit;
+    import mach.test;
     private struct TestRange{
         int value, end;
         @property auto front() const{
@@ -127,11 +127,16 @@ unittest{
             testf([1, 2, 3].equals!true([1, 2, 3, 4]));
             test([1, 2, 3].equals!(false, false)([1, 2, 3, 4]));
         });
+        tests("Recursive", {
+            test(["abc", "xyz"].equals(["abc", "xyz"]));
+            test([[0, 1], [2, 3]].equals([[0, 1], [2, 3]]));
+        });
         tests("Ranges", {
             test(TestRange(2, 6).equals(TestRange(2, 6)));
             test(TestRange(2, 6).equals([2, 3, 4, 5]));
             test([2, 3, 4, 5].equals(TestRange(2, 6)));
-            test("Recursive", ["abc", "xyz"].equals(["abc", "xyz"]));
+            test([2, 3, 4, 5].asrange.equals(TestRange(2, 6)));
+            test(TestRange(2, 6).equals([2, 3, 4, 5].asrange));
         });
     });
 }
