@@ -128,8 +128,6 @@ version(unittest){
     import mach.range : headis;
     import mach.io.stream.filestream : FileStream;
     enum string TestPath = __FILE__.dirName ~ "/range.txt";
-    
-    import mach.io.log;
 }
 unittest{
     tests("Stream as range", {
