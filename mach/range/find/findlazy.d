@@ -56,16 +56,16 @@ auto findalliterlazy(
 struct FindAllRange(alias pred, Range, Subject, Index = DefaultFindIndex) if(
     canFindAllLazyRange!(pred, Index, Range, Subject)
 ){
-    static enum Finite = isFiniteRange!Range;
-    static enum Slicing = isSlicingRange!Range;
-    static enum RandomAccess = isRandomAccessIterable!Subject;
+    static enum isFinite = isFiniteRange!Range;
+    static enum isSlicing = isSlicingRange!Range;
+    static enum isRandomAccess = isRandomAccessIterable!Subject;
     
-    static if(RandomAccess){
+    static if(isRandomAccess){
         alias Thread = FindRandomAccessThread!(pred, true, Index);
     }else{
         alias Thread = FindSavingThread!(pred, true, Index, Subject);
     }
-    static if(Slicing){
+    static if(isSlicing){
         alias Result = FindResultPlural!(Index, Range);
     }else{
         alias Result = FindResultIndexPlural!Index;
@@ -79,15 +79,15 @@ struct FindAllRange(alias pred, Range, Subject, Index = DefaultFindIndex) if(
     SubjectFront subjectfront; /// First element of subject
     ThreadManager threads; /// Interface for handling search threads
     Index index; /// Current index in source range
-    Result front; /// Current front of range
-    static if(Finite) bool empty; /// Whether the range is currently empty
+    Result result; /// Current front of range
     
-    this(typeof(this) range){
-        this(
-            range.source, range.subject, range.subjectfront,
-            range.threads, range.index, range.front, range.empty
-        );
+    static if(isFinite){
+        bool isempty; /// Whether the range is currently empty
+        @property bool empty() const{return this.isempty;}
+    }else{
+        static enum bool empty = false;
     }
+    
     this(Range source, Subject subject) in{
         assert(subject.length, "Subjects of zero length are not allowed.");
     }body{
@@ -96,40 +96,40 @@ struct FindAllRange(alias pred, Range, Subject, Index = DefaultFindIndex) if(
         }else{
             SubjectFront subjectfront = subject.front;
         }
-        static if(Finite){
-            bool empty = source.empty;
+        static if(isFinite){
+            bool isempty = source.empty;
             static if(hasNumericLength!Range){
-                empty = empty || (source.length < subject.length);
+                isempty = isempty || (source.length < subject.length);
             }
-            this(source, subject, subjectfront, ThreadManager(64), 0, empty);
+            this(source, subject, subjectfront, ThreadManager(64), 0, isempty);
         }else{
             this(source, subject, subjectfront, ThreadManager(64), 0);
         }
     }
-    static if(Finite){
+    static if(isFinite){
         this(
             Range source, Subject subject, SubjectFront subjectfront,
-            ThreadManager threads, Index index, bool empty
+            ThreadManager threads, Index index, bool isempty
         ){
             this.source = source;
             this.subject = subject;
             this.subjectfront = subjectfront;
             this.threads = threads;
             this.index = index;
-            this.empty = empty;
-            if(!this.empty) this.popFront(); // Prepares the range
+            this.isempty = isempty;
+            if(!this.isempty) this.popFront(); // Prepares the range
         }
         this(
             Range source, Subject subject, SubjectFront subjectfront,
-            ThreadManager threads, Index index, Result front, bool empty
+            ThreadManager threads, Index index, Result result, bool isempty
         ){
             this.source = source;
             this.subject = subject;
             this.subjectfront = subjectfront;
             this.threads = threads;
             this.index = index;
-            this.front = front;
-            this.empty = empty;
+            this.result = result;
+            this.isempty = isempty;
         }
     }else{
         this(
@@ -145,49 +145,55 @@ struct FindAllRange(alias pred, Range, Subject, Index = DefaultFindIndex) if(
         }
         this(
             Range source, Subject subject, SubjectFront subjectfront,
-            ThreadManager threads, Index index, Result front
+            ThreadManager threads, Index index, Result result
         ){
             this.source = source;
             this.subject = subject;
             this.subjectfront = subjectfront;
             this.threads = threads;
             this.index = index;
-            this.front = front;
+            this.result = result;
         }
     }
-        
+    
+    @property auto front() in{assert(!this.empty);} body{
+        return this.result;
+    }
+    
     void popFront() in{assert(!this.empty);} body{
-        bool found = void;
+        bool found = false;
         while(!this.source.empty){
             found = this.stepthreads(this.source.front);
             this.source.popFront();
             this.index++;
             if(found) break;
         }
-        if(!found) this.empty = this.source.empty;
+        static if(isFinite){
+            if(!found) this.isempty = this.source.empty;
+        }
     }
     
-    bool stepthreads(ref ElementType!Range element){
+    bool stepthreads(ElementType!Range element){
         auto found = false;
         // Progress living threads
         foreach(ref thread; this.threads){
-            static if(RandomAccess) bool matched = thread.next(element, this.subject);
+            static if(isRandomAccess) bool matched = thread.next(element, this.subject);
             else bool matched = thread.next(element);
             if(matched){
-                this.front = cast(Result) thread.result(this.source, this.index);
+                this.result = cast(Result) thread.result(this.source, this.index);
                 found = true;
             }
         }
         // Spawn new threads
         if(pred(element, this.subjectfront)){
-            static if(RandomAccess){
+            static if(isRandomAccess){
                 auto thread = Thread(this.index, 1);
             }else{
                 auto thread = Thread(this.index, this.subject.save);
                 thread.searchrange.popFront();
             }
             if(this.subject.length == 1){
-                this.front = cast(Result) thread.result(this.source, this.index);
+                this.result = cast(Result) thread.result(this.source, this.index);
                 found = true;
             }else{
                 this.threads.add(thread);
@@ -198,10 +204,17 @@ struct FindAllRange(alias pred, Range, Subject, Index = DefaultFindIndex) if(
     
     static if(isSavingRange!Range){
         @property typeof(this) save(){
-            return typeof(this)(
-                this.source.save, this.subject, this.subjectfront,
-                this.threads.dup, this.index, this.front, this.empty
-            );
+            static if(isFinite){
+                return typeof(this)(
+                    this.source.save, this.subject, this.subjectfront,
+                    this.threads.dup, this.index, this.result, this.isempty
+                );
+            }else{
+                return typeof(this)(
+                    this.source.save, this.subject, this.subjectfront,
+                    this.threads.dup, this.index, this.result
+                );
+            }
         }
     }
 }
@@ -210,7 +223,7 @@ struct FindAllRange(alias pred, Range, Subject, Index = DefaultFindIndex) if(
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
     import mach.range.pluck : pluck;
     struct StringRange{
@@ -225,6 +238,8 @@ version(unittest){
         void FindAllTests(){
             tests("Iteration", {
                 auto range = "hihi yo hi".findalliterlazy(transformsubject("hi"));
+                testeq(range.front.index, 0);
+                test(range.front.value.equals("hi"));
                 test(range.pluck!`index`.equals([0, 2, 8]));
                 test(range.pluck!`value`.equals(["hi", "hi", "hi"]));
             });
@@ -232,19 +247,26 @@ version(unittest){
                 auto range = "".findalliterlazy(transformsubject("hi"));
                 test(range.empty);
             });
-            fail("Empty Subject", {
-                auto range = "test".findalliterlazy(transformsubject(""));
+            tests("Empty Subject", {
+                testfail({
+                    auto range = "test".findalliterlazy(transformsubject(""));
+                });
             });
             tests("Single-length subject", {
                 auto range = "abcabc".findalliterlazy(transformsubject("a"));
                 test(range.pluck!`index`.equals([0, 3]));
                 test(range.pluck!`value`.equals(["a", "a"]));
+                range.popFront();
+                range.popFront();
+                test(range.empty);
+                testfail({range.front;});
             });
             tests("Single occurence", {
                 auto range = ".hi.".findalliterlazy(transformsubject("hi"));
                 test(range.pluck!`index`.equals([1]));
             });
             tests("Overlapping", {
+                import mach.range.asarray;
                 auto range = "etetet".findalliterlazy(transformsubject("etet"));
                 testeq(range.front.index, 0);
                 test(range.front.value.equals("etet"));

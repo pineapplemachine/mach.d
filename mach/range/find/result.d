@@ -15,7 +15,7 @@ template FindResultPlural(Index, Value){
 
 /// Result of a plural find operation with an index but no value.
 template FindResultIndexPlural(Index){
-    alias FindResultPlural = Index;
+    alias FindResultIndexPlural = Index;
 }
 
 
