@@ -1,8 +1,12 @@
-# Overview
+# mach.range
+
+## Introduction
 
 This package provides functions for dealing with collections of things, especially ranges.
 
 Many of the modules come with some measure of documentation, and all of them include unit tests. In the absence of thorough documentation, the unit tests should hopefully prove sufficiently enlightening.
+
+## Modules
 
 Here's a brief summary of some of the most useful modules included in this package:
 
