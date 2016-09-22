@@ -4,51 +4,46 @@ private:
 
 import std.traits : isArray, isIntegral;
 import mach.traits : ArrayElementType, canSliceSame;
+import mach.error : enforcebounds;
 
 public:
 
 
 
-enum canMakeArrayRange(Array) = isArray!Array;
-
-enum canMakeArrayRange(Array, Index) = (
-    canMakeArrayRange!Array && isIntegral!Index
-);
+enum canMakeArrayRange(T) = isArray!T;
 
 
 
-auto asarrayrange(Array, Index = size_t)(Array array) if(
-    canMakeArrayRange!(Array, Index)
-){
-    return ArrayRange!(Array, Index)(array);
+auto asarrayrange(Array)(Array array) if(canMakeArrayRange!Array){
+    return ArrayRange!(Array)(array);
 }
 
 
 
 /// Range based on an array.
-struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!(Array, Index)){
+struct ArrayRange(Array) if(canMakeArrayRange!(Array)){
     alias Element = ArrayElementType!Array;
     
     /// The array over which this range iterates.
     Array array;
     /// The index in the array where this range begins.
-    Index startindex;
+    size_t startindex;
     /// The index in the array where this range ends.
-    Index endindex;
+    size_t endindex;
     /// Index of the array where the front of the range is currently located,
     /// as modified by the range's startindex.
-    Index frontindex;
+    size_t frontindex;
     /// Index of the array where the back of the range is currently located,
     /// as modified by the range's startindex.
-    Index backindex;
+    size_t backindex;
     
     this(Array array){
         this(array, frontindex, array.length);
     }
-    this(Array array, Index frontindex, Index backindex){
+    this(Array array, size_t frontindex, size_t backindex){
         this(array, 0, backindex - frontindex, frontindex, backindex);
     }
-    this(Array array, Index frontindex, Index backindex, Index startindex, Index endindex){
+    this(Array array, size_t frontindex, size_t backindex, size_t startindex, size_t endindex){
         this.array = array;
         this.frontindex = frontindex;
         this.backindex = backindex;
@@ -81,13 +76,13 @@ struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!(Array, Index)){
     }
     alias opDollar = length;
     
-    auto ref opIndex(in Index index) in{
-        assert(index >= 0 && index < this.length);
+    auto ref opIndex(in size_t index) in{
+        enforcebounds(index, this);
     }body{
         return this.array[index + this.startindex];
     }
     
-    typeof(this) opSlice(in Index low, in Index high) in{
+    typeof(this) opSlice(in size_t low, in size_t high) in{
         assert(low >= 0 && high >= low && high <= this.length);
     }body{
         return typeof(this)(this.array, low + this.startindex, high + this.startindex);
@@ -101,7 +96,9 @@ struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!(Array, Index)){
         @property void back(Element value){
             this.array[this.backindex + this.startindex - 1] = value;
         }
-        void opIndexAssign(Element value, in Index index){
+        void opIndexAssign(Element value, in size_t index) in{
+            enforcebounds(index, this);
+        }body{
             this.array[index + this.startindex] = value;
         }
     }else{
@@ -127,14 +124,14 @@ struct ArrayRange(Array, Index = size_t) if(canMakeArrayRange!(Array, Index)){
         static if(isString!Array){
             Element[] str;
             str.reserve(this.length);
-            for(size_t i = cast(size_t) this.startindex; i < this.endindex; i++){
+            for(size_t i = this.startindex; i < this.endindex; i++){
                 str ~= this.array[i];
             }
             return str;
         }else{
             import std.conv : to;
             string str = "";
-            for(size_t i = cast(size_t) this.startindex; i < this.endindex; i++){
+            for(size_t i = this.startindex; i < this.endindex; i++){
                 if(str.length > 0) str ~= ", ";
                 str ~= this.array[i].to!string;
             }
@@ -175,22 +172,29 @@ unittest{
         tests("Slicing", {
             auto range = ArrayRange!(int[])([1, 1, 2, 3, 5, 8]);
             auto slice = range[1 .. 4];
+            static assert(is(typeof(range) == typeof(slice)));
             testeq(slice.length, 3);
             testeq(slice[0], 1);
             testeq(slice[1], 2);
             testeq(slice[2], 3);
-            test(is(typeof(range) == typeof(slice)));
+            testfail({range[0 .. $+1];});
+            testfail({range[3 .. 1];});
         });
         tests("Random access", {
             auto range = ArrayRange!(int[])([1, 2, 3]);
             testeq(range[0], 1);
             testeq(range[1], 2);
             testeq(range[$-1], 3);
+            testfail({range[$];});
         });
         tests("Empty", {
             auto range = ArrayRange!(int[])(new int[0]);
             testeq(range.length, 0);
             test(range.empty);
+            testfail({range.front;});
+            testfail({range.back;});
+            testfail({range.popFront;});
+            testfail({range.popBack;});
         });
         tests("Mutability", {
             char[] data = ['h', 'e', 'l', 'l', 'o'];
