@@ -2,7 +2,7 @@ module mach.io.stream.stream;
 
 private:
 
-import mach.traits : isArray;
+import mach.traits : isArray, isIterable;
 import mach.error : ThrowableMixin;
 
 public:
@@ -119,8 +119,8 @@ interface OutputStream : Stream{
         auto result = this.writebuffer(&value, 1);
         if(result != T.sizeof) throw new StreamWriteException();
     }
-    final void write(T)(in T[] values){
-        foreach(value; values) this.write!T(value);
+    final void write(Iter)(in Iter values) if(isIterable!Iter){
+        foreach(value; values) this.write!(typeof(value))(value);
     }
 }
 
