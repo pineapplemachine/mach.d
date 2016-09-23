@@ -40,7 +40,7 @@ enum canFindAllLazyRange(alias pred, Index, Range, Subject) = (
 /// given predicate to compare elements for equality.
 auto findalliterlazy(
     alias pred = DefaultFindPredicate, Index = DefaultFindIndex, Iter, Subject
-)(Iter iter, Subject subject) if(
+)(auto ref Iter iter, auto ref Subject subject) if(
     canFindAllLazy!(pred, Index, Iter, Subject)
 ){
     static if(isRandomAccessIterable!Subject) auto sub = subject;

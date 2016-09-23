@@ -60,7 +60,7 @@ enum canFindSavingRange(alias pred, Index, Iter, Subject, bool forward = true) =
 auto findfirstiter(
     alias pred = DefaultFindPredicate,
     Index = DefaultFindIndex, Iter, Subject
-)(Iter iter, Subject subject) if(
+)(auto ref Iter iter, auto ref Subject subject) if(
     canFindIterable!(pred, Index, Iter, Subject, true)
 ){
     static if(canFindRandomAccess!(pred, Index, Iter, Subject, true)){
@@ -73,7 +73,7 @@ auto findfirstiter(
 auto findlastiter(
     alias pred = DefaultFindPredicate,
     Index = DefaultFindIndex, Iter, Subject
-)(Iter iter, Subject subject) if(
+)(auto ref Iter iter, auto ref Subject subject) if(
     canFindIterable!(pred, Index, Iter, Subject, false)
 ){
     static if(canFindRandomAccess!(pred, Index, Iter, Subject, false)){
@@ -86,7 +86,7 @@ auto findlastiter(
 auto findallitereager(
     alias pred = DefaultFindPredicate,
     Index = DefaultFindIndex, Iter, Subject
-)(Iter iter, Subject subject) if(
+)(auto ref Iter iter, auto ref Subject subject) if(
     canFindIterable!(pred, Index, Iter, Subject, true)
 ){
     static if(canFindRandomAccess!(pred, Index, Iter, Subject, true)){
@@ -99,39 +99,39 @@ auto findallitereager(
 
 
 auto findfirstrandomaccess(alias pred, Index = DefaultFindIndex, Iter, Subject)(
-    Iter iter, Subject subject
+    auto ref Iter iter, auto ref Subject subject
 ) if(canFindRandomAccess!(pred, Index, Iter, Subject, true)){
     return findgeneralized!(true, true, false, pred, Index)(iter, subject);
 }
 
 auto findlastrandomaccess(alias pred, Index = DefaultFindIndex, Iter, Subject)(
-    Iter iter, Subject subject
+    auto ref Iter iter, auto ref Subject subject
 ) if(canFindRandomAccess!(pred, Index, Iter, Subject, false)){
     return findgeneralized!(false, true, false, pred, Index)(iter, subject);
 }
 
 auto findallrandomaccess(alias pred, Index = DefaultFindIndex, Iter, Subject)(
-    Iter iter, Subject subject
+    auto ref Iter iter, auto ref Subject subject
 ) if(canFindRandomAccess!(pred, Index, Iter, Subject, true)){
     return findgeneralized!(true, true, true, pred, Index)(iter, subject);
 }
 
 auto findfirstsaving(alias pred, Index = DefaultFindIndex, Iter, Subject)(
-    Iter iter, Subject subject
+    auto ref Iter iter, auto ref Subject subject
 ) if(canFindSaving!(pred, Index, Iter, Subject, true)){
     auto range = subject.asrange;
     return findgeneralized!(true, false, false, pred, Index)(iter, range);
 }
 
 auto findlastsaving(alias pred, Index = DefaultFindIndex, Iter, Subject)(
-    Iter iter, Subject subject
+    auto ref Iter iter, auto ref Subject subject
 ) if(canFindSaving!(pred, Index, Iter, Subject, false)){
     auto range = subject.asrange;
     return findgeneralized!(false, false, false, pred, Index)(iter, range);
 }
 
 auto findallsaving(alias pred, Index = DefaultFindIndex, Iter, Subject)(
-    Iter iter, Subject subject
+    auto ref Iter iter, auto ref Subject subject
 ) if(canFindSaving!(pred, Index, Iter, Subject, true)){
     auto range = subject.asrange;
     return findgeneralized!(true, false, true, pred, Index)(iter, range);
@@ -159,7 +159,7 @@ private template findgeneralized(
     bool forward, bool randomaccess, bool all, alias pred, Index = DefaultFindIndex
 ){
     import mach.traits : SliceType, canSliceSame;
-    auto findgeneralized(Iter, Subject)(Iter iter, Subject subject) if(
+    auto findgeneralized(Iter, Subject)(auto ref Iter iter, auto ref Subject subject) if(
         canFindGeneralized!(randomaccess, pred, Index, Iter, Subject, forward)
     ){
         // If the range being searched in can be sliced, the result holds the
