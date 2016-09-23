@@ -7,7 +7,6 @@ The full list of named sequences can be found here: https://www.w3.org/TR/html5/
 Here's a simple example of usage:
 
 ``` D
-import mach.text.html.namedchar;
 /// Get whether the code point or code point sequence has a name.
 assert(NamedChar.isnamed("á"));
 /// Get the name of a code point or code point sequence.

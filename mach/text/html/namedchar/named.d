@@ -113,11 +113,5 @@ unittest{
             testeq(NamedChar.getpoints("GT"), ">"d);
             testeq(NamedChar.getpoints("acE"), "\u223E\u0333"d);
         });
-        tests("In readme", {
-            assert(NamedChar.isnamed("á"));
-            assert(NamedChar.getname("á") == "aacute");
-            assert(NamedChar.isname("aacute"));
-            assert(NamedChar.getpoints("aacute") == "á"d);
-        });
     });
 }
