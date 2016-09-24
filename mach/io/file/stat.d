@@ -58,18 +58,22 @@ struct Stat{
                 return (this.mode & S_IFMT) == S_IFIFO;
             }
         }
-        static if(is(typeof({S_IFLNK;}))){
-            /// Whether the stat describes a symbolic link.
-            /// Only available for some Posix platforms.
-            @property auto islink(){
+        /// Whether the stat describes a symbolic link.
+        /// Only meaningful for some Posix platforms.
+        @property auto islink(){
+            static if(is(typeof({S_IFLNK;}))){
                 return (this.mode & S_IFMT) == S_IFLNK;
+            }else{
+                return false;
             }
         }
-        static if(is(typeof({S_ISSOCK;}))){
-            /// Whether the stat describes a symbolic link.
-            /// Only available for some Posix platforms.
-            @property auto issocket(){
+        /// Whether the stat describes a symbolic link.
+        /// Only meaningful for some Posix platforms.
+        @property auto issocket(){
+            static if(is(typeof({S_ISSOCK;}))){
                 return (this.mode & S_IFMT) == S_ISSOCK;
+            }else{
+                return false;
             }
         }
     }
@@ -80,7 +84,7 @@ struct Stat{
         cstatstruct st = void;
         version(Windows) auto result = stat(cast(char*) path.ptr, &st);
         else auto result = stat(path.ptr, &st);
-        if(result != 0) throw new FileStatException(new ErrnoException);
+        if(result != 0) throw new FileStatException(path, new ErrnoException);
         this(st);
     }
     this(FileHandle file){
