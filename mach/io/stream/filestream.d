@@ -5,7 +5,8 @@ private:
 import core.exception : AssertError;
 import mach.error : enforceerrno;
 import mach.io.file.sys : FileHandle, Seek;
-import mach.io.file.sys : dfstat, dfopen, fclose, fread, fwrite, fflush, fsync, fseek, ftell, feof, tmpfile, rewind;
+import mach.io.file.sys : fopen, fclose, fread, fwrite, fflush, fsync, fseek, ftell, feof, tmpfile, rewind;
+import mach.io.file.stat : Stat;
 import mach.io.stream.stream : IOStream, StreamSupportMixin;
 
 public:
@@ -25,7 +26,7 @@ class FileStream: IOStream{
         this.target = target;
     }
     this(string path, in char[] mode = "rb"){
-        this(enforceerrno(dfopen(path, mode), "Failed to open file."));
+        this(fopen(path, mode));
     }
     
     static FileStream temp(){
@@ -70,7 +71,7 @@ class FileStream: IOStream{
     override @property size_t length() in{
         assert(this.canseek && this.hasposition);
     }body{
-        return this.active ? cast(size_t) this.stat.st_size : 0;
+        return this.active ? cast(size_t) this.stat.size : 0;
     }
     override @property size_t position() in{
         assert(this.active);
@@ -112,7 +113,7 @@ class FileStream: IOStream{
     }
     
     @property auto stat(){
-        return dfstat(this.target);
+        return Stat(this.target);
     }
 }
 
