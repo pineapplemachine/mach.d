@@ -35,9 +35,9 @@ class ErrnoException: Exception{
         }
         auto errstring = errcstring[0..errcstring.strlen].idup;
         if(message !is null){
-            return "%s (Errno %s %s)".format(message, errno, errstring);
+            return "%s (Errno %s: %s)".format(message, errno, errstring);
         }else{
-            return "Errno %s %s".format(errno, errstring);
+            return "Errno %s: %s".format(errno, errstring);
         }
     }
 }
