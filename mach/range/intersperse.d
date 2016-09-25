@@ -45,11 +45,11 @@ auto intersperse(
 
 
 struct IntersperseRange(
-    Range, bool frontinterval = false, bool backinterval = false
+    Range, bool frontinterval, bool backinterval
 ) if(canIntersperseRange!(Range)){
-    alias Finite = isFiniteRange!Range;
     alias Element = ElementType!Range;
     alias Interval = IntersperseInterval;
+    enum bool isFinite = isFiniteRange!Range;
     
     Range source;
     Element interrupt;
@@ -63,7 +63,7 @@ struct IntersperseRange(
         this.index = index;
     }
     
-    static if(Finite){
+    static if(isFinite){
         @property bool empty(){
             static if(backinterval){
                 return !this.oninterrupt && this.source.empty;
