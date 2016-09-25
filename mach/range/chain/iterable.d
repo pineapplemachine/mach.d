@@ -82,7 +82,10 @@ struct ChainRandomAccessIterablesRange(Iter) if(canChainRandomAccessIterable!Ite
         );
     }
     this(Iter source){
-        this(source, 0, 0, source.length, source[source.length - 1].length);
+        this(
+            source, 0, 0, source.length,
+            source.length > 0 ? source[source.length - 1].length : 0
+        );
         this.searchFront();
         this.searchBack();
     }
@@ -284,12 +287,15 @@ version(unittest){
                 int[][] inputa = [[], [1], [], []];
                 int[][] inputb = [[], [], []];
                 string[] inputc = [""];
+                string[] inputd = [];
                 testeq(chainfunc(inputa).length, 1);
                 test(chainfunc(inputa).equals([1]));
                 test(chainfunc(inputb).empty);
                 foreach(b; inputb){}
                 test(chainfunc(inputc).empty);
                 foreach(c; inputc){}
+                test(chainfunc(inputd).empty);
+                foreach(d; inputd){}
             });
             tests("Random access", {
                 auto range = chainfunc(input);
