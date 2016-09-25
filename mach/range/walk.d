@@ -141,6 +141,10 @@ struct WalkSliceRange(Range, bool hasfallback) if(isRange!Range){
     }
     alias opDollar = length;
     
+    @property auto remaining() const{
+        return this.index >= this.low ? this.high - this.index : this.length;
+    }
+    
     @property bool empty() const{
         return this.low == this.high || this.index >= this.high;
     }
