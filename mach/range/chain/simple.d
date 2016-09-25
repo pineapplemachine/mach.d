@@ -17,11 +17,15 @@ enum canChain(Iter) = (
 
 
 
-auto ref chain(Iters...)(Iters iters) if(Iters.length > 1 && canChainIterables!Iters){
+auto ref chain(Iters...)(auto ref Iters iters) if(
+    Iters.length > 1 && canChainIterables!Iters
+){
     return chainranges(iters);
 }
 
-auto ref chain(Iters...)(Iters iters) if(Iters.length == 1 && canChain!(Iters[0])){
+auto ref chain(Iters...)(auto ref Iters iters) if(
+    Iters.length == 1 && canChain!(Iters[0])
+){
     static if(canChainIterableOfIterables!(Iters[0])){
         return chainiter(iters[0]);
     }else{

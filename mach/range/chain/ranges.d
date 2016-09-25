@@ -27,7 +27,7 @@ enum canChainRanges(Ranges...) = (
 
 
 
-auto chainranges(Iters...)(Iters iters) if(canChainIterables!Iters){
+auto chainranges(Iters...)(auto ref Iters iters) if(canChainIterables!Iters){
     mixin(MetaMultiRangeWrapperMixin!(`ChainRange`, Iters));
 }
 
@@ -126,14 +126,17 @@ struct ChainRange(Ranges...) if(canChainRanges!Ranges){
             }
             
             private size_t getslicelow(in size_t slice, in size_t low){
-                size_t offset = size_t.init;
+                size_t offset = 0;
                 foreach(i, _; Ranges){
-                    auto next = offset + this.sources[i].length;
+                    auto len = this.sources[i].length;
+                    auto next = offset + len;
                     if(i == slice){
-                        if(low > offset && low <= next){
+                        if(low <= offset){
+                            return 0;
+                        }else if(low < next){
                             return low - offset;
                         }else{
-                            return 0;
+                            return len;
                         }
                     } 
                     offset = next;
@@ -141,7 +144,7 @@ struct ChainRange(Ranges...) if(canChainRanges!Ranges){
                 assert(false);
             }
             private size_t getslicehigh(in size_t slice, in size_t high){
-                size_t offset = size_t.init;
+                size_t offset = 0;
                 foreach(i, _; Ranges){
                     auto next = offset + this.sources[i].length;
                     if(i == slice){
@@ -165,20 +168,30 @@ struct ChainRange(Ranges...) if(canChainRanges!Ranges){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
 }
 unittest{
     tests("Chaining", {
-        test("Basic equality",
-            chainranges("yo", "dawg").equals("yodawg")
-        );
-        test("Disparate types",
-            chainranges([1, 2], [3.0, 4.0]).equals([1.0, 2.0, 3.0, 4.0])
-        );
-        testeq("Length",
-            chainranges("yo", "dawg").length, 6
-        );
+        tests("Basic equality", {
+            chainranges("yo", "dawg").equals("yodawg");
+        });
+        tests("Disparate types", {
+            chainranges([1, 2], [3.0, 4.0]).equals([1.0, 2.0, 3.0, 4.0]);
+            static assert(!is(typeof({
+                chainranges([1, 2, 3], 4);
+            })));
+            static assert(!is(typeof({
+                struct X{size_t x;}
+                chainranges([1, 2, 3], [X(0), X(1)]);
+            })));
+        });
+        tests("Length", {
+            testeq(chainranges("yo", "dawg").length, 6);
+            testeq(chainranges("hi").length, 2);
+            testeq(chainranges("").length, 0);
+            testeq(chainranges("", "", "").length, 0);
+        });
         tests("Random access", {
             auto range = chainranges("yo", "dawg");
             testeq(range[0], 'y');
@@ -187,6 +200,7 @@ unittest{
             testeq(range[3], 'a');
             testeq(range[4], 'w');
             testeq(range[$-1], 'g');
+            testfail({range[$];});
         });
         tests("Saving", {
             auto range = chainranges("yo", "dawg");
@@ -198,8 +212,16 @@ unittest{
         });
         tests("Slices", {
             auto range = chainranges("xxx", "yyy", "zzz");
+            test(range[0 .. 0].equals(""));
+            test(range[0 .. 1].equals("x"));
             test(range[0 .. 4].equals("xxxy"));
             test(range[2 .. $].equals("xyyyzzz"));
+            test(range[4 .. $].equals("yyzzz"));
+            test(range[4 .. 4].equals(""));
+            test(range[$ .. $].equals(""));
+            testfail({range[0 .. 11];});
+            testfail({range[10 .. 11];});
+            testfail({range[10 .. 10];});
         });
         tests("Chain of chains", {
             auto range = chainranges(chainranges("abc", "def"), chainranges("ghi", "jkl", "mno"));

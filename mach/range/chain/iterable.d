@@ -66,8 +66,8 @@ auto ref chainiterforward(Iter)(auto ref Iter iter) if(canChainForwardIterable!I
 
 /// Chain the iterables contained within some iterable, where both the
 /// containing and contained iterables provide random access. Supports more
-/// operations than its counterpart that operates on iterables without random
-/// requiring access.
+/// operations than its counterpart that operates on iterables without requiring
+/// random access.
 struct ChainRandomAccessIterablesRange(Iter) if(canChainRandomAccessIterable!Iter){
     Iter source;
     size_t frontiter; /// Index of source for front
@@ -264,7 +264,7 @@ struct ChainForwardIterablesRange(Range) if(canChainForwardIterable!Range){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
     import mach.range.retro : retro;
     template ChainTestCommon(alias chainfunc){
@@ -283,9 +283,13 @@ version(unittest){
             tests("Empty iterables", {
                 int[][] inputa = [[], [1], [], []];
                 int[][] inputb = [[], [], []];
+                string[] inputc = [""];
                 testeq(chainfunc(inputa).length, 1);
                 test(chainfunc(inputa).equals([1]));
                 test(chainfunc(inputb).empty);
+                foreach(b; inputb){}
+                test(chainfunc(inputc).empty);
+                foreach(c; inputc){}
             });
             tests("Random access", {
                 auto range = chainfunc(input);
@@ -306,9 +310,9 @@ unittest{
         tests("Random Access", {
             ChainTestCommon!chainiterrandomaccess();
             int[][] input = [[1, 2], [3, 4], [5]];
-            test("Backwards",
-                input.chainiterrandomaccess.retro.equals([5, 4, 3, 2, 1])
-            );
+            tests("Backwards", {
+                input.chainiterrandomaccess.retro.equals([5, 4, 3, 2, 1]);
+            });
             tests("Bidirectionality", {
                 auto range = input.chainiterrandomaccess;
                 testeq(range.front, 1);
