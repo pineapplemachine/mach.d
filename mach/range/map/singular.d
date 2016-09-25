@@ -55,7 +55,7 @@ struct MapSingularRange(alias transform, Range) if(canMapRange!(transform, Range
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
 }
 unittest{
@@ -67,10 +67,14 @@ unittest{
             int[] empty = new int[0];
             test([1, 2, 3, 4].mapsingular!square.equals([1, 4, 9, 16]));
             test(ones.mapsingular!square.equals(ones));
-            test("Empty input", empty.mapsingular!square.equals(empty));
-            testeq("Length", [1, 2, 3].mapsingular!square.length, 3);
-            testeq("Random access", [2, 3].mapsingular!square[1], 9);
-            test("Slicing", [1, 2, 3, 4].mapsingular!square[1 .. $-1].equals([4, 9]));
+            // Empty input
+            test(empty.mapsingular!square.equals(empty));
+            // Length
+            testeq([1, 2, 3].mapsingular!square.length, 3);
+            // Random access
+            testeq([2, 3].mapsingular!square[1], 9);
+            // Slicing
+            test([1, 2, 3, 4].mapsingular!square[1 .. $-1].equals([4, 9]));
         });
         tests("Multiple functions", {
             auto input = [1, 2, 3];
@@ -86,6 +90,7 @@ unittest{
             int[3] input = [1, 2, 3];
             auto range = input.mapsingular!(square);
             test(range.equals([1, 4, 9]));
+            test(range[0 .. 2].equals([1, 4]));
         });
     });
 }
