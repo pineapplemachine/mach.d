@@ -2,7 +2,7 @@ module mach.text.html.namedchar.named;
 
 private:
 
-import mach.text.html.namedchar.data : NamedChars;
+import mach.text.html.namedchar.data : NamedChars, LongestCharName;
 
 public:
 
@@ -13,6 +13,7 @@ public:
 struct NamedChar{
     alias Point = dchar;
     alias Points = immutable(Point)[];
+    alias LongestName = LongestCharName;
     
     string name; /// The name of the sequence of code points.
     Points points; /// The named sequence of code points.

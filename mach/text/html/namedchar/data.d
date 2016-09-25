@@ -6,6 +6,16 @@ import mach.text.html.namedchar.named : NamedChar;
 
 public:
 
+
+
+/// The maximum possible length for a character name.
+/// Tied for longest are:
+/// "DoubleLongLeftRightArrow"
+/// "ClockwiseContourIntegral"
+enum size_t LongestCharName = 24;
+
+
+
 /// A list of all recognized named code point sequences.
 // Reference: https://www.w3.org/TR/html5/syntax.html#named-character-references
 static enum NamedChars = [
