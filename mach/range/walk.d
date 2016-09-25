@@ -136,7 +136,12 @@ struct WalkSliceRange(Range, bool hasfallback) if(isRange!Range){
         }
     }
     
-    @property bool empty(){
+    @property auto length() const{
+        return this.high - this.low;
+    }
+    alias opDollar = length;
+    
+    @property bool empty() const{
         return this.low == this.high || this.index >= this.high;
     }
     @property auto front() in{assert(!this.empty);} body{
@@ -222,6 +227,7 @@ unittest{
         });
         tests("Slice", {
             tests("No fallback", {
+                testeq("hi".walkslice(0, 2).length, 2);
                 test("hi".walkslice(0, 2).equals("hi"));
                 test("hi".walkslice(0, 1).equals("h"));
                 test("hi".walkslice(1, 2).equals("i"));
@@ -233,6 +239,7 @@ unittest{
                 testfail({"".walkslice(0, 1).consume;});
             });
             tests("With fallback", {
+                testeq("hi".walkslice(0, 2, '_').length, 2);
                 test("hi".walkslice(0, 2, '_').equals("hi"));
                 test("hi".walkslice(0, 1, '_').equals("h"));
                 test("hi".walkslice(1, 2, '_').equals("i"));
