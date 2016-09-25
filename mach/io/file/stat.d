@@ -183,11 +183,5 @@ unittest{
         tests("Nonexistent path", {
             testfail({Stat("not a real file path");});
         });
-        tests("File handle", {
-            import mach.io.file.sys : fopen, fclose;
-            auto file = fopen(TestPath, "rb");
-            testeq(Stat(file).size, 85);
-            file.fclose;
-        });
     });
 }
