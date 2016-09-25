@@ -39,7 +39,7 @@ class FileGetCurrentDirException: FileException{
 
 
 
-private template FilePathExceptionTemplate(string message){
+template FilePathExceptionTemplate(string message){
     class FilePathExceptionTemplate: FileException{
         string path;
         
@@ -58,7 +58,7 @@ private template FilePathExceptionTemplate(string message){
     }
 }
 
-private template FileSrcDstExceptionTemplate(string message){
+template FileSrcDstExceptionTemplate(string message){
     class FileSrcDstExceptionTemplate: FileException{
         string src, dst;
         
