@@ -4,7 +4,6 @@ private:
 
 import mach.traits : isRange, isIterable, isElementPredicate;
 import mach.range.asrange : asrange, validAsRange;
-import mach.range.meta : MetaRangeMixin;
 
 public:
 
@@ -37,14 +36,14 @@ enum canSelectFromUntilRange(Range, alias from, alias until) = (
 
 /// Iterate over elements in a range starting with the first element matching a
 /// predicate.
-auto from(alias pred, bool inclusive = true, Iter)(Iter iter) if(
+auto from(alias pred, bool inclusive = true, Iter)(auto ref Iter iter) if(
     canSelectFrom!(Iter, pred)
 ){
     auto range = iter.asrange;
     return SelectFromRange!(typeof(range), pred, inclusive)(range);
 }
 /// ditto
-auto from(bool inclusive = true, Iter, From)(Iter iter, From element) if(
+auto from(bool inclusive = true, Iter, From)(auto ref Iter iter, auto ref From element) if(
     canSelectFrom!(Iter, (e) => (e == element))
 ){
     return from!((e) => (e == element), inclusive, Iter)(iter);
@@ -52,14 +51,14 @@ auto from(bool inclusive = true, Iter, From)(Iter iter, From element) if(
 
 /// Iterate over elements in a range ending with the first element matching a
 /// predicate.
-auto until(alias pred, bool inclusive = false, Iter)(Iter iter) if(
+auto until(alias pred, bool inclusive = false, Iter)(auto ref Iter iter) if(
     canSelectUntil!(Iter, pred)
 ){
     auto range = iter.asrange;
     return SelectUntilRange!(typeof(range), pred, inclusive)(range);
 }
 /// ditto
-auto until(bool inclusive = true, Iter, Until)(Iter iter, Until element) if(
+auto until(bool inclusive = true, Iter, Until)(auto ref Iter iter, auto ref Until element) if(
     canSelectUntil!(Iter, (e) => (e == element))
 ){
     return until!((e) => (e == element), inclusive, Iter)(iter);
@@ -72,7 +71,7 @@ auto select(
     alias from, alias until,
     bool frominclusive = true, bool untilinclusive = false,
     Iter
-)(Iter iter) if(canSelectFromUntil!(Iter, from, until)){
+)(auto ref Iter iter) if(canSelectFromUntil!(Iter, from, until)){
     auto range = iter.asrange;
     return SelectFromUntilRange!(
         typeof(range), from, until,
@@ -82,7 +81,7 @@ auto select(
 /// ditto
 auto select(
     bool frominclusive = true, bool untilinclusive = false, Iter, From, Until
-)(Iter iter, From from, Until until) if(
+)(auto ref Iter iter, auto ref From from, auto ref Until until) if(
     canSelectFromUntil!(Iter, (e) => (e == from), (e) => (e == until))
 ){
     return select!(
@@ -95,15 +94,24 @@ auto select(
 struct SelectFromRange(Range, alias from, bool inclusive = true) if(
     canSelectFromRange!(Range, from)
 ){
-    mixin MetaRangeMixin!(Range, `source`, `Empty Save`);
-    
     Range source;
     
-    this(Range source){
+    this(bool initialize = true)(Range source) if(initialize){
         this.source = source;
         this.prepareFront();
     }
+    this(bool initialize)(Range source) if(!initialize){
+        this.source = source;
+    }
     
+    @property bool empty(){
+        return this.source.empty;
+    }
+    static if(is(typeof({auto n = source.remaining;}))){
+        @property auto remaining(){
+            return this.source.remaining();
+        }
+    }
     @property auto ref front() in{assert(!this.empty);} body{
         return this.source.front;
     }
@@ -118,13 +126,14 @@ struct SelectFromRange(Range, alias from, bool inclusive = true) if(
             if(!this.source.empty) this.source.popFront();
         }
     }
+    @property typeof(this) save(){
+        return typeof(this).__ctor!false(this.source.save);
+    }
 }
 
 struct SelectUntilRange(Range, alias until, bool inclusive = false) if(
     canSelectUntilRange!(Range, until)
 ){
-    mixin MetaRangeMixin!(Range, `source`, `Save`);
-    
     Range source;
     
     @property auto ref front() in{assert(!this.empty);} body{
@@ -150,6 +159,9 @@ struct SelectUntilRange(Range, alias until, bool inclusive = false) if(
                 this.founduntil = until(this.source.front);
             }
         }
+        @property typeof(this) save(){
+            return typeof(this)(this.source.save, this.founduntil, this.empty);
+        }
     }else{
         this(Range source){
             this.source = source;
@@ -160,6 +172,9 @@ struct SelectUntilRange(Range, alias until, bool inclusive = false) if(
         @property bool empty(){
             return this.source.empty || until(this.source.front);
         }
+        @property typeof(this) save(){
+            return typeof(this)(this.source.save);
+        }
     }
 }
 
@@ -167,8 +182,6 @@ struct SelectFromUntilRange(
     Range, alias from, alias until,
     bool frominclusive = true, bool untilinclusive = false
 ) if(canSelectFromUntilRange!(Range, from, until)){
-    mixin MetaRangeMixin!(Range, `source`, `Save`);
-    
     Range source;
     
     static if(untilinclusive){
@@ -177,11 +190,14 @@ struct SelectFromUntilRange(
         this(Range source){
             this(source, false, source.empty);
         }
-        this(Range source, bool founduntil, bool empty){
+        this(bool initialize = true)(Range source, bool founduntil, bool empty) if(initialize){
+            this.__ctor!false(source, founduntil, empty);
+            this.prepareFront();
+        }
+        this(bool initialize)(Range source, bool founduntil, bool empty) if(!initialize){
             this.source = source;
             this.founduntil = founduntil;
             this.empty = empty;
-            this.prepareFront();
         }
         void popFront() in{assert(!this.empty);} body{
             this.source.popFront();
@@ -191,16 +207,25 @@ struct SelectFromUntilRange(
                 this.founduntil = until(this.source.front);
             }
         }
+        @property typeof(this) save(){
+            return typeof(this).__ctor!false(this.source.save, this.founduntil, this.empty);
+        }
     }else{
-        this(Range source){
+        this(bool initialize = true)(Range source) if(initialize){
             this.source = source;
             this.prepareFront();
+        }
+        this(bool initialize)(Range source) if(!initialize){
+            this.source = source;
         }
         void popFront() in{assert(!this.empty);} body{
             this.source.popFront();
         }
         @property bool empty(){
             return this.source.empty || until(this.source.front);
+        }
+        @property typeof(this) save(){
+            return typeof(this).__ctor!false(this.source.save);
         }
     }
     
