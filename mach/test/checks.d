@@ -26,6 +26,7 @@ class TestFailureException: Exception{
         MustThrow,
         MustThrowPred,
         NoThrow,
+        BinaryOp,
         // TODO: Support these test types also
         /+
         NearlyEqual,
@@ -75,6 +76,7 @@ class TestFailureException: Exception{
             case Type.MustThrow: return "Operation must throw an exception.";
             case Type.MustThrowPred: return "Operation must throw an exception meeting the predicate.";
             case Type.NoThrow: return "Operation must not throw an exception.";
+            case Type.BinaryOp: return "Binary operation must evaluate true for all pairs of inputs.";
         }
     }
     
@@ -107,7 +109,7 @@ class TestFailureException: Exception{
 
 
 /// If all inputs do not evaluate as truthy, throw a TestFailureException.
-void testtrue(T...)(T conditions){
+void testtrue(T...)(auto ref T conditions){
     foreach(cond; conditions){
         if(cond){
             continue;
@@ -121,7 +123,7 @@ void testtrue(T...)(T conditions){
 }
 
 /// If all inputs do not evaluate as falsey, throw a TestFailureException.
-void testfalse(T...)(T conditions){
+void testfalse(T...)(auto ref T conditions){
     foreach(cond; conditions){
         if(cond){
             throw new TestFailureException(
@@ -135,13 +137,13 @@ void testfalse(T...)(T conditions){
 
 
 /// Throw an exception unless for e.g. a, b, c: op(a, b) && op(b, c)
-void testbinaryseq(string op, T...)(TestFailureException.Type type, T values){
+void testbinaryseq(string op, T...)(TestFailureException.Type type, auto ref T values){
     mixin(`
         testbinaryseq!((a, b) => (a ` ~ op ~ ` b))(type, values);
     `);
 }
 /// ditto
-void testbinaryseq(alias op, T...)(TestFailureException.Type type, T values){
+void testbinaryseq(alias op, T...)(TestFailureException.Type type, auto ref T values){
     static if(values.length > 1){
         foreach(index, value; values){
             static if(index > 0){
@@ -160,13 +162,13 @@ void testbinaryseq(alias op, T...)(TestFailureException.Type type, T values){
 
 
 /// Throw an exception unless for e.g. a, b, c: op(a, b) && op(a, c) && op(b, c)
-void testbinaryall(string op, T...)(TestFailureException.Type type, T values){
+void testbinaryall(string op, T...)(TestFailureException.Type type, auto ref T values){
     mixin(`
         testbinaryall!((a, b) => (a ` ~ op ~ ` b))(type, values);
     `);
 }
 /// ditto
-void testbinaryall(alias op, T...)(TestFailureException.Type type, T values){
+void testbinaryall(alias op, T...)(TestFailureException.Type type, auto ref T values){
     static if(values.length > 1){
         foreach(i, ivalue; values){
             foreach(j, jvalue; values){
@@ -187,13 +189,13 @@ void testbinaryall(alias op, T...)(TestFailureException.Type type, T values){
 
 
 /// Throw an exception unless for e.g. a, b, c: op(a, b) || op(a, c) || op(b, c)
-void testbinaryany(string op, T...)(TestFailureException.Type type, T values){
+void testbinaryany(string op, T...)(TestFailureException.Type type, auto ref T values){
     mixin(`
         testbinaryany!((a, b) => (a ` ~ op ~ ` b))(type, values);
     `);
 }
 /// ditto
-void testbinaryany(alias op, T...)(TestFailureException.Type type, T values){
+void testbinaryany(alias op, T...)(TestFailureException.Type type, auto ref T values){
     static if(values.length > 1){
         foreach(i, ivalue; values){
             foreach(j, jvalue; values){
@@ -211,56 +213,56 @@ void testbinaryany(alias op, T...)(TestFailureException.Type type, T values){
 
 
 /// If all inputs are not equal to each other, throw a TestFailureException.
-void testequal(T...)(T values) if(values.length > 1){
+void testequal(T...)(auto ref T values) if(values.length > 1){
     testbinaryall!`==`(TestFailureException.Type.Equality, values);
 }
 
 /// If all inputs are equal to each other, throw a TestFailureException.
-void testnotequal(T...)(T values) if(values.length > 1){
+void testnotequal(T...)(auto ref T values) if(values.length > 1){
     testbinaryany!`!=`(TestFailureException.Type.Inequality, values);
 }
 
 /// If any two inputs are not identical, throw a TestFailureException.
-void testsameidentity(T...)(T values) if(values.length > 1){
+void testsameidentity(T...)(auto ref T values) if(values.length > 1){
     testbinaryseq!`is`(TestFailureException.Type.SameIdentity, values);
 }
 
 /// If all inputs are identical, throw a TestFailureException.
-void testdiffidentity(T...)(T values) if(values.length > 1){
+void testdiffidentity(T...)(auto ref T values) if(values.length > 1){
     testbinaryany!`!is`(TestFailureException.Type.DiffIdentity, values);
 }
 
 /// If inputs are not in ascending order, throw a TestFailureException.
-void testascending(T...)(T values){
+void testascending(T...)(auto ref T values){
     testbinaryseq!`<=`(TestFailureException.Type.Ascending, values);
 }
 
 /// If inputs are not in descending order, throw a TestFailureException.
-void testdescending(T...)(T values){
+void testdescending(T...)(auto ref T values){
     testbinaryseq!`>=`(TestFailureException.Type.Descending, values);
 }
 
 /// If the first input is not greater than the second,
 /// throw a TestFailureException.
-void testgreater(A, B)(A a, B b){
+void testgreater(A, B)(auto ref A a, auto ref B b){
     testbinaryseq!`>`(TestFailureException.Type.GreaterThan, a, b);
 }
 
 /// If the first input is not less than the second,
 /// throw a TestFailureException.
-void testless(A, B)(A a, B b){
+void testless(A, B)(auto ref A a, auto ref B b){
     testbinaryseq!`<`(TestFailureException.Type.LessThan, a, b);
 }
 
 /// If the first input is not greater than or equal to the second,
 /// throw a TestFailureException.
-void testgreatereq(A, B)(A a, B b){
+void testgreatereq(A, B)(auto ref A a, auto ref B b){
     testbinaryseq!`>=`(TestFailureException.Type.GreaterThanEq, a, b);
 }
 
 /// If the first input is not less than or equal to the second,
 /// throw a TestFailureException.
-void testlesseq(A, B)(A a, B b){
+void testlesseq(A, B)(auto ref A a, auto ref B b){
     testbinaryseq!`<=`(TestFailureException.Type.LessThanEq, a, b);
 }
 
@@ -345,7 +347,15 @@ void testgroup(Fn)(string name, Fn func, size_t line = __LINE__, string file = _
 
 
 
-alias test = testtrue;
+void test(alias op, T...)(auto ref T inputs){
+    testbinaryall!op(TestFailureException.Type.BinaryOp, inputs);
+}
+void test(T...)(auto ref T inputs){
+    testtrue(inputs);
+}
+
+
+
 alias testf = testfalse;
 alias testeq = testequal;
 alias testneq = testnotequal;
@@ -540,5 +550,12 @@ unittest{
         testlte(0, 1);
         testlte(0, 0);
         testfail({testlte(1, 0);});
+    });
+}
+unittest{
+    tests("Templated", {
+        alias pred = (a, b) => (a == b + 1);
+        test!pred(2, 1);
+        testfail({test!pred(0, 0);});
     });
 }
