@@ -92,6 +92,12 @@ unittest{
             testeq(counter, 16.0);
             testeq(counter, summed);
         });
+        tests("chain, tap, consume", {
+            auto range = ["abc", "def", "", "ghi"].chain;
+            string str = "";
+            range.tap!((e){str ~= e;}).consume;
+            test(str.equals("abcdefghi"));
+        });
     });
 }
 
