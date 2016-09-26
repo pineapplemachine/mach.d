@@ -2,9 +2,12 @@ module mach.meta;
 
 public:
 
-import mach.meta.aliases : Alias, Aliases;
-import mach.meta.filter : Filter;
-import mach.meta.logical : Any, All, None, Count, First, Last;
-import mach.meta.map : Map;
-import mach.meta.partial : Partial, PartialFront, PartialBack;
-import mach.meta.repeat : Repeat;
+import mach.meta.aliases;
+import mach.meta.filter;
+import mach.meta.logical;
+import mach.meta.map;
+import mach.meta.partial;
+import mach.meta.repeat;
+import mach.meta.varfilter;
+import mach.meta.varmap;
+import mach.meta.varreduce;
