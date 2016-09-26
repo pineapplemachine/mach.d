@@ -26,4 +26,5 @@ __dummy.html
 test.d
 test.py
 wip_*.d
+old_*.d
 bin/
