@@ -4,6 +4,7 @@ private:
 
 import mach.traits : CommonType, hasCommonType;
 import mach.range.asrange : asarrayrange;
+import mach.error : enforcebounds;
 
 public:
 
@@ -54,6 +55,16 @@ auto rangeof(Values...)(Values values) if(canMakeImplicitRangeOf!Values){
     }
 }
 
+/// Get an infinite range where every element is the given value.
+auto infrangeof(T)(T value){
+    return InfSingularRangeOf!T(value);
+}
+
+/// Get a finite range of a given length where every element is the given value.
+auto finiterangeof(T)(size_t length, T value){
+    return FiniteSingularRangeOf!T(length, value);
+}
+
 
 
 /// Element used by EmptyRangeOf type if no other type is provided.
@@ -80,10 +91,8 @@ struct EmptyRangeOf(T = DefaultEmptyRangeOfElement){
 struct SingularRangeOf(T){
     T value;
     bool isempty = false;
-    
     static enum size_t length = 1;
     alias opDollar = length;
-    
     @property bool empty(){return this.isempty;}
     @property auto front() in{assert(!this.empty);} body{return this.value;}
     @property auto back() in{assert(!this.empty);} body{return this.value;}
@@ -98,11 +107,55 @@ struct SingularRangeOf(T){
     }
 }
 
+/// Represents a finite range where every item is a single element.
+struct FiniteSingularRangeOf(T){
+    T value;
+    size_t values;
+    size_t index = 0;
+    this(size_t length){
+        this(length, T.init, 0);
+    }
+    this(size_t length, T value, size_t index = 0){
+        this.value = value;
+        this.values = length;
+        this.index = index;
+    }
+    @property bool empty() const{return this.index >= this.values;}
+    @property auto length() const{return this.values;}
+    alias opDollar = length;
+    @property auto front() in{assert(!this.empty);} body{return this.value;}
+    @property auto back() in{assert(!this.empty);} body{return this.value;}
+    void popFront() in{assert(!this.empty);} body{this.index++;}
+    void popBack() in{assert(!this.empty);} body{this.index++;}
+    @property typeof(this) save(){return this;}
+    auto opIndex(in size_t index) in{enforcebounds(index, this);} body{
+        return this.value;
+    }
+    auto opSlice(in size_t low, in size_t high) in{
+        assert(low >= 0 && high >= low && high <= this.length);
+    }body{
+        return typeof(this)(high - low, this.value, 0);
+    }
+}
+
+/// Represents an infinite range where every item is a single element.
+struct InfSingularRangeOf(T){
+    static enum bool empty = false;
+    T value;
+    @property auto front(){return this.value;}
+    @property auto back(){return this.value;}
+    void popFront() const{}
+    void popBack() const{}
+    @property typeof(this) save(){return this;}
+    auto opIndex(in size_t index){return this.value;}
+}
+
 
 
 version(unittest){
     private:
     import mach.test;
+    import mach.traits : isInfiniteIterable;
     import mach.range.compare : equals;
 }
 unittest{
@@ -164,6 +217,49 @@ unittest{
                 static assert(is(typeof(range.front) == double));
             });
         });
+        tests("Infinite singular", {
+            auto range = infrangeof!int(0);
+            static assert(isInfiniteIterable!range);
+            testf(range.empty);
+            testeq(range[0], 0);
+            testeq(range[size_t.max], 0);
+            testeq(range.front, 0);
+            testeq(range.back, 0);
+            range.popFront();
+            range.popBack();
+            testeq(range.front, 0);
+            testeq(range.back, 0);
+        });
+        tests("Finite singular", {
+            auto range = finiterangeof!int(4, 0);
+            testf(range.empty);
+            testeq(range.length, 4);
+            tests("Random access", {
+                testeq(range[0], 0);
+                testeq(range[1], 0);
+                testeq(range[$-1], 0);
+                testfail({range[$];});
+            });
+            tests("Slicing", {
+                test!equals(range[0 .. 0], new int[0]);
+                test!equals(range[0 .. 1], [0]);
+                test!equals(range[0 .. $], range);
+                testfail({range[0 .. 5];});
+            });
+            testeq(range.front, 0);
+            testeq(range.back, 0);
+            range.popFront();
+            range.popBack();
+            testeq(range.front, 0);
+            testeq(range.back, 0);
+            range.popFront();
+            range.popFront();
+            test(range.empty);
+            testfail({range.front;});
+            testfail({range.popFront;});
+            testfail({range.back;});
+            testfail({range.popBack;});
+        });
         tests("Plural", {
             void testcommon(T, V)(T range, V values){
                 testf(range.empty);
@@ -174,8 +270,8 @@ unittest{
                 testeq(range[0 .. 1][0], values[0]);
                 test(range[0 .. 0].empty);
                 test(range[1 .. 1].empty);
-                test(range[0 .. 1].equals(values[0 .. 1]));
-                test(range[0 .. $].equals(values));
+                test!equals(range[0 .. 1], values[0 .. 1]);
+                test!equals(range[0 .. $], values);
                 testfail({range[values.length + 1];});
                 testfail({range[0 .. values.length + 1];});
                 foreach(i; values) range.popFront();

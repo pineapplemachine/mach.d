@@ -38,7 +38,7 @@ import mach.range.ngrams : ngrams;
 import mach.range.pad : pad, padfront, padback, padfrontcount, padbackcount;
 import mach.range.pluck : pluck;
 import mach.range.random : lcong, mersenne, xorshift, shuffle;
-import mach.range.rangeof : rangeof;
+import mach.range.rangeof : rangeof, infrangeof, finiterangeof;
 import mach.range.recur : recur;
 import mach.range.reduce : reduce, reduceeager, reducelazy;
 import mach.range.reduction : sum, product;
