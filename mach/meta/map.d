@@ -23,9 +23,9 @@ template Map(alias transform, T...){
 
 
 
+
 version(unittest){
     private:
-    import std.typecons : tuple;
     import std.traits : isIntegral;
     template Embiggen(T){
         static if(is(T == int)){
