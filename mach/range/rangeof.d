@@ -148,6 +148,8 @@ struct InfSingularRangeOf(T){
     void popBack() const{}
     @property typeof(this) save(){return this;}
     auto opIndex(in size_t index){return this.value;}
+    // TODO: opSlice should really be meaningful for this range but that will
+    // be tricky to get right.
 }
 
 
