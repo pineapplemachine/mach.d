@@ -2,6 +2,7 @@ module mach.meta;
 
 public:
 
+import mach.meta.adjoin;
 import mach.meta.aliases;
 import mach.meta.filter;
 import mach.meta.logical;
