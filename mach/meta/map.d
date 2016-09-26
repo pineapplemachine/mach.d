@@ -23,7 +23,6 @@ template Map(alias transform, T...){
 
 
 
-
 version(unittest){
     private:
     import std.traits : isIntegral;
