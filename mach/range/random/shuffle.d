@@ -76,8 +76,8 @@ auto shuffleeager(Iter, RNG)(Iter iter, RNG rng) if(canShuffle!(Iter, RNG)){
 
 version(unittest){
     private:
-    import mach.error.unit;
-    import mach.range.logical : exactly;
+    import mach.test;
+    import mach.range.count : exactly;
     import mach.range.recur : recur;
 }
 unittest{
@@ -87,15 +87,16 @@ unittest{
             auto output = input.shuffleeager;
             testeq(output.length, 10);
             foreach(element; input){
-                test(output.exactly(element, 1));
+                test(output.exactly(1, element));
             }
         });
         tests("Unknown length range", {
-            auto input = recur!((int n) => (n + 1), ((n) => (n >= 10))); // Increment n until n >= 10
+            // Range increments n until n >= 10
+            auto input = recur!((int n) => (n + 1), ((n) => (n >= 10)));
             auto output = input.shuffleeager;
             testeq(output.length, 10);
             foreach(element; input){
-                test(output.exactly(element, 1));
+                test(output.exactly(1, element));
             }
         });
     });
