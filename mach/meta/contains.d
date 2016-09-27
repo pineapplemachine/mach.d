@@ -10,7 +10,7 @@ public:
 
 /// Get whether the first argument is equivalent to any of the successive
 /// arguments.
-private template Contains(Args...) if(Args.length){
+template Contains(Args...) if(Args.length){
     import mach.meta.aliases : Alias;
     alias T = Alias!(Args[0]);
     alias Seq = Args[1 .. $];
