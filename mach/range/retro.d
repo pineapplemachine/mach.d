@@ -4,7 +4,7 @@ private:
 
 import std.traits : Unqual, isNumeric;
 import mach.traits : isBidirectionalRange, isRandomAccessRange, hasNumericLength;
-import mach.traits : isSlicingRange, canCast, isTemplateOf;
+import mach.traits : isSlicingRange, isTemplateOf;
 import mach.range.asrange : asrange, validAsBidirectionalRange;
 import mach.range.meta : MetaRangeMixin;
 
