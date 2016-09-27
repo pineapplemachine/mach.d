@@ -10,8 +10,6 @@ import mach.range.asrange : asrange, validAsRange, AsRangeType;
 import mach.range.logical : first, last, all;
 import mach.range.reduce : reduce;
 
-import mach.range.meta : MetaRangeMixin;
-
 public:
 
 

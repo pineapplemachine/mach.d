@@ -3,25 +3,18 @@ module mach.range.zip;
 private:
 
 import std.typecons : tuple;
-import mach.range.map : map, canMap, canMapRanges;
-import mach.range.meta : MetaMultiRangeWrapperMixin;
+import mach.meta : varmap;
+import mach.range.asrange : asrange;
+import mach.range.map.plural : mapplural, canMapPlural;
 
 public:
 
 
 
-enum canZip(Iters...) = canMap!(tuple, Iters);
+enum canZip(T...) = canMapPlural!(tuple, T);
 
-enum canZipRanges(Ranges...) = canMapRanges!(tuple, Ranges);
-
-
-
-auto zip(Iters...)(Iters iters) if(canZip!Iters){
-    mixin(MetaMultiRangeWrapperMixin!(`zipranges`, Iters));
-}
-
-auto zipranges(Ranges...)(Ranges ranges) if(canZipRanges!Ranges){
-    return map!tuple(ranges);
+auto zip(Iters...)(auto ref Iters iters) if(canZip!Iters){
+    return mapplural!tuple(varmap!(e => e.asrange)(iters).expand);
 }
 
 

@@ -2,22 +2,23 @@ module mach.traits.length;
 
 private:
 
-import std.meta : anySatisfy, allSatisfy;
-import std.traits : ReturnType, isSomeFunction;
-import std.traits : isArray, isAssociativeArray, isNumeric, isIntegral;
+import std.traits : isArray, isNumeric, isIntegral;
+import mach.meta : Any;
 import mach.traits.property : hasProperty, PropertyType;
 
 public:
 
 
 
-enum hasLength(T) = hasProperty!(T, `length`);
+template hasLength(T...) if(T.length == 1){
+    enum bool hasLength = hasProperty!(T, `length`);
+}
 
-template LengthType(T) if(hasLength!T){
+template LengthType(T...) if(T.length == 1 && hasLength!T){
     alias LengthType = PropertyType!(T, `length`);
 }
 
-template hasNumericLength(T){
+template hasNumericLength(T...) if(T.length == 1){
     static if(hasLength!T){
         enum bool hasNumericLength = isNumeric!(LengthType!T);
     }else{
@@ -25,74 +26,7 @@ template hasNumericLength(T){
     }
 }
 
-template hasIntegralLength(T){
-    static if(hasLength!T){
-        enum bool hasNumericLength = isIntegral!(LengthType!T);
-    }else{
-        enum bool hasNumericLength = false;
-    }
-}
-
 enum hasDollar(T) = isArray!T || is(typeof(T.opDollar));
-
-
-
-enum canAccumulateLengths(Iters...) = allSatisfy!(hasNumericLength, Iters);
-
-auto getSummedLength(Iters...)(Iters iters) if(canAccumulateLengths!Iters){
-    return getAccumulatedLength!(`+`, Iters)(iters);
-}
-
-private auto getAccumulatedLength(string op, Iters...)(Iters iters) if(
-    canAccumulateLengths!Iters
-){
-    size_t length = size_t.init;
-    foreach(i, Iter; Iters){
-        static if(hasNumericLength!Iter){
-            mixin(`
-                length = cast(typeof(length))(length ` ~ op ~ ` iters[i].length);
-            `);
-        }
-    }
-    return length;
-}
-
-
-
-enum canCompareLengths(Iters...) = anySatisfy!(hasNumericLength, Iters);
-
-auto getGreatestLength(Iters...)(Iters iters) if(
-    canCompareLengths!Iters
-){
-    return getComparableLength!(`>`, Iters)(iters);
-}
-
-auto getSmallestLength(Iters...)(Iters iters) if(
-    canCompareLengths!Iters
-){
-    return getComparableLength!(`<`, Iters)(iters);
-}
-
-private auto getComparableLength(string comp, Iters...)(Iters iters) if(
-    canCompareLengths!Iters
-){
-    size_t length = size_t.init;
-    bool first = true;
-    foreach(i, Iter; Iters){
-        static if(hasNumericLength!Iter){
-            mixin(`
-                auto condition = (
-                    first || iters[i].length ` ~ comp ~ ` length
-                );
-            `);
-            if(condition){
-                length = cast(typeof(length)) iters[i].length;
-                first = false;
-            }
-        }
-    }
-    return length;
-}
 
 
 
@@ -139,23 +73,4 @@ unittest{
     static assert(hasDollar!DollarAliasTest);
     static assert(hasDollar!DollarPropertyTest);
     static assert(!hasDollar!NoDollarTest);
-}
-unittest{
-    tests("Length", {
-        testeq(3, getGreatestLength(
-            LengthFieldTest(1),
-            LengthFieldTest(3),
-            LengthFieldTest(2)
-        ));
-        testeq(1, getSmallestLength(
-            LengthFieldTest(1),
-            LengthFieldTest(3),
-            LengthFieldTest(2)
-        ));
-        testeq(6, getSummedLength(
-            LengthFieldTest(1),
-            LengthFieldTest(3),
-            LengthFieldTest(2)
-        ));
-    });
 }

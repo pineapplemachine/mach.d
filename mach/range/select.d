@@ -2,7 +2,7 @@ module mach.range.select;
 
 private:
 
-import mach.traits : isRange, isIterable, isElementPredicate;
+import mach.traits : isRange, isIterable, isElementPredicate, hasRemaining;
 import mach.range.asrange : asrange, validAsRange;
 
 public:
@@ -107,7 +107,7 @@ struct SelectFromRange(Range, alias from, bool inclusive = true) if(
     @property bool empty(){
         return this.source.empty;
     }
-    static if(is(typeof({auto n = source.remaining;}))){
+    static if(hasRemaining!Range){
         @property auto remaining(){
             return this.source.remaining();
         }

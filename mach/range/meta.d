@@ -20,7 +20,9 @@ enum MetaRangeMixinComponent : string {
 
 
 
-template MetaRangeEmptyMixin(Range, string source) if(isRange!Range){
+/// Used for ranges whose empty property should be
+/// the same as the source range if it has one.
+template MetaRangeEmptyMixin(Range, string source = `source`) if(isRange!Range){
     import mach.traits : hasEmptyEnum;
     static if(hasEmptyEnum!Range){
         alias empty = Range.empty;
@@ -31,17 +33,20 @@ template MetaRangeEmptyMixin(Range, string source) if(isRange!Range){
     }
 }
 
-template MetaRangeLengthMixin(Range, string source) if(isRange!Range){
-    import mach.traits : hasLength;
+/// Used for ranges whose length, remaining, and opDollar properties should be
+/// the same as the source range if it has them.
+template MetaRangeLengthMixin(Range, string source = `source`) if(isRange!Range){
+    import mach.traits : hasLength, hasRemaining, hasDollar;
     static if(hasLength!Range){
         @property auto length(){
             mixin(`return this.` ~ source ~ `.length;`);
         }
     }
-}
-
-template MetaRangeDollarMixin(Range, string source) if(isRange!Range){
-    import mach.traits : hasDollar;
+    static if(hasRemaining!Range){
+        @property auto remaining(){
+            mixin(`return this.` ~ source ~ `.remaining;`);
+        }
+    }
     static if(hasDollar!Range){
         @property auto opDollar(){
             mixin(`return this.` ~ source ~ `.opDollar;`);
@@ -49,7 +54,18 @@ template MetaRangeDollarMixin(Range, string source) if(isRange!Range){
     }
 }
 
-template MetaRangeSaveMixin(Range, string source) if(isRange!Range){
+/// Deprecated, TODO: Sever all ties
+template MetaRangeDollarMixin(Range, string source = `source`) if(isRange!Range){
+    //import mach.traits : hasDollar;
+    //static if(hasDollar!Range){
+    //    @property auto opDollar(){
+    //        mixin(`return this.` ~ source ~ `.opDollar;`);
+    //    }
+    //}
+}
+
+/// Deprecated, TODO: Sever all ties
+template MetaRangeSaveMixin(Range, string source = `source`) if(isRange!Range){
     import mach.traits : isSavingRange, hasConstructor;
     static if(isSavingRange!Range && hasConstructor!(typeof(this))){
         import std.traits : ParameterIdentifierTuple;
@@ -75,6 +91,7 @@ template MetaRangeSaveMixin(Range, string source) if(isRange!Range){
 
 
 
+/// Deprecated, TODO: Sever all ties
 template MetaRangeMixin(Range, string source, string inclusions) if(isRange!Range){
     //import mach.range.contains : contains;
     import std.algorithm : canFind;
@@ -103,6 +120,7 @@ template MetaRangeMixin(Range, string source, string inclusions) if(isRange!Rang
     // TODO: Slice
 }
 
+/// Deprecated, TODO: Sever all ties
 template MetaRangeMixin(Range, string source, string inclusions, string front, string popFront) if(isRange!Range){
     import std.string : replace; // TODO: Don't use phobos
     mixin MetaRangeMixin!(
@@ -112,6 +130,7 @@ template MetaRangeMixin(Range, string source, string inclusions, string front, s
     );
 }
 
+/// Deprecated, TODO: Sever all ties
 template MetaRangeMixin(
     Range, string source, string inclusions,
     string frontstr, string popFrontstr,
@@ -149,6 +168,8 @@ static string MetaMultiRangeWrapperMixin(string rangetype, Iters...)(){
     return MetaMultiRangeWrapperMixin!(rangetype, ``, ``, Iters);
 }
 
+/// TODO: Investigate using e.g. staticMap for this stuff instead of a gross
+/// string mixin.
 static string MetaMultiRangeWrapperMixin(
     string rangetype, string ctortemplateparams, string ctorparams, Iters...
 )(){

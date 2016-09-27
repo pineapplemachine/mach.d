@@ -2,21 +2,31 @@ module mach.traits.property;
 
 private:
 
-import std.meta : staticIndexOf;
-import std.traits : FieldNameTuple, Unqual, isNumeric, isIntegral;
+import std.traits : isNumeric, isIntegral;
 
 public:
 
 
 
-enum hasField(T, string field) = staticIndexOf!(field, FieldNameTuple!T) >= 0;
-
+/// Determine whether a type possesses some property, by property name.
+template hasProperty(alias T, string property){
+    enum bool hasProperty = is(typeof({
+        mixin(`auto property = T.` ~ property ~ `;`);
+    }));
+}
+/// ditto
 template hasProperty(T, string property){
-    enum bool hasProperty = is(typeof((inout int = 0){
+    enum bool hasProperty = is(typeof({
         mixin(`auto property = T.init.` ~ property ~ `;`);
     }));
 }
 
+/// Determine whether a type possesses some property matching a predicate
+/// template, by property name.
+enum hasProperty(alias pred, alias T, string property) = (
+    hasProperty!(pred, typeof(T), property)
+);
+/// ditto
 template hasProperty(alias pred, T, string property){
     static if(hasProperty!(T, property)){
         enum bool hasProperty = pred!(PropertyType!(T, property));
@@ -27,38 +37,26 @@ template hasProperty(alias pred, T, string property){
 
 
 
-template hasMutableProperty(T, string property){
-    enum bool hasMutableProperty = is(typeof((inout int = 0){
-        mixin(`
-            auto property = T.init.` ~ property ~ `;
-            T.init.` ~ property ~ ` = property;
-        `);
-    }));
-}
-
-template hasMutableProperty(alias pred, T, string property){
-    static if(hasMutableProperty!(T, property)){
-        enum bool hasMutableProperty = pred!(PropertyType!(T, property));
-    }else{
-        enum bool hasMutableProperty = false;
-    }
-}
-
-
+// TODO: Just put T at the end of the args list
+enum hasNumericProperty(alias T, string property) = (
+    hasProperty!(isNumeric, T, property)
+);
 enum hasNumericProperty(T, string property) = (
     hasProperty!(isNumeric, T, property)
 );
 
-enum hasIntegralProperty(T, string property) = (
-    hasProperty!(isIntegral, T, property)
-);
 
+
+template PropertyType(alias T, string property) if(hasProperty!(T, property)){
+    mixin(`alias PropertyType = typeof(T.` ~ property ~ `);`);
+}
 template PropertyType(T, string property) if(hasProperty!(T, property)){
     mixin(`alias PropertyType = typeof(T.init.` ~ property ~ `);`);
 }
 
 
 
+// TODO: Also move around these args
 template hasEnum(T, string name){
     mixin(`
         enum bool hasEnum = __traits(compiles, {enum value = T.` ~ name ~ `;});
@@ -95,42 +93,45 @@ version(unittest){
     }
 }
 unittest{
-    // hasField
-    static assert(hasField!(TestField, `x`));
-    static assert(hasField!(TestField, `y`));
-    static assert(hasField!(TestField, `str`));
-    static assert(!hasField!(TestField, `z`));
-    static assert(!hasField!(TestField, `notaproperty`));
-    // hasProperty
     static assert(hasProperty!(TestField, `x`));
     static assert(hasProperty!(TestField, `y`));
     static assert(hasProperty!(TestField, `z`));
     static assert(hasProperty!(TestField, `str`));
+    static assert(hasProperty!(TestField(), `x`));
+    static assert(hasProperty!(int, `min`));
+    static assert(hasProperty!(int, `max`));
     static assert(!hasProperty!(TestField, `notaproperty`));
-    // hasNumericProperty
+    static assert(!hasProperty!(int, `hi`));
+    static assert(!hasProperty!(void, `hi`));
+}
+unittest{
     static assert(hasNumericProperty!(TestField, `x`));
+    static assert(hasNumericProperty!(TestField(), `x`));
     static assert(!hasNumericProperty!(TestField, `str`));
     static assert(!hasNumericProperty!(TestField, `notaproperty`));
-    // hasIntegralProperty
-    static assert(hasIntegralProperty!(TestField, `x`));
-    static assert(!hasIntegralProperty!(TestField, `str`));
-    static assert(!hasIntegralProperty!(TestField, `notaproperty`));
-    // PropertyType
+}
+unittest{
     static assert(is(PropertyType!(int, `min`) == int));
     static assert(is(PropertyType!(int[], `length`) == size_t));
+    static assert(is(PropertyType!(int(0), `min`) == int));
     static assert(is(PropertyType!(TestField, `x`) == int));
     static assert(is(PropertyType!(TestField, `y`) == const int));
     static assert(is(PropertyType!(TestField, `z`) == int));
     static assert(is(PropertyType!(TestField, `str`) == string));
+    static assert(is(PropertyType!(TestField(), `x`) == int));
+    static assert(is(PropertyType!(const(TestField)(), `x`) == const(int)));
     static assert(!is(PropertyType!(TestField, `notaproperty`)));
-    // hasEnum
+}
+unittest{
     static assert(hasEnum!(TestField, `enumvalue`));
     static assert(!hasEnum!(TestField, `x`));
     static assert(!hasEnum!(TestField, `notaproperty`));
-    // hasEnumType
+}
+unittest{
     static assert(hasEnumType!(TestField, bool, `enumvalue`));
     static assert(!hasEnumType!(TestField, string, `enumvalue`));
-    // hasEnumValue
+}
+unittest{
     static assert(hasEnumValue!(TestField, `enumvalue`, true));
     static assert(!hasEnumValue!(TestField, `enumvalue`, false));
     static assert(!hasEnumValue!(TestField, `x`, true));
@@ -138,14 +139,9 @@ unittest{
 }
 
 version(unittest){
-    private enum TestEnum{
-        A, B
-    }
+    private enum TestEnum{A, B}
 }
 unittest{
-    // hasField
-    static assert(!hasField!(TestEnum, `A`));
-    static assert(!hasField!(TestEnum, `X`));
     // hasProperty
     static assert(hasProperty!(TestEnum, `A`));
     static assert(hasProperty!(TestEnum, `B`));

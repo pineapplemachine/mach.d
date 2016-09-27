@@ -2,93 +2,104 @@ module mach.range.map.plural;
 
 private:
 
-import std.meta : allSatisfy, anySatisfy;
-import mach.traits : hasFalseEmptyEnum, hasNumericLength, getSmallestLength;
-import mach.traits : isBidirectionalRange, isRandomAccessRange, isSlicingRange;
-import mach.range.meta : MetaMultiRangeEmptyMixin, MetaMultiRangeSaveMixin;
-import mach.range.meta : MetaMultiRangeWrapperMixin;
-import mach.range.map.templates : canMap, canMapRanges, AdjoinTransformations;
+import mach.meta : All, Any, Filter, AdjoinFlat, varmap, varfilter, varany, varmin;
+import mach.traits : hasTrueEmptyEnum, hasFalseEmptyEnum;
+import mach.traits : hasNumericLength, hasNumericRemaining;
+import mach.traits : isRange, isSlicingRange, isSavingRange;
+import mach.traits : isBidirectionalRange, isRandomAccessRange;
+import mach.range.asrange : asrange, validAsRange;
 
 public:
+
+
+
+template canMapPlural(alias transform, T...){
+    enum bool canMapPlural = All!(validAsRange, T) && is(typeof({
+        auto x = transform(varmap!(e => e.asrange.front)(T.init).expand);
+    }));
+}
+
+template canMapPluralRange(alias transform, T...){
+    enum bool canMapPluralRange = All!(isRange, T) && canMapPlural!(transform, T);
+}
 
 
 
 /// Construct a map range accepting multiple input iterables and at least one
 /// transformation.
 template mapplural(transformations...) if(transformations.length){
-    alias transform = AdjoinTransformations!transformations;
-    auto mapplural(Iters...)(Iters iters) if(canMap!(transform, Iters)){
-        mixin(MetaMultiRangeWrapperMixin!(`MapPluralRange`, `transform`, ``, Iters));
+    alias transform = AdjoinFlat!transformations;
+    auto mapplural(Iters...)(Iters iters) if(canMapPlural!(transform, Iters)){
+        auto ranges = varmap!(e => e.asrange)(iters);
+        return MapPluralRange!(transform, typeof(ranges.expand))(ranges.expand);
     }
-}
-
-
-
-private static string MergeAttributeMixin(string callname, string attribute, Ranges...)(){
-    import std.conv : to;
-    string params = ``;
-    for(size_t i = 0; i < Ranges.length; i++){
-        if(i > 0) params ~= `, `;
-        params ~= `this.sources[` ~ i.to!string ~ `]` ~ attribute;
-    }
-    return `return ` ~ callname ~ `(` ~ params ~ `);`;
 }
 
 
 
 /// Map range which accepts multiple input ranges and transforms each group of
 /// elements into a single element belonging to the output range.
-struct MapPluralRange(alias transform, Ranges...) if(canMapRanges!(transform, Ranges)){
-    mixin MetaMultiRangeSaveMixin!(`sources`, Ranges);
-    mixin MetaMultiRangeEmptyMixin!(
-        `
-            foreach(i, _; Ranges){
-                if(this.sources[i].empty) return true;
-            }
-            return false;
-        `,
-        `sources`, Ranges
-    );
-    
+struct MapPluralRange(alias transform, Ranges...) if(canMapPluralRange!(transform, Ranges)){
     Ranges sources;
     
     this(Ranges sources){
         this.sources = sources;
     }
     
-    static if(anySatisfy!(hasNumericLength, Ranges)){
-        /// Get the length of this range, which is the shortest of any of its
-        /// input ranges.
+    static if(All!(hasFalseEmptyEnum, Ranges)){
+        static enum bool empty = false;
+    }else static if(Any!(hasTrueEmptyEnum, Ranges)){
+        static enum bool empty = true;
+    }else{
+        @property auto empty(){
+            return varany(varmap!(e => e.empty)(this.sources).expand);
+        }
+    }
+    
+    static if(Any!(hasNumericLength, Ranges)){
         @property auto length(){
-            return getSmallestLength(this.sources);
+            auto withlen = varfilter!hasNumericLength(this.sources).expand;
+            return withlen.varmap!(e => e.length).expand.varmin;
         }
         alias opDollar = length;
     }
+    static if(Any!(hasNumericRemaining, Ranges)){
+        @property auto remaining(){
+            auto withlen = varfilter!hasNumericRemaining(this.sources).expand;
+            return withlen.varmap!(e => e.remaining).expand.varmin;
+        }
+    }
     
     @property auto ref front(){
-        mixin(MergeAttributeMixin!(`transform`, `.front`, Ranges));
+        return transform(varmap!(e => e.front)(this.sources).expand);
     }
     void popFront(){
         foreach(i, _; Ranges) this.sources[i].popFront();
     }
     
-    static if(allSatisfy!(isBidirectionalRange, Ranges)){
-        @property auto ref back(){
-            mixin(MergeAttributeMixin!(`transform`, `.back`, Ranges));
-        }
-        void popBack(){
-            foreach(i, _; Ranges) this.sources[i].popBack();
-        }
-    }
+    // TOOD: Fix for ranges of differing lengths
+    //static if(All!(isBidirectionalRange, Ranges)){
+    //    @property auto ref back(){
+    //        mixin(MergeAttributeMixin!(`transform`, `.back`, Ranges));
+    //    }
+    //    void popBack(){
+    //        foreach(i, _; Ranges) this.sources[i].popBack();
+    //    }
+    //}
     
-    static if(allSatisfy!(isRandomAccessRange, Ranges)){
+    static if(All!(isRandomAccessRange, Ranges)){
         auto ref opIndex(size_t index){
-            mixin(MergeAttributeMixin!(`transform`, `[index]`, Ranges));
+            return transform(varmap!(e => e[index])(this.sources).expand);
         }
     }
-    static if(allSatisfy!(isSlicingRange, Ranges)){
+    static if(All!(isSlicingRange, Ranges)){
         auto ref opSlice(size_t low, size_t high){
-            mixin(MergeAttributeMixin!(`typeof(this)`, `[low .. high]`, Ranges));
+            return typeof(this)(varmap!(e => e[low .. high])(this.sources).expand);
+        }
+    }
+    static if(All!(isSavingRange, Ranges)){
+        @property typeof(this) save(){
+            return typeof(this)(varmap!(e => e.save)(this.sources).expand);
         }
     }
 }
@@ -97,9 +108,10 @@ struct MapPluralRange(alias transform, Ranges...) if(canMapRanges!(transform, Ra
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
-    import mach.range.retro : retro;
+    import mach.range.rangeof : infrangeof;
+    //import mach.range.retro : retro; // TODO
 }
 unittest{
     tests("Plural Map", {
@@ -116,24 +128,27 @@ unittest{
             testeq(mapplural!sumtwo(inputa, inputlong).length, inputa.length);
         });
         tests("Iteration", {
-            test(mapplural!sumtwo(inputa, inputb).equals([1, 2, 4, 5]));
-            test(mapplural!sumthree(inputa, inputb, inputc).equals([2, 4, 6, 8]));
+            test!equals(mapplural!sumtwo(inputa, inputb), [1, 2, 4, 5]);
+            test!equals(mapplural!sumthree(inputa, inputb, inputc), [2, 4, 6, 8]);
         });
-        tests("Backwards", {
-            test(mapplural!sumtwo(inputa, inputb).retro.equals([5, 4, 2, 1]));
-            test(mapplural!sumthree(inputa, inputb, inputc).retro.equals([8, 6, 4, 2]));
-        });
+        //tests("Backwards", { // TODO
+        //    test!equals(mapplural!sumtwo(inputa, inputb).retro, [5, 4, 2, 1]);
+        //    test!equals(mapplural!sumthree(inputa, inputb, inputc).retro, [8, 6, 4, 2]);
+        //});
         tests("Random access", {
             auto range = mapplural!sumtwo(inputa, inputb);
             testeq(range[0], 1);
             testeq(range[1], 2);
             testeq(range[2], 4);
             testeq(range[$-1], 5);
+            testfail({range[$];});
         });
         tests("Slicing", {
             auto range = mapplural!sumtwo(inputa, inputb);
-            test(range[0 .. 2].equals([1, 2]));
-            test(range[2 .. $].equals([4, 5]));
+            test!equals(range[0 .. 2], [1, 2]);
+            test!equals(range[2 .. $], [4, 5]);
+            test!equals(range[0 .. 0], new int[0]);
+            testfail({range[0 .. 10];});
         });
         tests("Multiple functions", {
             auto range = mapplural!(sumtwo, product)(inputa, inputb);
@@ -141,6 +156,26 @@ unittest{
                 testeq(range[i][0], sumtwo(inputa[i], inputb[i]));
                 testeq(range[i][1], product(inputa[i], inputb[i]));
             }
+        });
+        tests("Finite & Infinite inputs", {
+            auto range = mapplural!sumtwo(infrangeof(10), [0, 1, 2, 3]);
+            testf(range.empty);
+            testeq(range.length, 4);
+            test!equals(range, [10, 11, 12, 13]);
+            testeq(range[0], 10);
+            testeq(range[1], 11);
+            testfail({range[$];});
+            testeq(range.front, 10);
+            //testeq(range.back, 13); // TODO
+            range.popFront();
+            range.popFront();
+            range.popFront();
+            range.popFront();
+            test(range.empty);
+            testfail({range.front;});
+            testfail({range.popFront;});
+            //testfail({range.back;}); // TODO
+            //testfail({range.popBack;}); // TODO
         });
     });
 }

@@ -2,16 +2,26 @@ module mach.range.map.combined;
 
 private:
 
-import mach.range.map.plural : mapplural;
-import mach.range.map.singular : mapsingular;
-import mach.range.map.templates : canMap, AdjoinTransformations;
+import mach.meta : AdjoinFlat;
+import mach.range.map.plural;
+import mach.range.map.singular;
 
 public:
 
 
 
+template canMap(alias transform, T...){
+    static if(T.length == 1){
+        enum bool canMap = canMapSingular!(transform, T);
+    }else{
+        enum bool canMap = canMapPlural!(transform, T);
+    }
+}
+
+
+
 template map(transformations...) if(transformations.length){
-    alias transform = AdjoinTransformations!transformations;
+    alias transform = AdjoinFlat!transformations;
     auto map(Iters...)(Iters iters) if(canMap!(transform, Iters)){
         static if(Iters.length == 1){
             return mapsingular!transform(iters[0]);

@@ -2,14 +2,12 @@ module mach.range.chain.ranges;
 
 private:
 
-import std.meta : staticMap, allSatisfy, anySatisfy;
+import mach.meta : Any, All, varmap, varmapi, varsum;
 import mach.traits : hasCommonElementType, CommonElementType;
 import mach.traits : isRange, isBidirectionalRange;
 import mach.traits : isRandomAccessRange, isSavingRange, isSlicingRange;
-import mach.traits : hasNumericLength, hasFalseEmptyEnum, getSummedLength;
-import mach.range.asrange : asrange, validAsRange, AsRangeType;
-import mach.range.meta : MetaMultiRangeEmptyMixin, MetaMultiRangeSaveMixin;
-import mach.range.meta : MetaMultiRangeWrapperMixin;
+import mach.traits : hasNumericLength, hasFalseEmptyEnum, hasTrueEmptyEnum;
+import mach.range.asrange : asrange, validAsRange;
 
 public:
 
@@ -17,51 +15,25 @@ public:
 
 /// Can a sequence of aliased iterables be chained?
 enum canChainIterables(Iters...) = (
-    Iters.length && allSatisfy!(validAsRange, Iters) && hasCommonElementType!Iters
+    Iters.length && All!(validAsRange, Iters) && hasCommonElementType!Iters
 );
 
 /// Can a sequence of aliased ranges be chained?
 enum canChainRanges(Ranges...) = (
-    Ranges.length && allSatisfy!(isRange, Ranges) && hasCommonElementType!Ranges
+    Ranges.length && All!(isRange, Ranges) && hasCommonElementType!Ranges
 );
 
 
 
 auto chainranges(Iters...)(auto ref Iters iters) if(canChainIterables!Iters){
-    mixin(MetaMultiRangeWrapperMixin!(`ChainRange`, Iters));
-}
-
-
-
-private static string ChainSliceMixin(Ranges...)(){
-    import std.conv : to;
-    string params = ``;
-    for(size_t i = 0; i < Ranges.length; i++){
-        if(i > 0) params ~= `, `;
-        auto istr = i.to!string;
-        params ~= `this.sources[` ~ istr ~ `][
-            this.getslicelow(` ~ istr ~ `, low) ..
-            this.getslicehigh(` ~ istr ~ `, high)
-        ]`;
-    }
-    return `return typeof(this)(` ~ params ~ `);`;
+    auto ranges = varmap!(e => e.asrange)(iters);
+    return ChainRange!(typeof(ranges.expand))(ranges.expand);
 }
 
 
 
 struct ChainRange(Ranges...) if(canChainRanges!Ranges){
     alias Element = CommonElementType!Ranges;
-    
-    mixin MetaMultiRangeSaveMixin!(`sources`, Ranges);
-    mixin MetaMultiRangeEmptyMixin!(
-        `
-            foreach(i, _; Ranges){
-                if(!this.sources[i].empty) return false;
-            }
-            return true;
-        `,
-        `sources`, Ranges
-    );
     
     Ranges sources;
     
@@ -85,7 +57,7 @@ struct ChainRange(Ranges...) if(canChainRanges!Ranges){
         assert(false);
     }
     
-    static if(allSatisfy!(isBidirectionalRange, Ranges)){
+    static if(All!(isBidirectionalRange, Ranges)){
         @property auto ref back(){
             foreach_reverse(i, _; Ranges){
                 if(!this.sources[i].empty) return this.sources[i].back;
@@ -100,12 +72,32 @@ struct ChainRange(Ranges...) if(canChainRanges!Ranges){
         }
     }
     
-    static if(allSatisfy!(hasNumericLength, Ranges)){
+    static if(Any!(hasFalseEmptyEnum, Ranges)){
+        static enum bool empty = false;
+    }else static if(All!(hasTrueEmptyEnum, Ranges)){
+        static enum bool empty = true;
+    }else{
+        @property bool empty(){
+            foreach(i, _; Ranges){
+                if(!this.sources[i].empty) return false;
+            }
+            return true;
+        }
+    }
+    
+    static if(All!(isSavingRange, Ranges)){
+        @property typeof(this) save(){
+            return typeof(this)(varmap!(e => e.save)(this.sources).expand);
+        }
+    }
+    
+    static if(All!(hasNumericLength, Ranges)){
         @property auto length(){
-            return getSummedLength(this.sources);
+            return varsum(varmap!(e => e.length)(this.sources).expand);
         }
         alias opDollar = length;
-        static if(allSatisfy!(isRandomAccessRange, Ranges)){
+        
+        static if(All!(isRandomAccessRange, Ranges)){
             auto opIndex(in size_t index) in{
                 assert(index >= 0 && index < this.length);
             }body{
@@ -118,14 +110,20 @@ struct ChainRange(Ranges...) if(canChainRanges!Ranges){
                 assert(false);
             }
         }
-        static if(allSatisfy!(isSlicingRange, Ranges)){
+        
+        static if(All!(isSlicingRange, Ranges)){
             typeof(this) opSlice(in size_t low, in size_t high) in{
                 assert((low >= 0) & (high >= low) & (high <= this.length));
             }body{
-                mixin(ChainSliceMixin!Ranges);
+                return typeof(this)(
+                    this.sources.varmapi!((i, e) => (e[
+                        this.getslicelow(i, low) ..
+                        this.getslicehigh(i, high)
+                    ])).expand
+                );
             }
             
-            private size_t getslicelow(in size_t slice, in size_t low){
+            size_t getslicelow(in size_t slice, in size_t low){
                 size_t offset = 0;
                 foreach(i, _; Ranges){
                     auto len = this.sources[i].length;
@@ -143,7 +141,7 @@ struct ChainRange(Ranges...) if(canChainRanges!Ranges){
                 }
                 assert(false);
             }
-            private size_t getslicehigh(in size_t slice, in size_t high){
+            size_t getslicehigh(in size_t slice, in size_t high){
                 size_t offset = 0;
                 foreach(i, _; Ranges){
                     auto next = offset + this.sources[i].length;
