@@ -1,3 +1,5 @@
+module mach.meta.readme;
+
 private:
 
 import mach.meta;

@@ -1,5 +1,9 @@
 module mach.meta;
 
+private:
+
+import mach.meta.readme;
+
 public:
 
 import mach.meta.adjoin;
