@@ -2,9 +2,7 @@ module mach.range.logical;
 
 private:
 
-import std.traits : Unqual, isImplicitlyConvertible, isNumeric;
-import mach.traits : isIterable, isFiniteIterable, isIterableReverse;
-import mach.traits : canIncrement, ElementType, isElementPredicate;
+import mach.traits : isFiniteIterable;
 
 public:
 
@@ -12,18 +10,22 @@ public:
 
 alias DefaultLogicalPredicate = (e) => (e);
 
-alias canAny = canAnyAllNone;
-alias canAll = canAnyAllNone;
-alias canNone = canAnyAllNone;
-
-enum canAnyAllNone(Iter, alias pred) = (
-    isFiniteIterable!Iter && isElementPredicate!(pred, Iter)
-);
+template canLogical(Iter, alias pred){
+    static if(isFiniteIterable!Iter){
+        enum bool canLogical = is(typeof({
+            foreach(item; Iter.init){
+                if(pred(item)){}
+            }
+        }));
+    }else{
+        enum bool canLogical = false;
+    }
+}
 
 
 
 /// True if any element in an iterable matches the predicate.
-bool any(alias pred = DefaultLogicalPredicate, Iter)(auto ref Iter iter) if(canAny!(Iter, pred)){
+bool any(alias pred = DefaultLogicalPredicate, Iter)(auto ref Iter iter) if(canLogical!(Iter, pred)){
     foreach(ref item; iter){
         if(pred(item)) return true;
     }
@@ -31,7 +33,7 @@ bool any(alias pred = DefaultLogicalPredicate, Iter)(auto ref Iter iter) if(canA
 }
 
 /// True if all elements in an iterable match the predicate.
-bool all(alias pred = DefaultLogicalPredicate, Iter)(auto ref Iter iter) if(canAll!(Iter, pred)){
+bool all(alias pred = DefaultLogicalPredicate, Iter)(auto ref Iter iter) if(canLogical!(Iter, pred)){
     foreach(ref item; iter){
         if(!pred(item)) return false;
     }
@@ -39,7 +41,7 @@ bool all(alias pred = DefaultLogicalPredicate, Iter)(auto ref Iter iter) if(canA
 }
 
 /// True if no element in an iterable matches the predicate.
-bool none(alias pred = DefaultLogicalPredicate, Iter)(auto ref Iter iter) if(canNone!(Iter, pred)){
+bool none(alias pred = DefaultLogicalPredicate, Iter)(auto ref Iter iter) if(canLogical!(Iter, pred)){
     foreach(ref item; iter){
         if(pred(item)) return false;
     }
