@@ -49,7 +49,7 @@ unittest{
 
 ## mach.meta.aliases
 
-Provides functions that can be used to generate an alias referring to some
+Provides templates that can be used to generate an alias referring to some
 value or sequence of values.
 
 There is Alias for generating an alias to a single specific value, even values
@@ -83,8 +83,8 @@ unittest{
 
 ## mach.meta.contains
 
-Given at least one argument, determine whether the first argument is equivalent
-to any of the subsequent arguments.
+Given at least one argument, determines whether the first argument is
+equivalent to any of the subsequent arguments.
 
 +/
 
@@ -127,7 +127,7 @@ unittest{
 +/
 
 unittest{
-    // TODO
+    // TODO: Document
 }
 
 /++ md
@@ -137,7 +137,7 @@ unittest{
 +/
 
 unittest{
-    // TODO
+    // TODO: Document
 }
 
 /++ md
@@ -147,7 +147,7 @@ unittest{
 +/
 
 unittest{
-    // TODO
+    // TODO: Document
 }
 
 /++ md
@@ -157,7 +157,7 @@ unittest{
 +/
 
 unittest{
-    // TODO
+    // TODO: Document
 }
 
 /++ md
@@ -194,7 +194,7 @@ unittest{
 +/
 
 unittest{
-    // TODO
+    // TODO: Document
 }
 
 /++ md
@@ -222,5 +222,5 @@ unittest{
 +/
 
 unittest{
-    // TODO
+    // TODO: Document
 }

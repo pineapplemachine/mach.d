@@ -26,7 +26,7 @@ assert(flat(0) == 0);
 
 ## mach.meta.aliases
 
-Provides functions that can be used to generate an alias referring to some value or sequence of values.
+Provides templates that can be used to generate an alias referring to some value or sequence of values.
 
 There is Alias for generating an alias to a single specific value, even values that cannot be aliased using `alias x = y;` syntax.
 
@@ -50,7 +50,7 @@ static assert(is(typeof({fn1(ints.init);})));
 
 ## mach.meta.contains
 
-Given at least one argument, determine whether the first argument is equivalent to any of the subsequent arguments.
+Given at least one argument, determines whether the first argument is equivalent to any of the subsequent arguments.
 
 ``` D
 static assert(Contains!(int, byte, short, int));
@@ -78,25 +78,25 @@ static assert(is(Filter!(NotVoid, void, void, int, void, long) == Aliases!(int, 
 ## mach.meta.indexof
 
 ``` D
-// TODO
+// TODO: Document
 ```
 
 ## mach.meta.logical
 
 ``` D
-// TODO
+// TODO: Document
 ```
 
 ## mach.meta.map
 
 ``` D
-// TODO
+// TODO: Document
 ```
 
 ## mach.meta.partial
 
 ``` D
-// TODO
+// TODO: Document
 ```
 
 ## mach.meta.repeat
@@ -119,7 +119,7 @@ static assert(is(Retro!(byte, short, int) == Aliases!(int, short, byte)));
 ## mach.meta.varfilter
 
 ``` D
-// TODO
+// TODO: Document
 ```
 
 ## mach.meta.varmap
@@ -138,5 +138,5 @@ static assert(is(typeof({fn(mapped.expand);})));
 ## mach.meta.varreduce
 
 ``` D
-// TODO
+// TODO: Document
 ```
