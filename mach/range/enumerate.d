@@ -4,54 +4,44 @@ private:
 
 import std.typecons : Tuple;
 import std.traits : isImplicitlyConvertible;
-import mach.traits : canIncrement, canDecrement, canCast, ElementType;
 import mach.traits : isRange, isSavingRange, isRandomAccessRange, isSlicingRange;
 import mach.traits : canReassign, isMutableFrontRange, isMutableBackRange;
 import mach.traits : isMutableRandomRange, isMutableInsertRange;
 import mach.traits : isMutableRemoveFrontRange, isMutableRemoveBackRange;
-import mach.traits : hasLength, LengthType, canIndex, canSliceSame;
+import mach.traits : hasNumericLength, ElementType;
 import mach.range.asrange : asrange, validAsRange;
-import mach.range.meta : MetaRangeMixin;
+import mach.range.meta : MetaRangeEmptyMixin, MetaRangeLengthMixin;
 
 public:
 
 
 
-enum canEnumerateIndex(Index) = canIncrement!Index;
-enum canEnumerateIndexBidirectional(Index) = (
-    canEnumerateIndex!Index && canDecrement!Index
+enum canEnumerate(T) = (
+    validAsRange!T
 );
-
-enum canEnumerate(Iter, Index = size_t) = (
-    validAsRange!Iter && canEnumerateIndex!Index
+enum canEnumerateRange(T) = (
+    isRange!T && canEnumerate!T
 );
-enum canEnumerateRange(Range, Index = size_t) = (
-    isRange!Range && canEnumerateIndex!Index
-);
-enum canEnumerateRangeBidirectional(Range, Index = size_t) = (
-    isRange!Range && canEnumerateIndexBidirectional!Index &&
-    hasLength!Range && canCast!(LengthType!Range, Index)
+enum canEnumerateRangeBidirectional(T) = (
+    hasNumericLength!T && canEnumerateRange!T
 );
 
 
 
-auto enumerate(Index = size_t, Iter)(
-    auto ref Iter iter, Index initial = Index.init
-) if(canEnumerate!(Iter, Index)){
+auto enumerate(Iter)(auto ref Iter iter, size_t initial = 0) if(canEnumerate!Iter){
     auto range = iter.asrange;
-    return EnumerationRange!(Index, typeof(range))(range, initial);
+    return EnumerationRange!(typeof(range))(range, initial);
 }
 
 
 
-struct EnumerationRange(Index = size_t, Range) if(canEnumerateRange!(Range, Index)){
+struct EnumerationRange(Range) if(canEnumerateRange!Range){
+    alias Index = size_t;
     alias Element = Tuple!(Index, `index`, ElementType!Range, `value`);
+    static enum bool isBidirectional = canEnumerateRangeBidirectional!Range;
     
-    static enum bool isBidirectional = canEnumerateRangeBidirectional!(Range, Index);
-    
-    mixin MetaRangeMixin!(
-        Range, `source`, `Empty Length Dollar`
-    );
+    mixin MetaRangeEmptyMixin!Range;
+    mixin MetaRangeLengthMixin!Range;
     
     Range source;
     Index frontindex;
@@ -82,30 +72,30 @@ struct EnumerationRange(Index = size_t, Range) if(canEnumerateRange!(Range, Inde
         }
     }
     
-    @property auto ref front(){
+    @property auto ref front() in{assert(!this.empty);} body{
         return Element(this.frontindex, this.source.front);
     }
-    void popFront(){
+    void popFront() in{assert(!this.empty);} body{
         this.source.popFront();
         this.frontindex++;
     }
     static if(isBidirectional){
-        @property auto ref back(){
+        @property auto ref back() in{assert(!this.empty);} body{
             return Element(this.backindex, this.source.back);
         }
-        void popBack(){
+        void popBack() in{assert(!this.empty);} body{
             this.source.popBack();
             this.backindex--;
         }
     }
     
-    static if(isRandomAccessRange!Range && canIndex!(Range, Index)){
+    static if(isRandomAccessRange!Range){
         auto ref opIndex(Index index){
             return Element(index, this.source[index]);
         }
     }
     
-    static if(isSlicingRange!Range && canSliceSame!(Range, Index)){
+    static if(isSlicingRange!Range){
         auto ref opSlice(Index low, Index high){
             static if(isBidirectional){
                 return typeof(this)(this.source[low .. high], low, high);
@@ -137,7 +127,7 @@ struct EnumerationRange(Index = size_t, Range) if(canEnumerateRange!(Range, Inde
                 this.source.back = value;
             }
         }
-        static if(isMutableRandomRange!Range && canIndex!(Range, Index)){
+        static if(isMutableRandomRange!Range){
             void opIndexAssign(Element element, Index index) in{
                 assert(element.index == index);
             }body{
@@ -183,7 +173,7 @@ struct EnumerationRange(Index = size_t, Range) if(canEnumerateRange!(Range, Inde
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
     import mach.range.pluck : pluck;
     import mach.collect : aslist;
@@ -191,18 +181,10 @@ version(unittest){
 unittest{
     tests("Enumerate", {
         auto input = ["ant", "bat", "cat", "dot", "eel"];
-        testeq("Length",
-            input.enumerate.length, input.length
-        );
-        testeq("Random access", 
-            input.enumerate[1].value, input[1]
-        );
-        test("Indexes",
-            input.enumerate.pluck!`index`.equals([0, 1, 2, 3, 4])
-        );
-        test("Values",
-            input.enumerate.pluck!`value`.equals(input)
-        );
+        testeq(input.enumerate.length, input.length); // Length
+        testeq(input.enumerate[1].value, input[1]); // Random access
+        test(input.enumerate.pluck!`index`.equals([0, 1, 2, 3, 4])); // Indexes
+        test(input.enumerate.pluck!`value`.equals(input)); // Values
         tests("Slicing", {
             test(input.enumerate[1 .. $-1].pluck!`index`.equals([1, 2, 3]));
             test(input.enumerate[1 .. $-1].pluck!`value`.equals(input[1 .. $-1]));
