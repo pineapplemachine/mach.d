@@ -2,15 +2,19 @@ module mach.types.types;
 
 private:
 
-import mach.meta.aliases;
+import mach.traits.templates : isTemplateOf;
 
 public:
 
 
 
+template isTypes(T...) if(T.length){
+    enum bool isTypes = isTemplateOf!(T, Types);
+}
+
 /// Used simply to store a sequence of types. Not intended to be instantiated.
 struct Types(T...){
-    alias Types = T;
+    alias types = T;
     
     // TODO: Would be nice to actually support index and slice operators
     
@@ -32,7 +36,7 @@ struct Types(T...){
     static template opSlice(size_t low, size_t high) if(
         low >= 0 && high >= low && high <= length
     ){
-        alias opSlice = .Types!(T[low .. high]);
+        alias opSlice = Types!(T[low .. high]);
     }
 }
 

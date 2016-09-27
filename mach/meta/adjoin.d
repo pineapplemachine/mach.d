@@ -11,7 +11,7 @@ public:
 /// Used by functions constructed by Adjoin to determine whether the function
 /// is able to be called using the given arguments.
 template canAdjoin(FTypes, Args...){
-    alias F = FTypes.Types;
+    alias F = FTypes.types;
     static if(FTypes.length == 0){
         enum bool canAdjoin = true;
     }else static if(FTypes.length == 1){
