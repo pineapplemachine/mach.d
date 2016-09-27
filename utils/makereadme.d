@@ -15,6 +15,7 @@ public:
 
 immutable readmepaths = [
     "readme.d",
+    "mach/meta/readme.d",
     "mach/text/html/namedchar/readme.d",
 ];
 
