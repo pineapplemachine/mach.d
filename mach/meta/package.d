@@ -11,6 +11,7 @@ import mach.meta.logical;
 import mach.meta.map;
 import mach.meta.partial;
 import mach.meta.repeat;
+import mach.meta.retro;
 import mach.meta.varfilter;
 import mach.meta.varmap;
 import mach.meta.varreduce;
