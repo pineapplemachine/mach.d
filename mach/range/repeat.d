@@ -6,7 +6,6 @@ import std.conv : to;
 import std.traits : isIntegral;
 import mach.traits : isIterable, isFiniteIterable, isInfiniteIterable;
 import mach.traits : isFiniteRange, isRandomAccessRange, isSavingRange;
-import mach.traits : canIncrement, canCompare, hasNumericLength;
 import mach.traits : hasNumericLength;
 import mach.range.asrange : asrange, validAsRange;
 import mach.range.asrange : validAsRandomAccessRange, validAsSavingRange;
