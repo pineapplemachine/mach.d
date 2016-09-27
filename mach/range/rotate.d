@@ -2,9 +2,9 @@ module mach.range.rotate;
 
 private:
 
-import std.meta : allSatisfy, staticMap;
+import mach.meta : Any, All, Map, varmap;
 import mach.traits : isFiniteIterable, isFiniteRange;
-import mach.traits : canCast, isMutableFrontRange, ElementType;
+import mach.traits : isMutableFrontRange, ElementType;
 import mach.range.asrange : asrange, validAsMutableFrontRange;
 import mach.range.meta : MetaMultiRangeWrapperMixin;
 
@@ -12,27 +12,40 @@ public:
 
 
 
-enum canRotate(Iters...) = (
-    allSatisfy!(validAsMutableFrontRange, Iters) &&
-    allSatisfy!(isFiniteIterable, Iters)
-);
-
-enum canRotateRanges(Ranges...) = (
-    allSatisfy!(isMutableFrontRange, Ranges) &&
-    allSatisfy!(isFiniteRange, Ranges)
-);
+/// Determine whether rotation is a meaningful operation for some inputs.
+template canRotate(T...){
+    static if(T.length == 0){
+        enum bool canRotate = true;
+    }else{
+        enum bool canRotate = (
+            All!(validAsMutableFrontRange, T) &&
+            Any!(isFiniteIterable, T)
+        );
+    }
+}
+/// ditto
+template canRotateRanges(T...){
+    static if(T.length == 0){
+        enum bool canRotateRanges = true;
+    }else{
+        enum bool canRotateRanges = (
+            All!(isMutableFrontRange, T) &&
+            Any!(isFiniteRange, T)
+        );
+    }
+}
 
 
 
 /// Eagerly rotates the contents of some iterables in-place, up to the length of
 /// the shortest iterable.
-void rotate(Iters...)(Iters iters) if(canRotate!Iters){
-    mixin(MetaMultiRangeWrapperMixin!(`rotateranges`, Iters));
+void rotate(Iters...)(auto ref Iters iters) if(canRotate!Iters){
+    return rotateranges(iters.varmap!(e => e.asrange).expand);
 }
-
-void rotateranges(Ranges...)(Ranges ranges) if(canRotateRanges!Ranges){
+/// ditto
+void rotateranges(Ranges...)(auto ref Ranges ranges) if(canRotateRanges!Ranges){
     static if(Ranges.length > 1){
-        alias Elements = staticMap!(ElementType, Ranges);
+        alias Elements = Map!(ElementType, Ranges);
         while(true){
             foreach(i, _; Ranges){
                 if(ranges[i].empty) goto endrotate;
@@ -56,7 +69,7 @@ void rotateranges(Ranges...)(Ranges ranges) if(canRotateRanges!Ranges){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
 }
 unittest{
     tests("Rotate", {
