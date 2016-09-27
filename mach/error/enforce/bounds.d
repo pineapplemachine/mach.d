@@ -3,7 +3,7 @@ module mach.error.enforce.bounds;
 private:
 
 import std.traits : isNumeric;
-import mach.traits : canCompare, hasNumericLength, LengthType;
+import mach.traits : hasNumericLength, LengthType;
 import mach.text : text;
 
 public:
