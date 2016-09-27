@@ -74,6 +74,7 @@ struct DefaultEmptyRangeOfElement{}
 struct EmptyRangeOf(T = DefaultEmptyRangeOfElement){
     static enum bool empty = true;
     static enum size_t length = 0;
+    static enum size_t remaining = 0;
     alias opDollar = length;
     @property T front(){assert(false, "Empty range has no front.");}
     @property T back(){assert(false, "Empty range has no back.");}
@@ -93,7 +94,8 @@ struct SingularRangeOf(T){
     bool isempty = false;
     static enum size_t length = 1;
     alias opDollar = length;
-    @property bool empty(){return this.isempty;}
+    @property bool empty() const{return this.isempty;}
+    @property size_t remaining() const{return this.isempty ? 0 : 1;}
     @property auto front() in{assert(!this.empty);} body{return this.value;}
     @property auto back() in{assert(!this.empty);} body{return this.value;}
     void popFront() in{assert(!this.empty);} body{this.isempty = true;}
@@ -122,6 +124,7 @@ struct FiniteSingularRangeOf(T){
     }
     @property bool empty() const{return this.index >= this.values;}
     @property auto length() const{return this.values;}
+    @property auto remaining() const{return this.values - this.index;}
     alias opDollar = length;
     @property auto front() in{assert(!this.empty);} body{return this.value;}
     @property auto back() in{assert(!this.empty);} body{return this.value;}
@@ -166,6 +169,7 @@ unittest{
             void testcommon(T)(T range){
                 test(range.empty);
                 testeq(range.length, 0);
+                testeq(range.remaining, 0);
                 testeq(range[0 .. 0], range);
                 testeq(range[0 .. $], range);
                 testfail({range.front;});
@@ -189,6 +193,7 @@ unittest{
             void testcommon(T, V)(T range, V value){
                 testf(range.empty);
                 testeq(range.length, 1);
+                testeq(range.remaining, 1);
                 testeq(range.front, value);
                 testeq(range.back, value);
                 testeq(range[0], value);
@@ -201,6 +206,8 @@ unittest{
                 testfail({range[0 .. 2];});
                 range.popFront();
                 test(range.empty);
+                testeq(range.length, 1);
+                testeq(range.remaining, 0);
                 testfail({range.front;});
                 testfail({range.back;});
                 testfail({range.popFront;});
@@ -236,6 +243,7 @@ unittest{
             auto range = finiterangeof!int(4, 0);
             testf(range.empty);
             testeq(range.length, 4);
+            testeq(range.remaining, 4);
             tests("Random access", {
                 testeq(range[0], 0);
                 testeq(range[1], 0);
@@ -257,6 +265,7 @@ unittest{
             range.popFront();
             range.popFront();
             test(range.empty);
+            testeq(range.remaining, 0);
             testfail({range.front;});
             testfail({range.popFront;});
             testfail({range.back;});
@@ -266,6 +275,7 @@ unittest{
             void testcommon(T, V)(T range, V values){
                 testf(range.empty);
                 testeq(range.length, values.length);
+                testeq(range.remaining, values.length);
                 testeq(range.front, values[0]);
                 testeq(range.back, values[$-1]);
                 testeq(range[0], values[0]);
@@ -278,6 +288,7 @@ unittest{
                 testfail({range[0 .. values.length + 1];});
                 foreach(i; values) range.popFront();
                 test(range.empty);
+                testeq(range.remaining, 0);
                 testfail({range.front;});
                 testfail({range.back;});
                 testfail({range.popFront;});
