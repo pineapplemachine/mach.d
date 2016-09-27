@@ -2,9 +2,9 @@ module mach.range.logical;
 
 private:
 
-import std.traits : Unqual, isImplicitlyConvertible;
+import std.traits : Unqual, isImplicitlyConvertible, isNumeric;
 import mach.traits : isIterable, isFiniteIterable, isIterableReverse;
-import mach.traits : canIncrement, canCompare, ElementType, isElementPredicate;
+import mach.traits : canIncrement, ElementType, isElementPredicate;
 
 public:
 
@@ -12,22 +12,8 @@ public:
 
 alias DefaultLogicalPredicate = (x) => (x);
 
-enum canCount(Iter, Count) = isFiniteIterable!Iter && canIncrement!Count;
-
-enum canMore(Iter, Count) = (
-    canCount!(Iter, Unqual!Count) && canCompare(Unqual!Count, Count, ">")
-);
-enum canLess(Iter, Count) = (
-    canCount!(Iter, Unqual!Count) && canCompare(Unqual!Count, Count, "<")
-);
-enum canAtMost(Iter, Count) = (
-    canCount!(Iter, Unqual!Count) && canCompare(Unqual!Count, Count, "<=")
-);
-enum canAtLeast(Iter, Count) = (
-    canCount!(Iter, Unqual!Count) && canCompare(Unqual!Count, Count, ">=")
-);
-
-
+enum canCount(T) = isFiniteIterable!T;
+enum canExactly(T) = isFiniteIterable!T;
 
 enum canAnyAllNone(Iter, alias pred) = (
     isFiniteIterable!Iter && isElementPredicate!(pred, Iter)
@@ -37,15 +23,6 @@ alias canAny = canAnyAllNone;
 alias canAll = canAnyAllNone;
 alias canNone = canAnyAllNone;
 
-
-
-enum validExactlyCount(T) = (
-    canIncrement!(Unqual!T) && // Can keep a count
-    canCompare!(Unqual!T, T, ">") && // Can short-circuit when target count exceeded
-    canCompare!(Unqual!T, T, "<") // Can count is not less than target
-);
-
-enum canExactly(Iter, Count) = isFiniteIterable!Iter && validExactlyCount!Count;
 
 
 
@@ -169,32 +146,28 @@ auto ref last(alias pred, Iter)(auto ref Iter iter) if(canFindLast!Iter){
 
 
 
-auto count(Count = size_t, Iter, Element)(auto ref Iter iter, Element element) if(
-    canCount!(Iter, Count)
+auto count(Iter, Element)(auto ref Iter iter, Element element) if(
+    canCount!Iter
 ){
     return count!(e => e == element)(iter);
 }
 
-auto count(alias pred = DefaultLogicalPredicate, Count = size_t, Iter)(auto ref Iter iter) if(
-    canCount!(Iter, Count)
+auto count(alias pred = DefaultLogicalPredicate, Iter)(auto ref Iter iter) if(
+    canCount!Iter
 ){
-    Count count = Count.init;
+    size_t count = 0;
     foreach(item; iter){
         if(pred(item)) count++;
     }
     return count;
 }
 
-auto exactly(Count = size_t, Iter, Element)(auto ref Iter iter, Element element, Count target) if(
-    canExactly!(Iter, Count)
-){
+auto exactly(Iter, Element)(auto ref Iter iter, Element element, in size_t target) if(canExactly!Iter){
     return exactly!(e => e == element)(iter, target);
 }
 
-bool exactly(alias pred = DefaultLogicalPredicate, Count, Iter)(auto ref Iter iter, Count target) if(
-    canExactly!(Iter, Count)
-){
-    auto count = Unqual!Count.init;
+bool exactly(alias pred = DefaultLogicalPredicate, Iter)(auto ref Iter iter, in size_t target) if(canExactly!Iter){
+    size_t count = 0;
     foreach(item; iter){
         if(pred(item)){
             count++;
@@ -208,13 +181,9 @@ bool exactly(alias pred = DefaultLogicalPredicate, Count, Iter)(auto ref Iter it
 
 private template moreless(string name, string op, bool upon){
     private bool moreless(
-        alias pred = DefaultLogicalPredicate, Count, Iter
-    )(
-        auto ref Iter iter, Count target
-    ) if(
-        canCount!(Iter, Unqual!Count) && canCompare!(Unqual!Count, Count, op)
-    ){
-        auto count = Unqual!Count.init;
+        alias pred = DefaultLogicalPredicate, Iter
+    )(auto ref Iter iter, in size_t target) if(canCount!Iter){
+        size_t count = 0;
         mixin(`if(count ` ~ op ~ ` target) return upon;`);
         foreach(item; iter){
             if(pred(item)){
