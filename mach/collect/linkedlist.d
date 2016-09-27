@@ -6,7 +6,7 @@ import std.experimental.allocator : make, dispose;
 import std.experimental.allocator.mallocator : Mallocator;
 import std.traits : isIntegral, isImplicitlyConvertible, Unqual;
 import mach.traits : isFiniteIterable, isIterableOf, ElementType;
-import mach.traits : canReassign, isAllocator, canIncrement;
+import mach.traits : canReassign, isAllocator;
 
 public:
 
@@ -342,12 +342,8 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
     }
     
     /// Get the index of some node in this list.
-    auto nodeindex(Index = size_t)(
-        in Node* node, Index start = Index.init
-    ) const pure nothrow @trusted @nogc if(
-        canIncrement!Index
-    ){
-        Index index = start;
+    auto nodeindex(in Node* node, in size_t start = 0) const pure nothrow @trusted @nogc{
+        size_t index = start;
         foreach(listnode; this.nodes){
             if(listnode is node) return index;
             index++;
