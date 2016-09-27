@@ -2,12 +2,10 @@ module mach.range.chain.iterable;
 
 private:
 
-import std.traits : isArray;
 import mach.traits : ElementType, hasNumericLength, isRandomAccessIterable;
 import mach.traits : isRange, isFiniteRange, isSavingRange, isRandomAccessRange;
-import mach.traits : isIterable, isIterableOf, isFiniteIterable;
+import mach.traits : isArray, isIterable, isIterableOf, isFiniteIterable;
 import mach.range.asrange : asrange, validAsRange, AsRangeType;
-import mach.range.logical : first, last, all;
 import mach.range.reduce : reduce;
 
 public:
