@@ -3,7 +3,7 @@ module mach.range.compare;
 private:
 
 import mach.range.asrange : asrange, validAsRange;
-import mach.traits : ElementType, isFiniteIterable, isFiniteRange, canCompare;
+import mach.traits : ElementType, isFiniteIterable, isFiniteRange;
 import mach.traits : hasNumericLength, isPredicate;
 
 public:
