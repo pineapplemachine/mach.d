@@ -191,18 +191,26 @@ unittest{
 
 ## mach.meta.varfilter
 
+Given a sequence of variadic arguments, return a tuple containing only those
+arguments whose types meet a template predicate.
+
 +/
 
 unittest{
-    // TODO: Document
+    enum NotInt(T) = !is(T == int);
+    auto values = varfilter!NotInt(byte(1), short(2), int(3), "hi");
+    static assert(values.length == 3);
+    assert(values[0] == 1);
+    assert(values[1] == 2);
+    assert(values[2] == "hi");
 }
 
 /++ md
 
 ## mach.meta.varmap
 
-A map function returning a tuple containing the results of transformation of
-each passed argument.
+Given a sequence of variadic arguments, return a tuple containing the result of
+each argument being transformed by a passed function.
 
 +/
 
@@ -219,8 +227,31 @@ unittest{
 
 ## mach.meta.varreduce
 
+Provides an implementation of the reduce HOF, operating upon a sequence of
+variadic arguments.
+
+The reduction operation can be given a seed by prepending the seed as an
+additional argument.
+
 +/
 
 unittest{
-    // TODO: Document
+    alias sum = (a, b) => (a + b);
+    assert(varreduce!sum(1, 2, 3) == 6);
+}
+
+/++ md
+
+This module provides several common abstractions built on top of varreduce,
+including varmin, varmax, varany, varall, and varsum.
+
++/
+
+unittest{
+    assert(varmin(1, 2, 3) == 1);
+    assert(varmax(1, 2, 3) == 3);
+    assert(varsum(1, 2, 3) == 6);
+    assert(varany(true, false));
+    assert(varall(true, true));
+    assert(varnone(false, false));
 }
