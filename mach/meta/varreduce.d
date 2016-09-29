@@ -2,7 +2,7 @@ module mach.meta.varreduce;
 
 private:
 
-//import mach.traits : CommonType, hasCommonType;
+
 
 public:
 
@@ -71,13 +71,29 @@ auto varproduct(T...)(auto ref T args) if(canVarReduce!(VarReduceProduct, T)){
 }
 
 /// Get whether any passed arguments evaluate true.
-auto varany(T...)(auto ref T args) if(canVarReduce!(VarReduceAny, T)){
-    return varreduce!VarReduceAny(args);
+/// When no arguments are passed, the function returns false.
+auto varany(T...)(auto ref T args) if(T.length == 0 || canVarReduce!(VarReduceAny, T)){
+    static if(T.length == 0){
+        return false;
+    }else{
+        return varreduce!VarReduceAny(args);
+    }
 }
 
 /// Get whether all passed arguments evaluate true.
-auto varall(T...)(auto ref T args) if(canVarReduce!(VarReduceAll, T)){
-    return varreduce!VarReduceAll(args);
+/// When no arguments are passed, the function returns true.
+auto varall(T...)(auto ref T args) if(T.length == 0 || canVarReduce!(VarReduceAll, T)){
+    static if(T.length == 0){
+        return true;
+    }else{
+        return varreduce!VarReduceAll(args);
+    }
+}
+
+/// Get whether no passed arguments evaluate true.
+/// When no arguments are passed, the function returns true.
+auto varnone(T...)(auto ref T args) if(T.length == 0 || canVarReduce!(VarReduceAny, T)){
+    return !varany(args);
 }
 
 /// Get the number of arguments which evaluate true.
@@ -115,15 +131,26 @@ unittest{
     assert(varany(true));
     assert(varany(true, true, true));
     assert(varany(true, true, false));
+    assert(!varany());
     assert(!varany(false));
     assert(!varany(null));
 }
 unittest{
+    assert(varall());
     assert(varall(true));
     assert(varall(true, true, true));
     assert(!varall(false));
     assert(!varall(true, true, false));
     assert(!varall(true, true, false, null));
+}
+unittest{
+    assert(varnone());
+    assert(varnone(false));
+    assert(varnone(false, false, false));
+    assert(!varnone(true));
+    assert(!varnone(true, true));
+    assert(!varnone(true, true, false));
+    assert(!varnone(true, null, false));
 }
 unittest{
     assert(varcount() == 0);
