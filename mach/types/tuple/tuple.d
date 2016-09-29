@@ -59,7 +59,7 @@ template canAssignTuple(L, R...){
 
 template canOpAssignTuple(string op, L, R...){
     alias assign = (a, b){mixin(`a ` ~ op ~ `= b;`); return 0;};
-    alias canAssignTuple = canTupleOp!(assign, L, R);
+    alias canOpAssignTuple = canTupleOp!(assign, L, R);
 }
 
 
@@ -160,7 +160,7 @@ struct Tuple(X...){
     void opAssign(R...)(auto ref R rhs) if(
         canAssignTuple!(typeof(this), R)
     ){
-        foreach(i, _; T) this.expand[i] = rhs[i];
+        foreach(i, _; T) this.expand[i] = rhs[0].expand[i];
     }
     
     void opAssign(R...)(auto ref R rhs) if(
@@ -173,7 +173,7 @@ struct Tuple(X...){
     void opOpAssign(string op, R...)(auto ref R rhs) if(
         canOpAssignTuple!(op, typeof(this), R)
     ){
-        foreach(i, _; T) mixin(`this.expand[i] ` ~ op ~ `= rhs[i];`);
+        foreach(i, _; T) mixin(`this.expand[i] ` ~ op ~ `= rhs[0].expand[i];`);
     }
     
     void opOpAssign(string op, R...)(auto ref R rhs) if(
@@ -256,7 +256,57 @@ struct Tuple(X...){
 
 
 
-//import mach.io.log;
+import mach.io.log;
+
+unittest{
+    auto empty = tuple();
+    static assert(empty.length == 0);
+    static assert(empty.empty);
+    static assert(!is(typeof({empty[0];})));
+    assert(empty == empty);
+    assert(empty + empty == empty);
+    assert(!(empty < empty));
+    assert(empty <= empty);
+    assert(empty.slice!(0, 0) is empty);
+    empty = empty;
+    empty += empty;
+}
+unittest{
+    auto t = tuple(0);
+    static assert(t.length == 1);
+    static assert(!t.empty);
+    assert(t.expand[0] == 0);
+    assert(t[0] == 0);
+    assert(t == t);
+    assert(t >= t);
+    assert(!(t > t));
+    assert(t + 1 == 1);
+    assert(t - 1 == -1);
+    assert(t.slice!(0, 1) is t);
+    assert(t.slice!(0, 0) == tuple());
+    t += 1;
+    assert(t == 1);
+    auto sum = t + t;
+    static assert(is(typeof(t) == typeof(sum)));
+    assert(sum == 2);
+    assert(sum > t);
+    assert(t <= sum);
+    t = sum;
+    assert(t == sum);
+    t += sum;
+    assert(t == sum * 2);
+}
+unittest{
+    auto t = tuple(0, 1);
+    static assert(t.length == 2);
+    static assert(!t.empty);
+    assert(t[0] == 0);
+    assert(t[1] == 1);
+    assert(t == t);
+    assert(t >= t);
+    assert(!(t > t));
+    //log(t + (1, 2));
+}
 
 // TODO
 unittest{
