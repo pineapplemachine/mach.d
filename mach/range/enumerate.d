@@ -2,8 +2,7 @@ module mach.range.enumerate;
 
 private:
 
-import std.typecons : Tuple;
-import std.traits : isImplicitlyConvertible;
+import mach.types : tuple;
 import mach.traits : isRange, isSavingRange, isRandomAccessRange, isSlicingRange;
 import mach.traits : canReassign, isMutableFrontRange, isMutableBackRange;
 import mach.traits : isMutableRandomRange, isMutableInsertRange;
@@ -35,9 +34,18 @@ auto enumerate(Iter)(auto ref Iter iter, size_t initial = 0) if(canEnumerate!Ite
 
 
 
+struct EnumerationRangeElement(T){
+    size_t index;
+    T value;
+    @property auto astuple(){
+        return tuple(this.index, this.value);
+    }
+    alias astuple this;
+}
+
 struct EnumerationRange(Range) if(canEnumerateRange!Range){
     alias Index = size_t;
-    alias Element = Tuple!(Index, `index`, ElementType!Range, `value`);
+    alias Element = EnumerationRangeElement!(ElementType!Range);
     static enum bool isBidirectional = canEnumerateRangeBidirectional!Range;
     
     mixin MetaRangeEmptyMixin!Range;
