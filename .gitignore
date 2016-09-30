@@ -27,4 +27,5 @@ test.d
 test.py
 wip_*.d
 old_*.d
+reject_*.d
 bin/
