@@ -2,7 +2,7 @@ module mach.range.zip;
 
 private:
 
-import std.typecons : tuple;
+import mach.types : tuple;
 import mach.meta : varmap;
 import mach.range.asrange : asrange;
 import mach.range.map.plural : mapplural, canMapPlural;

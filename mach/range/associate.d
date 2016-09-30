@@ -3,8 +3,8 @@ module mach.range.associate;
 private:
 
 import std.traits : Unqual;
-import std.typecons : tuple;
-import mach.traits : isIterable, canHash, ElementType, isTuple;
+import mach.types : tuple;
+import mach.traits : isIterable, canHash, ElementType;
 import mach.range.map : map;
 import mach.range.zip : zip;
 
@@ -98,6 +98,7 @@ version(unittest){
     import mach.range.enumerate : enumerate;
 }
 unittest{
+    // TODO: More thorough unittests
     tests("Associations", {
         auto inputa = [0, 0, 1, 1, 2, 2];
         auto inputb = [0, 1, 2, 3, 4, 5];

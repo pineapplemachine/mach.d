@@ -31,7 +31,7 @@ template canAdjoin(FTypes, Args...){
 /// the same arguments.
 template Adjoin(F...){
     auto Adjoin(Args...)(auto ref Args args) if(canAdjoin!(Types!F, Args)){
-        import std.typecons : tuple;
+        import mach.types : tuple;
         static if(F.length == 0){
             return tuple();
         }else static if(F.length == 1){
