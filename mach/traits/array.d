@@ -12,7 +12,7 @@ public:
 enum isArray(alias T) = isArray!(typeof(T));
 /// ditto
 template isArray(T){
-    enum bool isArray = is(typeof({
+    enum bool isArray = !is(T == typeof(null)) && is(typeof({
         auto x(X)(X[] y){}
         x(T.init);
     }));
@@ -62,6 +62,7 @@ unittest{
     static assert(isArray!(int[]));
     static assert(isArray!(string[]));
     static assert(isArray!(int[][]));
+    static assert(!isArray!(null));
     static assert(!isArray!(void));
     static assert(!isArray!(int));
 }
@@ -86,6 +87,7 @@ unittest{
     static assert(isStaticArray!(int[1]));
     static assert(isStaticArray!(int[2]));
     static assert(isStaticArray!(string[4]));
+    static assert(!isStaticArray!(null));
     static assert(!isStaticArray!(void));
     static assert(!isStaticArray!(int));
     static assert(!isStaticArray!(int[]));
@@ -97,6 +99,7 @@ unittest{
     static assert(isDynamicArray!(int[]));
     static assert(isDynamicArray!(string));
     static assert(isDynamicArray!(int[][]));
+    static assert(!isDynamicArray!(null));
     static assert(!isDynamicArray!(void));
     static assert(!isDynamicArray!(int));
     static assert(!isDynamicArray!(int[0]));
