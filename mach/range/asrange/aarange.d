@@ -3,7 +3,7 @@ module mach.range.asrange.aarange;
 private:
 
 import std.traits : isAssociativeArray, KeyType, ValueType, isImplicitlyConvertible;
-import std.typecons : Tuple;
+import mach.types : tuple;
 import mach.traits : canReassign;
 import mach.range.asrange.arrayrange : ArrayRange;
 
@@ -15,11 +15,28 @@ alias canMakeAssociativeArrayRange = isAssociativeArray;
 
 
 
+struct AssociativeArrayRangeElement(K, V){
+    K key;
+    V value;
+    @property auto astuple(){
+        return tuple(this.key, this.value);
+    }
+    alias astuple this;
+}
+
+template AssociativeArrayRangeElement(T) if(isAssociativeArray!T){
+    alias AssociativeArrayRangeElement = AssociativeArrayRangeElement!(
+        KeyType!T, ValueType!T
+    );
+}
+
+
+
 /// Range based on an associative array.
 struct AssociativeArrayRange(Array) if(canMakeAssociativeArrayRange!Array){
     alias Key = KeyType!Array;
     alias Keys = ArrayRange!(Key[]);
-    alias Element = Tuple!(KeyType!Array, "key", ValueType!Array, "value");
+    alias Element = AssociativeArrayRangeElement!Array;
     
     Array array;
     Keys keys;
