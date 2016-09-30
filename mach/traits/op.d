@@ -100,11 +100,34 @@ template hasOpApplyReverse(T...) if(T.length == 1){
 
 
 
-/// True when From can be explicitly casted to To.
-template canCast(From, To){
-    enum bool canCast = is(typeof({
+alias canCast = canCastSingular;
+
+/// Determine whether values of type From can be explicitly cast to To.
+template canCastSingular(From, To){
+    enum bool canCastSingular = is(typeof({
         To x = cast(To) From.init;
     }));
+}
+
+/// Determine whether, for each pair of types between From and To, whether
+/// values of the first type can be explicitly cast to the second.
+template canCastPlural(From, To) if(isTypes!From && isTypes!To){
+    static if(From.length == To.length){
+        static if(From.length == 0){
+            enum bool canCastPlural = true;
+        }else static if(From.length == 1){
+            enum bool canCastPlural = is(typeof({
+                To.types[0] x = cast(To.types[0]) From.types[0].init;
+            }));
+        }else{
+            enum bool canCastPlural = (
+                canCastPlural!(From.slice!(0, 1), To.slice!(0, 1)) &&
+                canCastPlural!(From.slice!(1, From.length), To.slice!(1, To.length))
+            );
+        }
+    }else{
+        enum bool canCastPlural = false;
+    }
 }
 
 
@@ -224,4 +247,16 @@ unittest{
     static assert(!canCast!(void, int));
     static assert(!canCast!(string, int));
     static assert(!canCast!(string, float));
+}
+unittest{
+    static assert(canCastPlural!(Types!(), Types!()));
+    static assert(canCastPlural!(Types!(int), Types!(int)));
+    static assert(canCastPlural!(Types!(int), Types!(float)));
+    static assert(canCastPlural!(Types!(int, int), Types!(int, int)));
+    static assert(canCastPlural!(Types!(int, float, short), Types!(int, int, int)));
+    static assert(!canCastPlural!(Types!(), Types!(int)));
+    static assert(!canCastPlural!(Types!(int), Types!()));
+    static assert(!canCastPlural!(Types!(int), Types!(string)));
+    static assert(!canCastPlural!(Types!(int, int), Types!(int)));
+    static assert(!canCastPlural!(Types!(int, int, int), Types!(int, int, string)));
 }
