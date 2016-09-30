@@ -18,7 +18,7 @@ enum size_t LongestCharName = 24;
 
 /// A list of all recognized named code point sequences.
 // Reference: https://www.w3.org/TR/html5/syntax.html#named-character-references
-static enum NamedChars = [
+static immutable NamedChars = [
     NamedChar("Aacute", [0x000C1]), // 'Á'
     NamedChar("aacute", [0x000E1]), // 'á'
     NamedChar("Abreve", [0x00102]), // 'Ă'
