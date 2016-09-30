@@ -12,7 +12,7 @@ public:
 template FindThreadMixin(bool forward, Index){
     import mach.traits : canSliceSame;
     
-    auto result(Iter)(Iter iter, Index index){
+    auto result(bool plural = true, Iter)(Iter iter, Index index){
         static if(forward){
             immutable Index low = this.foundindex;
             immutable Index high = index + 1;
@@ -22,9 +22,17 @@ template FindThreadMixin(bool forward, Index){
         }
         static if(canSliceSame!Iter){
             auto slice = iter[low .. high];
-            return FindResultPlural!(Index, typeof(slice))(low, slice);
+            static if(plural){
+                return FindResultPlural!(Index, typeof(slice))(low, slice);
+            }else{
+                return FindResultSingular!(Index, typeof(slice))(low, slice, true);
+            }
         }else{
-            return FindResultIndexPlural!(Index)(low);
+            static if(plural){
+                return FindResultIndexPlural!(Index)(low);
+            }else{
+                return FindResultIndexSingular!(Index)(low, true);
+            }
         }
     }
 }

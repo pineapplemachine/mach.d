@@ -208,7 +208,7 @@ private template findgeneralized(
                 static if(randomaccess) bool matched = thread.next(element, subject);
                 else bool matched = thread.next(element);
                 if(matched){
-                    result = cast(Result) thread.result(iter, index);
+                    result = cast(Result) thread.result!all(iter, index);
                     found = true;
                 }
             }
@@ -222,7 +222,7 @@ private template findgeneralized(
                     else thread.searchrange.popBack();
                 }
                 if(subjectlen == 1){
-                    result = cast(Result) thread.result(iter, index);
+                    result = cast(Result) thread.result!all(iter, index);
                     found = true;
                 }else{
                     threads.add(thread);

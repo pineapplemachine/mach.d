@@ -2,15 +2,20 @@ module mach.range.find.result;
 
 private:
 
-import std.typecons : Tuple;
+import mach.types : tuple;
 
 public:
 
 
 
 /// Result of a plural find operation with both an index and a value.
-template FindResultPlural(Index, Value){
-    alias FindResultPlural = Tuple!(Index, `index`, Value, `value`);
+struct FindResultPlural(Index, Value){
+    Index index;
+    Value value;
+    @property auto astuple(){
+        return tuple(this.index, this.value);
+    }
+    alias astuple this;
 }
 
 /// Result of a plural find operation with an index but no value.
