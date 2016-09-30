@@ -2,9 +2,8 @@ module mach.range.asarray;
 
 private:
 
-import std.traits : isArray;
 import mach.text : text;
-import mach.traits : isArrayOf, isIterable, isFiniteIterable, ElementType;
+import mach.traits : isArray, isArrayOf, isIterable, isFiniteIterable, ElementType;
 import mach.traits : hasNumericLength, LengthType, canCast;
 
 public:
@@ -16,8 +15,8 @@ enum canMakeArray(Iter) = (
     isArray!Iter || canMakeFiniteLengthArray!Iter
 );
 /// ditto
-enum canMakeArrayOf(Iter, Element) = (
-    isArrayOf!(Iter, Element) || canMakeFiniteLengthArrayOf!(Iter, Element)
+enum canMakeArrayOf(Element, Iter) = (
+    isArrayOf!(Element, Iter) || canMakeFiniteLengthArrayOf!(Element, Iter)
 );
 
 /// Can an array be made from the iterable, deriving length from the iterable itself?
@@ -25,9 +24,9 @@ enum canMakeKnownLengthArray(Iter) = (
     canMakeMaxLengthArray!Iter && isFiniteIterable!Iter && hasNumericLength!Iter
 );
 /// ditto
-enum canMakeKnownLengthArrayOf(Iter, Element) = (
+enum canMakeKnownLengthArrayOf(Element, Iter) = (
     canMakeKnownLengthArray!Iter &&
-    canMakeMaxLengthArrayOf!(Iter, Element)
+    canMakeMaxLengthArrayOf!(Element, Iter)
 );
 
 /// Can an array of a default maximum length be made from the iterable?
@@ -36,9 +35,9 @@ enum canMakeFiniteLengthArray(Iter) = (
     canMakeMaxLengthArray!Iter && isFiniteIterable!Iter
 );
 /// ditto
-enum canMakeFiniteLengthArrayOf(Iter, Element) = (
+enum canMakeFiniteLengthArrayOf(Element, Iter) = (
     canMakeFiniteLengthArray!Iter &&
-    canMakeMaxLengthArrayOf!(Iter, Element)
+    canMakeMaxLengthArrayOf!(Element, Iter)
 );
 
 /// Can an array of some given maximum length be made from the iterable?
@@ -46,7 +45,7 @@ enum canMakeMaxLengthArray(Iter) = (
     isIterable!Iter
 );
 /// ditto
-template canMakeMaxLengthArrayOf(Iter, Element){
+template canMakeMaxLengthArrayOf(Element, Iter){
     static if(canMakeMaxLengthArray!Iter){
         enum bool canMakeMaxLengthArrayOf = canCast!(ElementType!Iter, Element);
     }else{
@@ -69,7 +68,7 @@ auto asarray(bool enforce = false, Iter)(auto ref Iter iter, size_t maxlength) i
     
 // ditto
 auto asarray(Element, bool enforce = false, Iter)(auto ref Iter iter, size_t maxlength) if(
-    canMakeMaxLengthArrayOf!(Iter, Element)
+    canMakeMaxLengthArrayOf!(Element, Iter)
 ){
     Element[] array;
     foreach(item; iter){
@@ -95,13 +94,13 @@ auto asarray(Iter)(auto ref Iter iter) if(
 
 /// ditto
 auto asarray(Element, Iter)(auto ref Iter iter) if(
-    canMakeArrayOf!(Iter, Element)
+    canMakeArrayOf!(Element, Iter)
 ){
-    static if(isArrayOf!(Iter, Element)){
+    static if(isArrayOf!(Element, Iter)){
         return iter;
-    }else static if(canMakeKnownLengthArrayOf!(Iter, Element)){
+    }else static if(canMakeKnownLengthArrayOf!(Element, Iter)){
         return asknownlengtharray!(Element, Iter)(iter, cast(size_t) iter.length);
-    }else static if(canMakeFiniteLengthArrayOf!(Iter, Element)){
+    }else static if(canMakeFiniteLengthArrayOf!(Element, Iter)){
         return asarray!(Element, false, Iter)(iter, size_t.max);
     }else{
         static assert(false); // This shouldn't happen
@@ -112,7 +111,7 @@ auto asarray(Element, Iter)(auto ref Iter iter) if(
 
 /// Create array from an iterable where exact length is known at runtime.
 auto asknownlengtharray(Element, Iter)(auto ref Iter iter, size_t length) if(
-    canMakeMaxLengthArrayOf!(Iter, Element)
+    canMakeMaxLengthArrayOf!(Element, Iter)
 ){
     Element[] array;
     array.reserve(length);
@@ -137,7 +136,7 @@ auto asarray(size_t length, Iter)(auto ref Iter iter) if(canMakeArray!(Iter)){
 
 /// ditto
 auto asarray(Element, size_t length, Iter)(auto ref Iter iter) if(
-    canMakeMaxLengthArrayOf!(Iter, Element)
+    canMakeMaxLengthArrayOf!(Element, Iter)
 ){
     Element[length] array;
     size_t index = 0;
