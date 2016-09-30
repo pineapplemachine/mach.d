@@ -99,6 +99,25 @@ static assert(is(Filter!(NotVoid, void, void, int, void, long) == Aliases!(int, 
 // TODO: Document
 ```
 
+## mach.meta.reduce
+
+Implements the reduce higher-order function for template arguments.
+
+``` D
+template greater(alias a, alias b){
+    enum greater = a > b ? a : b;
+}
+static assert(Reduce!(greater, 0, 4, 1, 7, 3) == 7);
+```
+
+``` D
+template larger(a, b){
+    static if(a.sizeof > b.sizeof) alias larger = a;
+    else alias larger = b;
+}
+static assert(is(Reduce!(larger, short, byte, long, int) == long));
+```
+
 ## mach.meta.repeat
 
 Given a value or sequence of values, generate a new sequence which is the original sequence repeated and concatenated some number of times.

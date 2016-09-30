@@ -162,6 +162,28 @@ unittest{
 
 /++ md
 
+## mach.meta.reduce
+
+Implements the reduce higher-order function for template arguments.
+
++/
+
+unittest{
+    template greater(alias a, alias b){
+        enum greater = a > b ? a : b;
+    }
+    static assert(Reduce!(greater, 0, 4, 1, 7, 3) == 7);
+}
+unittest{
+    template larger(a, b){
+        static if(a.sizeof > b.sizeof) alias larger = a;
+        else alias larger = b;
+    }
+    static assert(is(Reduce!(larger, short, byte, long, int) == long));
+}
+
+/++ md
+
 ## mach.meta.repeat
 
 Given a value or sequence of values, generate a new sequence which is the
