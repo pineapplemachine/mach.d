@@ -2,9 +2,8 @@ module mach.range.asrange.aarange;
 
 private:
 
-import std.traits : isAssociativeArray, KeyType, ValueType, isImplicitlyConvertible;
 import mach.types : tuple;
-import mach.traits : canReassign;
+import mach.traits : canReassign, isAssociativeArray, ArrayKeyType, ArrayValueType;
 import mach.range.asrange.arrayrange : ArrayRange;
 
 public:
@@ -26,7 +25,7 @@ struct AssociativeArrayRangeElement(K, V){
 
 template AssociativeArrayRangeElement(T) if(isAssociativeArray!T){
     alias AssociativeArrayRangeElement = AssociativeArrayRangeElement!(
-        KeyType!T, ValueType!T
+        ArrayKeyType!T, ArrayValueType!T
     );
 }
 
@@ -34,7 +33,7 @@ template AssociativeArrayRangeElement(T) if(isAssociativeArray!T){
 
 /// Range based on an associative array.
 struct AssociativeArrayRange(Array) if(canMakeAssociativeArrayRange!Array){
-    alias Key = KeyType!Array;
+    alias Key = ArrayKeyType!Array;
     alias Keys = ArrayRange!(Key[]);
     alias Element = AssociativeArrayRangeElement!Array;
     
@@ -66,14 +65,14 @@ struct AssociativeArrayRange(Array) if(canMakeAssociativeArrayRange!Array){
     
     @property auto ref front(){
         auto key = keys.front;
-        return Element(cast(KeyType!Array) key, cast(ValueType!Array) this.array[key]);
+        return Element(cast(ArrayKeyType!Array) key, cast(ArrayValueType!Array) this.array[key]);
     }
     void popFront(){
         this.keys.popFront();
     }
     @property auto ref back(){
         auto key = keys.back;
-        return Element(cast(KeyType!Array) key, cast(ValueType!Array) this.array[key]);
+        return Element(cast(ArrayKeyType!Array) key, cast(ArrayValueType!Array) this.array[key]);
     }
     void popBack(){
         this.keys.popBack();
@@ -81,11 +80,11 @@ struct AssociativeArrayRange(Array) if(canMakeAssociativeArrayRange!Array){
     
     auto ref opIndex(in size_t index){
         auto key = this.keys[index];
-        return Element(cast(KeyType!Array) key, cast(ValueType!Array) this.array[key]);
+        return Element(cast(ArrayKeyType!Array) key, cast(ArrayValueType!Array) this.array[key]);
     }
-    static if(!isImplicitlyConvertible!(size_t, Key)){
+    static if(!is(typeof({this.array[size_t(0)];}))){
         auto ref opIndex(in Key key) const{
-            return Element(cast(KeyType!Array) key, cast(ValueType!Array) this.array[key]);
+            return Element(cast(ArrayKeyType!Array) key, cast(ArrayValueType!Array) this.array[key]);
         }
     }
     
@@ -101,7 +100,7 @@ struct AssociativeArrayRange(Array) if(canMakeAssociativeArrayRange!Array){
             this.keys.front = element.key;
             this.array[element.key] = element.value;
         }
-        @property void front(ValueType!Array value){
+        @property void front(ArrayValueType!Array value){
             this.array[this.keys.front] = value;
         }
         
@@ -110,7 +109,7 @@ struct AssociativeArrayRange(Array) if(canMakeAssociativeArrayRange!Array){
             this.keys.back = element.key;
             this.array[element.key] = element.value;
         }
-        @property void back(ValueType!Array value){
+        @property void back(ArrayValueType!Array value){
             this.array[this.keys.back] = value;
         }
         
@@ -121,7 +120,7 @@ struct AssociativeArrayRange(Array) if(canMakeAssociativeArrayRange!Array){
             this.keys[index] = element.key;
             this.array[element.key] = element.value;
         }
-        void opIndexAssign(ValueType!Array value, size_t index) in{
+        void opIndexAssign(ArrayValueType!Array value, size_t index) in{
             assert(index >= 0 && index < this.keys.length);
         }body{
             this.array[this.keys[index]] = value;
