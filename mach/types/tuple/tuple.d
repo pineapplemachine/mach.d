@@ -5,14 +5,14 @@ private:
 import mach.meta : Any, All, Contains, IndexOf;
 import mach.types.types : Types, isTypes;
 import mach.traits : AsUnaryOp, isUnaryOpPlural, AsBinaryOp, isBinaryOpPlural;
-import mach.traits : isTemplateOf, isCallable;
+import mach.traits : canCastPlural, canHash, hash, isTemplateOf, isCallable;
 
 public:
 
 
 
-template isBaseTuple(T...) if(T.length == 1){
-    enum bool isBaseTuple = isTemplateOf!(T, Tuple);
+template isTuple(T...) if(T.length == 1){
+    enum bool isTuple = isTemplateOf!(T, Tuple);
 }
 
 
@@ -25,7 +25,7 @@ auto tuple(T...)(T args){
 
 template canTupleOp(alias op, L, R...){
     static if(R.length == 1){
-        static if(isBaseTuple!L && isBaseTuple!R){
+        static if(isTuple!L && isTuple!R){
             enum bool canTupleOp = (
                 isBinaryOpPlural!(op, L.Types, R[0].Types)
             );
@@ -38,7 +38,7 @@ template canTupleOp(alias op, L, R...){
 }
 
 template canUnaryOpTuple(alias op, T){
-    static if(isBaseTuple!T){
+    static if(isTuple!T){
         alias canUnaryOpTuple = isUnaryOpPlural!(op, T.T);
     }else{
         enum bool canUnaryOpTuple = false;
@@ -62,8 +62,17 @@ template canOpAssignTuple(string op, L, R...){
     alias canOpAssignTuple = canTupleOp!(assign, L, R);
 }
 
+template canCastTuple(From, To){
+    static if(isTuple!From && isTuple!To){
+        enum bool canCastTuple = canCastPlural!(From.Types, To.Types);
+    }else{
+        enum bool canCastTuple = false;
+    }
+}
 
 
+
+/// Encapsulates an arbitrary number of values of arbitrary types.
 struct Tuple(X...){
     alias T = X;
     alias Types = .Types!X;
@@ -83,19 +92,22 @@ struct Tuple(X...){
             this.expand = values;
         }
     }else{
-        // Silence default constructor nonsense
+        /// Silence default constructor nonsense, allow construction with
+        /// an empty list of arguments.
         static typeof(this) opCall(){
             typeof(this) value; return value;
         }
     }
     
+    /// Return another tuple which contains a slice of those values in this one.
     auto ref slice(size_t low, size_t high)() if(
         low >= 0 && high >= low && high <= this.length
     ){
         return tuple(this.expand[low .. high]);
     }
     
-    auto ref concat(Args...)(auto ref Args args) if(All!(isBaseTuple!Args)){
+    /// Return a tuple which is a concatenation of this and some other tuples.
+    auto ref concat(Args...)(auto ref Args args) if(All!(isTuple!Args)){
         static if(Args.length == 0){
             return this;
         }else static if(Args.length == 1){
@@ -110,16 +122,23 @@ struct Tuple(X...){
     auto ref opUnary(string op)() if(
         canUnaryOpTuple!(op, typeof(this))
     ){
-        alias UnOp = AsUnaryOp!op;
-        static if(T.length == 0){
+        static if(op == `++` || op == `--`){
+            foreach(i, _; T){
+                mixin(op ~ `this.expand[i];`);
+            }
             return this;
-        }else static if(T.length == 1){
-            return tuple(UnOp(this.expand));
         }else{
-            return tuple(
-                UnOp(this.expand[0]),
-                this.slice!(1, this.length).opUnary!op().expand
-            );
+            alias UnOp = AsUnaryOp!op;
+            static if(T.length == 0){
+                return this;
+            }else static if(T.length == 1){
+                return tuple(UnOp(this.expand));
+            }else{
+                return tuple(
+                    UnOp(this.expand[0]),
+                    this.slice!(1, this.length).opUnary!op().expand
+                );
+            }
         }
     }
     
@@ -183,6 +202,7 @@ struct Tuple(X...){
         foreach(i, _; T) mixin(`this.expand[i] ` ~ op ~ `= rhs[i];`);
     }
     
+    /// Compare equality of each pair of values with another tuple.
     auto ref opEquals(R)(auto ref R rhs) if(
         canBinaryOpTuple!(`==`, typeof(this), R)
     ){
@@ -192,6 +212,8 @@ struct Tuple(X...){
         return true;
     }
     
+    /// Compare equality of each pair of values with a compatible sequence of
+    /// arguments.
     auto opEquals(R...)(auto ref R rhs) if(
         !canBinaryOpTuple!(`==`, typeof(this), R) &&
         isBinaryOpPlural!(AsBinaryOp!`==`, Types, .Types!R)
@@ -245,89 +267,199 @@ struct Tuple(X...){
         return this.opCmp(tuple(rhs));
     }
     
-    static if(T.length == 1){
-        auto opCast(T)() if(is(typeof({
-            auto x = cast(T) this.expand[0];
-        }))){
-            return cast(T) this.expand[0];
+    /// Cast this tuple to another type of tuple.
+    auto opCast(To)() if(canCastTuple!(typeof(this), To)){
+        static if(To.length == 0){
+            return this;
+        }else static if(To.length == 1){
+            return tuple(cast(To.T[0]) this.expand[0]);
+        }else{
+            return tuple(
+                cast(To.T[0]) this.expand[0],
+                this.slice!(1, this.length).opCast!(
+                    typeof(To.init.slice!(1, To.length)())
+                ).expand
+            );
+        }
+    }
+    
+    /// When there is only a single element in the tuple, allow it to
+    /// be cast to any type that the single element can be cast to.
+    auto opCast(To)() if(
+        T.length == 1 && !canCastTuple!(typeof(this), To) && is(typeof({
+            auto x = cast(To) this.expand[0];
+        }))
+    ){
+        return cast(To) this.expand[0];
+    }
+    
+    /// Get a hash which is a function of the hashes of each item in the
+    /// tuple.
+    size_t toHash()() if(All!(canHash, T)){
+        static if(T.length == 0){
+            return 0;
+        }else static if(T.length == 1){
+            return this.expand[0].hash;
+        }else{
+            size_t h = T.length;
+            foreach(i, _; T){
+                h ^= this.expand[0].hash;
+            }
+            return h;
         }
     }
 }
 
 
 
-import mach.io.log;
-
-unittest{
-    auto empty = tuple();
-    static assert(empty.length == 0);
-    static assert(empty.empty);
-    static assert(!is(typeof({empty[0];})));
-    assert(empty == empty);
-    assert(empty + empty == empty);
-    assert(!(empty < empty));
-    assert(empty <= empty);
-    assert(empty.slice!(0, 0) is empty);
-    empty = empty;
-    empty += empty;
+version(unittest){
+    private:
+    struct TupRange(T...){
+        Tuple!T t;
+        bool empty = false;
+        @property auto front(){return t;}
+        void popFront(){this.empty = true;}
+    }
 }
-unittest{
-    auto t = tuple(0);
-    static assert(t.length == 1);
-    static assert(!t.empty);
-    assert(t.expand[0] == 0);
-    assert(t[0] == 0);
-    assert(t == t);
-    assert(t >= t);
-    assert(!(t > t));
-    assert(t + 1 == 1);
-    assert(t - 1 == -1);
-    assert(t.slice!(0, 1) is t);
-    assert(t.slice!(0, 0) == tuple());
-    t += 1;
-    assert(t == 1);
-    auto sum = t + t;
-    static assert(is(typeof(t) == typeof(sum)));
-    assert(sum == 2);
-    assert(sum > t);
-    assert(t <= sum);
-    t = sum;
-    assert(t == sum);
-    t += sum;
-    assert(t == sum * 2);
+unittest{ // Empty tuple
+    {
+        auto t = tuple();
+        static assert(t.length == 0);
+        static assert(t.empty);
+        static assert(!is(typeof({t[0];})));
+        assert(t == t);
+        assert(t + t == t);
+        assert(!(t < t));
+        assert(t <= t);
+        assert(t.slice!(0, 0) is t);
+        assert(t.concat(t) == t);
+        assert(t.hash == tuple().hash);
+        t = t;
+        t += t;
+        t = cast(Tuple!()) t;
+    }
+    {
+        foreach(value; tuple()){
+            assert(false);
+        }
+    }
+    {
+        TupRange!() range;
+        foreach(value; range){
+            static assert(is(typeof(value) == Tuple!()));
+        }
+    }
 }
-unittest{
-    auto t = tuple(0, 1);
-    static assert(t.length == 2);
-    static assert(!t.empty);
-    assert(t[0] == 0);
-    assert(t[1] == 1);
-    assert(t == t);
-    assert(t >= t);
-    assert(!(t > t));
-    //log(t + (1, 2));
+unittest{ // Single-element tuple
+    {
+        auto t = tuple(0);
+        static assert(t.length == 1);
+        static assert(!t.empty);
+        assert(t.expand[0] == 0);
+        assert(t[0] == 0);
+        assert(t == t);
+        assert(t >= t);
+        assert(!(t > t));
+        assert(t + 1 == 1);
+        assert(t - 1 == -1);
+        assert(t.slice!(0, 1) is t);
+        assert(t.slice!(0, 0) == tuple());
+        assert(t.slice!(1, 1) == tuple());
+        assert(t.hash == tuple(0).hash);
+    }
+    {
+        TupRange!int range;
+        foreach(value; range){
+            static assert(is(typeof(value) == Tuple!int));
+        }
+    }
+    {
+        auto t = tuple(0);
+        t += 1;
+        assert(t == 1);
+        auto sum = t + t;
+        static assert(is(typeof(t) == typeof(sum)));
+        assert(sum == 2);
+        assert(sum > t);
+        assert(t <= sum);
+        t = sum;
+        assert(t == sum);
+        t += sum;
+        assert(t == sum * 2);
+        assert(t == 4);
+        t++;
+        assert(t == 5);
+    }
+    {
+        auto i = tuple!int(0);
+        auto f = cast(float) i;
+        static assert(is(typeof(f) == float));
+        assert(f == 0);
+    }
+    {
+        auto i = tuple!int(0);
+        auto f = cast(Tuple!float) i;
+        static assert(is(typeof(f) == Tuple!float));
+        assert(f == 0);
+    }
 }
-
-// TODO
-unittest{
-    //auto t = tuple(1, 2);
-    //log(t);
-    //log(t[0]);
-    //log(t + tuple(0.0, 2.0));
-    //log(-t);
-    //log(t + t.expand);
-    //log(t == t);
-    //log(t == t.expand);
-    //log(t >= t);
-    //log(t >= t.expand);
-    //static assert(isTemplateOf!(typeof(t), Tuple));
-}
-unittest{
-    //auto t = tuple(0);
-    //log(t + 1);
-    //log(1 + t);
-}
-unittest{
-    //Tuple!() t;
-    //auto t2 = Tuple!()(t.expand);
+unittest{ // Multiple-element tuple
+    {
+        auto t = tuple(0, 1);
+        static assert(t.length == 2);
+        static assert(!t.empty);
+        assert(t[0] == 0);
+        assert(t[1] == 1);
+        assert(t == t);
+        assert(t >= t);
+        assert(!(t > t));
+        assert(t + tuple(1, 2) == tuple(1, 3));
+        assert(-t == tuple(0, -1));
+        assert(t.slice!(0, 2) is t);
+        assert(t.slice!(0, 1) == tuple(t[0]));
+        assert(t.slice!(0, 0) == tuple());
+        assert(t.slice!(2, 2) == tuple());
+        assert(t.concat(t) == tuple(0, 1, 0, 1));
+        assert(t.hash == tuple(0, 1).hash);
+    }
+    {
+        TupRange!(int, int) range;
+        foreach(value; range){
+            static assert(is(typeof(value) == Tuple!(int, int)));
+        }
+        foreach(x, y; range){
+            static assert(is(typeof(x) == int));
+            static assert(is(typeof(y) == int));
+        }
+    }
+    {
+        TupRange!(string, string, int, int) range;
+        foreach(value; range){
+            static assert(is(typeof(value) == Tuple!(string, string, int, int)));
+        }
+        foreach(x, y, z, w; range){
+            static assert(is(typeof(x) == string));
+            static assert(is(typeof(y) == string));
+            static assert(is(typeof(z) == int));
+            static assert(is(typeof(w) == int));
+        }
+    }
+    {
+        auto t = tuple(0, 1);
+        t++;
+        assert(t[0] == 1);
+        assert(t[1] == 2);
+        t *= tuple(2, 2);
+        assert(t[0] == 2);
+        assert(t[1] == 4);
+        t = t - tuple(1, 1);
+        assert(t[0] == 1);
+        assert(t[1] == 3);
+    }
+    {
+        auto i = tuple!(int, int)(0, 1);
+        auto f = cast(Tuple!(float, float)) i;
+        static assert(is(typeof(f) == Tuple!(float, float)));
+        assert(f == i);
+    }
 }
