@@ -47,6 +47,7 @@ unittest{
     static assert(!isAssociativeArray!(void));
     static assert(!isAssociativeArray!(int));
     static assert(!isAssociativeArray!(int[]));
+    static assert(!isAssociativeArray!(int[4]));
     static assert(!isAssociativeArray!(string));
     static assert(!isAssociativeArray!(int[int][]));
 }

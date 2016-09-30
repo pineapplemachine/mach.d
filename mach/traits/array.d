@@ -65,6 +65,7 @@ unittest{
     static assert(!isArray!(null));
     static assert(!isArray!(void));
     static assert(!isArray!(int));
+    static assert(!isArray!(int[int]));
 }
 unittest{
     static assert(isArrayOf!(int, int[]));
@@ -92,6 +93,7 @@ unittest{
     static assert(!isStaticArray!(int));
     static assert(!isStaticArray!(int[]));
     static assert(!isStaticArray!(string[]));
+    static assert(!isStaticArray!(int[int]));
 }
 unittest{
     int[] ints;
@@ -106,4 +108,5 @@ unittest{
     static assert(!isDynamicArray!(int[1]));
     static assert(!isDynamicArray!(int[2]));
     static assert(!isDynamicArray!(string[4]));
+    static assert(!isDynamicArray!(int[int]));
 }
