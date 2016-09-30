@@ -14,7 +14,7 @@ enum canHash(alias T) = canHash!(typeof(T));
 template canHash(T){
     enum bool canHash = is(typeof({
         T value = T.init;
-        typeid(value).getHash(&value);
+        size_t hash = typeid(value).getHash(&value);
     }));
 }
 
