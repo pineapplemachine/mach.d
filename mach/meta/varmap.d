@@ -2,7 +2,7 @@ module mach.meta.varmap;
 
 private:
 
-import std.typecons : tuple;
+import mach.types : tuple;
 
 public:
 

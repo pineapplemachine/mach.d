@@ -2,7 +2,7 @@ module mach.meta.varfilter;
 
 private:
 
-import std.typecons : tuple;
+import mach.types : tuple;
 
 public:
 
