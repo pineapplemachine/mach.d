@@ -9,10 +9,6 @@ public:
 
 
 /// Strip all qualifiers from a type, if any.
-template Unqual(alias T){
-    alias Unqual = Unqual!(typeof(T));
-}
-/// ditto
 template Unqual(T){
     static if(is(T R == immutable R)) alias Unqual = R;
     else static if(is(T R == shared inout const R)) alias Unqual = R;
@@ -43,15 +39,34 @@ template isUnqual(T...){
 
 
 
+/// Get the second type with all the same qualifiers as the first type.
+template Qualify(Q, T){
+    alias U = Unqual!T;
+    static if(is(Q R == immutable R)) alias Qualify = immutable U;
+    else static if(is(Q R == shared inout const R)) alias Qualify = shared inout const U;
+    else static if(is(Q R == shared inout R)) alias Qualify = shared inout U;
+    else static if(is(Q R == shared const R)) alias Qualify = shared const U;
+    else static if(is(Q R == inout const R)) alias Qualify = inout const U;
+    else static if(is(Q R == shared R)) alias Qualify = shared U;
+    else static if(is(Q R == inout R)) alias Qualify = inout U;
+    else static if(is(Q R == const R)) alias Qualify = const U;
+    else alias Qualify = U;
+}
+
+
+
 version(unittest){
     private:
     import mach.meta : Aliases;
     class TestClass{}
     struct TestStruct{}
     struct TestTmplStruct(T){}
+    enum TestEnum{A, B, C}
+    enum TestEnumI: int{A, B, C}
     alias TestTypes = Aliases!(
         int, long, double, char, string,
-        TestClass, TestStruct, TestTmplStruct!int
+        TestClass, TestStruct, TestTmplStruct!int,
+        TestEnum, TestEnumI
     );
 }
 unittest{
@@ -102,4 +117,13 @@ unittest{
         static assert(!isUnqual!(const int, const double));
         static assert(!isUnqual!(int, double, float));
     }
+}
+unittest{
+    static assert(is(Qualify!(void, int) == int));
+    static assert(is(Qualify!(void, const int) == int));
+    static assert(is(Qualify!(void, immutable int) == int));
+    static assert(is(Qualify!(const void, immutable int) == const int));
+    static assert(is(Qualify!(immutable void, int) == immutable int));
+    static assert(is(Qualify!(immutable void, immutable int) == immutable int));
+    static assert(is(Qualify!(shared inout void, const int) == shared inout int));
 }
