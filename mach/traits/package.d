@@ -22,6 +22,7 @@ import mach.traits.qualifiers;
 import mach.traits.range;
 import mach.traits.remaining;
 import mach.traits.slice;
+import mach.traits.size;
 import mach.traits.string;
 import mach.traits.templates;
 import mach.traits.transform;
