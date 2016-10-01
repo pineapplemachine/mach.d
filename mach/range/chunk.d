@@ -3,62 +3,48 @@ module mach.range.chunk;
 private:
 
 import std.conv : to;
-import std.traits : isIntegral;
 import mach.math.round : divceil;
-import mach.traits : hasNumericLength, isSlicingRange;
+import mach.traits : hasNumericLength, isSlicingRange, isSavingRange;
 import mach.range.asrange : asrange, validAsSlicingRange;
-import mach.range.meta : MetaRangeMixin;
 
 public:
 
 
 
-enum canChunk(Iter, Count) = (
-    validAsSlicingRange!Iter && hasNumericLength!Iter && validAsChunkCount!Count
+enum canChunk(Iter) = (
+    validAsSlicingRange!Iter && hasNumericLength!Iter
 );
 
-enum canChunkRange(Range, Count) = (
-    isSlicingRange!Range && hasNumericLength!Range && validAsChunkCount!Count
+enum canChunkRange(Range) = (
+    isSlicingRange!Range && hasNumericLength!Range
 );
-
-alias validAsChunkCount = isIntegral;
-
-alias DefaultChunkCount = size_t;
 
 
 
 /// Breaks down a single range into a range of smaller ranges. The final chunk
 /// in the resulting range may be shorter than the provided size, but all others
 /// will be that exact length.
-auto chunk(Iter, Count = DefaultChunkCount)(Iter iter, Count size) if(
-    canChunk!(Iter, Count)
-)in{
+auto chunk(Iter)(auto ref Iter iter, size_t size) if(canChunk!Iter)in{
     assert(size > 0);
 }body{
     auto range = iter.asrange;
-    return ChunkRange!(typeof(range), Count)(range, size);
+    return ChunkRange!(typeof(range))(range, size);
 }
 
 
 
-struct ChunkRange(Range, Count = DefaultChunkCount) if(
-    canChunkRange!(Range, Count)
-){
-    mixin MetaRangeMixin!(
-        Range, `source`, `Save`
-    );
+struct ChunkRange(Range) if(canChunkRange!(Range)){
+    Range source; /// Make chunks from this range
+    size_t size; /// Maximum size of each chunk
+    size_t frontindex;
+    size_t backindex;
     
-    Range source; /// Making chunks from this range
-    Count size; /// Maximum size of each chunk
-    Count frontindex;
-    Count backindex;
-    
-    this(Range source, Count size, Count frontindex = Count.init) in{
+    this(Range source, size_t size, size_t frontindex = size_t.init) in{
         assert(size > 0);
     }body{
         this(source, size, frontindex, divceil(source.length, size));
     }
-    this(Range source, Count size, Count frontindex, Count backindex) in{
+    this(Range source, size_t size, size_t frontindex, size_t backindex) in{
         assert(size > 0);
     }body{
         this.source = source;
@@ -74,28 +60,30 @@ struct ChunkRange(Range, Count = DefaultChunkCount) if(
         return this.backindex - this.frontindex;
     }
     @property auto length(){
-        return divceil(this.source.length, this.size);
+        return divceil(cast(size_t) this.source.length, this.size);
     }
     alias opDollar = length;
     
-    @property auto ref front(){
+    @property auto ref front() in{assert(!this.empty);} body{
         return this[this.frontindex];
     }
     void popFront() in{assert(!this.empty);} body{
         this.frontindex++;
     }
     
-    @property auto ref back(){
+    @property auto ref back() in{assert(!this.empty);} body{
         return this[this.backindex - 1];
     }
     void popBack() in{assert(!this.empty);} body{
         this.backindex--;
     }
     
-    auto ref opIndex(in size_t index){
+    auto ref opIndex(in size_t index) in{
+        assert(index >= 0 && index < this.length);
+    }body{
         auto low = index * this.size;
         auto high = low + this.size;
-        if(high > this.source.length) high = to!Count(this.source.length);
+        if(high > this.source.length) high = to!size_t(this.source.length);
         return this.source[low .. high];
     }
     
@@ -116,13 +104,21 @@ struct ChunkRange(Range, Count = DefaultChunkCount) if(
             return typeof(this)(this.source[0 .. $], this.size);
         }
     }
+    
+    static if(isSavingRange!Range){
+        @property typeof(this) save(){
+            return typeof(this)(
+                this.source.save, this.size, this.frontindex, this.backindex
+            );
+        }
+    }
 }
 
 
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
     import mach.range.retro : retro;
 }
@@ -131,7 +127,7 @@ unittest{
         auto input = "abcdefghijklmnop";
         tests("Exact", {
             auto range = input.chunk(4);
-            testeq("Length", range.length, 4);
+            test(range.length, 4);
             test("Iteration",
                 range.equals(["abcd", "efgh", "ijkl", "mnop"])
             );
@@ -156,9 +152,9 @@ unittest{
                 test(copy.front.equals("efgh"));
             });
         });
-        tests("Nonexact", {
+        tests("Inexact", {
             auto range = input.chunk(5);
-            testeq("Length", range.length, 4);
+            testeq(range.length, 4);
             test("Iteration",
                 range.equals(["abcde", "fghij", "klmno", "p"])
             );
