@@ -2,13 +2,12 @@ module mach.range.repeat;
 
 private:
 
-import std.conv : to;
-import std.traits : isIntegral;
 import mach.traits : isIterable, isFiniteIterable, isInfiniteIterable;
 import mach.traits : isFiniteRange, isRandomAccessRange, isSavingRange;
 import mach.traits : hasNumericLength;
 import mach.range.asrange : asrange, validAsRange;
 import mach.range.asrange : validAsRandomAccessRange, validAsSavingRange;
+import mach.range.rangeof : infrangeof, finiterangeof;
 
 public:
 
@@ -38,18 +37,14 @@ enum canRepeatSavingRange(Range) = (
 
 enum canRepeatElement(Element) = !validAsRange!Element;
 
-alias DefaultRepeatCount = size_t;
-
-alias validRepeatCount = isIntegral;
-
 
 
 auto repeat(Iter)(Iter iter) if(isInfiniteIterable!Iter){
     return iter;
 }
 
-auto repeat(Iter, Count = DefaultRepeatCount)(Iter iter, Count count) if(
-    isInfiniteIterable!Iter && validRepeatCount!Count
+auto repeat(Iter)(auto ref Iter iter, size_t count) if(
+    isInfiniteIterable!Iter
 ){
     return iter;
 }
@@ -62,24 +57,22 @@ auto repeat(Iter)(Iter iter) if(canRepeatIterable!Iter){
     }
 }
 
-auto repeat(Iter, Count = DefaultRepeatCount)(Iter iter, Count count) if(
-    canRepeatIterable!Iter && validRepeatCount!Count
+auto repeat(Iter)(auto ref Iter iter, size_t count) if(
+    canRepeatIterable!Iter
 ){
     static if(canRepeatRandomAccess!Iter){
-        return repeatrandomaccess!(Iter, Count)(iter, count);
+        return repeatrandomaccess!(Iter)(iter, count);
     }else{
-        return repeatsaving!(Iter, Count)(iter, count);
+        return repeatsaving!(Iter)(iter, count);
     }
 }
 
-auto repeat(Element)(Element element) if(!validAsRange!Element){
+auto repeat(Element)(auto ref Element element) if(!validAsRange!Element){
     return repeatelement!(Element)(element);
 }
 
-auto repeat(Element, Count = DefaultRepeatCount)(Element element, Count count) if(
-    !validAsRange!Element && validRepeatCount!Count
-){
-    return repeatelement!(Element, Count)(element, count);
+auto repeat(Element)(auto ref Element element, size_t count) if(!validAsRange!Element){
+    return repeatelement!(Element)(element, count);
 }
 
 
@@ -89,11 +82,11 @@ auto repeatrandomaccess(Iter)(Iter iter) if(canRepeatRandomAccess!Iter){
     return InfiniteRepeatRandomAccessRange!(typeof(range))(range);
 }
 
-auto repeatrandomaccess(Iter, Count = DefaultRepeatCount)(Iter iter, Count count) if(
-    canRepeatRandomAccess!Iter && validRepeatCount!Count
+auto repeatrandomaccess(Iter)(auto ref Iter iter, size_t count) if(
+    canRepeatRandomAccess!Iter
 ){
     auto range = iter.asrange;
-    return FiniteRepeatRandomAccessRange!(typeof(range), Count)(range, count);
+    return FiniteRepeatRandomAccessRange!(typeof(range))(range, count);
 }
 
 auto repeatsaving(Iter)(Iter iter) if(canRepeatSaving!Iter){
@@ -101,21 +94,19 @@ auto repeatsaving(Iter)(Iter iter) if(canRepeatSaving!Iter){
     return InfiniteRepeatSavingRange!(typeof(range))(range);
 }
 
-auto repeatsaving(Iter, Count = DefaultRepeatCount)(Iter iter, Count count) if(
-    canRepeatSaving!Iter && validRepeatCount!Count
+auto repeatsaving(Iter)(auto ref Iter iter, size_t count) if(
+    canRepeatSaving!Iter
 ){
     auto range = iter.asrange;
-    return FiniteRepeatSavingRange!(typeof(range), Count)(range, count);
+    return FiniteRepeatSavingRange!(typeof(range))(range, count);
 }
 
-auto repeatelement(Element)(Element element){
-    return InfiniteRepeatElementRange!(Element)(element);
+auto repeatelement(Element)(auto ref Element element){
+    return infrangeof(element);
 }
 
-auto repeatelement(Element, Count = DefaultRepeatCount)(Element element, Count count) if(
-    validRepeatCount!Count
-){
-    return FiniteRepeatElementRange!(Element, Count)(element, count);
+auto repeatelement(Element)(auto ref Element element, size_t count){
+    return finiterangeof(count, element);
 }
 
 
@@ -164,10 +155,10 @@ private template RepeatSavingRangeMixin(Range, string popfrontstr){
     }
 }
 
-private template RepeatRandomAccessRangeMixin(Range, Count){
+private template RepeatRandomAccessRangeMixin(Range){
     Range source;
-    Count frontindex;
-    Count backindex;
+    size_t frontindex;
+    size_t backindex;
     
     alias index = frontindex;
     
@@ -178,7 +169,7 @@ private template RepeatRandomAccessRangeMixin(Range, Count){
         return this.source[this.backindex - 1];
     }
     
-    auto opIndex(in Count index) in{
+    auto opIndex(in size_t index) in{
         assert(index >= 0);
         static if(hasNumericLength!(typeof(this))){
             assert(index < this.length);
@@ -230,18 +221,17 @@ private template RepeatElementRangeMixin(Element){
 
 
 /// Repeat a range with random access infinitely
-struct InfiniteRepeatRandomAccessRange(Range, Count = DefaultRepeatCount) if(
-    canRepeatRandomAccessRange!Range && validRepeatCount!Count
+struct InfiniteRepeatRandomAccessRange(Range) if(
+    canRepeatRandomAccessRange!Range
 ){
-    mixin RepeatRandomAccessRangeMixin!(Range, Count);
+    Range source;
+    size_t frontindex;
+    size_t backindex;
     
-    this(typeof(this) range){
-        this(range.source, range.frontindex, range.backindex);
-    }
-    this(Range source, Count frontindex = Count.init){
+    this(Range source, size_t frontindex = 0){
         this(source, frontindex, source.length);
     }
-    this(Range source, Count frontindex, Count backindex){
+    this(Range source, size_t frontindex, size_t backindex){
         this.source = source;
         this.frontindex = frontindex;
         this.backindex = backindex;
@@ -249,31 +239,57 @@ struct InfiniteRepeatRandomAccessRange(Range, Count = DefaultRepeatCount) if(
     
     enum bool empty = false;
     
+    @property auto ref front(){
+        return this.source[this.frontindex];
+    }
+    @property auto ref back(){
+        return this.source[this.backindex - 1];
+    }
+    
     void popFront(){
-        this.frontindex = (this.frontindex + 1) % this.source.length;
+        this.frontindex = (this.frontindex + 1) % cast(size_t) this.source.length;
     }
     void popBack(){
         this.backindex--;
-        if(this.backindex == 0) this.backindex = this.source.length;
+        if(this.backindex == 0) this.backindex = cast(size_t) this.source.length;
+    }
+    
+    auto opIndex(in size_t index) in{assert(index >= 0);} body{
+        return this.source[index % cast(size_t) this.source.length];
+    }
+    auto opSlice(in size_t low, in size_t high) in{
+        assert(low >= 0 && high >= low);
+    }body{
+        return typeof(this)(
+            this.source,
+            low % cast(size_t) this.source.length,
+            high % cast(size_t) this.source.length
+        );
+    }
+    
+    static if(isSavingRange!Range){
+        @property typeof(this) save(){
+            return typeof(this)(this.source.save, this.frontindex, this.backindex);
+        }
     }
 }
 
 /// Repeat a range with random access a given number of times
-struct FiniteRepeatRandomAccessRange(Range, Count = DefaultRepeatCount) if(
-    canRepeatRandomAccessRange!Range && validRepeatCount!Count
+struct FiniteRepeatRandomAccessRange(Range) if(
+    canRepeatRandomAccessRange!Range
 ){
-    mixin RepeatRandomAccessRangeMixin!(Range, Count);
+    mixin RepeatRandomAccessRangeMixin!(Range);
     
-    Count limit; // Number of times the source range is repeated
-    Count count; // Number of times the source range has been fully consumed
+    size_t limit; // Number of times the source range is repeated
+    size_t count; // Number of times the source range has been fully consumed
     
     this(typeof(this) range){
         this(range.source, range.limit, range.count, range.frontindex, range.backindex);
     }
-    this(Range source, Count limit, Count frontindex = Count.init){
-        this(source, limit, Count.init, frontindex, to!Count(source.length));
+    this(Range source, size_t limit, size_t frontindex = 0){
+        this(source, limit, 0, frontindex, cast(size_t) source.length);
     }
-    this(Range source, Count limit, Count count, Count frontindex, Count backindex){
+    this(Range source, size_t limit, size_t count, size_t frontindex, size_t backindex){
         this.source = source;
         this.limit = limit;
         this.count = count;
@@ -300,7 +316,7 @@ struct FiniteRepeatRandomAccessRange(Range, Count = DefaultRepeatCount) if(
         this.backindex--;
         if(this.backindex == 0){
             this.count++;
-            this.backindex = to!Count(this.source.length);
+            this.backindex = cast(size_t) this.source.length;
         }
     }
 }
@@ -329,8 +345,8 @@ struct InfiniteRepeatSavingRange(Range) if(canRepeatSavingRange!Range){
 }
 
 /// Repeat a range with saving a given number of times
-struct FiniteRepeatSavingRange(Range, Count = DefaultRepeatCount) if(
-    canRepeatSavingRange!Range && validRepeatCount!Count
+struct FiniteRepeatSavingRange(Range) if(
+    canRepeatSavingRange!Range
 ){
     mixin RepeatSavingRangeMixin!(
         Range, `
@@ -342,8 +358,8 @@ struct FiniteRepeatSavingRange(Range, Count = DefaultRepeatCount) if(
         `
     );
     
-    Count count; /// Cycle iteration is currently on
-    Count limit; /// Maximum number of cycles before emptiness
+    size_t count; /// Cycle iteration is currently on
+    size_t limit; /// Maximum number of cycles before emptiness
     
     this(typeof(this) range){
         this.count = range.count;
@@ -351,10 +367,10 @@ struct FiniteRepeatSavingRange(Range, Count = DefaultRepeatCount) if(
         this.original = range.original;
         this.repeat(*range.source);
     }
-    this(Range source, Count limit){
-        this(source, Count.init, limit);
+    this(Range source, size_t limit){
+        this(source, 0, limit);
     }
-    this(Range source, Count count, Count limit){
+    this(Range source, size_t count, size_t limit){
         this.count = count;
         this.limit = limit;
         this.original = source;
@@ -375,62 +391,9 @@ struct FiniteRepeatSavingRange(Range, Count = DefaultRepeatCount) if(
 
 
 
-/// Create a range repeating a single element infinitely
-struct InfiniteRepeatElementRange(Element){
-    mixin RepeatElementRangeMixin!Element;
-    
-    this(typeof(this) range){
-        this(range.element);
-    }
-    this(Element element){
-        this.element = element;
-    }
-    
-    enum bool empty = false;
-    
-    void popFront() const{
-        // Do nothing
-    }
-    void popBack() const{
-        // Do nothing
-    }
-}
-
-/// Create a range repeating a single element for a given number of times
-struct FiniteRepeatElementRange(Element, Count = DefaultRepeatCount) if(
-    validRepeatCount!Count
-){
-    mixin RepeatElementRangeMixin!Element;
-    
-    Count count;
-    Count limit;
-    
-    this(typeof(this) range){
-        this(range.element, range.count, range.limit);
-    }
-    this(Element element, Count limit, Count count = Count.init){
-        this.element = element;
-        this.limit = limit;
-        this.count = count;
-    }
-    
-    @property bool empty() const{
-        return this.count >= this.limit;
-    }
-    
-    void popFront(){
-        this.count++;
-    }
-    void popBack(){
-        this.count++;
-    }
-}
-
-
-
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
     import mach.range.ends : head;
 }
@@ -463,7 +426,7 @@ unittest{
                 testeq(range[2], 3);
                 testeq(range[3], 1);
             });
-            testeq("Length", range.length, input.length * 3);
+            testeq(range.length, input.length * 3);
             test(range.equals(thrice));
         });
     });
@@ -495,7 +458,7 @@ unittest{
                 testeq(range[2], 3);
                 testeq(range[3], 1);
             });
-            testeq("Length", range.length, input.length * 3);
+            testeq(range.length, input.length * 3);
             test(range.equals(thrice));
             tests("Bidirectionality", {
                 auto range = input.repeatrandomaccess(3);
@@ -506,10 +469,10 @@ unittest{
     });
     tests("Repeat element", {
         tests("Infinitely", {
-            test(6.repeat.head(3).equals([6, 6, 6]));
+            test!equals(6.repeat.head(3), [6, 6, 6]);
         });
         tests("Finitely", {
-            test(6.repeat(3).equals([6, 6, 6]));
+            test!equals(6.repeat(3), [6, 6, 6]);
         });
     });
 }
