@@ -2,8 +2,6 @@ module mach.traits.iter;
 
 private:
 
-import std.traits : isImplicitlyConvertible;
-import std.math : isInfinity, isNaN;
 import mach.traits.array : isArray;
 import mach.traits.element.type : ElementType, hasElementType;
 import mach.traits.property : hasEnumType;

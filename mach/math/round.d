@@ -2,7 +2,7 @@ module mach.math.round;
 
 private:
 
-import std.traits : isNumeric, isIntegral;
+import mach.traits : isNumeric, isIntegral;
 import std.math : abs;
 
 public:
@@ -44,7 +44,10 @@ R divceil(R = int, N)(in N x, in N y) if(isNumeric!N && isNumeric!R){
 
 
 
-version(unittest) import mach.error.unit;
+version(unittest){
+    private:
+    import mach.test;
+}
 unittest{
     tests("Rounding", {
         tests("Integers", {

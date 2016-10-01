@@ -2,7 +2,7 @@ module mach.math.normalize;
 
 private:
 
-import std.traits : isSigned, isIntegral, isFloatingPoint, isNumeric;
+import mach.traits : isSigned, isIntegral, isFloatingPoint, isNumeric;
 
 public:
 
@@ -37,7 +37,6 @@ static SI denormalize(SI, FP)(FP value) pure @safe @nogc nothrow if(
 version(unittest){
     private:
     import mach.error.unit;
-    import std.stdio;
 }
 unittest{
     tests("Normalize", {

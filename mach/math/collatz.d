@@ -2,20 +2,15 @@ module mach.math.collatz;
 
 private:
 
-import std.traits : isIntegral;
+import mach.traits : isIntegral;
 import mach.range : recur;
 
 public:
 
 
 
-/// Determine whether a given type is valid for Collatz sequence calculation.
-alias canCollatz = isIntegral;
-
-
-
 /// Get a range which enumerates the Collatz sequence of a given number.
-auto collatzseq(N)(N value) if(canCollatz!N) in{
+auto collatzseq(N)(N value) if(isIntegral!N) in{
     assert(value >= 1, "Operation is only meaningful for positive integers.");
 }body{
     return value.recur!(
@@ -28,7 +23,7 @@ auto collatzseq(N)(N value) if(canCollatz!N) in{
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
 }
 unittest{
@@ -36,7 +31,7 @@ unittest{
         test(collatzseq(1).equals([1]));
         test(collatzseq(2).equals([2, 1]));
         test(collatzseq(3).equals([3, 10, 5, 16, 8, 4, 2, 1]));
-        fail({collatzseq(0);});
-        fail({collatzseq(-1);});
+        testfail({collatzseq(0);});
+        testfail({collatzseq(-1);});
     });
 }

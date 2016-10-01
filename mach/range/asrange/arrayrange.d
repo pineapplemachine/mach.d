@@ -2,8 +2,7 @@ module mach.range.asrange.arrayrange;
 
 private:
 
-import std.traits : isArray, isIntegral;
-import mach.traits : ArrayElementType, canSliceSame;
+import mach.traits : ArrayElementType, isArray, isIntegral, canSliceSame;
 import mach.error : enforcebounds;
 
 public:

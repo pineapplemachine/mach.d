@@ -19,8 +19,8 @@ alias DefaultCompareEnds = (a, b) => (a == b);
 template canCompareHead(Iter, Sub, alias pred = DefaultCompareEnds){
     static if(validAsRange!Iter && validAsRange!Sub && hasNumericLength!Sub){
         enum bool canCompareHead = (
-            canGetHead!(Iter, LengthType!Sub) &&
-            canCompareIterables!(pred, typeof(Iter.init.head(Sub.init.length)), Sub)
+            canGetHead!(Iter) &&
+            canCompareIterables!(pred, typeof(Iter.init.head(0)), Sub)
         );
     }else{
         enum bool canCompareHead = false;
@@ -31,8 +31,8 @@ template canCompareHead(Iter, Sub, alias pred = DefaultCompareEnds){
 template canCompareTail(Iter, Sub, alias pred = DefaultCompareEnds){
     static if(validAsRange!Iter && validAsRange!Sub && hasNumericLength!Sub){
         enum bool canCompareTail = (
-            canGetTail!(Iter, LengthType!Sub) &&
-            canCompareIterables!(pred, typeof(Iter.init.tail(Sub.init.length)), Sub)
+            canGetTail!(Iter) &&
+            canCompareIterables!(pred, typeof(Iter.init.tail(0)), Sub)
         );
     }else{
         enum bool canCompareTail = false;
@@ -45,14 +45,14 @@ template canCompareTail(Iter, Sub, alias pred = DefaultCompareEnds){
 bool headis(alias pred = DefaultCompareEnds, Iter, Sub)(
     auto ref Iter iter, auto ref Sub sub
 ) if(canCompareHead!(Iter, Sub, pred)){
-    return iter.head(sub.length).compare!pred(sub);
+    return iter.head(cast(size_t) sub.length).compare!pred(sub);
 }
 
 /// Compare the tail of one iterable to another iterable. Like endsWith.
 bool tailis(alias pred = DefaultCompareEnds, Iter, Sub)(
     auto ref Iter iter, auto ref Sub sub
 ) if(canCompareTail!(Iter, Sub, pred)){
-    return iter.tail(sub.length).compare!pred(sub);
+    return iter.tail(cast(size_t) sub.length).compare!pred(sub);
 }
 
 

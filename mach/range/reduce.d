@@ -2,9 +2,8 @@ module mach.range.reduce;
 
 private:
 
-import std.traits : Unqual, isImplicitlyConvertible;
 import mach.traits : isIterable, isFiniteIterable, ElementType;
-import mach.traits : isRange, isSavingRange, hasNumericLength;
+import mach.traits : isRange, isSavingRange, hasNumericLength, Unqual;
 import mach.range.asrange : asrange, validAsRange;
 
 public:
@@ -50,7 +49,7 @@ auto reduceeager(alias func, Iter)(auto ref Iter iter) if(canReduceEager!(Iter, 
     return reduceeager!(func, ElementType!Iter, Iter)(iter);
 }
 
-auto reduceeager(alias func, Acc, Iter)(auto ref Iter iter, Acc initial) if(
+auto reduceeager(alias func, Acc, Iter)(auto ref Iter iter, auto ref Acc initial) if(
     canReduceEager!(Iter, Acc, func)
 ){
     Acc* acc = &initial;
@@ -101,7 +100,7 @@ auto reducelazy(alias func, Acc, Iter)(auto ref Iter iter) if(canReduceLazy!(Ite
 
 struct ReduceRange(Range, Acc, alias func, bool seeded = true) if(
     canReduceLazyRange!(Range, Acc, func) &&
-    (seeded || isImplicitlyConvertible!(ElementType!Range, Acc))
+    (seeded || is(typeof({Acc x = ElementType!Range.init;})))
 ){
     import core.stdc.stdlib : malloc, free;
     import core.stdc.string : memcpy;
@@ -122,6 +121,7 @@ struct ReduceRange(Range, Acc, alias func, bool seeded = true) if(
     }
     
     // Makes unittests fail with a "pointer being freed was not allocated" error?
+    // TODO: I really need to just use some kind of Rebindable template
     //~this(){
     //    if(this.valueptr){
     //        free(this.valueptr);

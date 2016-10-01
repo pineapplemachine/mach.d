@@ -2,10 +2,8 @@ module mach.math.box;
 
 private:
 
-import std.traits : isNumeric;
-import std.algorithm : min, max;
-
-import mach.traits : isTemplateOf;
+import mach.meta : min = varmin, max = varmax;
+import mach.traits : isNumeric, isTemplateOf;
 import mach.math.vector2 : Vector2;
 
 public:
@@ -234,13 +232,13 @@ struct Box(T) if(isNumeric!T){
         );
     }
     
-    void to(N)(in Box!N vector){
+    void moveto(N)(in Box!N vector){
         this.to(vector.minx, vector.miny);
     }
-    void to(N)(in Vector2!N vector){
+    void moveto(N)(in Vector2!N vector){
         this.to(vector.x, vector.y);
     }
-    void to(N)(in N x, in N y) if(isNumeric!N){
+    void moveto(N)(in N x, in N y) if(isNumeric!N){
         T width = this.width, height = this.height;
         this.minx = x; this.miny = y;
         this.maxx = x + width; this.maxy = y + height;
@@ -324,7 +322,12 @@ struct Box(T) if(isNumeric!T){
     
 }
 
-version(unittest) import mach.error.unit;
+
+
+version(unittest){
+    private:
+    import mach.test;
+}
 unittest{
     // TODO: More tests
     tests("Box", {

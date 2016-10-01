@@ -5,11 +5,9 @@ private:
 import derelict.sdl2.sdl;
 import derelict.opengl3.gl;
 
-import std.traits : isNumeric;
 import std.string : toStringz, fromStringz;
-import core.sync.mutex : Mutex;
+import mach.traits : isNumeric;
 import mach.range : filter, asarray;
-
 import mach.sdl.error : SDLError, GLError;
 import mach.sdl.init : GLSettings;
 import mach.sdl.glenum : PixelsFormat, PixelsType, ColorBufferMode;

@@ -26,7 +26,7 @@ template Filter(alias predicate, T...){
 
 version(unittest){
     private:
-    import std.traits : isFloatingPoint, isIntegral;
+    import mach.traits.primitives : isFloatingPoint, isIntegral;
 }
 unittest{
     static assert(is(

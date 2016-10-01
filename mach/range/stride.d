@@ -2,8 +2,7 @@ module mach.range.stride;
 
 private:
 
-import std.traits : isIntegral;
-import mach.traits : isRange, isRandomAccessRange, isSlicingRange;
+import mach.traits : isIntegral, isRange, isRandomAccessRange, isSlicingRange;
 import mach.traits : isBidirectionalRange, hasEmptyEnum, hasNumericLength;
 import mach.range.asrange : asrange, validAsRange, validAsRandomAccessRange;
 import mach.range.meta : MetaRangeMixin;

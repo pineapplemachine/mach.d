@@ -4,7 +4,7 @@ private:
 
 import derelict.sdl2.sdl;
 
-import std.traits : isNumeric;
+import mach.traits : isNumeric;
 import mach.math : isVector2;
 import mach.sdl.error : SDLError;
 import mach.sdl.window : Window;

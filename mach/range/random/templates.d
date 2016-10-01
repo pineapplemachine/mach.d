@@ -15,7 +15,7 @@ enum isRNG(T) = (
 
 
 template RNGMixin(T){
-    import std.traits : isIntegral, isFloatingPoint, isNumeric, isUnsigned;
+    import mach.traits : isIntegral, isFloatingPoint, isNumeric, isUnsigned;
     
     static enum bool rng = true;
     
@@ -71,12 +71,13 @@ template RNGMixin(T){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.random.lcong : lcong;
     import mach.range.random.mersenne : mersenne;
     import mach.range.random.xorshift : xorshift;
 }
 unittest{
+    // TODO
     static assert(isRNG!(typeof(lcong())));
     static assert(isRNG!(typeof(mersenne())));
     static assert(isRNG!(typeof(xorshift())));

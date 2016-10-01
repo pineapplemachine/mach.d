@@ -2,7 +2,7 @@ module mach.traits.property;
 
 private:
 
-import std.traits : isNumeric, isIntegral;
+import mach.traits.primitives : isNumeric, isIntegral;
 
 public:
 

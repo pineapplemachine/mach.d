@@ -2,7 +2,7 @@ module mach.range.random.xorshift;
 
 private:
 
-import std.traits : isIntegral;
+import mach.traits : isIntegral;
 import mach.math : flog2;
 import mach.range.random.seed : seeds;
 import mach.range.random.templates : RNGMixin;

@@ -2,9 +2,8 @@ module mach.text.parse.numeric.parse;
 
 private:
 
-import std.traits : Unqual, isNumeric, isFloatingPoint;
 //import std.bitmanip : FloatRep, DoubleRep; // TODO: Use this
-import std.math : pow;
+import mach.traits : Unqual, isNumeric, isFloatingPoint;
 import mach.traits : isStringRange;
 import mach.range : asrange;
 import mach.text.parse.numeric.exceptions;
@@ -108,9 +107,9 @@ auto parsefloat(
     value += integral;
     if(hasexp){
         if(exponent > 0){
-            value *= pow(base, exponent);
+            value *= base ^^ exponent;
         }else{
-            value /= pow(base, -exponent);
+            value /= base ^^ -exponent;
         }
     }
     return cast(T)(negate ? -value : value);

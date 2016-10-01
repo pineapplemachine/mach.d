@@ -2,8 +2,7 @@ module mach.math.vector;
 
 private:
 
-import std.traits : isNumeric;
-import mach.traits : PropertyType, hasProperty, isTemplateOf;
+import mach.traits : isNumeric, PropertyType, hasProperty, isTemplateOf;
 import mach.meta : Repeat;
 import mach.math.vector2;
 import mach.math.vector3;
@@ -109,7 +108,7 @@ enum bool canGetVectorSize(T) = (
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     struct pos2{int x, y;}
     struct pos3{int x, y, z;}
     struct nopos1{int x; real y;}

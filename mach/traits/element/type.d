@@ -2,9 +2,9 @@ module mach.traits.element.type;
 
 private:
 
-import std.traits : Unqual;
 import mach.traits.array : isArray;
 import mach.traits.op : hasOpApply, hasOpApplyReverse;
+import mach.traits.qualifiers : Unqual;
 import mach.traits.range : isRange;
 import mach.traits.element.array;
 import mach.traits.element.ealias;

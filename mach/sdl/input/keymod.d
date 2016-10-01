@@ -3,7 +3,7 @@ module mach.sdl.input.keymod;
 private:
 
 import derelict.sdl2.sdl;
-import std.traits : isIntegral;
+import mach.traits : isIntegral;
 
 public:
 

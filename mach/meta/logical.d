@@ -81,7 +81,7 @@ template Last(alias predicate, T...){
 
 version(unittest){
     private:
-    import std.traits : isIntegral;
+    import mach.traits.primitives : isIntegral;
 }
 unittest{
     // Any

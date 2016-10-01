@@ -2,8 +2,7 @@ module mach.range.split;
 
 private:
 
-import std.traits : isIntegral;
-import mach.traits : hasProperty, hasNumericLength, ElementType;
+import mach.traits : isIntegral, hasProperty, hasNumericLength, ElementType;
 import mach.traits : isFiniteIterable, isSavingRange, canSliceSame;
 import mach.range.asrange : asrange, validAsRange, AsRangeType;
 import mach.range.find : findalliter, findallelements;

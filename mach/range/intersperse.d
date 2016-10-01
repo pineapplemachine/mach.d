@@ -2,8 +2,7 @@ module mach.range.intersperse;
 
 private:
 
-import std.traits : isIntegral, isImplicitlyConvertible;
-import mach.traits : isRange, isFiniteRange, isIterableOf, ElementType;
+import mach.traits : isIntegral, isRange, isFiniteRange, isIterableOf, ElementType;
 import mach.range.asrange : asrange, validAsRange;
 
 public:
@@ -12,9 +11,9 @@ public:
 
 template canIntersperse(Iter, Element){
     static if(validAsRange!Iter){
-        enum bool canIntersperse = (
-            isImplicitlyConvertible!(Element, ElementType!Iter)
-        );
+        enum bool canIntersperse = is(typeof({
+            ElementType!Iter i = Element.init;
+        }));
     }else{
         enum bool canIntersperse = false;
     }

@@ -2,13 +2,10 @@ module mach.collect.set.densehash;
 
 private:
 
-import std.traits : Unqual, isImplicitlyConvertible;
 import mach.collect.set.templates;
 import mach.traits : isIterable, isIterableOf, ElementType;
-import mach.traits : hasNumericLength, hash, canHash;
+import mach.traits : hasNumericLength, hash, canHash, Unqual;
 import mach.math.log2 : clog2;
-
-import std.stdio;
 
 public:
 
@@ -66,9 +63,12 @@ struct DenseHashSet(
     static enum size_t DefaultSize = 64;
     static enum size_t MinDynamicSize = 64;
     
-    static if(!isImplicitlyConvertible!(T, size_t)){
+    static if(!is(typeof({
+        auto x(T[] values...){}
+        size_t i; x(i);
+    }))){
         this(in size_t size){
-            return typeof(this).ofsize(size);
+            this.resize_unsafe(size);
         }
     }
     this(Values)(auto ref Values values) if(isIterableOf!(Values, T)){
@@ -269,7 +269,7 @@ struct DenseHashSet(
     Hash toHash() @safe const nothrow{
         Hash hash = cast(Hash) this.length;
         foreach(bucket; this.buckets){
-            if(!bucket.empty) hash ^= bucket.value;
+            if(!bucket.empty) hash ^= bucket.value.hash;
         }
         return hash;
     }
@@ -372,7 +372,7 @@ struct DenseHashSetRange(T){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.traits : isRange;
 }
 unittest{
@@ -440,7 +440,7 @@ unittest{
         tests("Pop", {
             tests("Empty set", {
                 Set!int set;
-                fail({set.pop;});
+                testfail({set.pop;});
             });
             tests("Not empty", {
                 auto a = Set!int(0, 1, 2);
@@ -521,6 +521,7 @@ unittest{
             testeq(Set!int.init.hash, Set!int.init.hash);
             testeq(Set!int(0, 1, 2).hash, Set!int(0, 1, 2).hash);
             testeq(Set!int(0, 1, 2).hash, Set!int(2, 1, 0).hash);
+            testeq(Set!string("abc", "def", "xyz").hash, Set!string("xyz", "abc", "def").hash);
         });
         tests("Copying", {
             auto a = Set!int(0, 1, 2);
@@ -548,11 +549,19 @@ unittest{
             testeq(set.length, 0);
             testeq(set.add(0, 1, 2, 3), 4);
             testeq(set.length, 4);
-            fail({set.add(4);});
+            testfail({set.add(4);});
             testeq(set.length, 4);
             test(set.remove(0));
             test(set.add(4));
-            fail({set.add(5);});
+            testfail({set.add(5);});
+        });
+        tests("Strings", {
+            Set!string set;
+            set.add("hello");
+            set.add("world");
+            test("hello" in set);
+            test("world" in set);
+            testf("yo" in set);
         });
         tests("Stress", {
             Set!int set;

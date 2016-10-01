@@ -2,7 +2,7 @@ module mach.range.interpolate;
 
 private:
 
-import std.traits : isNumeric, isIntegral, isFloatingPoint;
+import mach.traits : isNumeric, isIntegral, isFloatingPoint;
 
 public:
 
@@ -40,7 +40,7 @@ alias CosineInterpolation = (start, end, t){
 auto interpolate(
     alias func, bool inclusive = true, Element,
     Step = DefaultIterpolationStep, Sample = DefaultInterpolationSample
-)(Element start, Element end, Step length) if(
+)(auto ref Element start, auto ref Element end, auto ref Step length) if(
     validInterpolationRange!(Step, Sample)
 ){
     return InterpolationRange!(
@@ -54,7 +54,7 @@ auto interpolate(
 auto interpolate(
     alias func, bool inclusive = true, Element,
     Step = DefaultIterpolationStep, Sample = DefaultInterpolationSample
-)(Element end, Step length) if(
+)(auto ref Element end, auto ref Step length) if(
     validInterpolationRange!(Step, Sample)
 ){
     return InterpolationRange!(
@@ -70,7 +70,7 @@ auto interpolate(
 /// number of steps.
 auto lerp(
     bool inclusive = true, Element, Step = DefaultIterpolationStep
-)(Element start, Element end, Step length) if(validInterpolationStep!Step){
+)(auto ref Element start, auto ref Element end, auto ref Step length) if(validInterpolationStep!Step){
     return InterpolationRange!(
         LinearInterpolation, Element, inclusive, Step
     )(start, end, length);
@@ -80,7 +80,7 @@ auto lerp(
 /// of steps.
 auto lerp(
     bool inclusive = true, Element, Step = DefaultIterpolationStep
-)(Element end, Step length) if(validInterpolationStep!Step){
+)(auto ref Element end, auto ref Step length) if(validInterpolationStep!Step){
     return InterpolationRange!(
         LinearInterpolation, Element, inclusive, Step
     )(Element.init, end, length);
@@ -92,7 +92,7 @@ auto lerp(
 /// of steps.
 auto coslerp(
     bool inclusive = true, Element, Step = DefaultIterpolationStep
-)(Element start, Element end, Step length) if(validInterpolationStep!Step){
+)(auto ref Element start, auto ref Element end, auto ref Step length) if(validInterpolationStep!Step){
     return InterpolationRange!(
         CosineInterpolation, Element, inclusive, Step
     )(start, end, length);
@@ -102,7 +102,7 @@ auto coslerp(
 /// steps.
 auto coslerp(
     bool inclusive = true, Element, Step = DefaultIterpolationStep
-)(Element end, Step length) if(validInterpolationStep!Step){
+)(auto ref Element end, auto ref Step length) if(validInterpolationStep!Step){
     return InterpolationRange!(
         CosineInterpolation, Element, inclusive, Step
     )(Element.init, end, length);
@@ -183,7 +183,7 @@ struct InterpolationRange(
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
 }
 unittest{

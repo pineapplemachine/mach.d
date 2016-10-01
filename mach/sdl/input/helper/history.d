@@ -2,7 +2,7 @@ module mach.sdl.input.helper.history;
 
 private:
 
-import std.traits : isNumeric;
+import mach.traits : isNumeric;
 import mach.text : text;
 import mach.sdl.input.common : Timestamp;
 

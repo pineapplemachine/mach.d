@@ -2,9 +2,8 @@ module mach.range.associate;
 
 private:
 
-import std.traits : Unqual;
 import mach.types : tuple;
-import mach.traits : isIterable, canHash, ElementType;
+import mach.traits : Unqual, isIterable, canHash, ElementType;
 import mach.range.map : map;
 import mach.range.zip : zip;
 

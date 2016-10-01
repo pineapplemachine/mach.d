@@ -4,7 +4,7 @@ private:
 
 //import derelict.opengl3.gl3;
 import derelict.opengl3.gl;
-import std.traits : isFloatingPoint;
+import mach.traits : isFloatingPoint;
 
 public:
     

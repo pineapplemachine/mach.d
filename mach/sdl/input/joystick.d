@@ -4,8 +4,8 @@ private:
 
 import derelict.sdl2.sdl;
 
-import std.traits : isSigned, isIntegral, isNumeric;
 import std.string : fromStringz;
+import mach.traits : isSigned, isIntegral, isNumeric;
 import mach.math : normalize, denormalize;
 import mach.sdl.error : SDLError;
 import mach.sdl.input.common : EventState;

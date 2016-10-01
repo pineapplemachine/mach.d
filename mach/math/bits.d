@@ -2,7 +2,7 @@ module mach.math.bits;
 
 private:
 
-import std.traits : isIntegral;
+import mach.traits : isIntegral;
 
 public:
 

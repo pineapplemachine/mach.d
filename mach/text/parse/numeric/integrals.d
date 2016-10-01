@@ -3,9 +3,9 @@ module mach.text.parse.numeric.integrals;
 private:
 
 import std.math : abs;
-import std.traits : Unqual, isNumeric, isIntegral, isSigned, Unsigned;
-import mach.math : divceil, clog, clog2, ispow2;
+import mach.traits : Unqual, isNumeric, isIntegral, isSigned, Unsigned;
 import mach.traits : isString, hasNumericLength;
+import mach.math : divceil, clog, clog2, ispow2;
 import mach.text.parse.numeric.exceptions;
 
 public:
@@ -257,8 +257,7 @@ template WriteBase(size_t base) if(base >= 2 && base <= 10){
 /// no more than 26 alphabetic characters, and that is not base 32.
 /// The parser is case-insensitive; e.g. 'a' and 'A' represent the same digit.
 template ParseBase(size_t base) if(base > 10 && base <= 36 && base != 32){
-    private import std.traits : Unqual, isNumeric;
-    private import mach.traits : isString;
+    private import mach.traits : Unqual, isNumeric, isString;
     private import mach.text.parse.numeric.exceptions;
     auto ParseBase(T = long, S)(auto ref S str) if(isString!S && isNumeric!T){
         return ParseBaseGeneric!(T, base, (ch){
@@ -302,8 +301,7 @@ template WriteBase(size_t base, bool uppercase = true) if(
 /// appear at the end of the input string.
 /// https://en.wikipedia.org/wiki/Base32#RFC_4648_Base32_alphabet
 template ParseBase(size_t base) if(base == 32){
-    private import std.traits : Unqual, isNumeric;
-    private import mach.traits : isString;
+    private import mach.traits : Unqual, isNumeric, isString;
     private import mach.text.parse.numeric.exceptions;
     auto ParseBase(T = ulong, S)(auto ref S str) if(isString!S && isNumeric!T){
         return ParseBaseGeneric!(

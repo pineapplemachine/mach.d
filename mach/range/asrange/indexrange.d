@@ -2,8 +2,7 @@ module mach.range.asrange.indexrange;
 
 private:
 
-import std.traits : isIntegral;
-import mach.traits : hasNumericIndex, hasNumericLength, canSliceSame;
+import mach.traits : isIntegral, hasNumericIndex, hasNumericLength, canSliceSame;
 
 public:
 

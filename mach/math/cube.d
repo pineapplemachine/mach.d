@@ -2,8 +2,8 @@ module mach.math.cube;
 
 private:
 
-import std.traits : isNumeric;
-import std.algorithm : min, max;
+import mach.meta : min = varmin, max = varmax;
+import mach.traits : isNumeric;
 
 public:
 

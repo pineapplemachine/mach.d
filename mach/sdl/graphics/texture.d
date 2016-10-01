@@ -4,7 +4,7 @@ private:
 
 import derelict.opengl3.gl;
 
-import std.traits : isNumeric;
+import mach.traits : isNumeric;
 import mach.misc.refcounter : RefCounter;
 import mach.math.vector2 : Vector2;
 import mach.math.box : Box;

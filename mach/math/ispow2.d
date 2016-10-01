@@ -2,7 +2,7 @@ module mach.math.ispow2;
 
 private:
 
-import std.traits : isIntegral, isSigned;
+import mach.traits : isIntegral, isSigned;
 import mach.math.bits : hamming;
 
 public:
@@ -19,7 +19,7 @@ bool ispow2(T)(T n) if(isIntegral!T && !isSigned!T){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
 }
 unittest{
     tests("Is power of 2", {

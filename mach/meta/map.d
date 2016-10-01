@@ -25,7 +25,7 @@ template Map(alias transform, T...){
 
 version(unittest){
     private:
-    import std.traits : isIntegral;
+    import mach.traits.primitives : isIntegral;
     template Embiggen(T){
         static if(is(T == int)){
             alias Embiggen = long;

@@ -2,10 +2,9 @@ module mach.range.find.findeager;
 
 private:
 
-import std.traits : isIntegral;
 import mach.traits : isIterable, isIterableReverse, ElementType, isPredicate;
 import mach.traits : isRange, isSavingRange, isBidirectionalRange;
-import mach.traits : hasNumericIndex, hasNumericLength;
+import mach.traits : isIntegral, hasNumericIndex, hasNumericLength;
 import mach.range.asrange : asrange, validAsSavingRange, validAsBidirectionalRange;
 
 import mach.range.find.result;
@@ -258,7 +257,7 @@ private template findgeneralized(
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     template FindEagerTests(alias firstfunc, alias lastfunc, alias allfunc){
         void FindEagerTests(){
             alias nomatch = (a, b) => (false);
@@ -278,16 +277,22 @@ version(unittest){
                 testeq(result.value, "hi");
             });
             tests("All", {
-                auto result = allfunc!eq(input, sub);
-                testeq("Length", result.length, 2);
-                testeq(result[0].index, 0);
-                testeq(result[0].value, "hi");
-                testeq(result[1].index, 3);
-                testeq(result[1].value, "hi");
-                auto none1 = allfunc!eq(input, "notpresent");
-                testeq("Length", none1.length, 0);
-                auto none2 = allfunc!nomatch(input, sub);
-                testeq("Length", none2.length, 0);
+                tests({
+                    auto result = allfunc!eq(input, sub);
+                    testeq(result.length, 2);
+                    testeq(result[0].index, 0);
+                    testeq(result[0].value, "hi");
+                    testeq(result[1].index, 3);
+                    testeq(result[1].value, "hi");
+                });
+                tests("No matches", {
+                    auto none1 = allfunc!eq(input, "notpresent");
+                    testeq(none1.length, 0);
+                });
+                tests("Empty input", {
+                    auto none2 = allfunc!nomatch(input, sub);
+                    testeq(none2.length, 0);
+                });
                 tests("Single-length subject", {
                     auto result = allfunc!eq("abcabc", "a");
                     testeq(result.length, 2);

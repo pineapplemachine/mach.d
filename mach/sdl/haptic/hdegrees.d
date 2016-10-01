@@ -4,7 +4,7 @@ module mach.sdl.haptic.hdegrees;
 
 private:
 
-import std.traits : isNumeric;
+import mach.traits : isNumeric;
 import std.math : PI;
 
 public:

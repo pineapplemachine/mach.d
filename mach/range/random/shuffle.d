@@ -2,8 +2,8 @@ module mach.range.random.shuffle;
 
 private:
 
-import std.traits : Unqual, isIntegral;
-import mach.traits : ElementType, hasNumericLength, isFiniteIterable, isFiniteRange, isInfiniteRange;
+import mach.traits : ElementType, hasNumericLength, Unqual, isIntegral;
+import mach.traits : isFiniteIterable, isFiniteRange, isInfiniteRange;
 import mach.range.random.xorshift : XorshiftRange, xorshift;
 import mach.range.random.seed : seeds;
 

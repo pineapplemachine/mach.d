@@ -2,9 +2,8 @@ module mach.range.skipindexes;
 
 private:
 
-import std.traits : isIntegral;
 import mach.traits : isRange, isBidirectionalRange, hasNumericLength;
-import mach.traits : ElementType, isIterableOf;
+import mach.traits : isIntegral, ElementType, isIterableOf;
 import mach.range.contains : contains;
 import mach.range.meta : MetaRangeMixin;
 import mach.range.asrange : asrange, validAsRange;
@@ -138,7 +137,7 @@ struct SkipIndexesRange(Range, Index = DefaultSkipIndex) if(
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
 }
 unittest{

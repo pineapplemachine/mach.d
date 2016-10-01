@@ -2,8 +2,8 @@ module mach.traits.length;
 
 private:
 
-import std.traits : isArray, isNumeric, isIntegral;
-import mach.meta : Any;
+import mach.traits.array : isArray;
+import mach.traits.primitives : isNumeric;
 import mach.traits.property : hasProperty, PropertyType;
 
 public:

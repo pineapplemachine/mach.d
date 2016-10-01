@@ -2,7 +2,7 @@ module mach.range.recur;
 
 private:
 
-import std.traits : ReturnType;
+import mach.traits : ReturnType;
 
 public:
 

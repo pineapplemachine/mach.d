@@ -2,7 +2,7 @@ module mach.sdl.application;
 
 private:
 
-import std.traits : isNumeric;
+import mach.traits : isNumeric;
 import mach.error : ThrowableMixin;
 import mach.sdl.init : SDL, GL;
 import mach.sdl.window : Window;

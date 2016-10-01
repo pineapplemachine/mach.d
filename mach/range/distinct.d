@@ -5,7 +5,7 @@ private:
 import mach.traits : ElementType, isIterable, isRange, isSavingRange;
 import mach.traits : hasNumericLength, canHash, ElementType;
 import mach.range.asrange : asrange, validAsRange;
-import mach.range.meta : MetaRangeMixin;
+import mach.range.meta : MetaRangeEmptyMixin;
 import mach.collect : DenseHashSet;
 
 public:
@@ -83,7 +83,8 @@ struct DistinctRange(
     Range, alias by = DefaultDistinctBy,
     alias makehistory = DefaultDistinctMakeHistory
 ) if(canDistinctRange!(Range, by, makehistory)){
-    mixin MetaRangeMixin!(Range, `source`, `Empty Save`);
+    mixin MetaRangeEmptyMixin!Range;
+    
     alias History = typeof(makehistory!by(Range.init));
     
     Range source;

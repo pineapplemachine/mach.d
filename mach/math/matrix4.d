@@ -3,8 +3,7 @@ module mach.math.matrix4;
 private:
 
 static import std.math;
-import std.traits : isNumeric;
-
+import mach.traits : isNumeric;
 import mach.math.vector2 : Vector2;
 import mach.math.vector3 : Vector3;
 import mach.math.box : Box;
@@ -289,7 +288,10 @@ struct Matrix4(T = real) if(isNumeric!T){
 
 
 
-version(unittest) import mach.error.unit;
+version(unittest){
+    private:
+    import mach.test;
+}
 unittest{
     // TODO: Make this better
     
@@ -313,10 +315,13 @@ unittest{
             28,  45, 32,  49,
             64, 113, 92, 141
         );
-        testeq("By the identity matrix", m0 * Matrix4!real.identity, m0);
-        testeq("By an arbitrary matrix", m0 * m1, m0m1);
+        // By the identity matrix
+        testeq(m0 * Matrix4!real.identity, m0);
+        // By an arbitrary matrix
+        testeq(m0 * m1, m0m1);
+        // In-place
         auto inplace = m0.copy(); inplace *= m1;
-        testeq("In-place", inplace, m0m1);
+        testeq(inplace, m0m1);
     });
     
     // TODO: More unit tests

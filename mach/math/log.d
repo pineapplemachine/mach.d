@@ -2,7 +2,7 @@ module mach.math.log;
 
 private:
 
-import std.traits : Unqual, isIntegral;
+import mach.traits : Unqual, isIntegral;
 import std.math : E, log, floor, ceil;
 
 public:
@@ -27,7 +27,7 @@ auto flog(alias base = E, N)(N number){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
 }
 unittest{
     tests("Log", {

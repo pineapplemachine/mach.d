@@ -2,8 +2,7 @@ module mach.range.find.templates;
 
 private:
 
-import std.traits : isIntegral;
-import mach.traits : isIterable, isIterableReverse, hasNumericLength;
+import mach.traits : isIntegral, isIterable, isIterableReverse, hasNumericLength;
 
 public:
 

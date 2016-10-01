@@ -6,8 +6,7 @@ import derelict.sdl2.sdl;
 import derelict.sdl2.types : SDL_Color;
 import derelict.opengl3.gl;
 
-import std.traits : isNumeric, isIntegral, isFloatingPoint;
-import mach.traits : isTemplateOf;
+import mach.traits : isNumeric, isIntegral, isFloatingPoint, isTemplateOf;
 import mach.math.round : round;
 import mach.sdl.error : GLError;
 

@@ -2,7 +2,6 @@ module mach.range.retro;
 
 private:
 
-import std.traits : isNumeric;
 import mach.traits : isBidirectionalRange, isRandomAccessRange, hasNumericLength;
 import mach.traits : isSlicingRange, isSavingRange, isTemplateOf;
 import mach.range.asrange : asrange, validAsBidirectionalRange;

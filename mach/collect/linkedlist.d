@@ -4,7 +4,7 @@ private:
 
 import std.experimental.allocator : make, dispose;
 import std.experimental.allocator.mallocator : Mallocator;
-import std.traits : isIntegral, isImplicitlyConvertible, Unqual;
+import mach.traits : isIntegral, Unqual;
 import mach.traits : isFiniteIterable, isIterableOf, ElementType;
 import mach.traits : canReassign, isAllocator;
 
@@ -139,7 +139,7 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
     alias append = AddAction!false;
     
     enum canAdd(X) = (
-        isImplicitlyConvertible!(X, T) ||
+        is(typeof({T t = X.init;})) ||
         isIterableOf!(X, T) || isNodes!X
     );
     

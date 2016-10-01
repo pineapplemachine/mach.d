@@ -2,7 +2,7 @@ module mach.math.log2;
 
 private:
 
-import std.traits : Unqual, isIntegral;
+import mach.traits : Unqual, isIntegral;
 
 public:
 
@@ -38,7 +38,7 @@ auto flog2(N)(N number) if(isIntegral!N) in{
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
 }
 unittest{
     tests("Log2", {

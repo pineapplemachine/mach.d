@@ -2,7 +2,7 @@ module mach.range.random.mersenne;
 
 private:
 
-import std.traits : isIntegral;
+import mach.traits : isIntegral;
 import mach.range.random.seed : seed;
 import mach.range.random.templates : RNGMixin;
 
