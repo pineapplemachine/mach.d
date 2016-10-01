@@ -60,9 +60,19 @@ template isTemplatePredicate(alias pred, T...) if(T.length == 1){
 
 
 /// Determine whether some collection contains elements of a given type.
-template hasElementType(Element, T...) if(T.length == 1){
+enum hasElementType(E, alias T) = hasElementType!(E, typeof(T));
+/// ditto
+template hasElementType(E, T){
     static if(canGetElementType!T){
-        enum bool hasElementType = is(ElementType!T == Element);
+        // This oddness is to get around a couple of caveats:
+        // 1. `typeof({E x = ElementType!T.init;})` won't work for
+        //    cases e.g. `byte x = short.init`
+        // 2. `ElementType!T x; E y = x;` won't work for types thet disable
+        //    blitting.
+        // But this implementation seems to work fine.
+        enum bool hasElementType = is(typeof(
+            (ElementType!T x){E y = x;}(ElementType!T.init)
+        ));
     }else{
         enum bool hasElementType = false;
     }
@@ -75,30 +85,6 @@ template hasElementType(alias pred, T...) if(T.length == 1){
         enum bool hasElementType = pred!(ElementType!T);
     }else{
         enum bool hasElementType = false;
-    }
-}
-
-/// Determine whether some collection contains element of the given type,
-/// ignoring modifiers such as const and immutable.
-template hasUnqualElementType(Element, T...) if(T.length == 1){
-    static if(canGetElementType!T){
-        enum bool hasUnqualElementType = is(
-            Unqual!Element == Unqual!(ElementType!T)
-        );
-    }else{
-        enum bool hasUnqualElementType = false;
-    }
-}
-
-/// Determine whether some collection contains elements implicitly-convertible
-/// to the given type.
-template hasImplicitElementType(Element, T...) if(T.length == 1){
-    static if(canGetElementType!T){
-        enum bool hasImplicitElementType = is(typeof({
-            Element b = ElementType!T.init;
-        }));
-    }else{
-        enum bool hasImplicitElementType = false;
     }
 }
 
@@ -135,14 +121,17 @@ unittest{
     static assert(hasElementType!(int, ints));
     static assert(hasElementType!(int, int[]));
     static assert(hasElementType!(int[], int[][]));
+    static assert(hasElementType!(const int, const(int)[]));
+    static assert(hasElementType!(const int, int[]));
+    static assert(hasElementType!(int, const int[]));
     static assert(!hasElementType!(string, int[]));
     static assert(!hasElementType!(int, int));
-    static assert(hasElementType!(const int, const(int)[]));
-    static assert(!hasElementType!(const int, int[]));
-    static assert(!hasElementType!(int, const int[]));
-    static assert(hasUnqualElementType!(const int, const(int)[]));
-    static assert(hasUnqualElementType!(const int, int[]));
-    static assert(hasUnqualElementType!(int, const int[]));
+    static assert(!hasElementType!(byte, short[]));
+    static assert(!hasElementType!(byte, int[]));
+    static assert(!hasElementType!(short, int[]));
+    static assert(!hasElementType!(char, wchar[]));
+    static assert(!hasElementType!(char, dchar[]));
+    static assert(!hasElementType!(wchar, dchar[]));
 }
 unittest{
     enum bool isInt(T) = is(T == int);
