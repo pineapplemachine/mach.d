@@ -2,95 +2,89 @@ module mach.range.ends;
 
 private:
 
-import std.conv : to;
-import std.traits : isIntegral;
-import mach.error.assertf : assertf;
 import mach.traits : isRange, isBidirectionalRange, isRandomAccessRange, isSavingRange;
 import mach.traits : isInfiniteIterable, isInfiniteRange, hasNumericLength;
+import mach.error : enforcebounds;
 import mach.range.asrange : asrange, validAsRange, validAsRandomAccessRange;
 
 public:
 
 
 
-alias DefaultEndCount = size_t;
-
-alias validEndCount = isIntegral;
-
-enum canGetEnd(Iter, Count) = (
-    validAsRandomAccessRange!Iter && hasNumericLength!Iter && validEndCount!Count
+enum canGetEnd(Iter) = (
+    validAsRandomAccessRange!Iter && hasNumericLength!Iter
 );
-enum canGetEndRange(Range, Count) = (
-    isRandomAccessRange!Range && canGetEnd!(Range, Count)
+enum canGetEndRange(Range) = (
+    isRandomAccessRange!Range && canGetEnd!Range
 );
 
-enum canGetSimpleHead(Iter, Count) = (
-    validAsRange!Iter && validEndCount!Count
+enum canGetSimpleHead(Iter) = (
+    validAsRange!Iter
 );
 
-enum canGetSimpleHeadRange(Range, Count) = (
-    isRange!Range && canGetSimpleHead!(Range, Count)
+enum canGetSimpleHeadRange(Range) = (
+    isRange!Range && canGetSimpleHead!Range
 );
 
-enum canGetHead(Iter, Count = DefaultEndCount) = (
-    canGetEnd!(Iter, Count) || canGetSimpleHead!(Iter, Count)
+enum canGetHead(Iter) = (
+    canGetEnd!Iter || canGetSimpleHead!Iter
 );
-enum canGetTail(Iter, Count = DefaultEndCount) = (
-    canGetEnd!(Iter, Count)
+enum canGetTail(Iter) = (
+    canGetEnd!Iter
 );
 
 
 
 /// Get as a range the first count elements of some iterable.
-auto head(Iter, Count = DefaultEndCount)(Iter iter, Count count) if(
-    canGetSimpleHead!(Iter, Count) && !canGetEnd!(Iter, Count)
+auto head(Iter)(auto ref Iter iter, size_t count) if(
+    canGetSimpleHead!(Iter) && !canGetEnd!(Iter)
 ){
     auto range = iter.asrange;
-    return SimpleHeadRange!(typeof(range), Count)(range, count);
+    return SimpleHeadRange!(typeof(range))(range, count);
 }
 
 /// ditto
-auto head(Iter, Count = DefaultEndCount)(Iter iter, Count count) if(canGetEnd!(Iter, Count)){
+auto head(Iter)(auto ref Iter iter, size_t count) if(canGetEnd!(Iter)){
     auto range = iter.asrange;
-    return HeadRange!(typeof(range), Count)(range, count);
+    return HeadRange!(typeof(range))(range, count);
 }
 
 /// Get as a range the trailing count elements of some iterable.
-auto tail(Iter, Count = DefaultEndCount)(Iter iter, Count count) if(canGetEnd!(Iter, Count)){
+auto tail(Iter)(auto ref Iter iter, size_t count) if(canGetEnd!(Iter)){
     auto range = iter.asrange;
-    return TailRange!(typeof(range), Count)(range, count);
+    return TailRange!(typeof(range))(range, count);
 }
 
 
 
-template HeadRange(Range, Count = DefaultEndCount) if(canGetEndRange!(Range, Count)){
-    alias HeadRange = EndRange!(Range, Count, false);
+template HeadRange(Range) if(canGetEndRange!(Range)){
+    alias HeadRange = EndRange!(Range, false);
 }
 
-template TailRange(Range, Count = DefaultEndCount) if(canGetEndRange!(Range, Count)){
-    alias TailRange = EndRange!(Range, Count, true);
+template TailRange(Range) if(canGetEndRange!(Range)){
+    alias TailRange = EndRange!(Range, true);
 }
 
 
 
-struct SimpleHeadRange(Range, Count = DefaultEndCount) if(canGetSimpleHeadRange!(Range, Count)){
+struct SimpleHeadRange(Range) if(canGetSimpleHeadRange!(Range)){
     Range source;
-    Count index;
-    Count limit;
+    size_t index;
+    size_t limit;
     
     this(typeof(this) range){
         this(range.source, range.index, range.limit);
     }
-    this(Range source, Count limit, Count index = Count.init){
+    this(Range source, size_t limit, size_t index = size_t.init){
         this.source = source;
         this.limit = limit;
         this.index = index;
     }
     
-    @property auto ref front(){
+    @property auto ref front() in{assert(!this.empty);} body{
         return this.source.front;
     }
-    void popFront(){
+    void popFront() in{assert(!this.empty);} body{
         this.index++;
         this.source.popFront();
     }
@@ -116,58 +110,53 @@ struct SimpleHeadRange(Range, Count = DefaultEndCount) if(canGetSimpleHeadRange!
     }
 }
 
-struct EndRange(Range, Count = DefaultEndCount, bool tail) if(canGetEndRange!(Range, Count)){
+struct EndRange(Range, bool tail) if(canGetEndRange!(Range)){
     Range source;
-    Count frontindex;
-    Count backindex;
-    Count limit;
+    size_t frontindex;
+    size_t backindex;
+    size_t limit;
     
     alias index = frontindex;
     
     this(typeof(this) range){
         this(range.source, range.frontindex, range.backindex, range.limit);
     }
-    this(Range source, Count limit, Count frontindex = Count.init){
-        Count backindex = source.length < limit ? to!Count(source.length) : limit;
+    this(Range source, size_t limit, size_t frontindex = size_t.init){
+        size_t backindex = source.length < limit ? cast(size_t)(source.length) : limit;
         this(source, limit, frontindex, backindex);
     }
-    this(Range source, Count limit, Count frontindex, Count backindex){
+    this(Range source, size_t limit, size_t frontindex, size_t backindex){
         this.source = source;
         this.frontindex = frontindex;
         this.backindex = backindex;
         this.limit = limit;
     }
     
-    @property auto ref front(){
+    @property auto ref front() in{assert(!this.empty);} body{
         return this[this.frontindex];
     }
-    void popFront(){
+    void popFront() in{assert(!this.empty);} body{
         this.frontindex++;
     }
     
-    @property auto ref back(){
+    @property auto ref back() in{assert(!this.empty);} body{
         return this[this.backindex - 1];
     }
-    void popBack(){
+    void popBack() in{assert(!this.empty);} body{
         this.backindex--;
     }
     
     @property bool empty() const{
         return this.frontindex >= this.backindex;
     }
-    
     @property auto length(){
         return this.source.length < this.limit ? this.source.length : this.limit;
     }
 
     alias opDollar = length;
     
-    auto ref opIndex(Count index) in{
-        assertf(
-            index >= 0 && index < this.length,
-            "Index %d is out of range [0, %d).",
-            index, this.length
-        );
+    auto ref opIndex(size_t index) in{
+        enforcebounds(index, this);
     }body{
         static if(!tail){
             return this.source[index];
@@ -191,21 +180,17 @@ struct EndRange(Range, Count = DefaultEndCount, bool tail) if(canGetEndRange!(Ra
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
     struct InfiniteRangeTest{
         int value;
-        @property auto ref front() const{
-            return this.value;
-        }
-        void popFront(){
-            this.value++;
-        }
         enum bool empty = false;
+        @property auto ref front(){return this.value;}
+        void popFront(){this.value++;}
     }
 }
 unittest{
-    import std.stdio;
+    // TODO: More thorough tests
     tests("Ends", {
         auto input = [1, 2, 3, 4, 5];
         tests("Simple head", {
@@ -215,11 +200,11 @@ unittest{
         });
         tests("Head", {
             test(input.head(3).equals([1, 2, 3]));
-            testeq("Random access", input.head(3)[0], 1);
+            testeq(input.head(3)[0], 1);
         });
         tests("Tail", {
             test(input.tail(3).equals([3, 4, 5]));
-            testeq("Random access", input.tail(3)[0], 3);
+            testeq(input.tail(3)[0], 3);
         });
     });
 }
