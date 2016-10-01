@@ -14,16 +14,70 @@ public:
 
 
 /// Determine whether some type can be iterated over using foreach.
+/// Will not evaluate true for types such as tuples where all elements may
+/// not be of the same type.
 enum bool isIterable(alias T) = isIterable!(typeof(T));
 /// ditto
-enum bool isIterable(T) = is(typeof({
+enum bool isIterable(T) = (
+    is(typeof({
+        // Must be iterable via foreach
+        foreach(e; T.init){}
+        // Indexes must not be known at compile-time
+        // Because if they are, this is a tuple
+        static if(is(typeof({foreach(i, e; T.init){}}))){
+            foreach(i, e; T.init){
+                static assert(!is(typeof({enum x = i;})));
+            }
+        }
+    })) && !is(typeof({
+        // Must not be an empty tuple
+        foreach(e; T.init){
+            static assert(false);
+        }
+    }))
+);
+
+/// Determine whether some type can be iterated over using foreach_reverse.
+/// Will not evaluate true for types such as tuples where all elements may
+/// not be of the same type.
+enum bool isIterableReverse(alias T) = isIterableReverse!(typeof(T));
+/// ditto
+enum bool isIterableReverse(T) = (
+    is(typeof({
+        // Must be iterable via foreach_reverse
+        foreach_reverse(e; T.init){}
+        // Indexes must not be known at compile-time
+        // Because if they are, this is a tuple
+        static if(is(typeof({foreach_reverse(i, e; T.init){}}))){
+            foreach_reverse(i, e; T.init){
+                static assert(!is(typeof({enum x = i;})));
+            }
+        }
+    })) && !is(typeof({
+        // Must not be an empty tuple
+        foreach_reverse(e; T.init){
+            static assert(false);
+        }
+    }))
+);
+
+
+
+/// Determine whether some type can be iterated over using foreach.
+/// Will also evaluate true for types such as tuples where all elements may
+/// not be of the same type.
+enum bool isAnyIterable(alias T) = isIterable!(typeof(T));
+/// ditto
+enum bool isAnyIterable(T) = is(typeof({
     foreach(elem; T.init){}
 }));
 
 /// Determine whether some type can be iterated over using foreach_reverse.
-enum bool isIterableReverse(alias T) = isIterableReverse!(typeof(T));
+/// Will also evaluate true for types such as tuples where all elements may
+/// not be of the same type.
+enum bool isAnyIterableReverse(alias T) = isIterableReverse!(typeof(T));
 /// ditto
-enum bool isIterableReverse(T) = is(typeof({
+enum bool isAnyIterableReverse(T) = is(typeof({
     foreach_reverse(elem; T.init){}
 }));
 
@@ -141,6 +195,21 @@ unittest{
     static assert(!isIterableReverse!void);
     static assert(!isIterableReverse!OpApply);
     static assert(!isIterableReverse!Range);
+}
+unittest{
+    import mach.types.tuple : Tuple;
+    static assert(!isIterable!(Tuple!()));
+    static assert(!isIterable!(Tuple!(int)));
+    static assert(!isIterable!(Tuple!(int, string)));
+    static assert(!isIterable!(Tuple!(int, float)));
+    static assert(!isIterable!(Tuple!(int, int)));
+    static assert(!isIterable!(Tuple!(int, int, int)));
+    static assert(!isIterableReverse!(Tuple!()));
+    static assert(!isIterableReverse!(Tuple!(int)));
+    static assert(!isIterableReverse!(Tuple!(int, string)));
+    static assert(!isIterableReverse!(Tuple!(int, float)));
+    static assert(!isIterableReverse!(Tuple!(int, int)));
+    static assert(!isIterableReverse!(Tuple!(int, int, int)));
 }
 
 unittest{
