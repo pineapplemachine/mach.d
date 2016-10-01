@@ -9,8 +9,10 @@ public:
 
 
 /// Return the argument at the given index.
-auto varselect(size_t i, Args...)(auto ref Args args) if(i < Args.length){
-    return args[i];
+/// Arguments are lazy, meaning that those arguments not selected are
+/// not evaluated.
+auto varselect(size_t i, Args...)(lazy Args args) if(i < Args.length){
+    return args[i]();
 }
 
 
@@ -29,4 +31,13 @@ unittest{
     assert(varselect!true(0, 0) == 0);
     assert(varselect!false(0, 1) == 0);
     assert(varselect!true(0, 1) == 1);
+}
+unittest{
+    void x(){}
+    void y(){assert(false);}
+    varselect!false(x(), y());
+    bool error = false;
+    try{varselect!true(x(), y());}
+    catch{error = true;}
+    assert(error);
 }
