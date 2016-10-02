@@ -100,6 +100,10 @@ unittest{
             range.tap!((e){str ~= e;}).consume;
             test(str.equals("abcdefghi"));
         });
+        tests("map, chain", {
+            auto range = "abcdefghi\0".map!(ch => [ch, ch + 1]).chain;
+            test(range.equals("abbccddeeffgghhiij\0\1"));
+        });
     });
 }
 
