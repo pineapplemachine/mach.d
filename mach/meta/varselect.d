@@ -1,4 +1,4 @@
-module mach.meta.select;
+module mach.meta.varselect;
 
 private:
 
