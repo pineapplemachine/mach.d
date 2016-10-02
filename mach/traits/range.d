@@ -14,7 +14,7 @@ public:
 enum isRange(alias T) = isRange!(typeof(T));
 /// ditto
 template isRange(T){
-    enum bool isRange = is(typeof((inout int = 0){
+    enum bool isRange = is(typeof({
         T range = T.init;
         if(range.empty){}
         auto element = range.front;
@@ -30,7 +30,7 @@ template isRange(T){
 enum isBidirectionalRange(alias T) = isBidirectionalRange!(typeof(T));
 /// ditto
 template isBidirectionalRange(T){
-    enum bool isBidirectionalRange = isRange!T && is(typeof((inout int = 0){
+    enum bool isBidirectionalRange = isRange!T && is(typeof({
         T range = T.init;
         auto front = range.front;
         auto back = range.back;
@@ -46,7 +46,7 @@ template isBidirectionalRange(T){
 enum isSavingRange(alias T) = isSavingRange!(typeof(T));
 /// ditto
 template isSavingRange(T){
-    enum bool isSavingRange = isRange!T && is(typeof((inout int = 0){
+    enum bool isSavingRange = isRange!T && is(typeof({
         T range = T.init;
         auto saved = range.save;
         static assert(is(typeof(saved) == T));
@@ -61,7 +61,7 @@ template isSavingRange(T){
 enum isRandomAccessRange(alias T) = isRandomAccessRange!(typeof(T));
 /// ditto
 template isRandomAccessRange(T){
-    enum bool isRandomAccessRange = isRange!T && is(typeof((inout int = 0){
+    enum bool isRandomAccessRange = isRange!T && is(typeof({
         size_t index = 0;
         T range = T.init;
         auto front = range.front;
@@ -78,7 +78,7 @@ template isRandomAccessRange(T){
 enum isSlicingRange(alias T) = isSlicingRange!(typeof(T));
 /// ditto
 template isSlicingRange(T){
-    enum bool isSlicingRange = isRange!T && is(typeof((inout int = 0){
+    enum bool isSlicingRange = isRange!T && is(typeof({
         auto slice = T.init[0 .. 0];
         static assert(is(typeof(slice) == T));
     }));
@@ -105,7 +105,7 @@ template isMutableRange(T){
 enum isMutableFrontRange(alias T) = isMutableFrontRange!(typeof(T));
 /// ditto
 template isMutableFrontRange(T){
-    enum bool isMutableFrontRange = isMutableRange!T && is(typeof((inout int = 0){
+    enum bool isMutableFrontRange = isMutableRange!T && is(typeof({
         T range = T.init;
         auto front = range.front;
         range.front = front;
@@ -119,7 +119,7 @@ template isMutableFrontRange(T){
 enum isMutableBackRange(alias T) = isMutableBackRange!(typeof(T));
 /// ditto
 template isMutableBackRange(T){
-    enum bool isMutableBackRange = isMutableRange!T && is(typeof((inout int = 0){
+    enum bool isMutableBackRange = isMutableRange!T && is(typeof({
         T range = T.init;
         auto back = range.back;
         range.back = back;
@@ -133,7 +133,7 @@ template isMutableBackRange(T){
 enum isMutableRandomRange(alias T) = isMutableRandomRange!(typeof(T));
 /// ditto
 template isMutableRandomRange(T){
-    enum bool isMutableRandomRange = isMutableRange!T && is(typeof((inout int = 0){
+    enum bool isMutableRandomRange = isMutableRange!T && is(typeof({
         T range = T.init;
         auto front = range.front;
         range[0] = front;
@@ -148,7 +148,7 @@ template isMutableRandomRange(T){
 enum isMutableInsertRange(alias T) = isMutableInsertRange!(typeof(T));
 /// ditto
 template isMutableInsertRange(T){
-    enum bool isMutableInsertRange = isMutableRange!T && is(typeof((inout int = 0){
+    enum bool isMutableInsertRange = isMutableRange!T && is(typeof({
         T range = T.init;
         auto front = range.front;
         range.insert(front);
@@ -163,7 +163,7 @@ template isMutableInsertRange(T){
 enum isMutableRemoveFrontRange(alias T) = isMutableRemoveFrontRange!(typeof(T));
 /// ditto
 template isMutableRemoveFrontRange(T){
-    enum bool isMutableRemoveFrontRange = isMutableRange!T && is(typeof((inout int = 0){
+    enum bool isMutableRemoveFrontRange = isMutableRange!T && is(typeof({
         T range = T.init;
         range.removeFront();
     }));
@@ -179,7 +179,7 @@ enum isMutableRemoveBackRange(alias T) = isMutableRemoveBackRange!(typeof(T));
 template isMutableRemoveBackRange(T){
     enum bool isMutableRemoveBackRange = (
         isMutableRange!T && isBidirectionalRange!T
-    ) && is(typeof((inout int = 0){
+    ) && is(typeof({
         T range = T.init;
         range.removeBack();
     }));
@@ -302,6 +302,8 @@ unittest{
     static assert(isRange!EmptyRange);
     static assert(isRange!FiniteRange);
     static assert(!isRange!int);
+    static assert(!isRange!(int[]));
+    static assert(!isRange!string);
     static assert(!isRange!NotARange);
     static assert(isBidirectionalRange!BiRange);
     static assert(!isBidirectionalRange!FwdRange);
