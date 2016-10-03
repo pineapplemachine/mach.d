@@ -4,7 +4,7 @@ This package contains numerous functions which operate on ranges and iterables. 
 
 ## mach.range.asarray
 
-The asarray method can be used to turn a lazily-evaluated sequence into a fully in-memory array.
+The `asarray` method can be used to turn a lazily-evaluated sequence into a fully in-memory array.
 
 If the range has a known length, then that will be used to make array construction more efficient.
 
@@ -91,7 +91,7 @@ auto range = rangeof(0, 1, 2, 3);
 assert(range.asrange is range);
 ```
 
-## mach.range.asrange
+## mach.range.chain
 
 The `chain` function returns a range which enumerates the contents of several iterables sequentially. It is possible to chain either a sequence of iterables passed in as multiple arguments, or to chain the iterables contained within an iterable of identically-typed iterables.
 
@@ -382,7 +382,7 @@ assert([0, 1, 2, 3].reducelazy!((a, b) => (a + b)).asarray == [0, 1, 3, 6]);
 
 ## mach.range.retro
 
-The `retro` function can be used to enumerate the contents of an input iterable in reverse-order.
+The `retro` function can be used to enumerate the contents of an input iterable in reverse order.
 
 ``` D
 assert("hello".retro.equals("olleh"));

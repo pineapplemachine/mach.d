@@ -26,7 +26,7 @@ should be able to provide an effective description of how its functions work.
 
 ## mach.range.asarray
 
-The asarray method can be used to turn a lazily-evaluated sequence into a
+The `asarray` method can be used to turn a lazily-evaluated sequence into a
 fully in-memory array.
 
 If the range has a known length, then that will be used to make array
@@ -150,7 +150,7 @@ unittest{
 
 /++ md
 
-## mach.range.asrange
+## mach.range.chain
 
 The `chain` function returns a range which enumerates the contents of several
 iterables sequentially.
@@ -578,7 +578,7 @@ unittest{
 ## mach.range.retro
 
 The `retro` function can be used to enumerate the contents of an input iterable
-in reverse-order.
+in reverse order.
 
 +/
 
