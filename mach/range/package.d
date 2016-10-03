@@ -2,7 +2,7 @@ module mach.range;
 
 private:
 
-import mach.range.readmetests;
+import mach.range.readme;
 
 public:
 

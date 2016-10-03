@@ -1,246 +1,460 @@
 # mach.range
 
-## Introduction
+This package contains numerous functions which operate on ranges and iterables. This documentation is by no means exhaustive. For more detailed explanations of arguments and examples of usage, please refer to the source of the modules themselves. Each module concludes with unittests, often rather thorough, which should be able to provide an effective description of how its functions work.
 
-This package provides functions for dealing with collections of things, especially ranges.
-
-Many of the modules come with some measure of documentation, and all of them include unit tests. In the absence of thorough documentation, the unit tests should hopefully prove sufficiently enlightening.
-
-## Modules
-
-Here's a brief summary of some of the most useful modules included in this package:
-
-### mach.range.asarray
-
-Turn a lazy sequence into an eager one, in the form of an array. Supports static array creation, too, if the length of the sequence is known at compile time.
-
-``` D
-string hello_there = ["hello", "there"].join(" ").asarray;
 ```
 
-### mach.range.asrange
+## mach.range.asarray
 
-Get a range for enumerating elements belonging to some arbitrary object. There are default implementations for static and dynamic arrays, associative arrays, and types implementing an integral-based opIndex.
+The asarray method can be used to turn a lazily-evaluated sequence into a fully in-memory array.
 
-``` D
-assert("hello".asrange.front == 'h');
-```
-
-### mach.range.chain
-
-Able to chain several iterables together. It is possible to chain both a sequence of iterables passed in as multiple arguments, and to chain the iterables contained within an iterable of identically-typed iterables. The `chain` method should be able to reliably determine which use case you intended, but in case not you can explicitly use `chainranges` for the former case and `chainiter` for the latter.
+If the range has a known length, then that will be used to make array construction more efficient.
 
 ``` D
-assert(["D", " ", "Man"].chain.asarray == "D Man");
-assert(chain("D", " ", "Man").asarray == "D Man");
-assert(["D", " ", "Man"].chainiter.asarray == "D Man");
-assert(chainranges("D", " ", "Man").asarray == "D Man");
+auto range = rangeof(0, 1, 2, 3); // Range containing the elements 0, 1, 2, 3.
+auto array = range.asarray;
+assert(array.length == 4);
+assert(array == [0, 1, 2, 3]);
 ```
-
-### mach.range.chunk
-
-Break down an iterable into chunks of no larger than a specified size.
 
 ``` D
-auto chunks = "abc123xyz!!".chunk(3);
-assert(chunks[0] == "abc");
-assert(chunks[$-1] == "!!");
+auto range = finiterangeof(4, 0); // A range of four 0s.
+auto array = range.asarray;
+assert(array.length == 4);
+assert(array == [0, 0, 0, 0]);
 ```
 
-### mach.range.contains
+To create an array from an infinite range, an explicit maximum length must be specified as an argument to `asarray`. Otherwise, the maximum length argument is optional.
 
-Check whether some iterable contains any instances of a value, or any elements satisfying a predicate.
+``` D
+auto range = infrangeof('?'); // An infinite range of '?'.
+auto array = range.asarray(3);
+assert(array == "???");
+```
+
+``` D
+auto range = rangeof(0, 1, 2, 3); // Range containing the elements 0, 1, 2, 3.
+auto array = range.asarray(2); // Array containing the first two elements.
+assert(array.length == 2);
+assert(array == [0, 1]);
+```
+
+Calling `asarray` for a type that is already an array will simply return the argument.
+
+``` D
+auto array = [0, 1, 2];
+assert(array.asarray is array);
+```
+
+## mach.range.asrange
+
+Get a range for enumerating elements belonging to a range, or an object which is valid as a range via its own `asrange` property. This package provides default implementations for static, dynamic, and associative arrays.
+
+Every function in this library which requires a range accepts any iterable valid as a range and calls `asrange` for that iterable to acquire a range. It is strongly recommended that code utilizing or extending this library duplicate this pattern in its own functions which operate upon ranges.
+
+``` D
+int[] array = [0, 1, 2, 3];
+auto range = array.asrange;
+assert(range.front == 0);
+assert(range.back == 3);
+assert(range.length == 4);
+```
+
+``` D
+int[4] array = [0, 1, 2, 3];
+auto range = array.asrange;
+assert(range.front == 0);
+assert(range.back == 3);
+assert(range.length == 4);
+```
+
+``` D
+int[string] array = ["one": 1, "two": 2, "three": 3];
+auto range = array.asrange;
+assert(range.length == 3);
+// Note that order of elements cannot be guaranteed, hence `any`.
+assert(range.any!(e => e.key == "one" && e.value == 1));
+```
+
+Collections in this library implement their own `asrange` methods, allowing those collections to be passed directly to functions which operate upon ranges. (Or, more strictly speaking, upon iterables which are valid as ranges.)
+
+``` D
+auto list = new LinkedList!int(0, 1, 2, 3);
+auto range = list.asrange;
+assert(range.equals([0, 1, 2, 3]));
+assert(list.map!(e => e + 1).equals([1, 2, 3, 4]));
+assert(list.filter!(e => e % 2).equals([1, 3]));
+```
+
+Calling `asrange` for a type that is already a range will simply return the argument.
+
+``` D
+auto range = rangeof(0, 1, 2, 3);
+assert(range.asrange is range);
+```
+
+## mach.range.asrange
+
+The `chain` function returns a range which enumerates the contents of several iterables sequentially. It is possible to chain either a sequence of iterables passed in as multiple arguments, or to chain the iterables contained within an iterable of identically-typed iterables.
+
+``` D
+assert(["D", " ", "Man"].chain.equals("D Man"));
+assert(chain("D", " ", "Man").equals("D Man"));
+```
+
+The `chain` function should be able to reliably determine which case you intended, but in case not you can explicitly use `chainiters` to chain a sequence of iterables passed as variadic arguments and `chainiter` to chain the iterables contained within a single passed iterable.
+
+``` D
+assert(["D", " ", "Man"].chainiter.equals("D Man"));
+assert(chainiters("D", " ", "Man").equals("D Man"));
+```
+
+## mach.range.chunk
+
+The `chunk` function breaks an iterable into sequential chunks of the specified size. If the iterable is not evenly divisible by the given chunk size, then the final element of the chunk range will be shorter than that given size.
+
+``` D
+auto range = "abc123xyz!!".chunk(3);
+assert(range[0] == "abc");
+assert(range[1] == "123");
+assert(range[2] == "xyz");
+assert(range[3] == "!!"); // Shorter because range isn't evenly divisble by 3.
+assert(range.length == 4);
+```
+
+## mach.range.compare
+
+The `compare` function offers a way to compare the contents of two iterables using a predicate function which accepts both an element from the first and the second range.
+
+``` D
+assert([0, 1, 2].compare!((a, b) => (a == b - 1))([1, 2, 3]));
+```
+
+This module also provides an `equals` function, which constitutes the most immediately obvious use case of the `compare` function.
+
+``` D
+assert([0, 1, 2].equals([0, 1, 2]));
+assert(rangeof(0, 1, 2).equals([0, 1, 2]));
+```
+
+## mach.range.consume
+
+The `consume` function consumes a range. This is primarily useful for ranges which may modify state while they are being enumerated.
+
+For example, the `tap` function adds a callback for each element of an input iterable. The callback is only evaluated as that element is popped from the range.
+
+``` D
+int count;
+// Increment `count` every time an element is popped.
+auto range = [0, 1, 2, 3].tap!((e){count++;});
+assert(count == 0);
+range.consume;
+assert(count == 4);
+```
+
+## mach.range.contains
+
+The `contains` function can be used to determine whether some iterable contains any elements satisfying a predicate, or any values being equal to a given argument.
+
+``` D
+assert("hello".contains!(ch => ch == 'h'));
+assert(!"hello".contains!(ch => ch == 'x'));
+```
 
 ``` D
 assert("hello".contains('h'));
-assert(!"hello".contains!isUpper);
+assert(!"hello".contains('x'));
 ```
 
-### mach.range.distinct
+## mach.range.distinct
 
-Omits repeated elements from the source iterable. Can optionally accept a transformation function to apply to each element, such that the transformation is used as a key to determine uniqueness instead of the element itself.
+The range returned by `distinct` uses an associative array to omit repeated elements from the iterable used to construct it. The function optionally accepts a transformation function which derives a key from an element to determine uniqueness, rather than the element itself. Note that the key must be hashable.
 
 ``` D
-assert("hello world".distinct.asarray == "helo wrd");
-assert([1, 3, 2, 4].distinct!(n => n % 2).asarray == [1, 2]);
+assert("hello world".distinct.equals("helo wrd"));
 ```
 
-### mach.range.each
-
-Eagerly applies a function to each element in an iterable. (For a lazily-evaluated equalivalent, see `mach.range.tap`.)
-
 ``` D
-string hello_each = "";
-"hello".each!(e => hello_each ~= e);
-assert(hello_each == "hello");
+// Use each element itself as the uniqueness key.
+assert([2, 1, 2, 11, 10, 12].distinct.equals([2, 1, 11, 10, 12]));
+// Use (element % 10) as the uniqueness key.
+assert([2, 1, 2, 11, 10, 12].distinct!(e => e % 10).equals([2, 1, 10]));
 ```
 
-### mach.range.ends
+## mach.range.each
 
-Provides `head` and `tail` functions, the former of which can be expected to work for all iterables valid as ranges and the latter of which only for iterables valid as bidirectional ranges.
+The `each` function eagerly applies a function to each element in an iterable.
+
+For a lazy-evaluated equivalent, where the function is applied only as a range is consumed, see `tap`.
 
 ``` D
-assert("hello".head(3).asarray == "hel");
-assert("hello".tail(3).asarray == "llo");
+string hello = "";
+"hello".each!(e => hello ~= e);
+assert(hello == "hello");
 ```
 
-### mach.range.enumerate
+## mach.range.ends
 
-Elements of an enumerated iterable are a tuple wherein the first item is an index in the sequence and the second item is the actual element of the source iterable.
+This module provides `head` and `tail` functions to get the leading and trailing elements of an iterable.
+
+The `head` function will operate on any range.
 
 ``` D
-foreach(index, character; "hello".enumerate){
-    assert("hello"[index] == character);
+assert("hello".head(3).equals("hel"));
+```
+
+The `tail` function can only operate on random-access ranges with length.
+
+``` D
+assert("hello".tail(3).equals("llo"));
+```
+
+## mach.range.enumerate
+
+Given an input iterable, the `enumerate` function returns a range wrapping each element in a struct with both the index in the iterable at which the element was encountered, and the element itself.
+
+The elements of the range act like tuples.
+
+``` D
+auto range = "hello".enumerate;
+assert(range.front.index == 0);
+assert(range.front.value == 'h');
+foreach(index, value; range){
+    assert("hello"[index] == value);
 }
 ```
 
-### mach.range.filter
+## mach.range.filter
 
-Archetypical filter higher-order function. Enumerates only those elements of a source iterable which satisfy a predicate.
-
-``` D
-assert("h e l l o!".filter!isAlpha.asarray == "hello");
-```
-
-### mach.range.find
-
-For finding the first element, last element, or all elements matching a predicate. Also capable of performing the same operation for substrings.
-
-Finding elements:
+The `filter` function enumerates only those elements of an input iterable matching a predicate.
 
 ``` D
-assert("hi".find('i').index == 1);
-assert(!"hi".find('o').exists);
-assert("aha!".findfirst('a').index == 0);
-assert("aha!".findlast('a').index == 2);
-assert("aha!".findall('a').front.index == 0);
-assert("aha!".findall('a').back.index == 2);
+auto range = "h e l l o".filter!(ch => ch != ' ');
+assert(range.equals("hello"));
 ```
 
-Finding substrings:
+## mach.range.find
+
+This module provides `findfirst`, `findlast`, and `findall` functions for retrieving the indexes and values of either elements or substrings of an input iterable.
+
+The `findfirst` and `findlast` functions are eagerly evaluated. The `findall` function is lazily evaluated; it returns a range for enumerating over the results of the operation.
+
+The `find` function defined in the module is an alias of `findfirst`.
+
+Examples of using these functions to find elements:
 
 ``` D
-assert("hello".find("el").index == 1);
-assert(!"hello".find("no").exists);
-assert("abcabc".findfirst("abc").index == 0);
-assert("abcabc".findlast("abc").index == 3);
-assert("abcabc".findall("abc").front.index == 0);
+auto str = "hello world";
+auto l = str.find('l');
+assert(l.exists);
+assert(l.index == 2);
+assert(l.value == 'l');
+auto e = str.find!(ch => ch != 'h');
+assert(e.exists);
+assert(e.index == 1);
+auto x = str.find('x');
+assert(!x.exists);
 ```
-
-### mach.range.join
-
-Inserts separators between elements of a source iterable.
 
 ``` D
-assert(["a", "b", "c"].join(',').asarray == "a,b,c");
-assert(["x", "y", "z"].join(", ").asarray == "x, y, z");
+auto str = "hello world";
+auto l = str.findlast('l');
+assert(l.exists);
+assert(l.index == 9);
+assert(l.value == 'l');
+auto x = str.find('x');
+assert(!x.exists);
 ```
-
-### mach.range.map
-
-Applies a transformation to an arbitrary number of input iterables.
-
-There is the conventional, singular form:
 
 ``` D
-assert([0, 1, 2].map!(e => e + 1).asarray == [1, 2, 3]);
+auto str = "hello world";
+auto range = str.findall('l');
+assert(range.front.index == 2);
+assert(range.front.value == 'l');
+range.popFront();
+assert(range.front.index == 3);
+range.popFront();
+assert(range.front.index == 9);
+range.popFront();
+assert(range.empty);
 ```
 
-And a less conventional, plural form, which can also be thought of as applying the predicate to the result of zipping several iterables. (The map range is only as long as the shortest input, but the functions in `mach.range.pad` can be used to remedy this when undesireable.)
+Examples of using these functions to find substrings:
 
 ``` D
-assert(map!((a, b) => (a + b))([0, 1, 2], [1, 4, 7]).asarray == [1, 5, 9]);
+auto str = "this is a test, yes a test";
+auto first = str.find("test");
+assert(first.exists);
+assert(first.index == 10);
+assert(first.value == "test");
 ```
-
-### mach.range.mutate
-
-Same as a map function, except the results are also written back into the source iterable, overwriting the original values. Of course, this is only supported for iterables that actually allow modification of their contents.
-
-The mutation is lazily-evaluated; `mach.range.consume` is used in this example to consume the range and apply the mutation to the input array's contents.
 
 ``` D
-auto ints = [0, 1, 2];
-ints.mutate!(e => e + 1).consume;
-assert(ints == [1, 2, 3]);
+auto str = "this is a test, yes a test";
+auto last = str.findlast("test");
+assert(last.exists);
+assert(last.index == 22);
+assert(last.value == "test");
 ```
-
-### mach.range.ngrams
-
-Can be used to get n-grams from a given input sequence, of course including bigrams and trigrams.
 
 ``` D
-auto bigrams = "hey".ngrams!2.asarray;
-assert(bigrams.length == 2);
-assert(bigrams[0] == "he");
-assert(bigrams[1] == "ey");
+auto str = "this is a test, yes a test";
+auto range = str.findall("test");
+assert(range.front.index == 10);
+assert(range.front.value == "test");
+range.popFront();
+assert(range.front.index == 22);
+assert(range.front.value == "test");
+range.popFront();
+assert(range.empty);
 ```
 
-### mach.range.pad
+## mach.range.join
 
-Creates a range which is a source iterable preceded and/or followed by any number of some padding element.
+The `join` function can be used to join iterable elements of an input iterable with a separator. The separator can be either an element of the joined iterables, or an iterable of elements implicitly convertible to the element type of the joined iterables.
+
+Its complement is the `split` function.
 
 ``` D
-assert("12".padfront('0', 4).asarray == "0012");
-assert("12".padback('0', 4).asarray == "1200");
+assert(["hello", "world"].join(' ').equals("hello world"));
+assert(["x", "y", "z"].join(", ").equals("x, y, z"));
 ```
 
-### mach.range.reduce
+## mach.range.map
 
-Provides both eager and lazy implementations of the reduce higher-order function, `reduceeager` and `reducelazy`. The `reduce` alias refers to the former, eager implementation.
+The `map` function creates a range for which each element is the result of a transformation applied to the corresponding element of the input iterable.
+
+``` D
+assert([0, 1, 2, 3].map!(e => e + 1).equals([1, 2, 3, 4]));
+assert([-1, 0, 1].map!(e => e >= 0).equals([false, true, true]));
+```
+
+It's also possible to compose a `map` function which operates on more than one input iterable. The range requires a transformation function which accepts as arguments an element from each input. The resulting range is only as long as the shortest input iterable.
+
+This usage of `map` is conceptually similar to zipping several iterables and mapping the zipped iterable. (It's worth noting that internally `map` is not implemented this way; rather `zip` is implemented as an abstraction of this function.)
+
+``` D
+auto inputa = [0, 1, 2];
+auto inputb = [3, 4, 5];
+assert(map!((a, b) => (a + b))(inputa, inputb).equals([3, 5, 7]));
+```
+
+## mach.range.ngrams
+
+The `ngrams` function can be used to generate n-grams given an input iterable.
+
+The length of each n-gram is given as a template argument. Calling `ngrams!2` enumerates bigrams, `ngrams!3` enumerates trigrams, and so on.
+
+``` D
+assert("hello".ngrams!2.equals(["he", "el", "ll" ,"lo"]));
+```
+
+One of the more practical use cases for this function is to generate n-grams from a sequence of words.
+
+``` D
+auto text = "hello how are you";
+auto words = text.split(' ');
+auto bigrams = words.ngrams!2;
+assert(bigrams.equals([["hello", "how"], ["how", "are"], ["are", "you"]]));
+```
+
+## mach.range.pad
+
+The `padfront` and `padback` functions can be used to pad the beginning or end of an input iterable with a given element, such that the total length of the returned range matches the length given at initialization.
+
+``` D
+assert("12".padfront('0', 4).equals("0012"));
+assert("12".padback('0', 4).equals("1200"));
+```
+
+## mach.range.reduce
+
+This module provides both eager and lazy implementations of the reduce higher- order function, `reduceeager` and `reducelazy`. The functions enumerate over an input iterable and use a passed reduction function to accumulate a value.
+
+The `reduceeager` function is also accessible by its alias `reduce`, as eager reduction is the more commonly-used form of the reduce function.
 
 ``` D
 assert([0, 1, 2, 3].reduce!((a, b) => (a + b)) == 6);
 assert([0, 1, 2, 3].reduceeager!((a, b) => (a + b)) == 6);
+```
+
+``` D
 assert([0, 1, 2, 3].reducelazy!((a, b) => (a + b)).asarray == [0, 1, 3, 6]);
 ```
 
-### mach.range.reduction
+## mach.range.retro
 
-Provides common abstractions of the reduce function, such as `sum` and `product`.
+The `retro` function can be used to enumerate the contents of an input iterable in reverse-order.
 
 ``` D
-assert([2, 3, 4].sum == 9);
-assert([2, 3, 4].product == 24);
+assert("hello".retro.equals("olleh"));
 ```
 
-### mach.range.retro
+## mach.range.split
 
-Iterates over something backwards, provided the source iterable supports it.
+The `split` function splits an input iterable on occurrences of an element or of a substring. It is a complement to the `join` function.
 
 ``` D
-assert("hello".retro.asarray == "olleh");
+assert("hello world".split(' ').equals(["hello", "world"]));
+assert("x, y, z".split(", ").equals(["x", "y", "z"]));
 ```
 
-### mach.range.split
+## mach.range.strip
 
-Splits an iterable into separate iterables on each occurrence of a separator.
+This module provides functions for stripping the frontmost and/or backmost elements of a range that meet a predicate. The functions are `stripfront`, `stripback`, and `stripboth`. The `stripboth` function can also be referred to using the `strip` alias.
 
 ``` D
-auto splitted = "how are you".split(" ").asarray;
-assert(splitted.length == 3);
-assert(splitted[0] == "how");
-assert(splitted[$-1] == "you");
+assert("  hello world ".strip!(ch => ch == ' ').equals("hello world"));
 ```
 
-### mach.range.strip
-
-Returns a range which is the same as a source iterable but with front and/or back elements meeting some predicate excluded.
-
 ``` D
-assert("__hello__".stripfront('_').asarray == "hello__");
-assert("__hello__".stripback('_').asarray == "__hello");
-assert("__hello__".stripboth('_').asarray == "hello");
-assert("  hello  ".stripboth!isWhite.asarray == "hello");
+assert("__hello__".stripfront('_').equals("hello__"));
+assert("__hello__".stripback('_').equals("__hello"));
+assert("__hello__".stripboth('_').equals("hello"));
 ```
 
-### mach.range.tap
+## mach.range.tap
 
-Evaluates a function for each element in an input iterable, but only when that element is actually accessed. It is, in a way, a lazy analogue to `mach.range.each`.
+The `tap` function returns a range which performs some function for each element as it's consumed.
+
+See the `each` function for an eagerly-evaluated equivalent.
 
 ``` D
-auto tapcount = 0;
-auto range = "hello".tap!(e => tapcount++);
-assert(tapcount == 0);
-range.consume();
-assert(tapcount == 5);
+int count;
+// Increment `count` every time an element is popped.
+auto range = [0, 1, 2, 3].tap!((e){count++;});
+assert(count == 0);
+range.consume;
+assert(count == 4);
+```
+
+## mach.range.walk
+
+This module implements the `walklength`, `walkindex`, and `walkslice` functions. These can be used to acquire the length, the value at an index, and a slice of an input iterable, respectively, by actually traversing the input.
+
+This is useful for ranges that do not actually implement `length`, `opIndex`, or `opSlice` because traversal is the only way to actually determine them.
+
+``` D
+// Range iterates the numbers 0 to 10.
+// This range doesn't implement length, opIndex, or opSlice because they
+// can't be evaluated except by traversal.
+auto range = recur!(n => n + 1, n => n == 10)(0);
+assert(range.walklength == 10);
+assert(range.walkindex(0) == 0);
+assert(range.walkslice(0, 3).equals([0, 1, 2]));
+```
+
+## mach.range.zip
+
+The `zip` function accepts any number of input iterables. Elements of the returned range are each a tuple containing the elements of the zipped inputs. The zipped range is only as long as the shortest input.
+
+``` D
+auto range = zip("abc", "xyz");
+assert(range.front == tuple('a', 'x'));
+range.popFront();
+assert(range.front == tuple('b', 'y'));
+range.popFront();
+assert(range.front == tuple('c', 'z'));
+range.popFront();
+assert(range.empty);
 ```
