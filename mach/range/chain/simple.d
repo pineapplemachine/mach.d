@@ -3,8 +3,8 @@ module mach.range.chain.simple;
 private:
 
 import mach.traits : isTemplateOf;
-import mach.range.chain.iterable;
-import mach.range.chain.ranges;
+import mach.range.chain.singular;
+import mach.range.chain.plural;
 
 public:
 
@@ -20,7 +20,7 @@ enum canChain(Iter) = (
 auto ref chain(Iters...)(auto ref Iters iters) if(
     Iters.length > 1 && canChainIterables!Iters
 ){
-    return chainranges(iters);
+    return chainiters(iters);
 }
 
 auto ref chain(Iters...)(auto ref Iters iters) if(
@@ -29,7 +29,7 @@ auto ref chain(Iters...)(auto ref Iters iters) if(
     static if(canChainIterableOfIterables!(Iters[0])){
         return chainiter(iters[0]);
     }else{
-        return chainranges(iters);
+        return chainiters(iters);
     }
 }
 

@@ -2,6 +2,6 @@ module mach.range.chain;
 
 public:
 
-import mach.range.chain.iterable;
-import mach.range.chain.ranges;
+import mach.range.chain.singular;
+import mach.range.chain.plural;
 import mach.range.chain.simple;

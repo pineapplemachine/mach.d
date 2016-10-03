@@ -10,7 +10,7 @@ import mach.range.asarray : asarray;
 import mach.range.asrange : asrange, asindexrange;
 import mach.range.associate : associate, aagroup, aadistribution;
 import mach.range.cache : cache;
-import mach.range.chain : chain, chainiter, chainranges;
+import mach.range.chain : chain, chainiter, chainiters;
 import mach.range.chunk : chunk;
 import mach.range.compare : compare, equals, iterequals, recursiveequals;
 import mach.range.compareends : headis, tailis;

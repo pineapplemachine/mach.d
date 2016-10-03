@@ -1,4 +1,4 @@
-module mach.range.chain.ranges;
+module mach.range.chain.plural;
 
 private:
 
@@ -25,7 +25,7 @@ enum canChainRanges(Ranges...) = (
 
 
 
-auto chainranges(Iters...)(auto ref Iters iters) if(canChainIterables!Iters){
+auto chainiters(Iters...)(auto ref Iters iters) if(canChainIterables!Iters){
     auto ranges = varmap!(e => e.asrange)(iters);
     return ChainRange!(typeof(ranges.expand))(ranges.expand);
 }
@@ -172,26 +172,26 @@ version(unittest){
 unittest{
     tests("Chaining", {
         tests("Basic equality", {
-            chainranges("yo", "dawg").equals("yodawg");
+            chainiters("yo", "dawg").equals("yodawg");
         });
         tests("Disparate types", {
-            chainranges([1, 2], [3.0, 4.0]).equals([1.0, 2.0, 3.0, 4.0]);
+            chainiters([1, 2], [3.0, 4.0]).equals([1.0, 2.0, 3.0, 4.0]);
             static assert(!is(typeof({
-                chainranges([1, 2, 3], 4);
+                chainiters([1, 2, 3], 4);
             })));
             static assert(!is(typeof({
                 struct X{size_t x;}
-                chainranges([1, 2, 3], [X(0), X(1)]);
+                chainiters([1, 2, 3], [X(0), X(1)]);
             })));
         });
         tests("Length", {
-            testeq(chainranges("yo", "dawg").length, 6);
-            testeq(chainranges("hi").length, 2);
-            testeq(chainranges("").length, 0);
-            testeq(chainranges("", "", "").length, 0);
+            testeq(chainiters("yo", "dawg").length, 6);
+            testeq(chainiters("hi").length, 2);
+            testeq(chainiters("").length, 0);
+            testeq(chainiters("", "", "").length, 0);
         });
         tests("Random access", {
-            auto range = chainranges("yo", "dawg");
+            auto range = chainiters("yo", "dawg");
             testeq(range[0], 'y');
             testeq(range[1], 'o');
             testeq(range[2], 'd');
@@ -201,7 +201,7 @@ unittest{
             testfail({range[$];});
         });
         tests("Saving", {
-            auto range = chainranges("yo", "dawg");
+            auto range = chainiters("yo", "dawg");
             auto saved = range.save;
             range.popFront();
             range.popBack();
@@ -209,7 +209,7 @@ unittest{
             test(saved.equals("yodawg"));
         });
         tests("Slices", {
-            auto range = chainranges("xxx", "yyy", "zzz");
+            auto range = chainiters("xxx", "yyy", "zzz");
             test(range[0 .. 0].equals(""));
             test(range[0 .. 1].equals("x"));
             test(range[0 .. 4].equals("xxxy"));
@@ -222,7 +222,7 @@ unittest{
             testfail({range[10 .. 10];});
         });
         tests("Chain of chains", {
-            auto range = chainranges(chainranges("abc", "def"), chainranges("ghi", "jkl", "mno"));
+            auto range = chainiters(chainiters("abc", "def"), chainiters("ghi", "jkl", "mno"));
             testeq(range[0], 'a');
             testeq(range[3], 'd');
             testeq(range[6], 'g');

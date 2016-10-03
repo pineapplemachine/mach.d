@@ -1,4 +1,4 @@
-module mach.range.chain.iterable;
+module mach.range.chain.singular;
 
 private:
 
