@@ -2,8 +2,6 @@
 
 This package contains numerous functions which operate on ranges and iterables. This documentation is by no means exhaustive. For more detailed explanations of arguments and examples of usage, please refer to the source of the modules themselves. Each module concludes with unittests, often rather thorough, which should be able to provide an effective description of how its functions work.
 
-```
-
 ## mach.range.asarray
 
 The asarray method can be used to turn a lazily-evaluated sequence into a fully in-memory array.

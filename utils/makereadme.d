@@ -62,7 +62,7 @@ auto makereadmecontent(dstring content){
             addcode = true;
             flushmdline();
             markdown ~= "``` D";
-        }else if(line.headis("}")){
+        }else if(addcode && line.headis("}")){
             addcode = false;
             markdown ~= ["```", ""];
         }else if(addcode){

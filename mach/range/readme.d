@@ -2,6 +2,14 @@ module mach.range.readme;
 
 private:
 
+version(unittest){
+    import mach.types;
+    import mach.range;
+    import mach.range.asrange;
+    import mach.text.utf;
+    import mach.collect;
+}
+
 /++ md
 
 # mach.range
@@ -13,14 +21,6 @@ themselves. Each module concludes with unittests, often rather thorough, which
 should be able to provide an effective description of how its functions work.
 
 +/
-
-version(unittest){
-    import mach.types;
-    import mach.range;
-    import mach.range.asrange;
-    import mach.text.utf;
-    import mach.collect;
-}
 
 /++ md
 
