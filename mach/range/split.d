@@ -14,6 +14,7 @@ public:
 
 
 // TODO: Split ranges not supporting slicing (is that even doable?)
+// TODO: Bidirectionality?
 
 
 
@@ -239,7 +240,7 @@ struct SplitIterableRange(
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
 }
 unittest{
@@ -283,6 +284,12 @@ unittest{
             test("hi.hi".split!(SplitInclusionMode.Front)('.').equals(["hi", ".hi"]));
             test("hi.hi".split!(SplitInclusionMode.Back)('.').equals(["hi.", "hi"]));
             test("hi.hi".split!(SplitInclusionMode.Both)('.').equals(["hi.", ".hi"]));
+        });
+        tests("Empty source", {
+            test("".split(' ').equals([""]));
+        });
+        tests("Empty delimiter", {
+            testfail({"hi".split("");});
         });
     });
 }
