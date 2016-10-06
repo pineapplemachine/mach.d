@@ -2,9 +2,12 @@ module mach.io.file.attributes;
 
 private:
 
-import core.sys.windows.winbase : GetFileAttributesW;
-import core.sys.windows.windows : DWORD;
-import core.sys.windows.winnt;
+version(Windows){
+    import core.sys.windows.winbase : GetFileAttributesW;
+    import core.sys.windows.windows : DWORD;
+    import core.sys.windows.winnt;
+}
+
 import std.internal.cstring : tempCString;
 import mach.io.file.common;
 
