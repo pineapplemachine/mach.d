@@ -26,7 +26,8 @@ class TestFailureException: Exception{
         MustThrow,
         MustThrowPred,
         NoThrow,
-        BinaryOp,
+        OpTrue,
+        OpFalse,
         // TODO: Support these test types also
         /+
         NearlyEqual,
@@ -76,7 +77,8 @@ class TestFailureException: Exception{
             case Type.MustThrow: return "Operation must throw an exception.";
             case Type.MustThrowPred: return "Operation must throw an exception meeting the predicate.";
             case Type.NoThrow: return "Operation must not throw an exception.";
-            case Type.BinaryOp: return "Binary operation must evaluate true for all pairs of inputs.";
+            case Type.OpTrue: return "Operation must evaluate true for the given inputs.";
+            case Type.OpFalse: return "Operation must evaluate false for the given inputs.";
         }
     }
     
@@ -111,9 +113,7 @@ class TestFailureException: Exception{
 /// If all inputs do not evaluate as truthy, throw a TestFailureException.
 void testtrue(T...)(auto ref T conditions){
     foreach(cond; conditions){
-        if(cond){
-            continue;
-        }else{
+        if(!cond){
             throw new TestFailureException(
                 TestFailureException.Type.True,
                 TestFailureException.inputstring(conditions)
@@ -147,9 +147,7 @@ void testbinaryseq(alias op, T...)(TestFailureException.Type type, auto ref T va
     static if(values.length > 1){
         foreach(index, value; values){
             static if(index > 0){
-                if(op(values[index - 1], value)){
-                    continue;
-                }else{
+                if(!op(values[index - 1], value)){
                     throw new TestFailureException(
                         type, TestFailureException.inputstring(values)
                     );
@@ -173,9 +171,7 @@ void testbinaryall(alias op, T...)(TestFailureException.Type type, auto ref T va
         foreach(i, ivalue; values){
             foreach(j, jvalue; values){
                 static if(i < j){
-                    if(op(ivalue, jvalue)){
-                        continue;
-                    }else{
+                    if(!op(ivalue, jvalue)){
                         throw new TestFailureException(
                             type, TestFailureException.inputstring(values)
                         );
@@ -348,15 +344,31 @@ void testgroup(Fn)(string name, Fn func, size_t line = __LINE__, string file = _
 
 
 void test(alias op, T...)(auto ref T inputs){
-    testbinaryall!op(TestFailureException.Type.BinaryOp, inputs);
+    if(!op(inputs)){
+        throw new TestFailureException(
+            TestFailureException.Type.OpTrue,
+            TestFailureException.inputstring(inputs)
+        );
+    }
 }
 void test(T...)(auto ref T inputs){
     testtrue(inputs);
 }
 
+void testf(alias op, T...)(auto ref T inputs){
+    if(op(inputs)){
+        throw new TestFailureException(
+            TestFailureException.Type.OpFalse,
+            TestFailureException.inputstring(inputs)
+        );
+    }
+}
+void testf(T...)(auto ref T inputs){
+    testfalse(inputs);
+}
 
 
-alias testf = testfalse;
+
 alias testeq = testequal;
 alias testneq = testnotequal;
 alias testis = testsameidentity;
@@ -554,8 +566,15 @@ unittest{
 }
 unittest{
     tests("Templated", {
-        alias pred = (a, b) => (a == b + 1);
-        test!pred(2, 1);
-        testfail({test!pred(0, 0);});
+        alias eq = (a, b) => (a == b);
+        alias neq = (a, b) => (a != b);
+        test!eq(1, 1);
+        test!neq(1, 2);
+        testfail({test!eq(1, 2);});
+        testfail({test!neq(1, 1);});
+        testf!eq(1, 2);
+        testf!neq(1, 1);
+        testfail({testf!eq(1, 1);});
+        testfail({testf!neq(1, 2);});
     });
 }
