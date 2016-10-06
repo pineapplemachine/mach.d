@@ -90,11 +90,11 @@ void copy(string src, string dst){
             throw new FileCopyException(src, dst, new SysErrorException);
         }
     }else{
-        import core.stdc.stdio : fopen, fclose, feoef, fread, fwrite, fileno;
-        import core.sys.posix.sys.stat : stat_t, mode_t, fstat, fchmod;
-        import core.sys.posix.sys.utime : utime, utimbuf;
+        import core.stdc.stdio : fopen, fclose, feof, fread, fwrite, fileno;
+        import core.sys.posix.sys.stat : stat_t, mode_t, time_t, fstat, fchmod;
+        import core.sys.posix.utime : utime, utimbuf;
         // Read source file
-        auto infile = fopen(fsrc, ['r', 'b']);
+        auto infile = fopen(fsrc, "rb".tempCString!FSChar());
         if(infile is null) throw new FileCopyException(
             src, dst, new FileOpenException(src, new ErrnoException)
         );
@@ -105,7 +105,7 @@ void copy(string src, string dst){
             src, dst, new FileStatException(src, new ErrnoException)
         );
         // Write destination file
-        auto outfile = fopen(fdst, ['w', 'b']);
+        auto outfile = fopen(fdst, "wb".tempCString!FSChar());
         if(outfile is null) throw new FileCopyException(
             src, dst, new FileOpenException(dst, new ErrnoException)
         );
@@ -118,7 +118,7 @@ void copy(string src, string dst){
             if(count) fwrite(cast(void*) buffer.ptr, ubyte.sizeof, count, outfile);
         }
         // Set permissions
-        if(fchmod(outfile, cast(mode_t) stat.st_mode) != 0){
+        if(fchmod(outfile.fileno, cast(mode_t) stat.st_mode) != 0){
             throw new FileCopyException(
                 src, dst, new FileSetPermissionsException(dst, new ErrnoException)
             );
@@ -127,7 +127,7 @@ void copy(string src, string dst){
         utimbuf time = void;
         time.actime = cast(time_t) stat.st_atime;
         time.modtime = cast(time_t) stat.st_mtime;
-        if(utime(dst, time) != -1) throw new FileCopyException(
+        if(utime(fdst, &time) != -1) throw new FileCopyException(
             src, dst, new FileSetTimeException(dst, new ErrnoException)
         );
     }
@@ -257,7 +257,7 @@ void rmdir(string path){
             throw new FileRemoveDirException(path, new SysErrorException);
         }
     }else{
-        import core.sys.posix.sys.stat : crmdir = rmdir;
+        import core.sys.posix.unistd : crmdir = rmdir;
         if(crmdir(fpath) != 0){
             throw new FileRemoveDirException(path, new ErrnoException);
         }
