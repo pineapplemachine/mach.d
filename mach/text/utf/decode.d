@@ -77,7 +77,7 @@ template isUTFDecoded(T){
 /// Given an input iterable containing raw char or byte data, iterate over
 /// its UTF-8 encoded code points.
 /// Throws a UTFDecodeException when the input is malformed.
-auto utfdecode(Iter)(auto ref Iter iter) if(isUTFDecoded!Iter || canUTFDecode!Iter){
+auto utf8decode(Iter)(auto ref Iter iter) if(isUTFDecoded!Iter || canUTFDecode!Iter){
     static if(isUTFDecoded!Iter){
         return iter;
     }else{
@@ -193,43 +193,43 @@ unittest{
 unittest{
     tests("UTF decode", {
         tests("Empty string", {
-            test("".utfdecode.equals(""d));
+            test("".utf8decode.equals(""d));
         });
         tests("Single-byte code points", {
-            test("test".utfdecode.equals("test"d));
-            test("hello".utfdecode.equals("hello"d));
+            test("test".utf8decode.equals("test"d));
+            test("hello".utf8decode.equals("hello"d));
         });
         tests("Two-byte code points", {
-            test("\xD7\x90".utfdecode.equals("א"d));
-            test("\xD7\x90\xD6\xB2\xD7\xA0\xD6\xB8\xD7\xA0\xD6\xB8\xD7\xA1".utfdecode.equals("אֲנָנָס"d));
+            test("\xD7\x90".utf8decode.equals("א"d));
+            test("\xD7\x90\xD6\xB2\xD7\xA0\xD6\xB8\xD7\xA0\xD6\xB8\xD7\xA1".utf8decode.equals("אֲנָנָס"d));
         });
         tests("Three-byte code points", {
-            test("\xE3\x83\x84".utfdecode.equals("ツ"d));
-            test("\xE3\x82\xB6\xE3\x83\xBC\xE3\x82\xB6\xE3\x83\xBC".utfdecode.equals("ザーザー"d));
+            test("\xE3\x83\x84".utf8decode.equals("ツ"d));
+            test("\xE3\x82\xB6\xE3\x83\xBC\xE3\x82\xB6\xE3\x83\xBC".utf8decode.equals("ザーザー"d));
         });
         tests("Four-byte code points", {
-            test("\xF0\x9F\x98\x83".utfdecode.equals("😃"d));
+            test("\xF0\x9F\x98\x83".utf8decode.equals("😃"d));
         });
         tests("Mixed-size code points", {
-            test("!\xD7\x90\xE3\x83\x84\xF0\x9F\x98\x83".utfdecode.equals("!אツ😃"d));
+            test("!\xD7\x90\xE3\x83\x84\xF0\x9F\x98\x83".utf8decode.equals("!אツ😃"d));
         });
         tests("Range", {
-            test("\xE3\x83\x84".asrange.utfdecode.equals("ツ"d));
+            test("\xE3\x83\x84".asrange.utf8decode.equals("ツ"d));
         });
         tests("Byte array", {
             ubyte[] bytes = [0xe3, 0x83, 0x84];
-            test(bytes.utfdecode.equals("ツ"d));
+            test(bytes.utf8decode.equals("ツ"d));
         });
         tests("Invalid inputs", {
-            testfail({"\xD7".utfdecode.consume;});
-            testfail({"\xF0".utfdecode.consume;});
-            testfail({"\xF0\x9F".utfdecode.consume;});
+            testfail({"\xD7".utf8decode.consume;});
+            testfail({"\xF0".utf8decode.consume;});
+            testfail({"\xF0\x9F".utf8decode.consume;});
         });
         tests("Already decoded", {
             auto dstr = "test"d;
-            testis(dstr.utfdecode, dstr);
+            testis(dstr.utf8decode, dstr);
             auto wstr = "test"w;
-            testis(wstr.utfdecode, wstr);
+            testis(wstr.utf8decode, wstr);
         });
     });
 }

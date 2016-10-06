@@ -49,7 +49,7 @@ template isUTFEncoded(T){
 
 
 
-auto utfencode(Iter)(auto ref Iter iter) if(isUTFEncoded!Iter || canUTFEncode!Iter){
+auto utf8encode(Iter)(auto ref Iter iter) if(isUTFEncoded!Iter || canUTFEncode!Iter){
     static if(isUTFEncoded!Iter){
         return iter;
     }else{
@@ -60,7 +60,7 @@ auto utfencode(Iter)(auto ref Iter iter) if(isUTFEncoded!Iter || canUTFEncode!It
 
 
 
-/// Type returned when calling utfencode with a dchar argument.
+/// Type returned when calling utf8encode with a dchar argument.
 /// Contains up to four bytes, the count determined by an object's length
 /// property, representing an encoding of the inputted unicode character.
 struct UTFEncodePoint(Element = char){
@@ -93,7 +93,7 @@ struct UTFEncodePoint(Element = char){
 
 /// Returns a struct containing information regarding how to encode a given
 /// UTF code point.
-auto utfencode(Element = char)(dchar ch){
+auto utf8encode(Element = char)(dchar ch){
     alias Result = UTFEncodePoint!Element;
     if(ch <= 0x7f){
         return Result(ch);
@@ -157,7 +157,7 @@ struct UTFEncodeRange(Range, Element = char) if(canUTFEncodeRange!Range){
             if(this.source.empty){
                 this.isempty = true;
             }else{
-                this.encoded = utfencode(this.source.front);
+                this.encoded = utf8encode(this.source.front);
                 this.encodedindex = 0;
                 this.source.popFront();
             }
@@ -199,38 +199,38 @@ unittest{
 unittest{
     tests("UTF encode", {
         tests("No chars", {
-            test(""d.utfencode.equals(""));
+            test(""d.utf8encode.equals(""));
         });
         tests("Single-byte chars", {
-            test("test"d.utfencode.equals("test"));
-            test("hello"d.utfencode.equals("hello"));
+            test("test"d.utf8encode.equals("test"));
+            test("hello"d.utf8encode.equals("hello"));
         });
         tests("Two-byte chars", {
-            test("א"d.utfencode.equals("\xD7\x90"));
-            test("אֲנָנָס"d.utfencode.equals("\xD7\x90\xD6\xB2\xD7\xA0\xD6\xB8\xD7\xA0\xD6\xB8\xD7\xA1"));
+            test("א"d.utf8encode.equals("\xD7\x90"));
+            test("אֲנָנָס"d.utf8encode.equals("\xD7\x90\xD6\xB2\xD7\xA0\xD6\xB8\xD7\xA0\xD6\xB8\xD7\xA1"));
         });
         tests("Three-byte chars", {
-            test("ツ"d.utfencode.equals("\xE3\x83\x84"));
-            test("ザーザー"d.utfencode.equals("\xE3\x82\xB6\xE3\x83\xBC\xE3\x82\xB6\xE3\x83\xBC"));
+            test("ツ"d.utf8encode.equals("\xE3\x83\x84"));
+            test("ザーザー"d.utf8encode.equals("\xE3\x82\xB6\xE3\x83\xBC\xE3\x82\xB6\xE3\x83\xBC"));
         });
         tests("Four-byte chars", {
-            test("😃"d.utfencode.equals("\xF0\x9F\x98\x83"));
+            test("😃"d.utf8encode.equals("\xF0\x9F\x98\x83"));
         });
         tests("Mixed", {
-            test("!אツ😃"d.utfencode.equals("!\xD7\x90\xE3\x83\x84\xF0\x9F\x98\x83"));
+            test("!אツ😃"d.utf8encode.equals("!\xD7\x90\xE3\x83\x84\xF0\x9F\x98\x83"));
         });
         tests("Array", {
             dchar[] array = ['!', 'א', 'ツ', '😃'];
-            test(array.utfencode.equals("!\xD7\x90\xE3\x83\x84\xF0\x9F\x98\x83"));
+            test(array.utf8encode.equals("!\xD7\x90\xE3\x83\x84\xF0\x9F\x98\x83"));
         });
         tests("Already encoded", {
             tests("String", {
                 auto str = "hello";
-                testis(str.utfencode, str);
+                testis(str.utf8encode, str);
             });
             tests("Byte array", {
                 ubyte[] bytes = [0x32, 0x32, 0x32];
-                testis(bytes.utfencode, bytes);
+                testis(bytes.utf8encode, bytes);
             });
         });
     });
