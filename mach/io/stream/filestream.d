@@ -2,12 +2,11 @@ module mach.io.stream.filestream;
 
 private:
 
-import core.exception : AssertError;
 import mach.error : enforceerrno;
 import mach.io.file.sys : FileHandle, Seek;
 import mach.io.file.sys : fopen, fclose, fread, fwrite, fflush, fsync, fseek, ftell, feof, tmpfile, rewind;
 import mach.io.file.stat : Stat;
-import mach.io.stream.stream : IOStream, StreamSupportMixin;
+import mach.io.stream.stream : IOStream;
 
 public:
 
@@ -16,9 +15,12 @@ public:
 class FileStream: IOStream{
     alias Seek = .Seek;
     
-    mixin(StreamSupportMixin(
-        "haseof", "haslength", "hasposition", "canseek", "canreset"
-    ));
+    static enum bool haseof = true;
+    static enum bool haslength = true;
+    static enum bool hasposition = true;
+    static enum bool canseek = true;
+    static enum bool canskip = true;
+    static enum bool canreset = true;
     
     FileHandle target;
     
@@ -86,15 +88,20 @@ class FileStream: IOStream{
         this.seek(index, Seek.Set);
     }
     
-    void seek(size_t offset, Seek origin = Seek.Set) in{
+    void seek(in size_t offset, in Seek origin = Seek.Set) in{
         assert(this.active);
     }body{
         enforceerrno(fseek(this.target, offset, origin) == 0);
     }
-    void skip(size_t count) in{
+    override size_t skip(in size_t count) in{
         assert(this.active);
     }body{
+        auto before = ftell(this.target);
+        enforceerrno(before >= 0);
         this.seek(count, Seek.Cur);
+        auto after = ftell(this.target);
+        enforceerrno(after >= 0);
+        return after - before;
     }
     override void reset() in{
         assert(this.active);
@@ -102,10 +109,10 @@ class FileStream: IOStream{
         rewind(this.target);
     }
     
-    @property bool active(){
+    override @property bool active(){
         return this.target !is null;
     }
-    void close() in{
+    override void close() in{
         assert(this.active);
     }body{
         enforceerrno(fclose(this.target) == 0);

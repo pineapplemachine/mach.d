@@ -51,7 +51,7 @@ interface Stream{
     
     /// Is length a meaningful property for this stream?
     static bool haslength = false;
-    /// Get the length of this stream.
+    /// Get the length of the stream in bytes.
     @property size_t length();
     
     /// Is position a meaningful property for this stream?
@@ -63,6 +63,12 @@ interface Stream{
     static bool canseek = false;
     /// Set the current position in the stream.
     @property void position(in size_t index);
+    
+    /// Is skipping a meaningful operation for this stream?
+    static bool canskip = false;
+    /// Skip some bytes in the stream.
+    /// Returns the number of bytes skipped.
+    size_t skip(in size_t count);
     
     /// Is resetting a meaningful operation for this stream?
     static bool canreset = false;
@@ -98,11 +104,28 @@ interface InputStream : Stream{
         return value;
     }
     /// ditto
-    final T[] read(T)(size_t count){
+    final T[] read(T)(in size_t count){
         T[] values;
         values.reserve(count);
         foreach(size_t i; 0 .. count) values ~= this.read!T;
         return values;
+    }
+    /// Skip some number of bytes in the stream by reading them.
+    /// Returns the number of bytes skipped.
+    final size_t readskip(in size_t count){
+        ubyte[256] buffer = void;
+        size_t skipped = 0;
+        while(skipped < count){
+            immutable size_t toskip = (
+                (count - skipped < buffer.length) ? (count - skipped) : buffer.length
+            );
+            auto read = this.readbufferraw(
+                cast(void*) buffer.ptr, typeof(buffer[0]).sizeof, toskip
+            );
+            skipped += read;
+            if(read < toskip) break;
+        }
+        return skipped;
     }
 }
 /// A stream which can be written to.
@@ -121,6 +144,25 @@ interface OutputStream : Stream{
     }
     final void write(Iter)(auto ref Iter values) if(isIterable!Iter){
         foreach(value; values) this.write!(typeof(value))(value);
+    }
+    /// Skip some number of bytes in the stream by writing to them.
+    /// Returns the number of bytes skipped.
+    final size_t writeskip(in size_t count, in ubyte data = 0){
+        import core.stdc.string : memset;
+        ubyte[256] buffer = void;
+        memset(cast(void*) buffer.ptr, data, buffer.length);
+        size_t skipped = 0;
+        while(skipped < count){
+            immutable size_t toskip = (
+                (count - skipped < buffer.length) ? (count - skipped) : buffer.length
+            );
+            auto written = this.writebufferraw(
+                cast(void*) buffer.ptr, typeof(buffer[0]).sizeof, toskip
+            );
+            skipped += written;
+            if(written < toskip) break;
+        }
+        return skipped;
     }
 }
 
