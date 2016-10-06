@@ -287,6 +287,7 @@ unittest{
         });
         tests("Empty source", {
             test("".split(' ').equals([""]));
+            test("".split(" ").equals([""]));
         });
         tests("Empty delimiter", {
             testfail({"hi".split("");});
