@@ -16,7 +16,7 @@ public:
 abstract class File{
     /// Open the file at a path.
     static auto open(string path, in char[] mode = "rb"){
-        return new FileStream(path, mode);
+        return FileStream(path, mode);
     }
     
     /// Open the file at a path in read mode.
