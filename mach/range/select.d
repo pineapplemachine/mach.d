@@ -2,7 +2,8 @@ module mach.range.select;
 
 private:
 
-import mach.traits : isRange, isIterable, isElementPredicate, hasRemaining;
+import mach.traits : isIterable, isElementPredicate, hasRemaining;
+import mach.traits : isRange, isSavingRange;
 import mach.range.asrange : asrange, validAsRange;
 
 public:
@@ -126,8 +127,10 @@ struct SelectFromRange(Range, alias from, bool inclusive = true) if(
             if(!this.source.empty) this.source.popFront();
         }
     }
-    @property typeof(this) save(){
-        return typeof(this).__ctor!false(this.source.save);
+    static if(isSavingRange!Range){
+        @property typeof(this) save(){
+            return typeof(this).__ctor!false(this.source.save);
+        }
     }
 }
 
@@ -159,8 +162,10 @@ struct SelectUntilRange(Range, alias until, bool inclusive = false) if(
                 this.founduntil = until(this.source.front);
             }
         }
-        @property typeof(this) save(){
-            return typeof(this)(this.source.save, this.founduntil, this.empty);
+        static if(isSavingRange!Range){
+            @property typeof(this) save(){
+                return typeof(this)(this.source.save, this.founduntil, this.empty);
+            }
         }
     }else{
         this(Range source){
@@ -172,8 +177,10 @@ struct SelectUntilRange(Range, alias until, bool inclusive = false) if(
         @property bool empty(){
             return this.source.empty || until(this.source.front);
         }
-        @property typeof(this) save(){
-            return typeof(this)(this.source.save);
+        static if(isSavingRange!Range){
+            @property typeof(this) save(){
+                return typeof(this)(this.source.save);
+            }
         }
     }
 }
@@ -207,8 +214,10 @@ struct SelectFromUntilRange(
                 this.founduntil = until(this.source.front);
             }
         }
-        @property typeof(this) save(){
-            return typeof(this).__ctor!false(this.source.save, this.founduntil, this.empty);
+        static if(isSavingRange!Range){
+            @property typeof(this) save(){
+                return typeof(this).__ctor!false(this.source.save, this.founduntil, this.empty);
+            }
         }
     }else{
         this(bool initialize = true)(Range source) if(initialize){
@@ -224,8 +233,10 @@ struct SelectFromUntilRange(
         @property bool empty(){
             return this.source.empty || until(this.source.front);
         }
-        @property typeof(this) save(){
-            return typeof(this).__ctor!false(this.source.save);
+        static if(isSavingRange!Range){
+            @property typeof(this) save(){
+                return typeof(this).__ctor!false(this.source.save);
+            }
         }
     }
     
