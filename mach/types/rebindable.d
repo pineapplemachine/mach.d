@@ -3,16 +3,14 @@ module mach.types.rebindable;
 private:
 
 import mach.traits : Unqual;
+import mach.sys.memory : malloc, free, memcpy;
 
 public:
 
 
 
-// TODO: Maybe support increment and decrement operators
-// I'm not sure whether that's possible to do in a decent way honestly
-
-
-
+/// Determine whether a type is rebindable. That is, whether a value of this
+/// type can be rebound using the assignment operator.
 enum isRebindable(T) = is(typeof({
     T x = T.init;
     x = T.init;
@@ -20,6 +18,7 @@ enum isRebindable(T) = is(typeof({
 
 
 
+/// Given a value, get it as a rebindable type.
 auto rebindable(T)(T value){
     static if(isRebindable!T){
         return value;
@@ -32,6 +31,7 @@ auto rebindable(T)(T value){
 
 
 
+/// Given a type, get its rebindable analog.
 template Rebindable(T){
     static if(isRebindable!T){
         alias Rebindable = T;
@@ -44,41 +44,58 @@ template Rebindable(T){
 
 
 
+/// Wraps a value that would normally not be rebindable in a struct whose value
+/// can be freely rebound.
 struct RebindableType(T){
-    static enum bool canAssignTo(X) = is(typeof({this.rebind ~= value;}));
-    static enum bool isImmutableUnaryOp(string op) = is(typeof({
-        mixin(`return `~ op ~ `this.rebind[0];`);
-    }));
-    
-    T[] rebind;
+    T* rebind = null;
     
     alias value this;
     
-    this(X)(X value) if(canAssignTo!X){
-        this.value = value;
+    /// Used to verify correctness of memory allocation and deallocation.
+    version(unittest) static long alive = 0;
+    
+    this(T value) @trusted @nogc{
+        this.rebind = malloc!T;
+        version(unittest) alive++;
+        memcpy(this.rebind, &value, T.sizeof);
     }
     
-    void assertbound() const{
-        assert(this.rebind.length != 0,
-            "Rebindable type is not currently storing a value."
-        );
-        assert(this.rebind.length == 1,
-            "Something went terribly wrong; rebindable type is currently " ~
-            "storing more than one value."
-        );
+    this(this) @trusted @nogc{
+        T* newptr = malloc!T;
+        version(unittest) alive++;
+        memcpy(newptr, this.rebind, T.sizeof);
+        this.rebind = newptr;
+    }
+    ~this() @trusted @nogc{
+        free(this.rebind);
+        version(unittest) alive--;
     }
     
-    @property auto value() in{this.assertbound();} body{
-        return this.rebind[0];
+    /// The `init` property is overriden in an attempt to avoid the edge-casey
+    /// state where the rebindable type has no actual value.
+    static @property typeof(this) init(){
+        return typeof(this)(T.init);
     }
     
-    @property void value(X)(X value) if(canAssignTo!X){
-        this.rebind.length = 0;
-        this.rebind ~= value;
+    /// Throws an AssertError if the internal `rebind` pointer is null,
+    /// which should be considered an illegal state.
+    void assertbound() const @safe pure nothrow{
+        assert(this.rebind !is null, "Rebindable type has no value.");
     }
     
-    auto ref opUnary(string op)() if(isImmutableUnaryOp!op) in{this.assertbound();} body{
-        mixin(`return `~ op ~ `this.rebind[0];`);
+    /// Get the value wrapped by this rebindable type.
+    @property auto value() @safe pure nothrow in{this.assertbound();} body{
+        return *this.rebind;
+    }
+    /// Set the value wrapped by this rebindable type.
+    @property void value(T value) @trusted pure nothrow in{this.assertbound();} body{
+        memcpy(this.rebind, &value, T.sizeof);
+    }
+    
+    auto ref opUnary(string op)() if(is(typeof({
+        mixin(`return `~ op ~ `(*this.rebind);`);
+    }))) in{this.assertbound();} body{
+        mixin(`return `~ op ~ `(*this.rebind);`);
     }
     
     auto ref opBinary(string op, X)(auto ref X value) if(is(typeof({
@@ -91,7 +108,7 @@ struct RebindableType(T){
     }))){
         mixin(`return value ` ~ op ~ ` this.value;`);
     }
-    void opAssign(X)(auto ref X value) if(canAssignTo!X){
+    void opAssign(T value) @safe pure nothrow{
         this.value = value;
     }
     auto ref opOpAssign(string op, X)(auto ref X value) if(is(typeof({
@@ -104,6 +121,7 @@ struct RebindableType(T){
 
 
 version(unittest){
+    import mach.io.log;
     private:
     struct MutMember{int x;}
     struct ConstMember{
@@ -125,6 +143,7 @@ version(unittest){
         auto opIndex(in size_t i){return this.x + i;}
     }
 }
+
 unittest{
     static assert(isRebindable!int);
     static assert(isRebindable!string);
@@ -135,17 +154,25 @@ unittest{
     static assert(!isRebindable!ConstMember);
 }
 unittest{
-    static assert(is(typeof(rebindable(int(0))) == int));
-    static assert(is(typeof(rebindable(MutMember.init)) == MutMember));
+    static assert(is(Rebindable!(int) == int));
+    static assert(is(Rebindable!(MutMember) == MutMember));
+    static assert(is(Rebindable!(const(int)) == int));
+    static assert(is(Rebindable!(immutable(int)) == int));
+    static assert(is(Rebindable!(const(MutMember)) == MutMember));
 }
 unittest{
+    static assert(is(typeof(rebindable(int(0))) == int));
+    static assert(is(typeof(rebindable(MutMember.init)) == MutMember));
     static assert(is(typeof(rebindable(const(int)(0))) == int));
     static assert(is(typeof(rebindable(immutable(int)(0))) == int));
     static assert(is(typeof(rebindable(const(MutMember).init)) == MutMember));
 }
+
 unittest{
     auto x = ConstMember(0);
     static assert(!isRebindable!(typeof(x)));
+    alias T = Rebindable!ConstMember;
+    assert(T.alive == 0);
     {
         // Comparison
         auto y = rebindable(x);
@@ -156,7 +183,15 @@ unittest{
         assert(y != ConstMember(1));
         assert(y < ConstMember(1));
         assert(y > ConstMember(-1));
+        assert(T.alive == 1);
     }
+    assert(T.alive == 0);
+    {
+        // Init
+        auto y = Rebindable!ConstMember.init;
+        assert(y == ConstMember.init);
+    }
+    assert(T.alive == 0);
     {
         // OpUnary
         auto y = rebindable(x);
@@ -171,6 +206,7 @@ unittest{
         y++;
         assert(z < y);
     }
+    assert(T.alive == 0);
     {
         // OpBinary
         auto y = rebindable(x);
@@ -178,6 +214,7 @@ unittest{
         assert(x + y == x);
         assert(y + ConstMember(1) == rebindable(ConstMember(1)));
     }
+    assert(T.alive == 0);
     {
         // Assign
         auto y = rebindable(x);
@@ -186,16 +223,20 @@ unittest{
         assert(y == ConstMember(1));
         y = ConstMember(100);
         assert(y == ConstMember(100));
+        y = y;
+        assert(y == ConstMember(100));
         // OpAssign
         y += ConstMember(1);
         assert(y == ConstMember(101));
         y *= ConstMember(2);
         assert(y == ConstMember(202));
     }
+    assert(T.alive == 0);
     {
         // OpIndex
         auto y = rebindable(x);
         assert(y[0] == x[0]);
         assert(y[100] == x[100]);
     }
+    assert(T.alive == 0);
 }
