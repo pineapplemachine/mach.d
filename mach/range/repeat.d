@@ -2,12 +2,14 @@ module mach.range.repeat;
 
 private:
 
+import mach.types : Rebindable;
 import mach.traits : isIterable, isFiniteIterable, isInfiniteIterable;
 import mach.traits : isFiniteRange, isRandomAccessRange, isSavingRange;
-import mach.traits : hasNumericLength;
+import mach.traits : isBidirectionalRange, hasNumericLength;
 import mach.range.asrange : asrange, validAsRange;
 import mach.range.asrange : validAsRandomAccessRange, validAsSavingRange;
 import mach.range.rangeof : infrangeof, finiterangeof;
+import mach.error : enforcebounds;
 
 public:
 
@@ -111,115 +113,6 @@ auto repeatelement(Element)(auto ref Element element, size_t count){
 
 
 
-private template RepeatSavingRangeMixin(Range, string popfrontstr){
-    Range* source;
-    Range original;
-    
-    import core.stdc.stdlib : malloc, free;
-    import core.stdc.string : memcpy;
-    
-    @nogc void repeat(in Range from){ // TODO: Is there a better way to do this?
-        if(this.source) free(cast(void*) this.source);
-        this.source = cast(Range*) malloc(Range.sizeof);
-        assert(this.source !is null, "Failed to allocate memory.");
-        memcpy(cast(void*) this.source, &from, Range.sizeof);
-    }
-    
-    this(this){
-        auto from = *this.source;
-        this.source = null;
-        this.repeat(from);
-    }
-    ~this(){
-        if(this.source){
-            free(this.source);
-            this.source = null;
-        }
-    }
-    
-    @property auto ref front(){
-        return this.source.front;
-    }
-    void popFront(){
-        mixin(popfrontstr);
-    }
-    
-    static if(isRandomAccessRange!Range && hasNumericLength!Range){
-        auto opIndex(size_t index){
-            return (*this.source)[index % this.source.length];
-        }
-    }
-    
-    @property auto ref save(){
-        return typeof(this)(this);
-    }
-}
-
-private template RepeatRandomAccessRangeMixin(Range){
-    Range source;
-    size_t frontindex;
-    size_t backindex;
-    
-    alias index = frontindex;
-    
-    @property auto ref front(){
-        return this.source[this.frontindex];
-    }
-    @property auto ref back(){
-        return this.source[this.backindex - 1];
-    }
-    
-    auto opIndex(in size_t index) in{
-        assert(index >= 0);
-        static if(hasNumericLength!(typeof(this))){
-            assert(index < this.length);
-        }
-    }body{
-        return this.source[index % this.source.length];
-    }
-    
-    // TODO: Slice
-    
-    @property auto ref save(){
-        return typeof(this)(this);
-    }
-}
-
-private template RepeatElementRangeMixin(Element){
-    Element element;
-    
-    @property auto ref front() const{
-        return this.element;
-    }
-    @property auto ref back() const{
-        return this.element;
-    }
-    
-    auto opIndex(in size_t index) in{
-        assert(index >= 0);
-        static if(hasNumericLength!(typeof(this))){
-            assert(index < this.length);
-        }
-    }body{
-        return this.element;
-    }
-    
-    auto opSlice(in size_t low, in size_t high) in{
-        assert((low >= 0) & (high >= low));
-        static if(hasNumericLength!(typeof(this))){
-            assert(high < this.length);
-        }
-    }body{
-        return FiniteRepeatElementRange!(Element)(this.element, high - low);
-    }
-    
-    @property auto ref save(){
-        return typeof(this)(this);
-    }
-}
-
-
-
 /// Repeat a range with random access infinitely
 struct InfiniteRepeatRandomAccessRange(Range) if(
     canRepeatRandomAccessRange!Range
@@ -278,14 +171,14 @@ struct InfiniteRepeatRandomAccessRange(Range) if(
 struct FiniteRepeatRandomAccessRange(Range) if(
     canRepeatRandomAccessRange!Range
 ){
-    mixin RepeatRandomAccessRangeMixin!(Range);
-    
+    Range source;
     size_t limit; // Number of times the source range is repeated
     size_t count; // Number of times the source range has been fully consumed
+    size_t frontindex;
+    size_t backindex;
     
-    this(typeof(this) range){
-        this(range.source, range.limit, range.count, range.frontindex, range.backindex);
-    }
+    // TODO: Slicing
+    
     this(Range source, size_t limit, size_t frontindex = 0){
         this(source, limit, 0, frontindex, cast(size_t) source.length);
     }
@@ -297,27 +190,47 @@ struct FiniteRepeatRandomAccessRange(Range) if(
         this.backindex = backindex;
     }
     
-    @property bool empty(){
+    @property bool empty() const{
         return this.count >= (this.limit - (this.frontindex >= this.backindex));
     }
-    
-    @property auto length(){
+    @property auto length() const{
         return this.source.length * this.limit;
     }
     
-    void popFront(){
+    @property auto ref front() in{assert(!this.empty);} body{
+        return this.source[this.frontindex];
+    }
+    void popFront() in{assert(!this.empty);} body{
         this.frontindex++;
         if(this.frontindex >= this.source.length){
             this.count++;
             this.frontindex = 0;
         }
     }
-    void popBack(){
+    
+    @property auto ref back() in{assert(!this.empty);} body{
+        return this.source[this.backindex - 1];
+    }
+    void popBack() in{assert(!this.empty);} body{
         this.backindex--;
         if(this.backindex == 0){
             this.count++;
             this.backindex = cast(size_t) this.source.length;
         }
+    }
+    
+    auto opIndex(in size_t index) in{
+        static if(hasNumericLength!(typeof(this))) enforcebounds(index, this);
+        else assert(index >= 0);
+    }body{
+        return this.source[cast(size_t)(index % this.source.length)];
+    }
+    
+    @property auto ref save(){
+        return typeof(this)(
+            this.source, this.limit, this.count,
+            this.frontindex, this.backindex
+        );
     }
 }
 
@@ -325,60 +238,100 @@ struct FiniteRepeatRandomAccessRange(Range) if(
 
 /// Repeat a range with saving infinitely
 struct InfiniteRepeatSavingRange(Range) if(canRepeatSavingRange!Range){
-    mixin RepeatSavingRangeMixin!(
-        Range, `
-            this.source.popFront();
-            if(this.source.empty) this.repeat(this.original.save);
-        `
-    );
+    static enum bool isBidirectional = isBidirectionalRange!Range;
     
-    this(typeof(this) range){
-        this.original = range.original;
-        this.repeat(*range.source);
-    }
+    Range source;
+    Rebindable!Range forward = void;
+    static if(isBidirectional) Rebindable!Range backward = void;
+    
     this(Range source){
-        this.original = source;
-        this.repeat(source.save);
+        this.source = source;
+        this.forward = this.source.save;
+        static if(isBidirectional) this.backward = this.source.save;
+    }
+    static if(!isBidirectional){
+        this(Range source, Rebindable!Range forward){
+            this.source = source;
+            this.forward = forward;
+        }
+    }else{
+        this(Range source, Rebindable!Range forward, Rebindable!Range backward){
+            this.source = source;
+            this.forward = forward;
+            this.backward = backward;
+        }
     }
     
-    enum bool empty = false;
+    static enum bool empty = false;
+    
+    @property auto ref front(){
+        return this.forward.front;
+    }
+    void popFront(){
+        this.forward.popFront();
+        if(this.forward.empty) this.forward = this.source.save;
+    }
+    
+    static if(isBidirectional){
+        @property auto ref back(){
+            return this.backward.back;
+        }
+        void popBack(){
+            this.backward.popBack();
+            if(this.backward.empty) this.backward = this.source.save;
+        }
+    }
+    
+    static if(isRandomAccessRange!Range && hasNumericLength!Range){
+        auto opIndex(in size_t index){
+            return this.source[cast(size_t)(index % this.source.length)];
+        }
+    }
+    
+    @property typeof(this) save(){
+        static if(!isBidirectional){
+            return typeof(this)(this.source, this.forward.save);
+        }else{
+            return typeof(this)(this.source, this.forward.save, this.backward.save);
+        }
+    }
 }
 
 /// Repeat a range with saving a given number of times
 struct FiniteRepeatSavingRange(Range) if(
     canRepeatSavingRange!Range
 ){
-    mixin RepeatSavingRangeMixin!(
-        Range, `
-            this.source.popFront();
-            if(this.source.empty){
-                this.repeat(this.original.save);
-                this.count++;
-            }
-        `
-    );
+    Range source;
+    Rebindable!Range forward = void;
     
     size_t count; /// Cycle iteration is currently on
     size_t limit; /// Maximum number of cycles before emptiness
     
-    this(typeof(this) range){
-        this.count = range.count;
-        this.limit = range.limit;
-        this.original = range.original;
-        this.repeat(*range.source);
-    }
+    // TODO: Bidirectionality
+    
     this(Range source, size_t limit){
         this(source, 0, limit);
     }
     this(Range source, size_t count, size_t limit){
         this.count = count;
         this.limit = limit;
-        this.original = source;
-        this.repeat(source.save);
+        this.source = source;
+        this.forward = this.source.save;
     }
     
-    @property bool empty(){
+    @property bool empty() const{
         return this.count >= this.limit;
+    }
+    
+    @property auto ref front() in{assert(!this.empty);} body{
+        return this.forward.front;
+    }
+    void popFront() in{assert(!this.empty);} body{
+        this.forward.popFront();
+        if(this.forward.empty){
+            this.forward = this.source.save;
+            this.count++;
+        }
     }
     
     static if(hasNumericLength!Range){
@@ -386,6 +339,14 @@ struct FiniteRepeatSavingRange(Range) if(
             return this.source.length * limit;
         }
         alias opDollar = length;
+    }
+    
+    static if(isRandomAccessRange!Range && hasNumericLength!Range){
+        auto opIndex(in size_t index) in{
+            enforcebounds(index, this);
+        }body{
+            return this.source[cast(size_t)(index % this.source.length)];
+        }
     }
 }
 
