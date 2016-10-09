@@ -17,7 +17,7 @@ struct StdInStream{
     size_t writebufferv(void* buffer, size_t size, size_t count){
         return fwrite(buffer, size, count, this.target);
     }
-    @property bool eof() in{assert(this.active);} body{
+    @property bool eof(){
         return cast(bool) feof(this.target);
     }
 }
@@ -65,9 +65,8 @@ Defines exceptions for failed stream operations.
 
 The only IO methods streams need to implement are `readbufferv` in the case of
 input streams and `writebufferv` in the case of output streams, which accept
-a `void*` pointer, a unit size, and a unit count. This module defines the sorts
-of abstractions you might need to work with these methods in a less messy
-capacity.
+a `void*` pointer, a unit size, and a unit count. This module defines cleaner
+abstractions on top of those methods.
 
 #### mach.io.stream.templates
 
