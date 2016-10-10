@@ -239,4 +239,11 @@ unittest{
         assert(y[100] == x[100]);
     }
     assert(T.alive == 0);
+    {
+        // OpCast
+        auto y = rebindable(x);
+        static assert(is(typeof(cast(ConstMember) y) == ConstMember));
+        assert(cast(ConstMember) y == x);
+    }
+    assert(T.alive == 0);
 }
