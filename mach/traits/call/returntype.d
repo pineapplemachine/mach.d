@@ -9,8 +9,8 @@ public:
 
 
 /// Get the return type of some callable type.
-template ReturnType(Tx...) if(Tx.length == 1 && isCallable!(Tx[0])){
-    static if(is(CallableType!(Tx[0]) R == return)){
+template ReturnType(T...) if(T.length == 1 && isCallable!T){
+    static if(is(CallableType!T R == return)){
         alias ReturnType = R;
     }else{
         static assert(false, "Unable to get return type.");
@@ -19,17 +19,25 @@ template ReturnType(Tx...) if(Tx.length == 1 && isCallable!(Tx[0])){
 
 
 
-/// Determine whether some callable type returns a value of the given type.
-template Returns(alias T, Ret){
-    enum bool Returns = Returns!(CallableType!T, Ret);
-}
-/// ditto
-template Returns(T, Ret){
-    static if(isCallable!(CallableType!T)){
-        enum bool Returns = is(ReturnType!(CallableType!T) == Ret);
+/// Determine whether some callable returns a value implicitly convertible
+/// to the given type.
+/// Except for `void`, where the template evaluates to true only if the function
+/// has no return value.
+template Returns(R, T...){
+    static if(is(R == void)){
+        enum bool Returns = is(ReturnType!T == void);
     }else{
-        enum bool Returns = false;
+        enum bool Returns = is(typeof({
+            ReturnType!T x; auto y = x;
+        }));
     }
+}
+
+
+
+/// Determine whether some callable returns a value of the given type.
+template ReturnsExactly(R, T...){
+    enum bool ReturnsExactly = is(ReturnType!T == R);
 }
 
 
@@ -56,9 +64,24 @@ unittest{
 unittest{
     void fn1(){}
     int fn2(){return 0;}
-    static assert(Returns!(fn1, void));
-    static assert(Returns!(typeof(fn1), void));
-    static assert(Returns!(fn2, int));
-    static assert(!Returns!(fn1, int));
-    static assert(!Returns!(int, int));
+    {
+        static assert(ReturnsExactly!(void, fn1));
+        static assert(ReturnsExactly!(void, typeof(fn1)));
+        static assert(ReturnsExactly!(int, fn2));
+        static assert(ReturnsExactly!(string, {return "";}));
+        static assert(!ReturnsExactly!(int, fn1));
+        static assert(!ReturnsExactly!(int, int));
+    }{
+        static assert(Returns!(void, fn1));
+        static assert(Returns!(void, typeof(fn1)));
+        static assert(Returns!(int, fn2));
+        static assert(Returns!(string, {return "";}));
+        static assert(!Returns!(int, fn1));
+        static assert(!Returns!(int, int));
+    }{
+        static assert(!ReturnsExactly!(long, fn2));
+        static assert(!ReturnsExactly!(const int, fn2));
+        static assert(Returns!(long, fn2));
+        static assert(Returns!(const int, fn2));
+    }
 }
