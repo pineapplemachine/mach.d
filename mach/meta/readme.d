@@ -152,12 +152,34 @@ unittest{
 
 /++ md
 
-## mach.meta.partial
+## mach.meta.predicates
+
+Apply logical operations to predicate functions.
 
 +/
 
 unittest{
-    // TODO: Document
+    alias pred = (x) => (x == 0);
+    assert(pred(0));
+    assert(!pred(1));
+    assert(NegatePredicate!pred(1));
+    assert(!NegatePredicate!pred(0));
+}
+
+unittest{
+    alias a = (x) => (x != 1);
+    alias b = (x) => (x != 2);
+    assert(AndPredicates!(a, b)(0));
+    assert(!AndPredicates!(a, b)(1));
+    assert(!AndPredicates!(a, b)(2));
+}
+
+unittest{
+    alias a = (x) => (x == 1);
+    alias b = (x) => (x == 2);
+    assert(OrPredicates!(a, b)(1));
+    assert(OrPredicates!(a, b)(2));
+    assert(!OrPredicates!(a, b)(3));
 }
 
 /++ md
