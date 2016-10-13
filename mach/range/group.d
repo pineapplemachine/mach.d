@@ -4,7 +4,7 @@ private:
 
 import mach.types : Tuple, tuple;
 import mach.traits : ElementType, isElementPredicate, isFiniteIterable;
-import mach.meta : All, Partial, Repeat;
+import mach.meta : All, Repeat;
 
 public:
 
