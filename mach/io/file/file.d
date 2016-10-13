@@ -3,7 +3,7 @@ module mach.io.file.file;
 private:
 
 import mach.traits : isIterable;
-import mach.io.stream : FileStream, asrange;
+import mach.io.stream : FileStream, write, asrange;
 import mach.io.file.exceptions;
 import mach.io.file.stat;
 import mach.io.file.sys;
