@@ -109,7 +109,7 @@ version(unittest){
     enum string TestPath = __FILE__.dirName ~ "/filestream.txt";
 }
 unittest{
-    tests("FileStream", {
+    tests("File stream", {
         static assert(isIOStream!FileStream);
         tests("Read", {
             auto stream = FileStream(TestPath, "rb");
