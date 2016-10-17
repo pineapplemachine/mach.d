@@ -10,7 +10,7 @@ import core.stdc.string : cmemmove = memmove;
 
 static immutable OOMError = new OutOfMemoryError();
 
-@trusted @nogc nothrow public:
+@nogc nothrow public:
 
 
 
