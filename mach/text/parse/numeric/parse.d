@@ -4,7 +4,7 @@ private:
 
 //import std.bitmanip : FloatRep, DoubleRep; // TODO: Use this
 import mach.traits : Unqual, isNumeric, isFloatingPoint;
-import mach.traits : isStringRange;
+import mach.traits : validAsStringRange;
 import mach.range : asrange;
 import mach.text.parse.numeric.exceptions;
 import mach.text.parse.numeric.settings;
@@ -18,7 +18,7 @@ public:
 /// Does not check for under/overflow.
 auto parseintegral(
     NumberParseSettings settings = NumberParseSettings.Default, T = long, S
-)(auto ref S str) if(isNumeric!T && isStringRange!S){
+)(auto ref S str) if(isNumeric!T && validAsStringRange!S){
     auto range = str.asrange;
     NumberParseException.enforceempty(!range.empty);
     bool negate = false;
@@ -47,7 +47,7 @@ auto parseintegral(
 /// integral, fraction, or exponent values.
 auto parsefloat(
     NumberParseSettings settings = NumberParseSettings.Default, T = double, S
-)(auto ref S str) if(isFloatingPoint!T && isStringRange!S){
+)(auto ref S str) if(isFloatingPoint!T && validAsStringRange!S){
     auto range = str.asrange;
     NumberParseException.enforceempty(!range.empty);
     // Determine sign
