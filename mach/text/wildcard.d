@@ -59,14 +59,14 @@ class WildMatcher{
             }
         }
         
-        static const string matchlazy = q{
+        static enum string matchlazy = `
             if(++y >= pattern.length) return true;
             while((x < text.length) & (y < pattern.length)){
                 if(matchchar() > 0) break;
                 x++;
             }
-        };
-        static const string matchgreedy = q{
+        `;
+        static enum string matchgreedy = `
             if(++y >= pattern.length) return true;
             while((x < text.length) & (y < pattern.length)){
                 if(matchchar() > 0 && this.match(pattern, text, x, y, casesensitive)){
@@ -75,7 +75,7 @@ class WildMatcher{
                     x++;
                 }
             }
-        };
+        `;
         
         while(true){
             if(y >= pattern.length){
@@ -114,7 +114,10 @@ class WildMatcher{
 
 
 
-version(unittest) import mach.error.unit;
+version(unittest){
+    private:
+    import mach.test;
+}
 unittest{
     tests("Wildcards", {
         WildMatcher wild = new WildMatcher();
