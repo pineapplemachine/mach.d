@@ -5,6 +5,7 @@ private:
 import mach.traits.element : ElementType, hasElementType;
 import mach.traits.index : canIndex, IndexType;
 import mach.traits.iter : isIterable;
+import mach.traits.range : isRange;
 import mach.traits.qualifiers : Unqual, isUnqual;
 
 public:
@@ -62,16 +63,29 @@ template isDStringLike(T...) if(T.length == 1){
 
 
 /// Get whether a type is an iterable valid as a range of chars, dchars, or wchars.
-template isStringRange(T...) if(T.length == 1){
+template validAsStringRange(T...) if(T.length == 1){
     import mach.range.asrange : validAsRange;
-    enum bool isStringRange = isString!T && validAsRange!T;
+    enum bool validAsStringRange = isString!T && validAsRange!T;
+}
+
+/// Get whether a type is an iterable valid as a range of elements valid as
+/// chars, dchars, or wchars.
+template validAsStringRangeLike(T...) if(T.length == 1){
+    import mach.range.asrange : validAsRange;
+    enum bool validAsStringRangeLike = isStringLike!T && validAsRange!T;
+}
+
+
+
+/// Get whether a type is an iterable valid as a range of chars, dchars, or wchars.
+template isStringRange(T...) if(T.length == 1){
+    enum bool isStringRange = isString!T && isRange!T;
 }
 
 /// Get whether a type is an iterable valid as a range of elements valid as
 /// chars, dchars, or wchars.
 template isStringRangeLike(T...) if(T.length == 1){
-    import mach.range.asrange : validAsRange;
-    enum bool isStringRange = isStringLike!T && validAsRange!T;
+    enum bool isStringRange = isStringLike!T && isRange!T;
 }
 
 
