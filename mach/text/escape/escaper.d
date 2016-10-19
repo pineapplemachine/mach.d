@@ -22,6 +22,15 @@ struct Escaper{
     struct Pair{
         dchar original;
         char escaped;
+        
+        this(char escaped){
+            this(escaped, escaped);
+        }
+        this(dchar original, char escaped){
+            this.original = original;
+            this.escaped = escaped;
+        }
+        
         @property auto astuple(){
             return tuple(this.original, this.escaped);
         }
@@ -79,15 +88,15 @@ struct Escaper{
         nameescmulti: false,
         unprintable: true,
         pairs: [
-            Pair('\'', '\''),
-            Pair('"', '"'),
-            Pair('?', '?'),
+            Pair('\''),
+            Pair('"'),
+            Pair('?'),
             Pair(dchar(0x00), '0'), // Null
             Pair(dchar(0x08), 'b'), // Backspace
             Pair(dchar(0x0C), 'f'), // Form feed
             Pair(dchar(0x0A), 'n'), // Newline
             Pair(dchar(0x0D), 'r'), // Carriage return
-            Pair(dchar(0x09), 't'), // Tab
+            Pair(dchar(0x09), 't'), // Horizontal tab
             Pair(dchar(0x0B), 'v'), // Vertical tab
             Pair(dchar(0x07), 'a')  // Alarm
         ]
