@@ -91,9 +91,16 @@ auto utf8decode(Iter)(auto ref Iter iter) if(isUTFDecoded!Iter || canUTFDecode!I
 /// Iterates over UTF code points as indicated by the contents of a range with
 /// char or ubyte elements.
 struct UTFDecodeRange(Range, CodePoint = dchar) if(canUTFDecodeRange!Range){
+    /// The string being decoded.
     Range source;
+    /// The current code point.
     CodePoint point = void;
+    /// Whether the range has been fully exhausted.
     bool isempty = false;
+    /// Represents the low index of the most recently outputted code point.
+    size_t lowindex = 0;
+    /// Represents the high index of the most recently outputted code point.
+    size_t highindex = 0;
     
     this(Range source){
         this.source = source;
@@ -106,6 +113,16 @@ struct UTFDecodeRange(Range, CodePoint = dchar) if(canUTFDecodeRange!Range){
         this.isempty = isempty;
     }
     
+    /// Get the index of the current code point in the string being decoded.
+    @property auto pointindex() const in{assert(!this.empty);} body{
+        return this.lowindex;
+    }
+    /// Get the length in elements (typically bytes) of the current code point
+    /// in the string being decoded.
+    @property auto pointlength() const in{assert(!this.empty);} body{
+        return this.highindex - this.lowindex;
+    }
+    
     @property bool empty() const{
         return this.isempty;
     }
@@ -113,6 +130,7 @@ struct UTFDecodeRange(Range, CodePoint = dchar) if(canUTFDecodeRange!Range){
         return this.point;
     }
     void popFront() in{assert(!this.empty);} body{
+        this.lowindex = this.highindex;
         if(this.source.empty){
             this.isempty = true;
         }else{
@@ -120,11 +138,13 @@ struct UTFDecodeRange(Range, CodePoint = dchar) if(canUTFDecodeRange!Range){
                 UTFDecodeException.enforceeof(!this.source.empty);
                 auto ch = this.source.front;
                 this.source.popFront();
+                this.highindex++;
                 UTFDecodeException.enforcecont((ch & 0xc0) == 0x80);
                 return ch & 0x3f;
             }
             char ch0 = this.source.front;
             this.source.popFront();
+            this.highindex++;
             if((ch0 & 0x80) == 0){
                 this.point = ch0;
             }else if((ch0 & 0xe0) == 0xc0){
@@ -230,6 +250,27 @@ unittest{
             testis(dstr.utf8decode, dstr);
             auto wstr = "test"w;
             testis(wstr.utf8decode, wstr);
+        });
+        tests("Index", {
+            auto str = "!\xD7\x90\xE3\x83\x84\xF0\x9F\x98\x83";
+            auto utf = str.utf8decode;
+            testeq(utf.pointindex, 0);
+            testeq(utf.pointlength, 1);
+            utf.popFront();
+            testeq(utf.pointindex, 1);
+            testeq(utf.pointlength, 2);
+            utf.popFront();
+            testeq(utf.pointindex, 3);
+            testeq(utf.pointlength, 3);
+            utf.popFront();
+            testeq(utf.pointindex, 6);
+            testeq(utf.pointlength, 4);
+            utf.popFront();
+            test(utf.empty());
+            testfail({utf.front;});
+            testfail({utf.popFront;});
+            testfail({utf.pointindex;});
+            testfail({utf.pointlength;});
         });
     });
 }
