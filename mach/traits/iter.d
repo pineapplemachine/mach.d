@@ -14,8 +14,6 @@ public:
 /// Determine whether some type can be iterated over using foreach.
 /// Will not evaluate true for types such as tuples where all elements may
 /// not be of the same type.
-enum bool isIterable(alias T) = isIterable!(typeof(T));
-/// ditto
 enum bool isIterable(T) = (
     is(typeof({
         // Must be iterable via foreach
@@ -38,8 +36,6 @@ enum bool isIterable(T) = (
 /// Determine whether some type can be iterated over using foreach_reverse.
 /// Will not evaluate true for types such as tuples where all elements may
 /// not be of the same type.
-enum bool isIterableReverse(alias T) = isIterableReverse!(typeof(T));
-/// ditto
 enum bool isIterableReverse(T) = (
     is(typeof({
         // Must be iterable via foreach_reverse
@@ -64,8 +60,6 @@ enum bool isIterableReverse(T) = (
 /// Determine whether some type can be iterated over using foreach.
 /// Will also evaluate true for types such as tuples where all elements may
 /// not be of the same type.
-enum bool isAnyIterable(alias T) = isIterable!(typeof(T));
-/// ditto
 enum bool isAnyIterable(T) = is(typeof({
     foreach(elem; T.init){}
 }));
@@ -73,8 +67,6 @@ enum bool isAnyIterable(T) = is(typeof({
 /// Determine whether some type can be iterated over using foreach_reverse.
 /// Will also evaluate true for types such as tuples where all elements may
 /// not be of the same type.
-enum bool isAnyIterableReverse(alias T) = isIterableReverse!(typeof(T));
-/// ditto
 enum bool isAnyIterableReverse(T) = is(typeof({
     foreach_reverse(elem; T.init){}
 }));
@@ -82,8 +74,6 @@ enum bool isAnyIterableReverse(T) = is(typeof({
 
 
 /// Determine whether a type is an iterable which supports random access.
-enum bool isRandomAccessIterable(alias T) = isRandomAccessIterable!(typeof(T));
-/// ditto
 template isRandomAccessIterable(T){
     enum bool isRandomAccessIterable = isIterable!T && is(typeof({
         auto element = T.init[0];
@@ -94,16 +84,12 @@ template isRandomAccessIterable(T){
 
 
 /// Determine whether some type is an iterable of elements of the given type.
-enum bool isIterableOf(alias T, Element) = isIterableOf!(typeof(T), Element);
-/// ditto
 template isIterableOf(T, Element){
     enum bool isIterableOf = isIterable!T && hasElementType!(Element, T);
 }
 
 /// Determine whether some type is an iterable of elements whose type matches
 /// the given predicate template.
-enum bool isIterableOf(alias T, alias pred) = isIterableOf!(typeof(T), pred);
-/// ditto
 template isIterableOf(T, alias pred){
     enum bool isIterableOf = isIterable!T && hasElementType!(pred, T);
 }
@@ -112,10 +98,6 @@ template isIterableOf(T, alias pred){
 
 /// This logic is meaningless when not combined with something like isIterable 
 /// or isRange. If an `empty` enum is present, then its boolean value is used.
-template isFinite(alias T){
-    enum bool isFinite = isFinite!(typeof(T));
-}
-/// ditto
 template isFinite(T){
     static if(isIterable!T){
         import mach.traits.range : isRange, hasEmptyEnum; // TODO: Better organization
@@ -134,23 +116,23 @@ template isFinite(T){
     }
 }
 
-template isInfinite(Tx...) if(Tx.length == 1){
-    enum bool isInfinite = !isFinite!(Tx[0]);
+template isInfinite(T){
+    enum bool isInfinite = !isFinite!T;
 }
 
 
 
-template isFiniteIterable(Tx...) if(Tx.length == 1){
-    enum bool isFiniteIterable = isIterable!(Tx[0]) && isFinite!(Tx[0]);
+template isFiniteIterable(T){
+    enum bool isFiniteIterable = isIterable!T && isFinite!T;
 }
-template isInfiniteIterable(Tx...) if(Tx.length == 1){
-    enum bool isInfiniteIterable = isIterable!(Tx[0]) && isInfinite!(Tx[0]);
+template isInfiniteIterable(T){
+    enum bool isInfiniteIterable = isIterable!T && isInfinite!T;
 }
-template isFiniteIterableReverse(Tx...) if(Tx.length == 1){
-    enum bool isFiniteIterableReverse = isIterableReverse!(Tx[0]) && isFinite!(Tx[0]);
+template isFiniteIterableReverse(T){
+    enum bool isFiniteIterableReverse = isIterableReverse!T && isFinite!T;
 }
-template isInfiniteIterableReverse(Tx...) if(Tx.length == 1){
-    enum bool isInfiniteIterableReverse = isIterableReverse!(Tx[0]) && isInfinite!(Tx[0]);
+template isInfiniteIterableReverse(T){
+    enum bool isInfiniteIterableReverse = isIterableReverse!T && isInfinite!T;
 }
 
 
@@ -168,8 +150,6 @@ unittest{
         @property int front(){return 0;} void popFront(){}
         @property int back(){return 0;} void popBack(){}
     }
-    string str; int i;
-    static assert(isIterable!str);
     static assert(isIterable!string);
     static assert(isIterable!(int[]));
     static assert(isIterable!(immutable(int[])));
@@ -177,18 +157,15 @@ unittest{
     static assert(isIterable!OpApplyBoth);
     static assert(isIterable!Range);
     static assert(isIterable!BiRange);
-    static assert(isIterableReverse!str);
     static assert(isIterableReverse!string);
     static assert(isIterableReverse!(int[]));
     static assert(isIterableReverse!(immutable(int[])));
     static assert(isIterableReverse!OpApplyRev);
     static assert(isIterableReverse!OpApplyBoth);
     static assert(isIterableReverse!BiRange);
-    static assert(!isIterable!i);
     static assert(!isIterable!int);
     static assert(!isIterable!void);
     static assert(!isIterable!OpApplyRev);
-    static assert(!isIterableReverse!i);
     static assert(!isIterableReverse!int);
     static assert(!isIterableReverse!void);
     static assert(!isIterableReverse!OpApply);
@@ -218,14 +195,10 @@ unittest{
         enum bool empty = false; @property int front(){return 0;} void popFront(){}
         int opIndex(size_t){return 0;}
     }
-    string str;
-    int i;
-    static assert(isRandomAccessIterable!str);
     static assert(isRandomAccessIterable!string);
     static assert(isRandomAccessIterable!(int[]));
     static assert(isRandomAccessIterable!(immutable(int[])));
     static assert(isRandomAccessIterable!RandomRange);
-    static assert(!isRandomAccessIterable!i);
     static assert(!isRandomAccessIterable!int);
     static assert(!isRandomAccessIterable!void);
     static assert(!isRandomAccessIterable!Range);
@@ -241,9 +214,7 @@ unittest{
     struct FiniteRange{
         @property bool empty(){return true;}; @property int front(){return 0;} void popFront(){}
     }
-    string str;
     // isFiniteIterable
-    static assert(isFiniteIterable!str);
     static assert(isFiniteIterable!string);
     static assert(isFiniteIterable!(int[]));
     static assert(isFiniteIterable!(immutable(int[])));
@@ -254,7 +225,6 @@ unittest{
     static assert(!isFiniteIterable!InfRange);
     // isInfiniteIterable
     static assert(isInfiniteIterable!InfRange);
-    static assert(!isInfiniteIterable!str);
     static assert(!isInfiniteIterable!string);
     static assert(!isInfiniteIterable!(int[]));
     static assert(!isInfiniteIterable!(immutable(int[])));
@@ -270,10 +240,8 @@ unittest{
         @property char front(){return 'x';}
         void popFront(){}
     }
-    static assert(isIterableOf!(new int[2], int));
     static assert(isIterableOf!(int[], int));
     static assert(isIterableOf!(int[4], int));
-    static assert(isIterableOf!("hi", immutable char));
     static assert(isIterableOf!(const(int)[], const int));
     static assert(isIterableOf!(CharRange, char));
 }

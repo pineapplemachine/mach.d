@@ -228,7 +228,7 @@ unittest{
         });
         tests("Infinite singular", {
             auto range = infrangeof!int(0);
-            static assert(isInfiniteIterable!range);
+            static assert(isInfiniteIterable!(typeof(range)));
             testf(range.empty);
             testeq(range[0], 0);
             testeq(range[size_t.max], 0);

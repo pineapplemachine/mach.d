@@ -13,26 +13,20 @@ public:
 
 
 /// Get whether a type is an iterable of chars, dchars, or wchars.
-template isString(T...) if(T.length == 1){
+template isString(T){
     enum bool isString = isCharString!T || isWString!T || isDString!T;
 }
 /// Get whether a type is an iterable of chars.
-enum isCharString(alias T) = isCharString!(typeof(T));
-/// ditto
 template isCharString(T){
     static if(isIterable!T) enum bool isCharString = isUnqual!(ElementType!T, char);
     else enum bool isCharString = false;
 }
 /// Get whether a type is an iterable of wchars.
-enum isWString(alias T) = isWString!(typeof(T));
-/// ditto
 template isWString(T){
     static if(isIterable!T) enum bool isWString = isUnqual!(ElementType!T, wchar);
     else enum bool isWString = false;
 }
 /// Get whether a type is an iterable of dchars.
-enum isDString(alias T) = isDString!(typeof(T));
-/// ditto
 template isDString(T){
     static if(isIterable!T) enum bool isDString = isUnqual!(ElementType!T, dchar);
     else enum bool isDString = false;
@@ -42,35 +36,35 @@ template isDString(T){
 
 /// Get whether a type an iterable with element implicitly convertible to
 /// chars, wchars, or dchars.
-template isStringLike(T...) if(T.length == 1){
+template isStringLike(T){
     enum bool isStringLike = isCharStringLike!T || isWStringLike!T || isDStringLike!T;
 }
 /// Get whether a type an iterable with element implicitly convertible to chars.
-template isCharStringLike(T...) if(T.length == 1){
+template isCharStringLike(T){
     enum bool isCharStringLike = isIterable!T && hasElementType!(char, T);
 }
 /// Get whether a type an iterable with element implicitly convertible to wchars.
 /// Note that an iterable of chars is also valid as an iterable of wchars.
-template isWStringLike(T...) if(T.length == 1){
+template isWStringLike(T){
     enum bool isWStringLike = isIterable!T && hasElementType!(wchar, T);
 }
 /// Get whether a type an iterable with element implicitly convertible to dchars.
 /// Note that an iterable of chars or wchars is also valid as an iterable of dchars.
-template isDStringLike(T...) if(T.length == 1){
+template isDStringLike(T){
     enum bool isDStringLike = isIterable!T && hasElementType!(dchar, T);
 }
 
 
 
 /// Get whether a type is an iterable valid as a range of chars, dchars, or wchars.
-template validAsStringRange(T...) if(T.length == 1){
+template validAsStringRange(T){
     import mach.range.asrange : validAsRange;
     enum bool validAsStringRange = isString!T && validAsRange!T;
 }
 
 /// Get whether a type is an iterable valid as a range of elements valid as
 /// chars, dchars, or wchars.
-template validAsStringRangeLike(T...) if(T.length == 1){
+template validAsStringRangeLike(T){
     import mach.range.asrange : validAsRange;
     enum bool validAsStringRangeLike = isStringLike!T && validAsRange!T;
 }
@@ -78,13 +72,13 @@ template validAsStringRangeLike(T...) if(T.length == 1){
 
 
 /// Get whether a type is an iterable valid as a range of chars, dchars, or wchars.
-template isStringRange(T...) if(T.length == 1){
+template isStringRange(T){
     enum bool isStringRange = isString!T && isRange!T;
 }
 
 /// Get whether a type is an iterable valid as a range of elements valid as
 /// chars, dchars, or wchars.
-template isStringRangeLike(T...) if(T.length == 1){
+template isStringRangeLike(T){
     enum bool isStringRange = isStringLike!T && isRange!T;
 }
 
@@ -92,27 +86,27 @@ template isStringRangeLike(T...) if(T.length == 1){
 
 /// Get whether a type is a random-access iterable of chars, dchars, or
 /// wchars.
-template isRandomAccessString(T...) if(T.length == 1){
+template isRandomAccessString(T){
     enum bool isRandomAccessString = (
-        isString!T && canIndex!(T[0], size_t)
+        isString!T && canIndex!(T, size_t)
     );
 }
 /// Get whether a type is a random-access iterable of chars.
-template isRandomAccessCharString(T...) if(T.length == 1){
+template isRandomAccessCharString(T){
     enum bool isRandomAccessCharString = (
-        isCharString!T && canIndex!(T[0], size_t)
+        isCharString!T && canIndex!(T, size_t)
     );
 }
 /// Get whether a type is a random-access iterable of dchars.
-template isRandomAccessDString(T...) if(T.length == 1){
+template isRandomAccessDString(T){
     enum bool isRandomAccessDCharString = (
-        isDString!T && canIndex!(T[0], size_t)
+        isDString!T && canIndex!(T, size_t)
     );
 }
 /// Get whether a type is a random-access iterable of wchars.
-template isRandomAccessWString(T...) if(T.length == 1){
+template isRandomAccessWString(T){
     enum bool isRandomAccessWCharString = (
-        isWString!T && canIndex!(T[0], size_t)
+        isWString!T && canIndex!(T, size_t)
     );
 }
 
@@ -120,27 +114,27 @@ template isRandomAccessWString(T...) if(T.length == 1){
 
 /// Get whether a type is valid as a random-access iterable of chars, dchars, or
 /// wchars.
-template isRandomAccessStringLike(T...) if(T.length == 1){
+template isRandomAccessStringLike(T){
     enum bool isRandomAccessStringLike = (
-        isStringLike!T && canIndex!(T[0], size_t)
+        isStringLike!T && canIndex!(T, size_t)
     );
 }
 /// Get whether a type is valid as a random-access iterable of chars.
-template isRandomAccessCharStringLike(T...) if(T.length == 1){
+template isRandomAccessCharStringLike(T){
     enum bool isRandomAccessCharStringLike = (
-        isCharStringLike!T && canIndex!(T[0], size_t)
+        isCharStringLike!T && canIndex!(T, size_t)
     );
 }
 /// Get whether a type is valid as a random-access iterable of dchars.
-template isRandomAccessDStringLike(T...) if(T.length == 1){
+template isRandomAccessDStringLike(T){
     enum bool isRandomAccessDStringLike = (
-        isDStringLike!T && canIndex!(T[0], size_t)
+        isDStringLike!T && canIndex!(T, size_t)
     );
 }
 /// Get whether a type is valid as a random-access iterable of wchars.
-template isRandomAccessWStringLike(T...) if(T.length == 1){
+template isRandomAccessWStringLike(T){
     enum bool isRandomAccessWStringLike = (
-        isWStringLike!T && canIndex!(T[0], size_t)
+        isWStringLike!T && canIndex!(T, size_t)
     );
 }
 
@@ -162,7 +156,6 @@ version(unittest){
 }
 unittest{
     foreach(tmpl; Aliases!(isCharString, isCharStringLike)){
-        static assert(tmpl!("hi"));
         static assert(tmpl!(string));
         static assert(tmpl!(char[]));
         static assert(tmpl!(char[10]));
@@ -181,7 +174,6 @@ unittest{
 }
 unittest{
     foreach(tmpl; Aliases!(isWString, isWStringLike)){
-        static assert(tmpl!("hi"w));
         static assert(tmpl!(wstring));
         static assert(tmpl!(wchar[]));
         static assert(tmpl!(wchar[10]));
@@ -201,7 +193,6 @@ unittest{
 }
 unittest{
     foreach(tmpl; Aliases!(isDString, isDStringLike)){
-        static assert(isDString!("hi"d));
         static assert(isDString!(dstring));
         static assert(isString!(dchar[]));
         static assert(isString!(dchar[10]));
@@ -218,9 +209,6 @@ unittest{
 }
 unittest{
     foreach(tmpl; Aliases!(isString, isStringLike)){
-        static assert(tmpl!("hi"));
-        static assert(tmpl!("hi"d));
-        static assert(tmpl!("hi"w));
         static assert(tmpl!(string));
         static assert(tmpl!(dstring));
         static assert(tmpl!(wstring));
@@ -252,9 +240,6 @@ unittest{
 }
 unittest{
     foreach(tmpl; Aliases!(isRandomAccessString, isRandomAccessStringLike)){
-        static assert(tmpl!("hi"));
-        static assert(tmpl!("hi"d));
-        static assert(tmpl!("hi"w));
         static assert(tmpl!(string));
         static assert(tmpl!(dstring));
         static assert(tmpl!(wstring));
