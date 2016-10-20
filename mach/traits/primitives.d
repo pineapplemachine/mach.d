@@ -25,6 +25,11 @@ private template isUCent(T){
 
 
 
+/// Get whether a type is null.
+template isNull(T){
+    enum isNull = is(Unqual!T == typeof(null));
+}
+
 /// Get whether a type is a boolean primitive.
 template isBoolean(T){
     enum isBoolean = is(Unqual!T == bool);
@@ -142,6 +147,7 @@ version(unittest){
     class TestClass{}
     enum TestEnum{A, B}
     enum TestEnumI: int{A, B}
+    alias Nulls = Aliases!(typeof(null), const typeof(null));
     alias Bools = Aliases!(bool, const bool, const shared inout bool, immutable bool);
     alias SInts = Aliases!(byte, short, int, long, const int);
     alias UInts = Aliases!(ubyte, ushort, uint, ulong, const uint);
@@ -161,42 +167,45 @@ version(unittest){
     );
 }
 unittest{
+    // isNull
+    static assert(All!(isNull, Nulls));
+    static assert(None!(isNull, Bools, SInts, UInts, Floats, Imag, Complex, Chars, Ptrs, Chaff));
     // isBoolean
     static assert(All!(isBoolean, Bools));
-    static assert(None!(isBoolean, SInts, UInts, Floats, Imag, Complex, Chars, Ptrs, Chaff));
+    static assert(None!(isBoolean, Nulls, SInts, UInts, Floats, Imag, Complex, Chars, Ptrs, Chaff));
     // isNumeric
     static assert(All!(isNumeric, SInts, UInts, Floats));
-    static assert(None!(isNumeric, Bools, Imag, Complex, Chars, Ptrs, Chaff));
+    static assert(None!(isNumeric, Nulls, Bools, Imag, Complex, Chars, Ptrs, Chaff));
     // isIntegral
     static assert(All!(isIntegral, SInts, UInts));
-    static assert(None!(isIntegral, Bools, Floats, Imag, Complex, Chars, Ptrs, Chaff));
+    static assert(None!(isIntegral, Nulls, Bools, Floats, Imag, Complex, Chars, Ptrs, Chaff));
     // isFloatingPoint
     static assert(All!(isFloatingPoint, Floats));
-    static assert(None!(isFloatingPoint, Bools, SInts, UInts, Imag, Complex, Chars, Ptrs, Chaff));
+    static assert(None!(isFloatingPoint, Nulls, Bools, SInts, UInts, Imag, Complex, Chars, Ptrs, Chaff));
     // isSignedIntegral
     static assert(All!(isSignedIntegral, SInts));
-    static assert(None!(isSignedIntegral, Bools, UInts, Floats, Imag, Complex, Chars, Ptrs, Chaff));
+    static assert(None!(isSignedIntegral, Nulls, Bools, UInts, Floats, Imag, Complex, Chars, Ptrs, Chaff));
     // isUnsignedIntegral
     static assert(All!(isUnsignedIntegral, UInts));
-    static assert(None!(isUnsignedIntegral, Bools, SInts, Floats, Imag, Complex, Chars, Ptrs, Chaff));
+    static assert(None!(isUnsignedIntegral, Nulls, Bools, SInts, Floats, Imag, Complex, Chars, Ptrs, Chaff));
     // isSigned
     static assert(All!(isSigned, SInts, Floats));
-    static assert(None!(isSigned, Bools, UInts, Imag, Complex, Chars, Ptrs, Chaff));
+    static assert(None!(isSigned, Nulls, Bools, UInts, Imag, Complex, Chars, Ptrs, Chaff));
     // isUnsigned
     static assert(All!(isUnsigned, UInts));
-    static assert(None!(isUnsigned, Bools, SInts, Floats, Imag, Complex, Chars, Ptrs, Chaff));
+    static assert(None!(isUnsigned, Nulls, Bools, SInts, Floats, Imag, Complex, Chars, Ptrs, Chaff));
     // isImaginary
     static assert(All!(isImaginary, Imag));
-    static assert(None!(isImaginary, Bools, UInts, SInts, Floats, Complex, Chars, Ptrs, Chaff));
+    static assert(None!(isImaginary, Nulls, Bools, UInts, SInts, Floats, Complex, Chars, Ptrs, Chaff));
     // isComplex
     static assert(All!(isComplex, Complex));
-    static assert(None!(isComplex, Bools, UInts, SInts, Floats, Imag, Chars, Ptrs, Chaff));
+    static assert(None!(isComplex, Nulls, Bools, UInts, SInts, Floats, Imag, Chars, Ptrs, Chaff));
     // isCharacter
     static assert(All!(isCharacter, Chars));
-    static assert(None!(isCharacter, Bools, UInts, SInts, Floats, Imag, Complex, Ptrs, Chaff));
+    static assert(None!(isCharacter, Nulls, Bools, UInts, SInts, Floats, Imag, Complex, Ptrs, Chaff));
     // isPointer
     static assert(All!(isPointer, Ptrs));
-    static assert(None!(isPointer, Bools, SInts, UInts, Floats, Imag, Complex, Chars, Chaff));
+    static assert(None!(isPointer, Nulls, Bools, SInts, UInts, Floats, Imag, Complex, Chars, Chaff));
 }
 unittest{
     static assert(is(Signed!(int) == int));
