@@ -156,7 +156,7 @@ auto asarray(Element, size_t length, Iter)(auto ref Iter iter) if(
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     struct KnownLengthTest{
         size_t start;
         size_t length;
@@ -194,25 +194,23 @@ version(unittest){
 }
 unittest{
     tests("As array", {
-        testeq("Most common use case",
-            KnownLengthTest(0, 4).asarray, [0, 1, 2, 3]
-        );
-        testeq("Max length",
-            KnownLengthTest(0, 4).asarray(2), [0, 1]
-        );
-        testeq("Length known at compile time",
-            KnownLengthTest(0, 4).asarray!4, [0, 1, 2, 3]
-        );
-        fail("Incorrect known length", {
-            KnownLengthTest(0, 4).asarray!6;
-        });
-        tests("Max length of infinite range", {
-            testeq(InfiniteRangeTest(0).asarray(4), [0, 1, 2, 3]);
-            fail({InfiniteRangeTest(0).asarray!true(4);});
-        });
+        // Basic use case
+        testeq(KnownLengthTest(0, 4).asarray, [0, 1, 2, 3]);
+        // Finite range with max length
+        testeq(KnownLengthTest(0, 4).asarray(2), [0, 1]);
+        // With ct length
+        testeq(KnownLengthTest(0, 4).asarray!4, [0, 1, 2, 3]);
+        // With incorrect ct length
+        testfail({KnownLengthTest(0, 4).asarray!6;});
+        // Infinite range with max length
+        testeq(InfiniteRangeTest(0).asarray(4), [0, 1, 2, 3]);
+        testfail({InfiniteRangeTest(0).asarray!true(4);});
+        // Specify element type
+        auto im = KnownLengthTest(0, 4).asarray!(immutable size_t);
+        static assert(is(typeof(im[0]) == immutable size_t));
+        testeq(im, [0, 1, 2, 3]);
+        // Call for array
         auto ints = [1, 2, 3, 4, 5, 6];
-        testis("Calling asarray on an array",
-            ints.asarray, ints
-        );
+        testis(ints.asarray, ints);
     });
 }
