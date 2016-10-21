@@ -1,4 +1,4 @@
-module mach.math.bits;
+module mach.math.bits.hamming;
 
 private:
 
@@ -53,7 +53,7 @@ auto hamming(N)(in N value) if(isIntegral!N){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     void HammingTest(T)(){
         testeq(hamming(cast(T) 0), 0);
         testeq(hamming(cast(T) 1), 1);
@@ -72,7 +72,7 @@ version(unittest){
     }
 }
 unittest{
-    tests("Hamming", {
+    tests("Hamming weight", {
         HammingTest!long();
         HammingTest!ulong();
         HammingTest!int();
