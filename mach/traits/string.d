@@ -2,7 +2,7 @@ module mach.traits.string;
 
 private:
 
-import mach.traits.element : ElementType, hasElementType;
+import mach.traits.element : ElementType, canGetElementType, hasElementType;
 import mach.traits.index : canIndex, IndexType;
 import mach.traits.iter : isIterable;
 import mach.traits.range : isRange;
@@ -18,18 +18,27 @@ template isString(T){
 }
 /// Get whether a type is an iterable of chars.
 template isCharString(T){
-    static if(isIterable!T) enum bool isCharString = isUnqual!(ElementType!T, char);
-    else enum bool isCharString = false;
+    static if(isIterable!T && canGetElementType!T){
+        enum bool isCharString = isUnqual!(ElementType!T, char);
+    }else{
+        enum bool isCharString = false;
+    }
 }
 /// Get whether a type is an iterable of wchars.
 template isWString(T){
-    static if(isIterable!T) enum bool isWString = isUnqual!(ElementType!T, wchar);
-    else enum bool isWString = false;
+    static if(isIterable!T && canGetElementType!T){
+        enum bool isWString = isUnqual!(ElementType!T, wchar);
+    }else{
+        enum bool isWString = false;
+    }
 }
 /// Get whether a type is an iterable of dchars.
 template isDString(T){
-    static if(isIterable!T) enum bool isDString = isUnqual!(ElementType!T, dchar);
-    else enum bool isDString = false;
+    static if(isIterable!T && canGetElementType!T){
+        enum bool isDString = isUnqual!(ElementType!T, dchar);
+    }else{
+        enum bool isDString = false;
+    }
 }
 
 
