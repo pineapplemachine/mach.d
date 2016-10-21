@@ -485,8 +485,7 @@ alias writeb64 = WriteBase!64;
 
 version(unittest){
     private:
-    import mach.error.unit;
-    import mach.io.log;
+    import mach.test;
     auto IntsTest(T)(T num){
         tests("byte", {
             if(num >= byte.min && num <= byte.max) NumTest!byte(cast(byte) num);
@@ -522,7 +521,7 @@ version(unittest){
             if(num >= 0){
                 BaseTest!(ParseBase!16, WriteBasePadded!16, T)(num);
             }else{
-                fail({BaseTest!(ParseBase!16, WriteBasePadded!16, T)(num);});
+                testfail({BaseTest!(ParseBase!16, WriteBasePadded!16, T)(num);});
             }
         });
         tests("Octal", {
@@ -530,7 +529,7 @@ version(unittest){
             if(num >= 0){
                 BaseTest!(ParseBase!8, WriteBasePadded!8, T)(num);
             }else{
-                fail({BaseTest!(ParseBase!8, WriteBasePadded!8, T)(num);});
+                testfail({BaseTest!(ParseBase!8, WriteBasePadded!8, T)(num);});
             }
         });
         tests("Binary", {
@@ -538,7 +537,7 @@ version(unittest){
             if(num >= 0){
                 BaseTest!(ParseBase!2, WriteBasePadded!2, T)(num);
             }else{
-                fail({BaseTest!(ParseBase!2, WriteBasePadded!2, T)(num);});
+                testfail({BaseTest!(ParseBase!2, WriteBasePadded!2, T)(num);});
             }
         });
         tests("Ternary", {
@@ -546,21 +545,21 @@ version(unittest){
             if(num >= 0){
                 BaseTest!(ParseBase!3, WriteBasePadded!3, T)(num);
             }else{
-                fail({BaseTest!(ParseBase!3, WriteBasePadded!3, T)(num);});
+                testfail({BaseTest!(ParseBase!3, WriteBasePadded!3, T)(num);});
             }
         });
         tests("Base 32", {
             if(num >= 0){
                 BaseTest!(ParseBase!32, WriteBase!32, T)(num);
             }else{
-                fail({BaseTest!(ParseBase!32, WriteBase!32, T)(num);});
+                testfail({BaseTest!(ParseBase!32, WriteBase!32, T)(num);});
             }
         });
         tests("Base 64", {
             if(num >= 0){
                 BaseTest!(ParseBase!64, WriteBase!64, T)(num);
             }else{
-                fail({BaseTest!(ParseBase!64, WriteBase!64, T)(num);});
+                testfail({BaseTest!(ParseBase!64, WriteBase!64, T)(num);});
             }
         });
         tests("Unary", {
