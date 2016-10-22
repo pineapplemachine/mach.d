@@ -78,9 +78,6 @@ struct IEEEFormat{
         sigsize: 64,
         intpart: true,
     };
-    static immutable IEEEFormat Extended53; /// TODO
-    /// https://en.wikipedia.org/wiki/Extended_precision#IBM_extended_precision_formats
-    static immutable IEEEFormat IBMExtended; /// TODO
     /// https://en.wikipedia.org/wiki/Quadruple-precision_floating-point_formatint_format
     static immutable IEEEFormat Quad = {
         sgnoffset: 127,
@@ -104,14 +101,15 @@ template IEEEFormatOf(T) if(isFloatingPoint!T){
         static if (T.sizeof == 8){
             alias IEEEFormatOf = IEEEFormat.Double;
         }else static if(T.sizeof == 12){
-            alias IEEEFormatOf = IEEEFormat.Extended53;
+            // Should be x86 extended, rounded to double
+            // Though I am not confident in that assessment
+            // TODO: Find some way to test this assumption
+            alias IEEEFormatOf = IEEEFormat.Extended;
         }else{
             static assert(false);
         }
     }else static if(T.mant_dig == 64){
         alias IEEEFormatOf = IEEEFormat.Extended;
-    }else static if(T.mant_dig == 106){
-        alias IEEEFormatOf = IEEEFormat.IBMExtended;
     }else static if(T.mant_dig == 113){
         alias IEEEFormatOf = IEEEFormat.Quad;
     }else{
