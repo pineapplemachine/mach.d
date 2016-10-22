@@ -10,6 +10,7 @@ import mach.traits.call;
 import mach.traits.ctor;
 import mach.traits.element;
 import mach.traits.hash;
+import mach.traits.ieee;
 import mach.traits.index;
 import mach.traits.iter;
 import mach.traits.length;
