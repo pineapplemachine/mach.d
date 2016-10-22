@@ -104,6 +104,7 @@ auto extractffrac(F = double, T)(T value) if(isFloatingPoint!T){
 
 
 /// Get whether a floating point value represents an infinite value.
+/// Also evaluates true for pseudo-infinity.
 auto isinf(T)(T value) if(isFloatingPoint!T){
     enum Format = IEEEFormatOf!T;
     static if(Format is IEEEFormat.Extended){
@@ -119,8 +120,8 @@ auto isinf(T)(T value) if(isFloatingPoint!T){
     }
 }
 
-/// Get whether a floating point value represents NaN.
-/// Also evaluates true for pseudo-infinity.
+/// Get whether a floating point value represents NaN
+/// Also evaluates true for pseudo not a number.
 auto isnan(T)(T value) if(isFloatingPoint!T){
     enum Format = IEEEFormatOf!T;
     static if(Format is IEEEFormat.Extended){
