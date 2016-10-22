@@ -8,47 +8,85 @@ public:
 
 
 
-/// An enumeration of recognized IEEE formats.
-enum IEEEFormat: IEEEFormatType{
-    /// https://en.wikipedia.org/wiki/Half-precision_floating-point_format
-    Half = IEEEFormatType(0),
-    /// https://en.wikipedia.org/wiki/Single-precision_floating-point_format
-    Single = IEEEFormatType(0),
-    /// https://en.wikipedia.org/wiki/Double-precision_floating-point_format
-    Double = IEEEFormatType(0),
-    /// https://en.wikipedia.org/wiki/Extended_precision#x86_Extended_Precision_Format
-    Extended = IEEEFormatType(0),
-    Extended53 = IEEEFormatType(0),
-    /// https://en.wikipedia.org/wiki/Extended_precision#IBM_extended_precision_formats
-    IBMExtended = IEEEFormatType(0),
-    /// https://en.wikipedia.org/wiki/Quadruple-precision_floating-point_format
-    Quad = IEEEFormatType(0),
-}
-
-
-
 /// Contains information describing an IEEE format.
-struct IEEEFormatType{
+struct IEEEFormat{
     /// Offset of the sign bit.
     uint sgnoffset;
     /// Offset of the exponent.
     uint expoffset;
     /// Size in bits of the exponent.
     uint expsize;
-    /// Number to subtract from the exponent to get an accurate value.
-    int expbias;
+    /// Exponent bias; this number is subtracted from the exponent to determine
+    /// the actual power of two.
+    uint expbias;
     /// Offset of the significand.
     uint sigoffset;
     /// Size in bits of the significand.
-    uint sigize;
+    uint sigsize;
     /// Whether the first bit of the significand represents an integer part,
     /// such as for the x86 extended precision format.
-    bool intpart;
+    bool intpart = false;
+    uint intoffset = 0;
+    
+    /// https://en.wikipedia.org/wiki/Half-precision_floating-point_format
+    static immutable IEEEFormat Half = {
+        sgnoffset: 15,
+        expoffset: 10,
+        expsize: 5,
+        expbias: 0xf,
+        sigoffset: 0,
+        sigsize: 10,
+        intpart: false,
+    };
+    /// https://en.wikipedia.org/wiki/Single-precision_floating-point_format
+    static immutable IEEEFormat Single = {
+        sgnoffset: 31,
+        expoffset: 23,
+        expsize: 8,
+        expbias: 0x7f,
+        sigoffset: 0,
+        sigsize: 23,
+        intpart: false,
+    };
+    /// https://en.wikipedia.org/wiki/Double-precision_floating-point_format
+    static immutable IEEEFormat Double = {
+        sgnoffset: 63,
+        expoffset: 52,
+        expsize: 11,
+        expbias: 0x3ff,
+        sigoffset: 0,
+        sigsize: 52,
+        intpart: false,
+    };
+    /// https://en.wikipedia.org/wiki/Extended_precision#x86_Extended_Precision_Format
+    static immutable IEEEFormat Extended = {
+        sgnoffset: 79,
+        expoffset: 64,
+        expsize: 15,
+        expbias: 0x3fff,
+        sigoffset: 0,
+        sigsize: 63,
+        intpart: true,
+        intoffset: 63,
+    };
+    static immutable IEEEFormat Extended53; /// TODO
+    /// https://en.wikipedia.org/wiki/Extended_precision#IBM_extended_precision_formats
+    static immutable IEEEFormat IBMExtended; /// TODO
+    /// https://en.wikipedia.org/wiki/Quadruple-precision_floating-point_formatint_format
+    static immutable IEEEFormat Quad = {
+        sgnoffset: 127,
+        expoffset: 112,
+        expsize: 15,
+        expbias: 0x3fff,
+        sigoffset: 0,
+        sigsize: 112,
+        intpart: false,
+    };
 }
 
 
 
-/// Get the IEEEFormatType corresponding to a floating point type.
+/// Get the IEEEFormat corresponding to a floating point type.
 /// Causes an assert error if the format is unrecognized.
 template IEEEFormatOf(T) if(isFloatingPoint!T){
     static if(T.mant_dig == 24){
