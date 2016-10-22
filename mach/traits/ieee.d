@@ -26,7 +26,17 @@ struct IEEEFormat{
     /// Whether the first bit of the significand represents an integer part,
     /// such as for the x86 extended precision format.
     bool intpart = false;
-    uint intoffset = 0;
+    
+    /// The maximum storable value by the format's exponent bits.
+    @property uint expmax() const{
+        return (1 << this.expsize) - 1;
+    }
+    
+    /// Subnormal numbers are represented by `2 ^ -x`
+    /// where `x` is the value of this property.
+    @property uint expsubnormal() const{
+        return this.expbias - 1;
+    }
     
     /// https://en.wikipedia.org/wiki/Half-precision_floating-point_format
     static immutable IEEEFormat Half = {
@@ -65,9 +75,8 @@ struct IEEEFormat{
         expsize: 15,
         expbias: 0x3fff,
         sigoffset: 0,
-        sigsize: 63,
+        sigsize: 64,
         intpart: true,
-        intoffset: 63,
     };
     static immutable IEEEFormat Extended53; /// TODO
     /// https://en.wikipedia.org/wiki/Extended_precision#IBM_extended_precision_formats
