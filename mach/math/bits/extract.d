@@ -23,12 +23,14 @@ auto extractbit(uint offset, T)(T value) if(
 /// where the offset and length are known at compile time.
 /// The return type is inferred from the length argument:
 /// If length <= 32 then the return type is uint.
-/// If length > 32 then the return type is ulong.
+/// If length <= 64 then the return type is ulong.
 auto extractbits(uint offset, uint length, T)(T value) if(
     offset + length <= T.sizeof * 8
 ){
     static if(length <= 32) alias R = uint;
-    else alias R = ulong;
+    else static if(length <= 64) alias R = ulong;
+    else static if(length <= 128 && is(ucent)) alias R = ucent;
+    else static assert(false, "Too many bits to extract with type inference.");
     return extractbits!(R, offset, length)(value);
 }
 
