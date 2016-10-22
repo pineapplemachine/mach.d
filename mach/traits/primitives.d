@@ -2,6 +2,7 @@ module mach.traits.primitives;
 
 private:
 
+import mach.meta.aliases : Aliases;
 import mach.traits.qualifiers : Qualify, Unqual;
 
 public:
@@ -22,6 +23,52 @@ private template isUCent(T){
     static if(is(ucent)) enum bool isUCent = is(T == ucent);
     else enum bool isUCent = false;
 }
+
+
+
+static if(is(cent)){
+    /// An alias sequence of all signed integral types.
+    alias SignedIntegralTypes = Aliases!(byte, short, int, long, cent);
+}else{
+    /// ditto
+    alias SignedIntegralTypes = Aliases!(byte, short, int, long);
+}
+
+static if(is(ucent)){
+    /// An alias sequence of all unsigned integral types.
+    alias UnsignedIntegralTypes = Aliases!(ubyte, ushort, uint, ulong, ucent);
+}else{
+    /// ditto
+    alias UnsignedIntegralTypes = Aliases!(ubyte, ushort, uint, ulong);
+}
+
+/// An alias sequence of all integral types.
+alias IntegralTypes = Aliases!(SignedIntegralTypes, UnsignedIntegralTypes);
+
+/// An alias sequence of all floating point types.
+alias FloatTypes = Aliases!(float, double, real);
+
+/// An alias sequence of all signed numeric types.
+alias SignedTypes = Aliases!(SignedIntegralTypes, FloatTypes);
+
+/// An alias sequence of all unsigned numeric types.
+alias UnsignedTypes = UnsignedIntegralTypes;
+
+/// An alias sequence of all numeric types.
+alias NumericTypes = Aliases!(IntegralTypes, FloatTypes);
+
+/// An alias sequence of all imaginary number types.
+alias ImaginaryTypes = Aliases!(ifloat, idouble, ireal);
+
+/// An alias sequence of all complex number types.
+alias ComplexTypes = Aliases!(cfloat, cdouble, creal);
+
+/// An alias sequence of all character types.
+alias CharacterTypes = Aliases!(char, wchar, dchar);
+
+/// An alias sequence of all scalar types.
+/// Includes booleans, characters, and numbers.
+alias ScalarTypes = Aliases!(bool, CharacterTypes, NumericTypes);
 
 
 
@@ -141,7 +188,6 @@ template Signed(T) if(isIntegral!T){
 
 version(unittest){
     private:
-    import mach.meta.aliases : Aliases;
     import mach.meta.logical : All, None;
     struct TestStruct{}
     class TestClass{}
