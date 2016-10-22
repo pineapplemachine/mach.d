@@ -8,6 +8,11 @@ public:
 
 
 
+// TODO: Test on a big endian platform
+// Everything may well break
+
+
+
 /// Extract bit from a value at an offset in bits
 /// where the offset is known at compile time.
 auto extractbit(uint offset, T)(T value) if(
