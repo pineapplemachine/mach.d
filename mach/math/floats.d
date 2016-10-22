@@ -227,10 +227,7 @@ auto iszero(T)(T value) if(isIntegral!T){
 version(unittest){
     private:
     import mach.test;
-    
     import mach.meta : Aliases;
-    import mach.io.log;
-    import mach.text.parse.numeric.integrals;
 }
 unittest{
     tests("Float decomposition", {
