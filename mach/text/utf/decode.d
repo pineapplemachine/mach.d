@@ -14,59 +14,65 @@ public:
 // https://encoding.spec.whatwg.org/#utf-8
 // https://github.com/mathiasbynens/utf8.js/blob/master/utf8.js
 
+// TODO: Correctly handle UTF-16 encoded strings.
 
 
+
+/// Exception thrown when decoding a UTF-encoded string fails.
 class UTFDecodeException: UTFException{
-    static enum Reason{
-        UnexpectedEOF,
-        InvalidInitial,
-        InvalidContinuation,
+    this(string message, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super(message, next, line, file);
     }
-    
-    Reason reason;
-    
-    this(Reason reason, size_t line = __LINE__, string file = __FILE__){
-        super("Failed to decode UTF-8 string: " ~ reasonname(reason), null, line, file);
-        this.reason = reason;
+    static void enforceeof(T)(auto ref T cond, size_t line = __LINE__, string file = __FILE__){
+        if(!cond) throw new UTFDecodeEOFException(null, line, file);
     }
-    
-    static string reasonname(in Reason reason){
-        final switch(reason){
-            case Reason.UnexpectedEOF: return "Unexpected end of input.";
-            case Reason.InvalidInitial: return "Invalid initial byte.";
-            case Reason.InvalidContinuation: return "Invalid continuation byte.";
-        }
+    static void enforcecont(T)(auto ref T cond, size_t line = __LINE__, string file = __FILE__){
+        if(!cond) throw new UTFDecodeInvalidContException(null, line, file);
     }
-    
-    static void enforce(T)(auto ref T cond, Reason reason){
-        if(!cond) throw new typeof(this)(reason);
+}
+
+/// Exception thrown when decoding a UTF-encoded string fails
+/// as the result of an unexpected end-of-input.
+class UTFDecodeEOFException: UTFDecodeException{
+    this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super("Encountered unexpected EOF while decoding UTF-8 string.", null, line, file);
     }
-    static void enforceeof(T)(auto ref T cond){
-        typeof(this).enforce(cond, Reason.UnexpectedEOF);
+}
+
+/// Exception thrown when decoding a UTF-encoded string fails
+/// as the result of an invalid byte at the beginning of a code point.
+class UTFDecodeInvalidInitException: UTFDecodeException{
+    this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super("Encountered invalid code point initial byte while decoding UTF-8 string.", null, line, file);
     }
-    static void enforcecont(T)(auto ref T cond){
-        typeof(this).enforce(cond, Reason.InvalidContinuation);
+}
+
+/// Exception thrown when decoding a UTF-encoded string fails
+/// as the result of an invalid byte not at the beginning of a code point.
+class UTFDecodeInvalidContException: UTFDecodeException{
+    this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super("Encountered invalid code point continuation byte while decoding UTF-8 string.", null, line, file);
     }
 }
 
 
 
-template canUTFDecode(T){
-    enum bool canUTFDecode = validAsRange!T && is(typeof({
+template canUTF8Decode(T){
+    enum bool canUTF8Decode = validAsRange!T && is(typeof({
         static assert(ElementType!T.sizeof == 1);
         char ch = T.init.asrange.front;
     }));
 }
 
-template canUTFDecodeRange(T){
-    enum bool canUTFDecodeRange = isRange!T && is(typeof({
+template canUTF8DecodeRange(T){
+    enum bool canUTF8DecodeRange = isRange!T && is(typeof({
         static assert(ElementType!T.sizeof == 1);
         char ch = T.init.front;
     }));
 }
 
-template isUTFDecoded(T){
-    enum bool isUTFDecoded = isIterable!T && is(typeof({
+template isUTF8Decoded(T){
+    enum bool isUTF8Decoded = isIterable!T && is(typeof({
         static assert(ElementType!T.sizeof > 1);
         dchar ch = ElementType!T.init;
     }));
@@ -77,20 +83,20 @@ template isUTFDecoded(T){
 /// Given an input iterable containing raw char or byte data, iterate over
 /// its UTF-8 encoded code points.
 /// Throws a UTFDecodeException when the input is malformed.
-auto utf8decode(Iter)(auto ref Iter iter) if(isUTFDecoded!Iter || canUTFDecode!Iter){
-    static if(isUTFDecoded!Iter){
+auto utf8decode(Iter)(auto ref Iter iter) if(isUTF8Decoded!Iter || canUTF8Decode!Iter){
+    static if(isUTF8Decoded!Iter){
         return iter;
     }else{
         auto range = iter.asrange;
-        return UTFDecodeRange!(typeof(range), dchar)(range);
+        return UTF8DecodeRange!(typeof(range), dchar)(range);
     }
 }
 
 
 
-/// Iterates over UTF code points as indicated by the contents of a range with
-/// char or ubyte elements.
-struct UTFDecodeRange(Range, CodePoint = dchar) if(canUTFDecodeRange!Range){
+/// Iterates over unicode code points as indicated by the UTF-8 encoded
+/// contents of a range with char or ubyte elements.
+struct UTF8DecodeRange(Range, CodePoint = dchar) if(canUTF8DecodeRange!Range){
     /// The string being decoded.
     Range source;
     /// The current code point.
@@ -171,9 +177,7 @@ struct UTFDecodeRange(Range, CodePoint = dchar) if(canUTFDecodeRange!Range){
                     this.point >= 0x010000 && this.point <= 0x10ffff,
                 );
             }else{
-                throw new UTFDecodeException(
-                    UTFDecodeException.Reason.InvalidInitial
-                );
+                throw new UTFDecodeInvalidInitException();
             }
         }
     }
@@ -188,27 +192,27 @@ version(unittest){
     import mach.range.consume : consume;
 }
 unittest{
-    static assert(isUTFDecoded!(wstring));
-    static assert(isUTFDecoded!(dstring));
-    static assert(isUTFDecoded!(wchar[]));
-    static assert(isUTFDecoded!(dchar[]));
-    static assert(isUTFDecoded!(uint[]));
-    static assert(!isUTFDecoded!(string));
-    static assert(!isUTFDecoded!(char[]));
-    static assert(!isUTFDecoded!(ubyte[]));
+    static assert(isUTF8Decoded!(wstring));
+    static assert(isUTF8Decoded!(dstring));
+    static assert(isUTF8Decoded!(wchar[]));
+    static assert(isUTF8Decoded!(dchar[]));
+    static assert(isUTF8Decoded!(uint[]));
+    static assert(!isUTF8Decoded!(string));
+    static assert(!isUTF8Decoded!(char[]));
+    static assert(!isUTF8Decoded!(ubyte[]));
 }
 unittest{
-    static assert(canUTFDecode!(string));
-    static assert(canUTFDecode!(char[]));
-    static assert(canUTFDecode!(ubyte[]));
-    static assert(!canUTFDecode!(wstring));
-    static assert(!canUTFDecode!(dstring));
-    static assert(!canUTFDecode!(wchar[]));
-    static assert(!canUTFDecode!(dchar[]));
-    static assert(!canUTFDecode!(uint[]));
-    static assert(!canUTFDecode!int);
-    static assert(!canUTFDecode!uint);
-    static assert(!canUTFDecode!void);
+    static assert(canUTF8Decode!(string));
+    static assert(canUTF8Decode!(char[]));
+    static assert(canUTF8Decode!(ubyte[]));
+    static assert(!canUTF8Decode!(wstring));
+    static assert(!canUTF8Decode!(dstring));
+    static assert(!canUTF8Decode!(wchar[]));
+    static assert(!canUTF8Decode!(dchar[]));
+    static assert(!canUTF8Decode!(uint[]));
+    static assert(!canUTF8Decode!int);
+    static assert(!canUTF8Decode!uint);
+    static assert(!canUTF8Decode!void);
 }
 unittest{
     tests("UTF decode", {
