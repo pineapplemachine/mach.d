@@ -15,34 +15,54 @@ public:
 
 
 /// Inject bit into a value where the bit offset is known at compile time.
-auto injectbit(uint offset, T)(T value, in bool bit) if(
+/// When the `assumezero` template argument is true, the operation is able
+/// to be optimized by assuming the targeted bits are all initialized to 0.
+auto injectbit(uint offset, bool assumezero = false, T)(
+    T value, in bool bit
+) if(
     offset < T.sizeof * 8
 ){
     enum byteoffset = offset / 8;
     enum bitoffset = offset % 8;
     T target = value;
     auto ptr = cast(ubyte*) &target + byteoffset;
-    *ptr ^= (-(cast(ubyte) bit) ^ *ptr) & (1 << bitoffset);
+    static if(assumezero){
+        *ptr |= cast(ubyte) bit << bitoffset;
+    }else{
+        *ptr ^= (-(cast(ubyte) bit) ^ *ptr) & (1 << bitoffset);
+    }
     return target;
 }
 
 /// Injects bit into a value where the bit offset and length are known at
 /// compile time.
-auto injectbits(uint offset, uint length, T, B)(T value, in B bits) if(
+/// When the `assumezero` template argument is true, the operation is able
+/// to be optimized by assuming the targeted bits are all initialized to 0.
+auto injectbits(uint offset, uint length, bool assumezero = false, T, B)(
+    T value, in B bits
+) if(
     isIntegral!B && (offset + length) < (T.sizeof * 8)
 ){
     enum byteoffset = offset / 8;
     enum bitoffset = offset % 8;
     T target = value;
     B* ptr = cast(B*)(cast(ubyte*) &target + byteoffset);
-    // TODO: Should be possible to do this in one step instead of two
-    ptr[0] &= ~cast(B)(cast(B) pow2d!length << bitoffset); // set target bits to 0
-    ptr[0] |= cast(B)(bits << bitoffset); // set to desired value
+    static if(assumezero){
+        ptr[0] |= cast(B)(bits << bitoffset);
+    }else{
+        // TODO: Should be possible to do this in one step instead of two
+        ptr[0] &= ~cast(B)(cast(B) pow2d!length << bitoffset); // set target bits to 0
+        ptr[0] |= cast(B)(bits << bitoffset); // set to desired value
+    }
     static if(length + bitoffset > B.sizeof * 8){
         enum bitslength = B.sizeof * 8;
         enum overflowlength = (length + bitoffset) - bitslength;
-        ptr[1] &= ~cast(B)(cast(B) pow2d!overflowlength);
-        ptr[1] |= cast(B)(bits >> (bitslength - overflowlength));
+        static if(assumezero){
+            ptr[1] |= cast(B)(bits >> (bitslength - overflowlength));
+        }else{
+            ptr[1] &= ~cast(B)(cast(B) pow2d!overflowlength);
+            ptr[1] |= cast(B)(bits >> (bitslength - overflowlength));
+        }
     }
     return target;
 }
@@ -50,20 +70,32 @@ auto injectbits(uint offset, uint length, T, B)(T value, in B bits) if(
 
 
 /// Inject bit into a value where the bit offset is not known at compile time.
-auto injectbit(T)(T value, in uint offset, in bool bit) in{
+/// When the `assumezero` template argument is true, the operation is able
+/// to be optimized by assuming the targeted bits are all initialized to 0.
+auto injectbit(bool assumezero = false, T)(
+    T value, in uint offset, in bool bit
+) in{
     assert(offset < T.sizeof * 8, "Bit offset exceeds size of parameter.");
 }body{
     immutable byteoffset = offset / 8;
     immutable bitoffset = offset % 8;
     T target = value;
     auto ptr = cast(ubyte*) &target + byteoffset;
-    *ptr ^= (-(cast(ubyte) bit) ^ *ptr) & (1 << bitoffset);
+    static if(assumezero){
+        *ptr |= cast(ubyte) bit << bitoffset;
+    }else{
+        *ptr ^= (-(cast(ubyte) bit) ^ *ptr) & (1 << bitoffset);
+    }
     return target;
 }
 
 /// Injects bit into a value where the bit offset and length are not known at
 /// compile time.
-auto injectbits(T, B)(T value, in uint offset, in uint length, in B bits) if(
+/// When the `assumezero` template argument is true, the operation is able
+/// to be optimized by assuming the targeted bits are all initialized to 0.
+auto injectbits(bool assumezero = false, T, B)(
+    T value, in uint offset, in uint length, in B bits
+) if(
     isIntegral!B
 ) in{
     assert(offset + length <= T.sizeof * 8, "Bit offset exceeds size of parameter.");
@@ -72,14 +104,22 @@ auto injectbits(T, B)(T value, in uint offset, in uint length, in B bits) if(
     immutable bitoffset = offset % 8;
     T target = value;
     B* ptr = cast(B*)(cast(ubyte*) &target + byteoffset);
-    // TODO: Should be possible to do this in one step instead of two
-    ptr[0] &= ~cast(B)(pow2d!B(length) << bitoffset); // set target bits to 0
-    ptr[0] |= cast(B)(bits << bitoffset); // set to desired value
+    static if(assumezero){
+        ptr[0] |= cast(B)(bits << bitoffset); // set to desired value
+    }else{
+        // TODO: Should be possible to do this in one step instead of two
+        ptr[0] &= ~cast(B)(pow2d!B(length) << bitoffset); // set target bits to 0
+        ptr[0] |= cast(B)(bits << bitoffset); // set to desired value
+    }
     if(length + bitoffset > B.sizeof * 8){
         immutable bitslength = B.sizeof * 8;
         immutable overflowlength = (length + bitoffset) - bitslength;
-        ptr[1] &= ~cast(B)(pow2d!B(overflowlength));
-        ptr[1] |= cast(B)(bits >> (bitslength - overflowlength));
+        static if(assumezero){
+            ptr[1] |= cast(B)(bits >> (bitslength - overflowlength));
+        }else{
+            ptr[1] &= ~cast(B)(pow2d!B(overflowlength));
+            ptr[1] |= cast(B)(bits >> (bitslength - overflowlength));
+        }
     }
     return target;
 }
@@ -91,85 +131,113 @@ version(unittest){
     import mach.test;
     import mach.meta : Aliases, NumericSequence;
     import mach.math.bits.extract;
+    
+    import mach.io.log;
+    void SingularTests(alias func)(){
+        func!(0)(uint(0), 0, 0);
+        func!(1)(uint(0), 0, 0);
+        func!(0)(uint(0), 1, 1);
+        func!(0)(uint(1), 1, 1);
+        func!(0)(uint(1), 0, 0);
+        func!(1)(uint(0), 1, 2);
+        func!(2)(uint(0), 1, 4);
+        func!(7)(uint(0x7f), 1, 0xff);
+        func!(7)(uint(0xff), 1, 0xff);
+        func!(7)(uint(0xff), 0, 0x7f);
+        foreach(T; Aliases!(ubyte, uint, ulong, int, long, float, double, real)){
+            tests(T.stringof, {
+                T value = 0;
+                foreach(i; NumericSequence!(0, T.sizeof * 8)){
+                    value = func!(i)(value, 0);
+                    testeq(value.extractbit!i, 0);
+                    value = func!(i)(value, 1);
+                    testeq(value.extractbit!i, 1);
+                    value = func!(i)(value, 1);
+                    testeq(value.extractbit!i, 1);
+                    value = func!(i)(value, 0);
+                    testeq(value.extractbit!i, 0);
+                }
+            });
+        }
+    }
+    auto singularcttest(uint offset, T, E = typeof(null))(
+        T input, bool bit, E expected = E.init
+    ){
+        immutable value = injectbit!(offset, false)(input, bit);
+        static if(!is(E == typeof(null))){
+            testeq(value, expected);
+            if(input.extractbit!offset == 0){
+                testeq(injectbit!(offset, true)(input, bit), expected);
+            }
+        }
+        return value;
+    }
+    auto singularrttest(uint offset, T, E = typeof(null))(
+        T input, bool bit, E expected = E.init
+    ){
+        immutable value = injectbit!false(input, offset, bit);
+        static if(!is(E == typeof(null))){
+            testeq(value, expected);
+            if(input.extractbit!offset == 0){
+                testeq(injectbit!true(input, offset, bit), expected);
+            }
+        }
+        return value;
+    }
+    
+    void PluralTests(alias func)(){
+        func!(0, 4)(0x00, 0x00, 0x00);
+        func!(0, 4)(0x0f, 0x00, 0x00);
+        func!(0, 4)(0x00, 0x05, 0x05);
+        func!(0, 4)(0x00, 0x0a, 0x0a);
+        func!(0, 4)(0x00, 0x0f, 0x0f);
+        func!(0, 8)(0x0f, 0xf0, 0xf0);
+        func!(4, 4)(0x0f, 0x0f, 0xff);
+        func!(8, 16)(uint(0xffff0000), ushort(0x1234), 0xff123400);
+        func!(16, 32)(ulong(0xffffffff00000000), uint(0x12345678), 0xffff123456780000);
+    }
+    auto pluralcttest(uint offset, uint length, T, B, E = typeof(null))(
+        T input, B bits, E expected = E.init
+    ){
+        immutable value = injectbits!(offset, length, false)(input, bits);
+        static if(!is(E == typeof(null))){
+            testeq(value, expected);
+            if(input.extractbits!(offset, length) == 0){
+                testeq(injectbits!(offset, length, true)(input, bits), expected);
+            }
+        }
+        return value;
+    }
+    auto pluralrttest(uint offset, uint length, T, B, E = typeof(null))(
+        T input, B bits, E expected = E.init
+    ){
+        immutable value = injectbits!false(input, offset, length, bits);
+        static if(!is(E == typeof(null))){
+            testeq(value, expected);
+            if(input.extractbits!(offset, length) == 0){
+                testeq(injectbits!true(input, offset, length, bits), expected);
+            }
+        }
+        return value;
+    }
 }
+
 unittest{
     tests("Bit injection", {
         tests("Singular", {
             tests("Compile time", {
-                testeq(uint(0).injectbit!0(0), 0);
-                testeq(uint(0).injectbit!1(0), 0);
-                testeq(uint(0).injectbit!0(1), 1);
-                testeq(uint(1).injectbit!0(1), 1);
-                testeq(uint(0).injectbit!1(1), 2);
-                testeq(uint(0).injectbit!2(1), 4);
-                testeq(uint(0x7f).injectbit!7(1), 0xff);
-                testeq(uint(0xff).injectbit!7(1), 0xff);
-                testeq(uint(0xff).injectbit!7(0), 0x7f);
-                foreach(T; Aliases!(ubyte, uint, ulong, int, long, float, double, real)){
-                    tests(T.stringof, {
-                        T value = 0;
-                        foreach(i; NumericSequence!(0, T.sizeof * 8)){
-                            value = value.injectbit!i(0);
-                            testeq(value.extractbit!i, 0);
-                            value = value.injectbit!i(1);
-                            testeq(value.extractbit!i, 1);
-                            value = value.injectbit!i(1);
-                            testeq(value.extractbit!i, 1);
-                            value = value.injectbit!i(0);
-                            testeq(value.extractbit!i, 0);
-                        }
-                    });
-                }
+                SingularTests!singularcttest();
             });
             tests("Runtime", {
-                testeq(uint(0).injectbit(0, 0), 0);
-                testeq(uint(0).injectbit(1, 0), 0);
-                testeq(uint(0).injectbit(0, 1), 1);
-                testeq(uint(1).injectbit(0, 1), 1);
-                testeq(uint(0).injectbit(1, 1), 2);
-                testeq(uint(0).injectbit(2, 1), 4);
-                testeq(uint(0x7f).injectbit(7, 1), 0xff);
-                testeq(uint(0xff).injectbit(7, 1), 0xff);
-                testeq(uint(0xff).injectbit(7, 0), 0x7f);
-                foreach(T; Aliases!(ubyte, uint, ulong, int, long, float, double, real)){
-                    tests(T.stringof, {
-                        T value = 0;
-                        foreach(i; 0 .. T.sizeof * 8){
-                            value = value.injectbit(i, 0);
-                            testeq(value.extractbit(i), 0);
-                            value = value.injectbit(i, 1);
-                            testeq(value.extractbit(i), 1);
-                            value = value.injectbit(i, 1);
-                            testeq(value.extractbit(i), 1);
-                            value = value.injectbit(i, 0);
-                            testeq(value.extractbit(i), 0);
-                        }
-                    });
-                }
+                SingularTests!singularrttest();
             });
         });
         tests("Plural", {
             tests("Compile time", {
-                testeq((0x00).injectbits!(0, 4)(0x00), 0x00);
-                testeq((0x0f).injectbits!(0, 4)(0x00), 0x00);
-                testeq((0x00).injectbits!(0, 4)(0x05), 0x05);
-                testeq((0x00).injectbits!(0, 4)(0x0a), 0x0a);
-                testeq((0x00).injectbits!(0, 4)(0x0f), 0x0f);
-                testeq((0x0f).injectbits!(0, 8)(0xf0), 0xf0);
-                testeq((0x0f).injectbits!(4, 4)(0x0f), 0xff);
-                testeq(uint(0xffff0000).injectbits!(8, 16)(ushort(0x1234)), 0xff123400);
-                testeq(ulong(0xffffffff00000000).injectbits!(16, 32)(uint(0x12345678)), 0xffff123456780000);
+                PluralTests!pluralcttest();
             });
             tests("Runtime", {
-                testeq((0x00).injectbits(0, 4, 0x00), 0x00);
-                testeq((0x0f).injectbits(0, 4, 0x00), 0x00);
-                testeq((0x00).injectbits(0, 4, 0x05), 0x05);
-                testeq((0x00).injectbits(0, 4, 0x0a), 0x0a);
-                testeq((0x00).injectbits(0, 4, 0x0f), 0x0f);
-                testeq((0x0f).injectbits(0, 8, 0xf0), 0xf0);
-                testeq((0x0f).injectbits(4, 4, 0x0f), 0xff);
-                testeq(uint(0xffff0000).injectbits(8, 16, ushort(0x1234)), 0xff123400);
-                testeq(ulong(0xffffffff00000000).injectbits(16, 32, uint(0x12345678)), 0xffff123456780000);
+                PluralTests!pluralrttest();
             });
         });
     });
