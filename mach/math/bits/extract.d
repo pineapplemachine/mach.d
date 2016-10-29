@@ -15,7 +15,7 @@ public:
 
 /// Extract bit from a value at an offset in bits
 /// where the offset is known at compile time.
-auto extractbit(uint offset, T)(T value) if(
+auto extractbit(uint offset, T)(in T value) if(
     offset < T.sizeof * 8
 ){
     enum byteoffset = offset / 8;
@@ -29,7 +29,7 @@ auto extractbit(uint offset, T)(T value) if(
 /// The return type is inferred from the length argument:
 /// If length <= 32 then the return type is uint.
 /// If length <= 64 then the return type is ulong.
-auto extractbits(uint offset, uint length, T)(T value) if(
+auto extractbits(uint offset, uint length, T)(in T value) if(
     offset + length <= T.sizeof * 8
 ){
     static if(length <= 32) alias R = uint;
@@ -42,7 +42,7 @@ auto extractbits(uint offset, uint length, T)(T value) if(
 /// Extract bits from a value given an offset and length in bits
 /// where the offset and length are known at compile time.
 /// The return type is provided explicitly using the `R` template parameter.
-auto extractbits(R, uint offset, uint length, T)(T value) if(
+auto extractbits(R, uint offset, uint length, T)(in T value) if(
     length <= R.sizeof * 8 &&
     offset + length <= T.sizeof * 8
 ){
@@ -63,7 +63,7 @@ auto extractbits(R, uint offset, uint length, T)(T value) if(
 
 
 /// Extract bit from a value at an offset in bits.
-auto extractbit(T)(T value, in uint offset) in{
+auto extractbit(T)(in T value, in uint offset) in{
     assert(offset < T.sizeof * 8, "Bit offset exceeds size of parameter.");
 }body{
     immutable uint byteoffset = offset / 8;
@@ -73,7 +73,7 @@ auto extractbit(T)(T value, in uint offset) in{
 }
 
 /// Extract bits from a value given an offset and length in bits.
-auto extractbits(R = ulong, T)(T value, in uint offset, in uint length) in{
+auto extractbits(R = ulong, T)(in T value, in uint offset, in uint length) in{
     assert(offset + length <= T.sizeof * 8, "Bit offset exceeds size of parameter.");
 }body{
     immutable uint byteoffset = offset / 8;
