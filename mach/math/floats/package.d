@@ -1,5 +1,9 @@
 module mach.math.floats;
 
+private:
+
+import mach.math.floats.readme;
+
 public:
 
 import mach.math.floats.extract;
