@@ -3,6 +3,7 @@ module mach.math.bits.pow2;
 private:
 
 import mach.traits : isIntegral, isSigned;
+import mach.math.bits.hamming : hamming;
 
 public:
 
@@ -68,7 +69,6 @@ auto pow2d(T)(in size_t pow) if(isIntegral!T) in{
 /// Get whether a number is a power of two.
 /// TODO: Overrides for signed and float types
 bool ispow2(T)(T n) if(isIntegral!T && !isSigned!T){
-    import mach.math.bits.hamming : hamming;
     return n == 0 || n.hamming == 1;
 }
 
