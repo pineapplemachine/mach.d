@@ -10,17 +10,17 @@ public:
 
 /// Contains information describing an IEEE format.
 struct IEEEFormat{
-    /// Offset of the sign bit.
+    /// Offset in bits of the sign bit.
     uint sgnoffset;
-    /// Offset of the exponent.
+    /// Offset in bits of the exponent.
     uint expoffset;
     /// Size in bits of the exponent.
     uint expsize;
     /// Exponent bias; this number is subtracted from the exponent to determine
     /// the actual power of two.
     uint expbias;
-    /// Offset of the significand.
-    uint sigoffset;
+    /// Offset in bits of the significand.
+    static enum uint sigoffset = 0;
     /// Size in bits of the significand.
     uint sigsize;
     /// Whether the first bit of the significand represents an integer part,
@@ -44,7 +44,6 @@ struct IEEEFormat{
         expoffset: 10,
         expsize: 5,
         expbias: 0xf,
-        sigoffset: 0,
         sigsize: 10,
         intpart: false,
     };
@@ -54,7 +53,6 @@ struct IEEEFormat{
         expoffset: 23,
         expsize: 8,
         expbias: 0x7f,
-        sigoffset: 0,
         sigsize: 23,
         intpart: false,
     };
@@ -64,7 +62,6 @@ struct IEEEFormat{
         expoffset: 52,
         expsize: 11,
         expbias: 0x3ff,
-        sigoffset: 0,
         sigsize: 52,
         intpart: false,
     };
@@ -74,7 +71,6 @@ struct IEEEFormat{
         expoffset: 64,
         expsize: 15,
         expbias: 0x3fff,
-        sigoffset: 0,
         sigsize: 64,
         intpart: true,
     };
@@ -84,7 +80,6 @@ struct IEEEFormat{
         expoffset: 112,
         expsize: 15,
         expbias: 0x3fff,
-        sigoffset: 0,
         sigsize: 112,
         intpart: false,
     };
