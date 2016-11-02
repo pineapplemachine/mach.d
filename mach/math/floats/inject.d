@@ -14,46 +14,52 @@ public:
 auto fcompose(T, Sig)(in bool sgn, in uint exp, in Sig sig) if(
     isFloatingPoint!T && isIntegral!Sig
 ){
+    return T(0).finjectsgn!true(sgn).finjectexp!true(exp).finjectsig!true(sig);
+}
+
+
+
+/// Get a float equal to `1 * 2 ^ x`.
+/// The inputted exponent should be signed and biased, not a raw value.
+auto fcomposeexp(T)(in int exp) if(isFloatingPoint!T){
     enum Format = IEEEFormatOf!T;
-    enum sgnoffset = Format.sgnoffset;
-    enum expoffset = Format.expoffset;
-    enum expsize = Format.expsize;
-    enum sigoffset = Format.sigoffset;
-    enum sigsize = Format.sigsize;
-    immutable T a = T(0).injectbit!(sgnoffset, true)(sgn);
-    immutable T b = a.injectbits!(expoffset, expsize, true)(exp);
-    immutable T c = b.injectbits!(sigoffset, sigsize, true)(sig);
-    return c;
+    static if(Format.intpart){
+        enum intoffset = Format.intpartoffset;
+        immutable T a = T(0).injectbit!(intoffset, true)(1);
+    }else{
+        immutable T a = T(0);
+    }
+    return a.finjectexp!true(cast(uint)(exp + Format.expbias));
 }
 
 
 
 /// Get a float the same as the input, but with the given sign.
-auto finjectsgn(T)(in T value, in bool sgn) if(
+auto finjectsgn(bool assumezero = false, T)(in T value, in bool sgn) if(
     isFloatingPoint!T
 ){
     enum offset = IEEEFormatOf!T.sgnoffset;
-    return value.injectbit!(offset)(sgn);
+    return value.injectbit!(offset, assumezero)(sgn);
 }
 
 /// Get a float the same as the input, but with the given exponent bits.
-auto finjectexp(T)(in T value, in uint exp) if(
+auto finjectexp(bool assumezero = false, T)(in T value, in uint exp) if(
     isFloatingPoint!T
 ){
     enum Format = IEEEFormatOf!T;
     enum offset = Format.expoffset;
     enum size = Format.expsize;
-    return value.injectbits!(offset, size)(exp);
+    return value.injectbits!(offset, size, assumezero)(exp);
 }
 
 /// Get a float the same as the input, but with the given significand bits.
-auto finjectsig(T, Sig)(in T value, in Sig sig) if(
+auto finjectsig(bool assumezero = false, T, Sig)(in T value, in Sig sig) if(
     isFloatingPoint!T && isIntegral!Sig
 ){
     enum Format = IEEEFormatOf!T;
     enum offset = Format.sigoffset;
     enum size = Format.sigsize;
-    return value.injectbits!(offset, size)(sig);
+    return value.injectbits!(offset, size, assumezero)(sig);
 }
 
 
@@ -75,29 +81,46 @@ version(unittest){
 }
 unittest{
     tests("Float inject", {
-        struct Float{bool sgn; uint exp; ulong sig;}
-        foreach(T; Aliases!(float, double, real)){
-            tests(T.stringof, {
-                foreach(f; [
-                    Float(0, 0, 0),
-                    Float(1, 0, 0),
-                    Float(0, 1, 0),
-                    Float(1, 1, 0),
-                    Float(0, 0, 1),
-                    Float(1, 0, 1),
-                    Float(0, 120, 32000),
-                    Float(1, 120, 32000),
-                    Float(0, 127, 0),
-                    Float(1, 127, 0),
-                    Float(0, 127, 8388607),
-                    Float(1, 127, 8388607),
-                ]){
-                    auto composed = fcompose!T(f.sgn, f.exp, f.sig);
-                    testeq(composed.fextractsgn, f.sgn);
-                    testeq(composed.fextractexp, f.exp);
-                    testeq(composed.fextractsig, f.sig);
-                }
-            });
-        }
+        tests("Compose full", {
+            struct Float{bool sgn; uint exp; ulong sig;}
+            foreach(T; Aliases!(float, double, real)){
+                tests(T.stringof, {
+                    foreach(f; [
+                        Float(0, 0, 0),
+                        Float(1, 0, 0),
+                        Float(0, 1, 0),
+                        Float(1, 1, 0),
+                        Float(0, 0, 1),
+                        Float(1, 0, 1),
+                        Float(0, 120, 32000),
+                        Float(1, 120, 32000),
+                        Float(0, 127, 0),
+                        Float(1, 127, 0),
+                        Float(0, 127, 8388607),
+                        Float(1, 127, 8388607),
+                    ]){
+                        auto composed = fcompose!T(f.sgn, f.exp, f.sig);
+                        testeq(composed.fextractsgn, f.sgn);
+                        testeq(composed.fextractexp, f.exp);
+                        testeq(composed.fextractsig, f.sig);
+                    }
+                });
+            }
+        });
+        tests("Compose exp", {
+            foreach(T; Aliases!(float, double, real)){
+                enum Format = IEEEFormatOf!T;
+                tests(T.stringof, {
+                    foreach(e; [
+                        0, 1, -1, 100, -100, 126, -127, 128, -128,
+                        -500, 500, 1000, -1000, 1022, -1023
+                    ]){
+                        if(e >= Format.sexpmin && e <= Format.sexpmax){
+                            testeq(fcomposeexp!T(e), T(2) ^^ e);
+                        }
+                    }
+                });
+            }
+        });
     });
 }
