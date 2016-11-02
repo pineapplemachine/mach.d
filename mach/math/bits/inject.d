@@ -132,7 +132,6 @@ version(unittest){
     import mach.meta : Aliases, NumericSequence;
     import mach.math.bits.extract;
     
-    import mach.io.log;
     void SingularTests(alias func)(){
         func!(0)(uint(0), 0, 0);
         func!(1)(uint(0), 0, 0);
@@ -144,7 +143,7 @@ version(unittest){
         func!(7)(uint(0x7f), 1, 0xff);
         func!(7)(uint(0xff), 1, 0xff);
         func!(7)(uint(0xff), 0, 0x7f);
-        foreach(T; Aliases!(ubyte, uint, ulong, int, long, float, double, real)){
+        foreach(T; Aliases!(ubyte, uint, ulong, int, long, float, double)){
             tests(T.stringof, {
                 T value = 0;
                 foreach(i; NumericSequence!(0, T.sizeof * 8)){
