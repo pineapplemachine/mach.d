@@ -8,9 +8,12 @@ import std.string : join;
 
 public:
 
-/// Get a grammatically-correct (probably) series of items, e.g. "one, two, and three".
-/// Oxford comma can be optionally disabled (get "one, two and three" instead).
-string series(bool oxford = true, Args...)(in Args items){
+/// Get a grammatically-correct (probably) series of items.
+/// e.g. "one, two, and three".
+/// Oxford/serial comma can be optionally disabled.
+/// In which case the function returns e.g. "one, two and three" instead.
+/// TODO: Accept a range instead of varargs
+string series(bool oxford = true, Args...)(auto ref Args items){
     if(items.length == 0){
         return "";
     }else if(items.length == 1){
