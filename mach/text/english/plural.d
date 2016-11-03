@@ -2,19 +2,23 @@ module mach.text.english.plural;
 
 private:
 
-import std.conv : to;
-import std.algorithm : canFind;
-import std.string : join, endsWith, toLower, toUpper;
+import std.string : toLower, toUpper;
+import mach.text.utf : utf8encode;
+import mach.range : contains, tailis;
 import mach.text.english.vowels : isVowel;
 import mach.text.cases : isUpper;
 
 public:
+
+
 
 /// Pluralize a single English word using the default Pluralizer.
 /// Not perfect, but can be expected to work in the vast majority of cases.
 string plural(bool allcaps = false)(in string word){
     return Pluralizer.getdefault().plural!(allcaps)(word);
 }
+
+
 
 class Pluralizer{
     
@@ -43,15 +47,14 @@ class Pluralizer{
             "alumnus": "alumni", "corpus": "corpora", "focus": "foci", "genus": "genera",
             "radius": "radii", "succubus": "succubi", "viscus": "viscera",
             "cactus": "cacti", "fungus": "fungi", "terminus": "termini",
-            "criterion": "criteria", "phenomenon": "phenomena", "polyhedron": "polyhedra",
-            "benshi": "benshi", "otaku": "otaku", "samurai": "samurai"
+            "criterion": "criteria", "phenomenon": "phenomena", "polyhedron": "polyhedra"
         ];
         this.PluralSameAsSingular = [
             "bison", "buffalo", "deer", "duck", "fish", "moose", "salmon",
             "sheep", "squid", "swine", "trout", "aircraft", "watercraft", "spacecraft",
             "hovercraft", "blues", "series", "species", "swiss", "cherokee", "cree",
             "comanche", "delaware", "hopi", "iroquois", "kiowa", "navajo", "ojibwa",
-            "sioux", "zuni", "dice", "data"
+            "sioux", "zuni", "dice", "data", "benshi", "otaku", "samurai"
         ];
         this.PluralOSuffixExceptions = [
             "canto", "hetero", "homo", "photo", "zero", "piano", "portico",
@@ -80,20 +83,20 @@ class Pluralizer{
                 if(word.isUpper){
                     return result.toUpper;
                 }else{
-                    return to!string(result[0].toUpper) ~ result[1 .. $];
+                    return cast(string)(result[0].toUpper.utf8encode.chars) ~ result[1 .. $];
                 }
             }else{
                 return result;
             }
             
-        }else if(PluralSameAsSingular.canFind(word.toLower)){
+        }else if(PluralSameAsSingular.contains(word.toLower)){
             return word;
             
         }else{
             
-            // Case-insensitive endsWith
+            // Case-insensitive comparison of trailing characters
             bool ends(in string word, in string suffix){
-                return word.toLower.endsWith(suffix);
+                return word.tailis!((a, b) => (a.toLower == b))(suffix);
             }
             
             string suffix = "s"; // String to append
@@ -102,17 +105,17 @@ class Pluralizer{
             if(ends(word, "o")){
                 if(
                     word.length > 3 && !word[$-2].isVowel &&
-                    !PluralOSuffixExceptions.canFind(word.toLower)
+                    !PluralOSuffixExceptions.contains(word.toLower)
                 ){
                     suffix = "es";
                 }
             }else if(ends(word, "y")){
-                if(!word[$-2].isVowel || ends(word, "-by")){
+                if(!word[$-2].isVowel){
                     suffix = "ies";
                     trimright = 1;
                 }
             }else if(ends(word, "f")){
-                if(!PluralFSuffixExceptions.canFind(word.toLower)){
+                if(!ends(word, "ff") && !PluralFSuffixExceptions.contains(word.toLower)){
                     suffix = "ves";
                     trimright = 1;
                 }
@@ -122,7 +125,7 @@ class Pluralizer{
             }else if(!allcaps && word[0].isUpper && ends(word, "ese")){
                 // Assume a nationality e.g. Chinese, Japanese
                 suffix = "";
-            }else if(ends(word, "s") && word.length <= 3){
+            }else if(word.length <= 3 && ends(word, "s") && !ends(word, "ss")){
                 // TODO: More reliably check for a single syllable
                 suffix = "ses"; // e.g. "busses"
             }else if(
