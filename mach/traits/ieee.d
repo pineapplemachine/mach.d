@@ -32,10 +32,25 @@ struct IEEEFormat{
         return (1 << this.expsize) - 1;
     }
     
+    /// The minimum normal or subnormal exponent.
+    @property sexpmin() const{
+        return this.expbias;
+    }
+    /// The maximum normal exponent.
+    @property sexpmax() const{
+        return this.expmax - this.expbias - 1;
+    }
+    
     /// Subnormal numbers are represented by `2 ^ -x`
     /// where `x` is the value of this property.
     @property uint expsubnormal() const{
-        return this.expbias - 1;
+        return 1 - this.expbias;
+    }
+    
+    /// When `intpart` is true, returns the bit offset of the
+    /// format's integral part.
+    @property uint intpartoffset() const{
+        return this.sigoffset + this.sigsize - 1;
     }
     
     /// https://en.wikipedia.org/wiki/Half-precision_floating-point_format
