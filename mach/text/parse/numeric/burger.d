@@ -51,7 +51,9 @@ enum bitstoright = 52;
 
 struct Bignum{
     int l;
-    Bigit d[BIGSIZE];
+    Bigit[BIGSIZE] d;
+    
+    /+
     string toString() const{
         import mach.text.parse.numeric.integrals : writehex;
         string str = "";
@@ -60,6 +62,7 @@ struct Bignum{
         }
         return str;
     }
+    +/
 }
 
 Bignum five[MAX_FIVE];
@@ -280,6 +283,8 @@ auto sub_big(in Bignum x, in Bignum y){
         assert(false);
     }else{
         z.l = x.l;
+        // Sophie: This loop altered from the original C to include a bounds
+        // check for p.
         while((p > 0) && (z.d[--p] == 0)){
             z.l--;
         }
