@@ -34,7 +34,9 @@ auto fextractsexp(T)(T value) if(isFloatingPoint!T){
     if(value.fissubnormal){
         return -(cast(int) Format.expsubnormal);
     }else{
-        return cast(int) value.fextractexp - Format.expbias;
+        auto unbiased = cast(int) value.fextractexp;
+        if(unbiased == 0) return int(1) - Format.expbias;
+        else return unbiased - Format.expbias;
     }
 }
 

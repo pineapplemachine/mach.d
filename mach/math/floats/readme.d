@@ -22,7 +22,7 @@ unittest{
     float zero = 0;
     assert(zero.fextractsgn == 0); // Sign
     assert(zero.fextractexp == 0); // Unbiased exponent
-    assert(zero.fextractsexp == -127); // Biased exponent
+    assert(zero.fextractsexp == -126); // Biased exponent
     assert(zero.fextractsig == 0); // Raw significand
     assert(zero.fextractnsig == 0); // Normalized significand
 }
