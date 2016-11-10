@@ -32,7 +32,6 @@ module mach.text.parse.numeric.burger;
 
 private:
 
-import mach.math.bits : pow2d;
 import mach.math.floats : fextractsgn, fextractexp, fextractsig;
 
 public:
@@ -425,7 +424,7 @@ DragonResult dragon(in double v){
     // Compute the scaling factor estimate, k
     int k = void;
     if(e > MIN_E){
-        k = estimate(e + double.mant_dig);
+        k = estimate(e + 52);
     }else{
         int n = e + 52;
         Bigit y = B_P1;
@@ -537,12 +536,13 @@ DragonResult dragon(in double v){
             d = 0;
         }else if(R.l == sl){
             d = cast(int)(R.d[sl] >> slr);
-            R.d[sl] &= pow2d!Bigit(slr);
+            R.d[sl] &= (Bigit(1) << slr) - 1;
             while((R.l > 0) && (R.d[R.l] == 0)) R.l--;
         }else{
             d = cast(int)((R.d[sl + 1] << (64 - slr)) | (R.d[sl] >> slr));
-            R.d[sl] &= pow2d!Bigit(slr);
-            while((R.l > 0) && (R.d[R.l] == 0)) R.l--;
+            R.d[sl] &= (Bigit(1) << slr) - 1;
+            R.l = sl;
+            while(R.d[R.l] == 0) R.l--;
         }
     }else{ // We need to do quotient-remainder
         d = qr(R, S, S2, S3, S4, S5, S6, S7, S8, S9);
@@ -600,6 +600,11 @@ unittest{
         assert(result.digits == "123456");
         assert(result.k == 2);
     }{
+        auto result = dragon(69.6969);
+        assert(result.sign == 0);
+        assert(result.digits == "696969");
+        assert(result.k == 1);
+    }{
         auto result = dragon(0.00123);
         assert(result.sign == 0);
         assert(result.digits == "123");
@@ -609,5 +614,20 @@ unittest{
         assert(result.sign == 0);
         assert(result.digits == "456");
         assert(result.k == 3);
+    }{
+        auto result = dragon(9.001e-4);
+        assert(result.sign == 0);
+        assert(result.digits == "9001");
+        assert(result.k == -4);
+    }{
+        auto result = dragon(1.79769e+308); // double.max
+        assert(result.sign == 0);
+        assert(result.digits == "179769");
+        assert(result.k == 308);
+    }{
+        auto result = dragon(2.22507e-308); // double.min_normal
+        assert(result.sign == 0);
+        assert(result.digits == "222507");
+        assert(result.k == -308);
     }
 }
