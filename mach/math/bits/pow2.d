@@ -34,7 +34,7 @@ template pow2(size_t pow){
 /// Get a power of two stored in the given primitive integral type.
 /// Throws an assertion error if the integral isn't big enough to fit the number.
 auto pow2(T)(in size_t pow) if(isIntegral!T) in{
-    assert(pow < T.sizeof * 8);
+    assert(pow < T.sizeof * 8, "Value too large to fit in the given type.");
 }body{
     return T(1) << pow;
 }
@@ -58,7 +58,9 @@ template pow2d(size_t pow) if(pow > 0){
 /// Get a power of two minus one stored in the given primitive integral type.
 /// Throws an assertion error if the integral isn't big enough to fit the number.
 auto pow2d(T)(in size_t pow) if(isIntegral!T) in{
-    assert(pow > 0 && pow <= T.sizeof * 8);
+    assert(pow >= 0 && pow <= T.sizeof * 8,
+        "Value too large to fit in the given type."
+    );
 }body{
     if(pow == T.sizeof * 8) return ~T(0);
     else return (T(1) << pow) - 1;
