@@ -620,14 +620,14 @@ unittest{
         assert(result.digits == "9001");
         assert(result.k == -4);
     }{
-        auto result = dragon(1.79769e+308); // double.max
+        auto result = dragon(double.max); // Approx. 1.79769e+308
         assert(result.sign == 0);
-        assert(result.digits == "179769");
+        assert(result.digits == "17976931348623157");
         assert(result.k == 308);
     }{
-        auto result = dragon(2.22507e-308); // double.min_normal
+        auto result = dragon(double.min_normal); // Approx. 2.22507e-308
         assert(result.sign == 0);
-        assert(result.digits == "222507");
+        assert(result.digits == "22250738585072014");
         assert(result.k == -308);
     }
 }

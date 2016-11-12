@@ -19,8 +19,20 @@ public:
 struct WriteFloatSettings{
     static enum WriteFloatSettings Default = WriteFloatSettings();
     
+    static enum DefaultExponentThreshold = 12;
+    
     static enum ExponentSetting{
-        Never, Always, Threshold
+        /// Never output an exponent when forming a string;
+        /// use as many zeros as is necessary. (Even when that's a lot.)
+        Never,
+        /// Always output an exponent when forming a string;
+        /// The value will always be in the form `\d(.\d+)?e-?\d+`.
+        Always,
+        /// When the number of preceding or trailing zeros that would need
+        /// to be included to represent a value exceeds the threshold described
+        /// by a settings object's `exponentthreshold` attribute, output an
+        /// exponent when forming the string. Otherwise, do not use an exponent.
+        Threshold
     }
     
     /// What to output when the input is positive NaN.
@@ -40,7 +52,7 @@ struct WriteFloatSettings{
     /// When `exponentsetting` is set to Threshold, this is the maximum number
     /// of leading or trailing zeros to allow before an exponent is used to
     /// represent the value instead.
-    uint exponentthreshold = 24;
+    uint exponentthreshold = DefaultExponentThreshold;
 }
 
 
@@ -151,6 +163,12 @@ version(unittest){
     private:
     import mach.test;
     import mach.meta : Aliases;
+    void commontests(WriteFloatSettings settings)(){
+        testeq(writefloat!settings(double.infinity), settings.PosInfLiteral);
+        testeq(writefloat!settings(-double.infinity), settings.NegInfLiteral);
+        testeq(writefloat!settings(double.nan), settings.PosNaNLiteral);
+        testeq(writefloat!settings(-double.nan), settings.NegNaNLiteral);
+    }
     void testwrite(WriteFloatSettings settings, string literal)(){
         mixin(`double pvalue = ` ~ literal ~ `;`);
         testeq(pvalue.writefloat!settings, literal);
@@ -160,6 +178,8 @@ version(unittest){
 }
 unittest{
     tests("Write float", {
+        enum string double_min = "2.2250738585072014e-305";
+        enum string double_max = "1.7976931348623157e308";
         // No exponents, no trailing fraction
         {
             enum WriteFloatSettings settings = {
@@ -168,6 +188,7 @@ unittest{
             };
             testeq((0.0).writefloat!settings, "0");
             testeq((-0.0).writefloat!settings, "-0");
+            commontests!settings();
             foreach(str; Aliases!(
                 "1", "0.1", "0.125", "10", "100", "1000",
                 "123.456", "0.3333", "0.9999", "9001", "0.9001", "0.009001"
@@ -181,6 +202,7 @@ unittest{
                 trailingfraction: true,
                 exponentsetting: WriteFloatSettings.ExponentSetting.Never
             };
+            commontests!settings();
             foreach(str; Aliases!(
                 "0.0", "1.0", "0.1", "0.125", "10.0", "100.0", "1000.0",
                 "123.456", "0.3333", "0.9999", "9001.0", "0.9001", "0.009001"
@@ -194,10 +216,11 @@ unittest{
                 trailingfraction: false,
                 exponentsetting: WriteFloatSettings.ExponentSetting.Always
             };
+            commontests!settings();
             foreach(str; Aliases!(
                 "0e0", "1e0", "1.25e-1", "1e1", "1e2", "1e3",
                 "1.23456e2", "3.333e-1", "9.999e-1", "9.001e3", "9.001e-1",
-                "9.001e-3", "9.001e-4", "1.79769e308", "2.22507e-308"
+                "9.001e-3", "9.001e-4", double_min, double_max
             )){
                 testwrite!(settings, str)();
             }
@@ -208,6 +231,7 @@ unittest{
                 trailingfraction: true,
                 exponentsetting: WriteFloatSettings.ExponentSetting.Always
             };
+            commontests!settings();
             foreach(str; Aliases!(
                 "0.0e0", "1.0e0", "1.25e-1", "1.0e1", "1.0e2", "1.0e3",
                 "1.23456e2", "3.333e-1", "9.999e-1", "9.001e3", "9.001e-1", "9.001e-3"
@@ -222,10 +246,11 @@ unittest{
                 exponentsetting: WriteFloatSettings.ExponentSetting.Threshold,
                 exponentthreshold: 2
             };
+            commontests!settings();
             foreach(str; Aliases!(
                 "1", "0.1", "0.125", "10", "100", "1e3",
                 "123.456", "0.3333", "0.9999", "9001", "0.9001", "0.009001",
-                "9.001e-4", "1.79769e308", "2.22507e-308"
+                "9.001e-4", double_min, double_max
             )){
                 testwrite!(settings, str)();
             }
