@@ -12,6 +12,8 @@ public:
 /// Can be used to limit the maximum number of times a loop executes per second.
 /// Uses thread sleep when a loop - generally a rendering frame - takes less
 /// time than the imposed limit.
+/// TODO: Is the current implementation vulnerable to this?
+/// http://stackoverflow.com/questions/23258650/sleep1-and-sdl-delay1-takes-15-ms
 struct FrameLimiter{
     /// Target milliseconds per frame.
     real mspflimit = real(1000) / 60;
