@@ -45,7 +45,7 @@ struct WriteFloatSettings{
     string NegInfLiteral = "-inf";
     /// Whether to write a trailing ".0" when the value would otherwise be
     /// represented by an integral.
-    bool trailingfraction = true;
+    bool trailingfraction = false;
     /// Setting for when, if ever, to use exponents to describe inputted
     /// values.
     ExponentSetting exponentsetting = ExponentSetting.Threshold;
