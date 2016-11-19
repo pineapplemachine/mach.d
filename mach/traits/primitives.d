@@ -142,9 +142,9 @@ template isComplex(T){
 }
 
 /// Get whether a type is a character primitive.
-template isChar(T){
+template isCharacter(T){
     alias U = Unqual!T;
-    enum bool isChar = (
+    enum bool isCharacter = (
         is(U == char) || is(U == wchar) || is(U == dchar)
     );
 }
@@ -152,7 +152,7 @@ template isChar(T){
 /// Get whether a type is a scalar primitive. This includes numbers, characters,
 /// and booleans.
 enum isScalar(T) = (
-    isBoolean!T || isNumeric!T || isChar!T
+    isBoolean!T || isNumeric!T || isCharacter!T
 );
 
 /// Get whether a type is a pointer.
@@ -246,9 +246,9 @@ unittest{
     // isComplex
     static assert(All!(isComplex, Complex));
     static assert(None!(isComplex, Nulls, Bools, UInts, SInts, Floats, Imag, Chars, Ptrs, Chaff));
-    // isChar
-    static assert(All!(isChar, Chars));
-    static assert(None!(isChar, Nulls, Bools, UInts, SInts, Floats, Imag, Complex, Ptrs, Chaff));
+    // isCharacter
+    static assert(All!(isCharacter, Chars));
+    static assert(None!(isCharacter, Nulls, Bools, UInts, SInts, Floats, Imag, Complex, Ptrs, Chaff));
     // isPointer
     static assert(All!(isPointer, Ptrs));
     static assert(None!(isPointer, Nulls, Bools, SInts, UInts, Floats, Imag, Complex, Chars, Chaff));
