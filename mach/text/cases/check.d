@@ -22,7 +22,10 @@ bool isLower(S)(in S text) if(isSomeString!S){
 alias isupper = isUpper;
 alias islower = isLower;
 
-version(unittest) import mach.error.unit;
+version(unittest){
+    private:
+    import mach.test;
+}
 unittest{
     // is upper case
     test("HELLO WORLD".isupper);
