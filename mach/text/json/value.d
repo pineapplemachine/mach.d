@@ -124,7 +124,7 @@ static struct JsonValue{
             }else if(this.type is Type.Array){
                 this.store.arrayval = value.store.arrayval.dup;
             }else if(this.type is Type.Object){
-                this.store.objectval = value.store.objectval.dup;
+                this.store.objectval = cast(Object) value.store.objectval.dup;
             }else{
                 this.store = value.store;
             }
@@ -142,10 +142,7 @@ static struct JsonValue{
         }else static if(isString!T){
             this.type = Type.String;
             this.store.stringval = cast(string) value.utf8encode.asarray!(immutable char);
-        }else static if(is(T : Array)){
-            this.type = Type.Array;
-            this.store.arrayval = value;
-        }else static if(is(isArray!T)){
+        }else static if(isArray!T){
             this.type = Type.Array;
             JsonValue[] array;
             array.reserve(value.length);
@@ -423,6 +420,31 @@ static struct JsonValue{
     auto opOpAssign(string op: "~")(in char value){
         if(this.type is Type.String){
             this.store.stringval ~= value;
+        }else{
+            throw new JsonInvalidOperationException();
+        }
+    }
+    
+    /// Concatenate two strings.
+    auto opBinary(string op: "~")(in string value){
+        if(this.type is Type.String){
+            return JsonValue(this.store.stringval ~ value);
+        }else{
+            throw new JsonInvalidOperationException();
+        }
+    }
+    /// ditto
+    auto opBinary(string op: "~")(in JsonValue value){
+        if(this.type is Type.String && value.type is Type.String){
+            return JsonValue(this.store.stringval ~ value.store.stringval);
+        }else{
+            throw new JsonInvalidOperationException();
+        }
+    }
+    /// ditto
+    auto opBinaryRight(string op: "~")(in string value){
+        if(this.type is Type.String){
+            return JsonValue(value ~ this.store.stringval);
         }else{
             throw new JsonInvalidOperationException();
         }
@@ -832,27 +854,53 @@ unittest{
             }
         });
         tests("String", {
-            auto x = JsonValue(Type.String);
-            auto y = JsonValue("");
-            foreach(str; [x, y]){
-                testis(str.type, Type.String);
-                testeq(str, "");
-                testeq(str.length, 0);
-                test(str.empty);
+            {
+                auto x = JsonValue(Type.String);
+                auto y = JsonValue("");
+                foreach(str; [x, y]){
+                    testis(str.type, Type.String);
+                    testeq(str, "");
+                    testeq(str.length, 0);
+                    test(str.empty);
+                }
+            }{
+                auto hi = JsonValue("Hello");
+                testeq(hi, "Hello");
+                testeq(hi.length, 5);
+                testf(hi.empty);
+                hi ~= " World";
+                testeq(hi, "Hello World");
+                hi ~= '!';
+                testeq(hi, "Hello World!");
+                hi ~= JsonValue(" Hiya");
+                testeq(hi, "Hello World! Hiya");
+                testeq(hi[0], 'H');
+                JsonValue slice = hi[0 .. 5];
+                testeq(slice, "Hello");
+                testeq(hi.toString(), `"Hello World! Hiya"`);
+                testeq(slice.toString(), `"Hello"`);
+                JsonValue concat = slice ~ " There";
+                testeq(concat, "Hello There");
+                testeq(slice ~ slice, "HelloHello");
             }
-            auto z = JsonValue("Hello");
-            testeq(z, "Hello");
-            testeq(z.length, 5);
-            testf(z.empty);
-            z ~= " World";
-            testeq(z, "Hello World");
-            z ~= '!';
-            testeq(z, "Hello World!");
-            z ~= JsonValue(" Hiya");
-            testeq(z, "Hello World! Hiya");
-            testeq(z[0], 'H');
-            JsonValue slice = z[0 .. 5];
-            testeq(slice, "Hello");
+        });
+        tests("Array", {
+            {
+                auto array = JsonValue(Type.Array);
+                testeq(array.length, 0);
+                test(array.empty);
+            }{
+                auto array = JsonValue([0, 1, 2]);
+                testeq(array.length, 3);
+                testf(array.empty);
+                testeq(array[0], 0);
+                testeq(array[1], 1);
+                testeq(array[2], 2);
+                testeq(array[0 .. 0], new int[0]);
+                testeq(array[0 .. 2], [0, 1]);
+                testeq(array[1 .. 3], [1, 2]);
+                testeq(array[0 .. 3], array);
+            }
         });
     });
 }
