@@ -138,7 +138,7 @@ struct AssociativeArrayRange(Array) if(canMakeAssociativeArrayRange!Array){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
 }
 unittest{
     tests("Associative array as range", {
@@ -148,7 +148,7 @@ unittest{
             "four": 4, "five": 5
         ];
         alias Array = typeof(array);
-        testeq("Length",
+        testeq(
             AssociativeArrayRange!Array(array).length, array.length
         );
         tests("Iteration", {
@@ -170,7 +170,7 @@ unittest{
             auto range = AssociativeArrayRange!Array(array);
             testeq(range["zero"].value, 0);
             testeq(range["one"].value, 1);
-            fail({range["not_a_key"];});
+            testfail({range["not_a_key"];});
         });
         tests("Mutability", {
             auto arraydup = array.dup;
