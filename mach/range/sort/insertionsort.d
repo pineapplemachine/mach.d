@@ -12,10 +12,11 @@ alias insertionsort = linearinsertionsort;
 
 
 
-/// Implements a stable sort using insertion sort.
+/// Sorts an input using insertion sort.
 /// The input is mutated.
 /// The input must be finite, of known length, and allow random access
 /// reading and writing.
+/// The sorting is stable; i.e. equivalent elements retain their original order.
 /// The inputted comparison function should return true when the first input
 /// must precede the second in the sorted output and false otherwise.
 /// https://en.wikipedia.org/wiki/Insertion_sort
@@ -36,12 +37,13 @@ auto linearinsertionsort(alias compare = DefaultSortCompare, T)(auto ref T input
 
 
 
-/// Implements a stable sort using a binary insertion sort.
-/// Differs from linear insertion sort in that it requires fewer comparison
-/// operations at the cost of slightly increased overhead.
+/// Sorts an input using binary insertion sort.
+/// Differs from linear insertion sort in that it requires fewer comparisons,
+/// at the cost of slightly increased overhead.
 /// The input is mutated.
 /// The input must be finite, of known length, and allow random access
 /// reading and writing.
+/// The sorting is stable; i.e. equivalent elements retain their original order.
 /// The inputted comparison function should return true when the first input
 /// must precede the second in the sorted output and false otherwise.
 /// https://en.wikipedia.org/wiki/Insertion_sort

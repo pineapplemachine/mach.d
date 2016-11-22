@@ -14,10 +14,11 @@ alias canMergeSort = canBoundedRandomAccessSort;
 
 
 
-/// Implements a stable sort using mergesort.
+/// Sorts an input using mergesort.
 /// The input is mutated.
 /// The input must be finite, of known length, and allow random access
 /// reading and writing.
+/// The sorting is stable; i.e. equivalent elements retain their original order.
 /// The inputted comparison function should return true when the first input
 /// must precede the second in the sorted output and false otherwise.
 /// https://en.wikipedia.org/wiki/Merge_sort
