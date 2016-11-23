@@ -2,7 +2,7 @@ module mach.range.sort.selectionsort;
 
 private:
 
-import mach.traits : ElementType, isSavingRange, isFiniteIterable;
+import mach.traits : ElementType, isSavingRange, isFiniteIterable, hasNumericLength;
 import mach.range.asrange : asrange, validAsSavingRange;
 import mach.range.sort.common;
 
@@ -208,13 +208,20 @@ struct CopySelectionSortRange(alias compare, Range) if(
         this.valuesindex = valuesindex;
     }
     
-    @property bool empty() const{
-        return this.currentvalues.length == 0;
+    static if(isFiniteIterable!Range){
+        @property bool empty() const{
+            return this.currentvalues.length == 0;
+        }
+    }else{
+        enum bool empty = false;
     }
-    @property auto length(){
-        return this.source.length;
+    
+    static if(hasNumericLength!Range){
+        @property auto length(){
+            return this.source.length;
+        }
+        alias opDollar = length;
     }
-    alias opDollar = length;
     
     @property typeof(this) save(){
         return typeof(this)(
