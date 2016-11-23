@@ -17,27 +17,29 @@ alias selectionsort = eagerselectionsort;
 /// Determine whether a type is able to be eagerly selection sorted.
 alias canEagerSelectionSort = canBoundedRandomAccessSort;
 
+alias canLazySelectionSort = canBoundedRandomAccessSort;
 
 
-template canLazySelectionSort(T){
-    enum bool canLazySelectionSort = isFiniteIterable!T && validAsSavingRange!T;
+
+template canLazyCopySelectionSort(T){
+    enum bool canLazyCopySelectionSort = isFiniteIterable!T && validAsSavingRange!T;
 }
 
-template canLazySelectionSort(alias compare, T){
-    enum bool canLazySelectionSort = (
-        canLazySelectionSort!T && isSortComparison!(compare, T)
+template canLazyCopySelectionSort(alias compare, T){
+    enum bool canLazyCopySelectionSort = (
+        canLazyCopySelectionSort!T && isSortComparison!(compare, T)
     );
 }
 
 
 
-template canLazySelectionSortRange(T){
-    enum bool canLazySelectionSortRange = isFiniteIterable!T && isSavingRange!T;
+template canLazyCopySelectionSortRange(T){
+    enum bool canLazyCopySelectionSortRange = isFiniteIterable!T && isSavingRange!T;
 }
 
-template canLazySelectionSortRange(alias compare, T){
-    enum bool canLazySelectionSortRange = (
-        canLazySelectionSortRange!T && isSortComparison!(compare, T)
+template canLazyCopySelectionSortRange(alias compare, T){
+    enum bool canLazyCopySelectionSortRange = (
+        canLazyCopySelectionSortRange!T && isSortComparison!(compare, T)
     );
 }
 
@@ -64,7 +66,6 @@ auto eagerselectionsort(alias compare = DefaultSortCompare, T)(auto ref T input)
 ){
     immutable size_t ilimit = cast(size_t) input.length;
     immutable size_t jlimit = ilimit - 1;
-    size_t o = 0;
     for(size_t j = 0; j < jlimit; j++){
         size_t min = j;
         for(size_t i = j + 1; i < ilimit; i++){
@@ -79,6 +80,86 @@ auto eagerselectionsort(alias compare = DefaultSortCompare, T)(auto ref T input)
         }
     }
     return input;
+}
+
+
+
+/// Sorts an input lazily using a modified selection sort.
+/// https://en.wikipedia.org/wiki/Selection_sort
+/// 
+/// Input requirements: Finite, known length, random access reads & writes.
+/// Input is mutated: Yes.
+/// Sorting is eager: No.
+/// Sorting is adaptive: No.
+/// Sorting is stable: Yes.
+/// 
+/// The inputted comparison function should return true when the first input
+/// must precede the second in the sorted output and false otherwise.
+/// 
+/// Why to use it:
+///   Lazily evaluated.
+/// Why not to use it:
+///   Inefficient: O(n^2) complexity.
+auto lazyselectionsort(alias compare = DefaultSortCompare, T)(auto ref T input) if(
+    canLazySelectionSort!(compare, T)
+){
+    auto range = input.asrange;
+    return SelectionSortRange!(compare, typeof(range))(range);
+}
+
+/// Type returned by `lazyselectionsort`.
+struct SelectionSortRange(alias compare, Source) if(
+    canLazySelectionSort!(compare, Source)
+){
+    Source source;
+    size_t index = 0;
+    
+    this(Source source){
+        this.source = source;
+        this.select(0);
+    }
+    this(Source source, size_t index){
+        this.source = source;
+        this.index = index;
+    }
+    
+    @property bool empty() const{
+        return this.index >= this.source.length;
+    }
+    @property auto length(){
+        return this.source.length;
+    }
+    alias opDollar = length;
+    
+    static if(is(typeof({
+        typeof(this)(this.source.dup, this.index);
+    }))){
+        @property typeof(this) save(){
+            return typeof(this)(this.source.dup, this.index);
+        }
+    }
+    
+    @property auto front(){
+        return this.source[this.index];
+    }
+    void popFront(){
+        this.index++;
+        this.select(this.index);
+    }
+    
+    void select(in size_t start){
+        size_t min = start;
+        for(size_t i = start + 1; i < this.source.length; i++){
+            if(compare(this.source[i], this.source[min])){
+                min = i;
+            }
+        }
+        if(min != start){
+            auto t = this.source[start];
+            this.source[start] = this.source[min];
+            this.source[min] = t;
+        }
+    }
 }
 
 
@@ -101,18 +182,15 @@ auto eagerselectionsort(alias compare = DefaultSortCompare, T)(auto ref T input)
 /// Why not to use it:
 ///   Inefficient: O(n^2) complexity.
 auto lazycopyselectionsort(alias compare = DefaultSortCompare, T)(auto ref T input) if(
-    canLazySelectionSort!(compare, T)
+    canLazyCopySelectionSort!(compare, T)
 ){
     auto range = input.asrange;
     return CopySelectionSortRange!(compare, typeof(range))(range);
 }
 
-
-
-/// Type for lazily computing a range's values sorted according to a given
-/// comparison function.
+/// Type returned by `lazycopyselectionsort`.
 struct CopySelectionSortRange(alias compare, Range) if(
-    canLazySelectionSortRange!(compare, Range)
+    canLazyCopySelectionSortRange!(compare, Range)
 ){
     alias Element = ElementType!Range;
     
@@ -152,7 +230,7 @@ struct CopySelectionSortRange(alias compare, Range) if(
     void popFront(){
         this.valuesindex++;
         if(this.valuesindex >= this.currentvalues.length){
-            this.search();
+            this.select();
         }
     }
     
@@ -165,7 +243,7 @@ struct CopySelectionSortRange(alias compare, Range) if(
             }
         }
     }
-    void search(){
+    void select(){
         // Find all items that follow this and do not follow each other
         auto lowerbound = this.currentvalues[0];
         // Reset the list of current values
@@ -197,9 +275,15 @@ unittest{
             teststablesort!eagerselectionsort; // TODO: This IS stable, right?
         });
         tests("Lazy", {
-            testsort!lazycopyselectionsort;
-            teststablesort!lazycopyselectionsort;
-            testcopysort!lazycopyselectionsort;
+            tests("Mutating", {
+                testsort!lazyselectionsort;
+                teststablesort!lazyselectionsort;
+            });
+            tests("Copy", {
+                testsort!lazycopyselectionsort;
+                teststablesort!lazycopyselectionsort;
+                testcopysort!lazycopyselectionsort;
+            });
         });
     });
 }

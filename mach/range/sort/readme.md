@@ -19,6 +19,7 @@ and allow random-access reading and writing.
 
 - `selectionsort`: Aliases `eagerselectionsort`.
 - `eagerselectionsort`: Typical selection sort. Inefficient, but performs relatively few writes.
+- `lazyselectionsort`: Modified selection sort. Sorts the input lazily.
 - `lazycopyselectionsort`: Modified selection sort. Returns a range lazily enumerating values in sorted order; doesn't modify the input.
 
 ## mach.range.sort.shellsort
