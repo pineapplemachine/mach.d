@@ -100,18 +100,18 @@ auto eagerselectionsort(alias compare = DefaultSortCompare, T)(auto ref T input)
 ///   Does not modify the input.
 /// Why not to use it:
 ///   Inefficient: O(n^2) complexity.
-auto lazyselectionsort(alias compare = DefaultSortCompare, T)(auto ref T input) if(
+auto lazycopyselectionsort(alias compare = DefaultSortCompare, T)(auto ref T input) if(
     canLazySelectionSort!(compare, T)
 ){
     auto range = input.asrange;
-    return SelectionSortRange!(compare, typeof(range))(range);
+    return CopySelectionSortRange!(compare, typeof(range))(range);
 }
 
 
 
 /// Type for lazily computing a range's values sorted according to a given
 /// comparison function.
-struct SelectionSortRange(alias compare, Range) if(
+struct CopySelectionSortRange(alias compare, Range) if(
     canLazySelectionSortRange!(compare, Range)
 ){
     alias Element = ElementType!Range;
@@ -197,9 +197,9 @@ unittest{
             teststablesort!eagerselectionsort; // TODO: This IS stable, right?
         });
         tests("Lazy", {
-            testsort!lazyselectionsort;
-            teststablesort!lazyselectionsort;
-            testcopysort!lazyselectionsort;
+            testsort!lazycopyselectionsort;
+            teststablesort!lazycopyselectionsort;
+            testcopysort!lazycopyselectionsort;
         });
     });
 }
