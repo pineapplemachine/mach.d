@@ -200,6 +200,7 @@ unittest{
         tests("Lazy", {
             testsort!lazyselectionsort;
             teststablesort!lazyselectionsort;
+            testcopysort!lazyselectionsort;
         });
     });
 }
