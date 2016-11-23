@@ -2,6 +2,7 @@ module mach.range.sort.insertionsort;
 
 private:
 
+import mach.traits : ElementType, hasNumericLength, isFiniteIterable;
 import mach.range.sort.common;
 
 public:
@@ -10,6 +11,18 @@ public:
 
 /// Determine whether a type is able to be insertion sorted.
 alias canInsertionSort = canBoundedRandomAccessSort;
+
+
+
+template canCopyInsertionSort(T){
+    enum bool canCopyInsertionSort = isFiniteIterable!T;
+}
+
+template canCopyInsertionSort(alias compare, T){
+    enum bool canCopyInsertionSort = (
+        canCopyInsertionSort!T && isSortComparison!(compare, T)
+    );
+}
 
 
 
@@ -98,6 +111,56 @@ auto binaryinsertionsort(alias compare = DefaultSortCompare, T)(auto ref T input
 
 
 
+/// Sorts an input using a modified insertion sort.
+/// https://en.wikipedia.org/wiki/Insertion_sort
+/// 
+/// Input requirements: Finite (more performant when length is known)
+/// Input is mutated: No.
+/// Sorting is eager: Yes.
+/// Sorting is adaptive: Yes.
+/// Sorting is stable: Yes.
+/// 
+/// The inputted comparison function should return true when the first input
+/// must precede the second in the sorted output and false otherwise.
+/// 
+/// Why to use it:
+///   The only restriction upon input is that it is a finite iterable.
+///   The input is not modified.
+/// Why not to use it:
+///   Allocates additional memory.
+///   Not especially efficient.
+auto copyinsertionsort(alias compare = DefaultSortCompare, T)(auto ref T input) if(
+    canCopyInsertionSort!(compare, T)
+){
+    ElementType!T[] array;
+    static if(hasNumericLength!T){
+        array.reserve(input.length);
+    }
+    foreach(item; input){
+        if(array.length == 0 || !compare(item, array[$ - 1])){
+            array ~= item;
+        }else{
+            // Find the last element not less than the new one
+            size_t i = array.length - 1;
+            while(i > 0){
+                if(!compare(item, array[i - 1])) break;
+                i--;
+            }
+            // Shift elements that should follow the new insertion
+            immutable jlimit = array.length;
+            array.length += 1;
+            for(size_t j = jlimit; j > i; j--){
+                array[j] = array[j - 1];
+            }
+            // Place the new element where it belongs
+            array[i] = item;
+        }
+    }
+    return array;
+}
+
+
+
 version(unittest){
     private:
     import mach.test;
@@ -111,6 +174,11 @@ unittest{
         tests("Binary", {
             testsort!binaryinsertionsort;
             teststablesort!binaryinsertionsort;
+        });
+        tests("Copy", {
+            testsort!copyinsertionsort;
+            teststablesort!copyinsertionsort;
+            testcopysort!copyinsertionsort;
         });
     });
 }
