@@ -78,7 +78,6 @@ auto eagerselectionsort(alias compare = DefaultSortCompare, T)(auto ref T input)
             input[min] = t;
         }
     }
-    import mach.io.log;
     return input;
 }
 
