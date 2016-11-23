@@ -90,8 +90,10 @@ version(unittest){
             }
             alias asc = (a, b) => (a < b);
             alias desc = (a, b) => (a > b);
-            test(sort!asc(a).issorted!asc);
-            test(sort!desc(b).issorted!desc);
+            auto asorted = sort!asc(a);
+            auto bsorted = sort!desc(b);
+            test(asorted.issorted!asc);
+            test(bsorted.issorted!desc);
         });
         tests("Range input", {
             auto range = [4, 2, 1, 3].asrange;

@@ -4,6 +4,10 @@ This package provides implementations for a variety of sorting algorithms.
 Most (but not all) require that their inputs be finite, have numeric length,
 and allow random-access reading and writing.
 
+## mach.range.sort.heapsort
+
+- `heapsort`: Typical heap sort. Remarkable for its favorable worst-case complexity.
+
 ## mach.range.sort.insertionsort
 
 - `insertionsort`: Aliases `linearinsertionsort`.
