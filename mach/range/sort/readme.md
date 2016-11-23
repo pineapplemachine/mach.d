@@ -6,7 +6,9 @@ and allow random-access reading and writing.
 
 ## mach.range.sort.heapsort
 
-- `heapsort`: Typical heap sort. Remarkable for its favorable worst-case complexity.
+- `heapsort`: Aliases `eagerheapsort`.
+- `eagerheapsort`: Typical heapsort. Remarkable for its favorable worst-case complexity.
+- `lazyheapsort`: Modified heapsort. Returns a range which sorts the input lazily.
 
 ## mach.range.sort.insertionsort
 
@@ -23,7 +25,7 @@ and allow random-access reading and writing.
 
 - `selectionsort`: Aliases `eagerselectionsort`.
 - `eagerselectionsort`: Typical selection sort. Inefficient, but performs relatively few writes.
-- `lazyselectionsort`: Modified selection sort. Sorts the input lazily.
+- `lazyselectionsort`: Modified selection sort. Returns a range which sorts the input lazily.
 - `lazycopyselectionsort`: Modified selection sort. Returns a range lazily enumerating values in sorted order; doesn't modify the input.
 
 ## mach.range.sort.shellsort
