@@ -24,13 +24,9 @@ template canLazySelectionSort(T){
 }
 
 template canLazySelectionSort(alias compare, T){
-    static if(canLazySelectionSort!T){
-        enum bool canLazySelectionSort = is(typeof({
-            if(compare(ElementType!T.init, ElementType!T.init)){}
-        }));
-    }else{
-        enum bool canLazySelectionSort = false;
-    }
+    enum bool canLazySelectionSort = (
+        canLazySelectionSort!T && isSortComparison!(compare, T)
+    );
 }
 
 
@@ -40,13 +36,9 @@ template canLazySelectionSortRange(T){
 }
 
 template canLazySelectionSortRange(alias compare, T){
-    static if(canLazySelectionSortRange!T){
-        enum bool canLazySelectionSortRange = is(typeof({
-            if(compare(ElementType!T.init, ElementType!T.init)){}
-        }));
-    }else{
-        enum bool canLazySelectionSortRange = false;
-    }
+    enum bool canLazySelectionSortRange = (
+        canLazySelectionSortRange!T && isSortComparison!(compare, T)
+    );
 }
 
 

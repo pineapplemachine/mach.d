@@ -2,7 +2,8 @@ module mach.range.sort.common;
 
 private:
 
-import mach.traits : ElementType, hasNumericLength, isFiniteIterable;
+import mach.traits : ElementType, canGetElementType;
+import mach.traits : hasNumericLength, isFiniteIterable;
 
 public:
 
@@ -10,6 +11,18 @@ public:
 
 /// Default comparison function for sort functions.
 alias DefaultSortCompare = (a, b) => (a < b);
+
+
+
+template isSortComparison(alias compare, T){
+    static if(canGetElementType!T){
+        enum bool isSortComparison = is(typeof({
+            if(compare(ElementType!T.init, ElementType!T.init)){}
+        }));
+    }else{
+        enum bool isSortComparison = false;
+    }
+}
 
 
 
@@ -24,13 +37,9 @@ template canRandomAccessSort(T){
 
 /// Determine whether a type can be sorted via the given comparison function.
 template canRandomAccessSort(alias compare, T){
-    static if(canRandomAccessSort!T){
-        enum bool canRandomAccessSort = is(typeof({
-            if(compare(ElementType!T.init, ElementType!T.init)){}
-        }));
-    }else{
-        enum bool canRandomAccessSort = false;
-    }
+    enum bool canRandomAccessSort = (
+        canRandomAccessSort!T && isSortComparison!(compare, T)
+    );
 }
 
 
@@ -44,13 +53,9 @@ template canBoundedRandomAccessSort(T){
 
 /// Determine whether a type can be sorted via the given comparison function.
 template canBoundedRandomAccessSort(alias compare, T){
-    static if(canBoundedRandomAccessSort!T){
-        enum bool canBoundedRandomAccessSort = is(typeof({
-            if(compare(ElementType!T.init, ElementType!T.init)){}
-        }));
-    }else{
-        enum bool canBoundedRandomAccessSort = false;
-    }
+    enum bool canBoundedRandomAccessSort = (
+        canBoundedRandomAccessSort!T && isSortComparison!(compare, T)
+    );
 }
 
 
@@ -62,6 +67,7 @@ version(unittest){
     import mach.range.compare : equals;
     import mach.range.sort.issorted : issorted;
     public:
+    /// Verify basic sorting test cases.
     void testsort(alias sort)(){
         tests("Empty input", {
             auto empty = new int[0];
@@ -92,6 +98,7 @@ version(unittest){
             test!equals(sort(range), [1, 2, 3, 4]);
         });
     }
+    /// Verify behavior of sorts expected to be stable.
     void teststablesort(alias sort)(){
         tests("Stability", {
             struct Test{string data;}
@@ -104,6 +111,14 @@ version(unittest){
                 sort!cmp([Test("xyz"), Test("y"), Test("z"), Test("ab"), Test("qqq")]),
                 [Test("y"), Test("z"), Test("ab"), Test("xyz"), Test("qqq")]
             );
+        });
+    }
+    /// Verify behavior of sorts expected not to modify their inputs.
+    void testcopysort(alias sort)(){
+        tests("Non-mutating", {
+            auto i = [3, 1, 2];
+            test!equals(sort(i), [1, 2, 3]);
+            testeq(i, [3, 1, 2]);
         });
     }
 }
