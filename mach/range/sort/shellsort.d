@@ -8,21 +8,34 @@ public:
 
 
 
-/// Sorts an input using shellsort.
-/// The input is mutated.
-/// The input must be finite, of known length, and allow random access
-/// reading and writing.
-/// The sorting is stable; i.e. equivalent elements retain their original order.
-/// The inputted comparison function should return true when the first input
-/// must precede the second in the sorted output and false otherwise.
+/// Determine whether a type is able to be shell sorted.
+alias canShellSort = canBoundedRandomAccessSort;
+
+
+
+/// Sorts an input using shell sort.
 /// https://en.wikipedia.org/wiki/Shellsort
 /// https://www.tutorialspoint.com/data_structures_algorithms/shell_sort_algorithm.htm
+/// 
+/// Input requirements: Finite, known length, random access reads & writes.
+/// Input is mutated: Yes.
+/// Sorting is eager: Yes.
+/// Sorting is adaptive: Yes.
+/// Sorting is stable: No.
+/// 
+/// The inputted comparison function should return true when the first input
+/// must precede the second in the sorted output and false otherwise.
+/// 
+/// Why to use it:
+///   Does not require recursive calls.
+/// Why not to use it:
+///   Comparatively less efficient than quicksort.
 auto shellsort(alias compare = DefaultSortCompare, T)(auto ref T input) if(
-    canBoundedRandomAccessSort!(compare, T)
+    canShellSort!(compare, T)
 ){
     immutable l3 = input.length / 3;
     size_t interval = 1;
-    while(interval < l3){
+    while(interval < l3){ // TODO: There are probably more optimal intervals than this
         interval = interval * 3 + 1;
     }
     while(interval > 0){
@@ -49,6 +62,6 @@ version(unittest){
 unittest{
     tests("Shell sort", {
         testsort!shellsort;
-        teststablesort!shellsort;
+        //teststablesort!shellsort;
     });
 }
