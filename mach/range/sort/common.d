@@ -59,25 +59,26 @@ version(unittest){
     private:
     import mach.test;
     import mach.range.asrange : asrange;
+    import mach.range.compare : equals;
     import mach.range.sort.issorted : issorted;
     public:
     void testsort(alias sort)(){
         tests("Empty input", {
             auto empty = new int[0];
-            testeq(sort(empty), empty);
-            testeq(sort([1]), [1]);
+            test!equals(sort(empty), empty);
+            test!equals(sort([1]), [1]);
         });
         tests("Numbers", {
-            testeq(sort([1, 2]), [1, 2]);
-            testeq(sort([2, 1]), [1, 2]);
-            testeq(sort([1, 2, 3, 4]), [1, 2, 3, 4]);
-            testeq(sort([4, 2, 3, 1]), [1, 2, 3, 4]);
-            testeq(sort([4, 1, 3, 2]), [1, 2, 3, 4]);
-            testeq(sort([1, 1, 2, 1, 3, 2]), [1, 1, 1, 2, 2, 3]);
+            test!equals(sort([1, 2]), [1, 2]);
+            test!equals(sort([2, 1]), [1, 2]);
+            test!equals(sort([1, 2, 3, 4]), [1, 2, 3, 4]);
+            test!equals(sort([4, 2, 3, 1]), [1, 2, 3, 4]);
+            test!equals(sort([4, 1, 3, 2]), [1, 2, 3, 4]);
+            test!equals(sort([1, 1, 2, 1, 3, 2]), [1, 1, 1, 2, 2, 3]);
         });
         tests("Large input", {
             int[] a, b;
-            foreach(i; 0 .. 101){
+            foreach(i; 0 .. 51){
                 immutable n = (i * 9431) % 53;
                 a ~= n; b ~= n;
             }
@@ -88,18 +89,18 @@ version(unittest){
         });
         tests("Range input", {
             auto range = [4, 2, 1, 3].asrange;
-            testeq(sort(range), [1, 2, 3, 4]);
+            test!equals(sort(range), [1, 2, 3, 4]);
         });
     }
     void teststablesort(alias sort)(){
         tests("Stability", {
             struct Test{string data;}
             alias cmp = (a, b) => (a.data.length < b.data.length);
-            testeq(
+            test!equals(
                 sort!cmp([Test("a"), Test("b"), Test("c")]),
                 [Test("a"), Test("b"), Test("c")]
             );
-            testeq(
+            test!equals(
                 sort!cmp([Test("xyz"), Test("y"), Test("z"), Test("ab"), Test("qqq")]),
                 [Test("y"), Test("z"), Test("ab"), Test("xyz"), Test("qqq")]
             );
