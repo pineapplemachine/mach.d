@@ -4,7 +4,6 @@ private:
 
 import mach.traits : ElementType, isFiniteIterable;
 import mach.range.asrange : asrange, validAsRange;
-import mach.range.next : next;
 import mach.range.sort.common : DefaultSortCompare;
 
 public:
