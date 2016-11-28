@@ -3,8 +3,10 @@ module mach.range.asarray;
 private:
 
 import mach.text : text;
+import mach.types : KeyValuePair;
 import mach.traits : isArray, isArrayOf, isIterable, isFiniteIterable, ElementType;
 import mach.traits : hasNumericLength, LengthType, canCast;
+import mach.traits : isAssociativeArray, ArrayKeyType, ArrayValueType;
 
 public:
 
@@ -12,7 +14,9 @@ public:
 
 /// Can an array be made from the iterable without providing an explicit length?
 enum canMakeArray(Iter) = (
-    isArray!Iter || canMakeFiniteLengthArray!Iter
+    !isAssociativeArray!Iter && (
+        isArray!Iter || canMakeFiniteLengthArray!Iter
+    )
 );
 /// ditto
 enum canMakeArrayOf(Element, Iter) = (
@@ -154,6 +158,19 @@ auto asarray(Element, size_t length, Iter)(auto ref Iter iter) if(
 
 
 
+/// Create an array of key, value pairs from an associative array.
+auto asarray(T)(auto ref T input) if(isAssociativeArray!T){
+    alias Pair = KeyValuePair!(ArrayKeyType!T, ArrayValueType!T);
+    Pair[] array;
+    array.reserve(input.length);
+    foreach(key, value; input){
+        array ~= Pair(key, value);
+    }
+    return array;
+}
+
+
+
 version(unittest){
     private:
     import mach.test;
@@ -194,23 +211,32 @@ version(unittest){
 }
 unittest{
     tests("As array", {
-        // Basic use case
-        testeq(KnownLengthTest(0, 4).asarray, [0, 1, 2, 3]);
-        // Finite range with max length
-        testeq(KnownLengthTest(0, 4).asarray(2), [0, 1]);
-        // With ct length
-        testeq(KnownLengthTest(0, 4).asarray!4, [0, 1, 2, 3]);
-        // With incorrect ct length
-        testfail({KnownLengthTest(0, 4).asarray!6;});
-        // Infinite range with max length
-        testeq(InfiniteRangeTest(0).asarray(4), [0, 1, 2, 3]);
-        testfail({InfiniteRangeTest(0).asarray!true(4);});
-        // Specify element type
-        auto im = KnownLengthTest(0, 4).asarray!(immutable size_t);
-        static assert(is(typeof(im[0]) == immutable size_t));
-        testeq(im, [0, 1, 2, 3]);
-        // Call for array
-        auto ints = [1, 2, 3, 4, 5, 6];
-        testis(ints.asarray, ints);
+        {
+            // Basic use case
+            testeq(KnownLengthTest(0, 4).asarray, [0, 1, 2, 3]);
+            // Finite range with max length
+            testeq(KnownLengthTest(0, 4).asarray(2), [0, 1]);
+            // With ct length
+            testeq(KnownLengthTest(0, 4).asarray!4, [0, 1, 2, 3]);
+            // With incorrect ct length
+            testfail({KnownLengthTest(0, 4).asarray!6;});
+            // Infinite range with max length
+            testeq(InfiniteRangeTest(0).asarray(4), [0, 1, 2, 3]);
+            testfail({InfiniteRangeTest(0).asarray!true(4);});
+            // Specify element type
+            auto im = KnownLengthTest(0, 4).asarray!(immutable size_t);
+            static assert(is(typeof(im[0]) == immutable size_t));
+            testeq(im, [0, 1, 2, 3]);
+            // Call for array
+            auto ints = [1, 2, 3, 4, 5, 6];
+            testis(ints.asarray, ints);
+        }
+        tests("Associative array", {
+            auto array = asarray(["a": "aardvark", "b": "bear", "c": "crow"]);
+            testeq(array.length, 3);
+            foreach(pair; array){
+                testeq(pair.key[0], pair.value[0]);
+            }
+        });
     });
 }
