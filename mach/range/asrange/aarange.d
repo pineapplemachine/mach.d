@@ -2,7 +2,7 @@ module mach.range.asrange.aarange;
 
 private:
 
-import mach.types : tuple;
+import mach.types : KeyValuePair;
 import mach.traits : canReassign, isAssociativeArray, ArrayKeyType, ArrayValueType;
 import mach.range.asrange.arrayrange : ArrayRange;
 
@@ -14,15 +14,12 @@ alias canMakeAssociativeArrayRange = isAssociativeArray;
 
 
 
-struct AssociativeArrayRangeElement(K, V){
-    K key;
-    V value;
-    @property auto astuple(){
-        return tuple(this.key, this.value);
-    }
-    alias astuple this;
+/// Template to retrieve corresponding element type for a key and value type.
+template AssociativeArrayRangeElement(K, V){
+    alias AssociativeArrayRangeElement = KeyValuePair!(K, V);
 }
 
+/// Template to retrieve corresponding element type for an associative array.
 template AssociativeArrayRangeElement(T) if(isAssociativeArray!T){
     alias AssociativeArrayRangeElement = AssociativeArrayRangeElement!(
         ArrayKeyType!T, ArrayValueType!T
