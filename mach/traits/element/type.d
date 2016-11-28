@@ -3,6 +3,7 @@ module mach.traits.element.type;
 private:
 
 import mach.traits.array : isArray;
+import mach.traits.associativearray : isAssociativeArray, ArrayValueType;
 import mach.traits.op : hasOpApply, hasOpApplyReverse;
 import mach.traits.qualifiers : Unqual;
 import mach.traits.range : isRange;
@@ -18,7 +19,7 @@ public:
 /// Determine whether getting ElementType of some type is a meaningful operation.
 template canGetElementType(T){
     enum bool canGetElementType = (
-        isArray!T || isRange!T ||
+        isArray!T || isAssociativeArray!T || isRange!T ||
         hasElementAlias!T ||
         hasOpApply!T || hasOpApplyReverse!T
     );
@@ -30,9 +31,12 @@ template canGetElementType(T){
 template ElementType(T) if(canGetElementType!T){
     static if(isArray!T){
         alias ElementType = ArrayElementType!T;
+    }else static if(isAssociativeArray!T){
+        alias ElementType = ArrayValueType!T;
     }else static if(isRange!T){
         alias ElementType = RangeElementType!T;
     }else static if(hasElementAlias!T){
+        // TODO: Maybe this isn't the greatest idea and should be removed?
         alias ElementType = T.Element;
     }else static if(hasOpApply!T){
         alias ElementType = OpApplyElementType!T;
@@ -75,21 +79,69 @@ template hasElementType(alias pred, T){
 
 
 
+version(unittest){
+    private:
+    import mach.meta.aliases : Aliases;
+    struct IntRange{
+        enum bool empty = false;
+        @property int front(){return 0;}
+        void popFront(){}
+    }
+    struct StringRange{
+        enum bool empty = false;
+        @property string front(){return "";}
+        void popFront(){}
+    }
+    struct IntAlias{
+        alias Element = int;
+    }
+    struct StringAlias{
+        alias Element = string;
+    }
+    struct IntOpApply{
+        int opApply(int delegate(ref int)){return 0;}
+    }
+    struct IntOpApplyRev{
+        int opApplyReverse(int delegate(ref int)){return 0;}
+    }
+}
+
 unittest{
-    struct Range{enum bool empty = false; @property int front(){return 0;} void popFront();}
-    struct EAlias{alias Element = int;}
-    struct OpApply{int opApply(int delegate(ref int)){return 0;}}
-    struct OpApplyRev{int opApplyReverse(int delegate(ref int)){return 0;}}
-    static assert(canGetElementType!Range);
     static assert(canGetElementType!(int[]));
+    static assert(canGetElementType!(int[int]));
+    static assert(canGetElementType!IntRange);
+    static assert(canGetElementType!StringRange);
+    static assert(canGetElementType!IntAlias);
+    static assert(canGetElementType!StringAlias);
+    static assert(canGetElementType!IntOpApply);
+    static assert(canGetElementType!IntOpApplyRev);
     static assert(!canGetElementType!int);
     static assert(!canGetElementType!void);
-    static assert(is(ElementType!(int[]) == int));
-    static assert(is(ElementType!(int[][]) == int[]));
-    static assert(is(ElementType!Range == int));
-    static assert(is(ElementType!EAlias == int));
-    static assert(is(ElementType!OpApply == int));
-    static assert(is(ElementType!OpApplyRev == int));
+}
+
+unittest{
+    {
+        foreach(T; Aliases!(
+            int[], string[], int[int], int[string], string[int],
+            IntRange, StringRange, IntOpApply
+        )){
+            T test;
+            foreach(element; test){
+                static assert(is(ElementType!T == typeof(element)));
+                break;
+            }
+        }
+    }{
+        IntOpApplyRev test;
+        foreach_reverse(element; test){
+            static assert(is(ElementType!IntOpApplyRev == typeof(element)));
+            break;
+        }
+    }{
+        // TODO: Maybe this isn't the greatest idea and should be removed?
+        static assert(is(ElementType!IntAlias == int));
+        static assert(is(ElementType!StringAlias == string));
+    }
 }
 
 unittest{

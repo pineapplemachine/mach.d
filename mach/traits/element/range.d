@@ -9,36 +9,39 @@ public:
 
 
 /// Get the element type of a range.
-template RangeElementType(alias T) if(isRange!T){
-    alias RangeElementType = RangeElementType!(typeof(T));
-}
-/// ditto
 template RangeElementType(T) if(isRange!T){
     alias RangeElementType = typeof(T.init.front);
 }
 
 
 
-unittest{
-    struct IntRange{
+version(unittest){
+    private:
+    struct IntFrontRange{
+        enum bool empty = false;
         @property int front(){return 0;}
-        void popFront(){}; enum bool empty = false;
+        void popFront(){};
     }
-    struct CIntRange{
+    struct ConstIntRange{
+        enum bool empty = false;
         @property const(int) front(){return 0;}
-        void popFront(){}; enum bool empty = false;
+        void popFront(){};
     }
-    struct StringRange{
+    struct StringFrontRange{
+        enum bool empty = false;
         @property string front(){return null;}
-        void popFront(){}; enum bool empty = false;
+        void popFront(){};
     }
     struct IntFieldRange{
+        enum bool empty = false;
         int front;
-        void popFront(){}; enum bool empty = false;
+        void popFront(){};
     }
-    IntRange ints;
-    static assert(is(RangeElementType!ints == int));
-    static assert(is(RangeElementType!IntRange == int));
-    static assert(is(RangeElementType!CIntRange == const int));
-    static assert(is(RangeElementType!StringRange == string));
+}
+
+unittest{
+    static assert(is(RangeElementType!IntFrontRange == int));
+    static assert(is(RangeElementType!ConstIntRange == const int));
+    static assert(is(RangeElementType!StringFrontRange == string));
+    static assert(is(RangeElementType!IntFieldRange == int));
 }
