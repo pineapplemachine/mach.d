@@ -3,6 +3,7 @@ module mach.traits.iter;
 private:
 
 import mach.traits.array : isArray;
+import mach.traits.associativearray : isAssociativeArray;
 import mach.traits.element.type : ElementType, hasElementType;
 import mach.traits.property : hasEnumType;
 
@@ -101,7 +102,7 @@ template isIterableOf(T, alias pred){
 template isFinite(T){
     static if(isIterable!T){
         import mach.traits.range : isRange, hasEmptyEnum; // TODO: Better organization
-        static if(isArray!T){
+        static if(isArray!T || isAssociativeArray!T){
             enum bool isFinite = true;
         }else static if(hasEmptyEnum!T){
             enum bool isFinite = T.empty;
@@ -123,16 +124,32 @@ template isInfinite(T){
 
 
 template isFiniteIterable(T){
-    enum bool isFiniteIterable = isIterable!T && isFinite!T;
+    static if(isIterable!T){
+        enum bool isFiniteIterable = isFinite!T;
+    }else{
+        enum bool isFiniteIterable = false;
+    }
 }
 template isInfiniteIterable(T){
-    enum bool isInfiniteIterable = isIterable!T && isInfinite!T;
+    static if(isIterable!T){
+        enum bool isInfiniteIterable = isInfinite!T;
+    }else{
+        enum bool isInfiniteIterable = false;
+    }
 }
 template isFiniteIterableReverse(T){
-    enum bool isFiniteIterableReverse = isIterableReverse!T && isFinite!T;
+    static if(isIterableReverse!T){
+        enum bool isFiniteIterableReverse = isFinite!T;
+    }else{
+        enum bool isFiniteIterableReverse = false;
+    }
 }
 template isInfiniteIterableReverse(T){
-    enum bool isInfiniteIterableReverse = isIterableReverse!T && isInfinite!T;
+    static if(isIterableReverse!T){
+        enum bool isInfiniteIterableReverse = isInfinite!T;
+    }else{
+        enum bool isInfiniteIterableReverse = false;
+    }
 }
 
 
