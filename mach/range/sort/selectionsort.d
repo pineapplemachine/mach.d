@@ -64,19 +64,21 @@ template canLazyCopySelectionSortRange(alias compare, T){
 auto eagerselectionsort(alias compare = DefaultSortCompare, T)(auto ref T input) if(
     canEagerSelectionSort!(compare, T)
 ){
-    immutable size_t ilimit = cast(size_t) input.length;
-    immutable size_t jlimit = ilimit - 1;
-    for(size_t j = 0; j < jlimit; j++){
-        size_t min = j;
-        for(size_t i = j + 1; i < ilimit; i++){
-            if(compare(input[i], input[min])){
-                min = i;
+    if(input.length > 1){
+        immutable size_t ilimit = cast(size_t) input.length;
+        immutable size_t jlimit = ilimit - 1;
+        for(size_t j = 0; j < jlimit; j++){
+            size_t min = j;
+            for(size_t i = j + 1; i < ilimit; i++){
+                if(compare(input[i], input[min])){
+                    min = i;
+                }
             }
-        }
-        if(min != j){
-            auto t = input[j];
-            input[j] = input[min];
-            input[min] = t;
+            if(min != j){
+                auto t = input[j];
+                input[j] = input[min];
+                input[min] = t;
+            }
         }
     }
     return input;
