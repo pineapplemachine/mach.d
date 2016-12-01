@@ -76,7 +76,7 @@ struct UTFEncodePoint(Element = char){
         return this.data[index];
     }
     @property auto chars() const{
-        return this.data[0 .. this.length];
+        return this.data[0 .. this.length].idup;
     }
     string toString() const{
         return cast(string) this.chars;
