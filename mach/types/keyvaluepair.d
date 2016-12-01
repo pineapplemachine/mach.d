@@ -16,7 +16,7 @@ struct KeyValuePair(K, V){
     
     alias astuple this;
     
-    @property auto astuple(){
+    @property auto astuple() const{
         return tuple(this.key, this.value);
     }
 }
