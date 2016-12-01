@@ -2,7 +2,8 @@ module mach.math.floats.inject;
 
 private:
 
-import mach.traits : isFloatingPoint, isIntegral, IEEEFormat, IEEEFormatOf;
+import mach.traits : isFloatingPoint, isIntegral, isUnsignedIntegral;
+import mach.traits : IEEEFormat, IEEEFormatOf;
 import mach.math.bits.inject : injectbit, injectbits;
 import mach.math.floats.extract : fextractsgn;
 
@@ -15,6 +16,37 @@ auto fcompose(T, Sig)(in bool sgn, in uint exp, in Sig sig) if(
     isFloatingPoint!T && isIntegral!Sig
 ){
     return T(0).finjectsgn!true(sgn).finjectexp!true(exp).finjectsig!true(sig);
+}
+
+
+
+/// Compose a floating point number from decimal components.
+/// Not guaranteed to work for especially large or small exponents.
+/// sign: The sign of the mantissa, true implies negative.
+/// mantissa: The mantissa expressed as an unsigned integral.
+/// exponent: The signed base-10 exponent of the value.
+auto fcomposedec(T, Mant)(
+    in bool sign, in Mant mantissa, in int exponent
+) if(isFloatingPoint!T && isUnsignedIntegral!Mant){
+    static immutable T[] pow10 = [
+        10, 100, 1.0e4, 1.0e8, 1.0e16, 1.0e32, 1.0e64, 1.0e128, 1.0e256
+    ];
+    T fraction = cast(T) mantissa;
+    int exp = exponent < 0 ? -exponent : exponent;
+    size_t d = 0;
+    T fexp = 1.0;
+    while(exp != 0){
+        if(exp & 1) fexp *= pow10[d];
+        exp >>= 1;
+        d += 1;
+    }
+    if(exponent >= 0){
+        T result = fraction * fexp;
+        return sign ? -result : result;
+    }else{
+        T result = fraction / fexp;
+        return sign ? -result : result;
+    }
 }
 
 
@@ -106,6 +138,12 @@ unittest{
                     }
                 });
             }
+        });
+        tests("Compose decimal", {
+            testeq(fcomposedec!double(false, 128u, 0), 128);
+            testeq(fcomposedec!double(false, 128u, 2), 12800);
+            testeq(fcomposedec!double(false, 128u, -2), 1.28);
+            testeq(fcomposedec!double(false, 128u, -20), 1.28e-18);
         });
         tests("Compose exp", {
             foreach(T; Aliases!(float, double, real)){
