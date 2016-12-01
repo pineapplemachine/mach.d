@@ -7,6 +7,7 @@ import mach.traits.array;
 import mach.traits.associativearray;
 import mach.traits.common;
 import mach.traits.call;
+import mach.traits.classes;
 import mach.traits.ctor;
 import mach.traits.element;
 import mach.traits.enums;
