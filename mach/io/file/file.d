@@ -3,7 +3,7 @@ module mach.io.file.file;
 private:
 
 import mach.traits : isIterable;
-import mach.io.stream : FileStream, write, asrange;
+import mach.io.stream : FileStream, write, asrange, asarray;
 import mach.io.file.exceptions;
 import mach.io.file.stat;
 import mach.io.file.sys;
@@ -71,6 +71,12 @@ abstract class File{
     /// Read data from a file path as a range with elements of type T.
     static auto readfrom(T = char)(string path){
         return read(path).asrange!T;
+    }
+    /// Read data from a file path as an array with elements of type T.
+    static auto readall(T = char)(string path){
+        auto file = read(path);
+        scope(exit) file.close();
+        return file.asarray!T;
     }
     /// Write some data to a file path.
     static auto writeto(T)(string path, T data) if(isIterable!T){

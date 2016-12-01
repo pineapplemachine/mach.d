@@ -67,6 +67,13 @@ struct StreamRange(Stream, Element) if(isInputStream!Stream){
             return this.source.length / Element.sizeof;
         }
     }
+    
+    static if(isClosingStream!Stream){
+        void close(){
+            this.source.close;
+            this.empty = true;
+        }
+    }
 }
 
 
@@ -88,7 +95,7 @@ unittest{
             testeq(range.front, 'I');
             testeq(range.length, 85);
             test(range.headis("I am used to validate unittests."));
-            stream.close;
+            range.close;
         });
         tests("Multi-byte elements", {
             auto stream = FileStream(TestPath, "rb");
@@ -105,7 +112,7 @@ unittest{
                 testeq(range.front & 0x00ff, ' ');
                 testeq((range.front & 0xff00) >> 8, 'I');
             }
-            stream.close;
+            range.close;
         });
     });
 }
