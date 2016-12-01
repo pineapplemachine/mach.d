@@ -2,7 +2,7 @@ module mach.traits;
 
 public:
 
-import mach.traits.allocator;
+//import mach.traits.allocator; // TODO: Kill this
 import mach.traits.array;
 import mach.traits.associativearray;
 import mach.traits.attributes;
