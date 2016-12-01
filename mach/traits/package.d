@@ -9,6 +9,7 @@ import mach.traits.common;
 import mach.traits.call;
 import mach.traits.ctor;
 import mach.traits.element;
+import mach.traits.enums;
 import mach.traits.hash;
 import mach.traits.ieee;
 import mach.traits.index;
