@@ -252,9 +252,13 @@ auto jsondeserializenumber(T)(in JsonValue value) if(isIntegral!T || isFloatingP
     //}else if(value.type is JsonValue.Type.String){
     //    static if(isIntegral!T) return cast(T)(value.store.stringval.parseint);
     //    else return cast(T)(value.store.stringval.parsefloat);
-    }else{
-        throw new JsonDeserializationTypeException("number");
     }
+    static if(isFloatingPoint!T){
+        if(value.type is JsonValue.Type.Null){
+            return T.nan;
+        }
+    }
+    throw new JsonDeserializationTypeException("number");
 }
 
 
