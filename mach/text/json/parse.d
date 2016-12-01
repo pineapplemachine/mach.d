@@ -4,7 +4,7 @@ private:
 
 import std.conv : to;
 import std.ascii : isWhite;
-import mach.text.utf : utf8decode;
+import mach.text.utf : utf8decode, UTFDecodeException;
 
 import mach.math.floats : fcomposedec;
 import mach.text.parse.numeric : WriteFloatSettings;
@@ -15,6 +15,10 @@ import mach.text.json.literals;
 import mach.text.json.value;
 
 public:
+
+
+
+private enum MaxParseDepth = 256; // Try to prevent call stack overflow crashes
 
 
 
@@ -29,7 +33,7 @@ static auto parsejson(
     WriteFloatSettings floatsettings = JsonValue.EncodeFloatSettingsDefault
 )(in string str){
     // Parse the string.
-    auto result = parsevalue!floatsettings(str, 0, 1);
+    auto result = parsevalue!floatsettings(str, 0, 1, 0);
     // Consume whitespace at the end of the string.
     auto pos = result.endpos;
     while(pos < str.length && str[pos].isWhite) pos++;
@@ -67,12 +71,18 @@ private static auto parsevalue(
 )(
     in string str,
     in size_t initialpos,
-    in size_t initialline
+    in size_t initialline,
+    in size_t depth
 ){
+    if(depth > MaxParseDepth){
+        throw new JsonParseDepthException();
+    }
+    
     size_t pos = initialpos;
     size_t line = initialline;
     
     consumews(str, pos, line);
+    if(pos >= str.length) throw new JsonParseEOFException();
     immutable char initialch = str[pos];
     
     auto begins(in string word){
@@ -124,13 +134,13 @@ private static auto parsevalue(
             result.endpos, result.endline
         );
     }else if(initialch == '['){
-        auto result = parsearray!floatsettings(str, pos, line);
+        auto result = parsearray!floatsettings(str, pos, line, depth);
         return ParseValueResult(
             JsonValue(result.array),
             result.endpos, result.endline
         );
     }else if(initialch == '{'){
-        auto result = parseobject!floatsettings(str, pos, line);
+        auto result = parseobject!floatsettings(str, pos, line, depth);
         return ParseValueResult(
             JsonValue(result.object),
             result.endpos, result.endline
@@ -171,26 +181,30 @@ private static auto parsestring(
     // UTF-8 decoding is needed to ensure parsing doesn't hit
     // false positives for special characters if the byte happens
     // to be within a multi-byte code point.
-    auto utf = str[pos + 1 .. $].utf8decode;
-    bool escape = false;
-    while(!utf.empty){
-        if(escape){
-            escape = false;
-        }else if(utf.front == '\\'){
-            escape = true;
-        }else if(utf.front == '\n'){
-            line += 1;
-        }else if(utf.front == '"'){
-            try{
-                string result = cast(string) jsonunescape(
-                    str[pos + 1 .. pos + utf.highindex]
-                );
-                return ParseStringResult(result, pos + utf.highindex + 1, line);
-            }catch(StringUnescapeException e){
-                throw new JsonParseEscSeqException(line, pos, e);
+    try{
+        auto utf = str[pos + 1 .. $].utf8decode;
+        bool escape = false;
+        while(!utf.empty){
+            if(escape){
+                escape = false;
+            }else if(utf.front == '\\'){
+                escape = true;
+            }else if(utf.front == '\n'){
+                line += 1;
+            }else if(utf.front == '"'){
+                try{
+                    string result = cast(string) jsonunescape(
+                        str[pos + 1 .. pos + utf.highindex]
+                    );
+                    return ParseStringResult(result, pos + utf.highindex + 1, line);
+                }catch(StringUnescapeException e){
+                    throw new JsonParseEscSeqException(line, pos, e);
+                }
             }
+            utf.popFront();
         }
-        utf.popFront();
+    }catch(UTFDecodeException e){
+        throw new JsonParseUTFException(line, pos, e);
     }
     throw new JsonParseUnterminatedStrException(initialline, initialpos);
 }
@@ -210,7 +224,8 @@ private static auto parsearray(
 )(
     in string str, 
     in size_t initialpos,
-    in size_t initialline
+    in size_t initialline,
+    in size_t depth
 ){
     if(str[initialpos] != '['){
         throw new JsonParseUnexpectedException(
@@ -225,7 +240,9 @@ private static auto parsearray(
         if(str[pos] == ']'){
             return ParseArrayResult(array, pos + 1, line);
         }else if(array.length == 0 || (str[pos] == ',' && array.length > 0)){
-            auto value = parsevalue!floatsettings(str, pos + (array.length > 0), line);
+            auto value = parsevalue!floatsettings(
+                str, pos + (array.length > 0), line, depth + 1
+            );
             pos = value.endpos;
             line = value.endline;
             array ~= value.value;
@@ -253,7 +270,8 @@ private static auto parseobject(
 )(
     in string str,
     in size_t initialpos,
-    in size_t initialline
+    in size_t initialline,
+    in size_t depth
 ){
     if(str[initialpos] != '{'){
         throw new JsonParseUnexpectedException(
@@ -288,7 +306,7 @@ private static auto parseobject(
                     "key, value delimiter", line, pos
                 );
             }
-            auto value = parsevalue!floatsettings(str, pos + 1, line);
+            auto value = parsevalue!floatsettings(str, pos + 1, line, depth + 1);
             pos = value.endpos;
             line = value.endline;
             // Add key, value pair to object
@@ -535,6 +553,7 @@ unittest{
             testfail({`nulll`.parsejson;});
             testfail({`"`.parsejson;});
             testfail({`"""`.parsejson;});
+            testfail({`""x`.parsejson;});
             testfail({`[`.parsejson;});
             testfail({`{`.parsejson;});
             testfail({`]`.parsejson;});
@@ -547,6 +566,7 @@ unittest{
             testfail({`{notakey:"hi"}`.parsejson;});
             testfail({`{0:"hi"}`.parsejson;});
             testfail({`{"hi":notaliteral}`.parsejson;});
+            testfail({`<.>`.parsejson;});
         });
         tests("Literals", {
             testeq(`null`.parsejson, null);

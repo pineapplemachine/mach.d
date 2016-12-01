@@ -54,6 +54,14 @@ class JsonParseEOFException : JsonParseException{
     }
 }
 
+/// Thrown when json decoding encouters so many nested lists or objects that
+/// it threatens the call stack's ability to cope.
+class JsonParseDepthException : JsonParseException{
+    this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super("Encountered unexpected EOF", next, line, file);
+    }
+}
+
 /// Thrown when json decoding expects an EOF, but finds trailing characters.
 class JsonParseTrailingException : JsonParsePositionalException{
     this(size_t jline, size_t jpos, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
@@ -82,6 +90,13 @@ class JsonParseUnterminatedStrException : JsonParsePositionalException{
 class JsonParseEscSeqException : JsonParsePositionalException{
     this(size_t jline, size_t jpos, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
         super("Encountered invalid escape sequence in string literal", jline, jpos, next, line, file);
+    }
+}
+
+/// Thrown when json decoding encounters invalid UTF-8.
+class JsonParseUTFException : JsonParsePositionalException{
+    this(size_t jline, size_t jpos, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super("Encountered invalid UTF-8 in string literal", jline, jpos, next, line, file);
     }
 }
 
