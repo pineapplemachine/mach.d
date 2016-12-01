@@ -59,9 +59,8 @@ struct UnescapeRange(Range) if(isStringRange!Range){
     }
     
     auto nextne(){
-        auto value = this.source.next;
         StringUnescapeEOFException.enforce(!this.source.empty);
-        return value;
+        return this.source.next;
     }
     void setpoints(in dchar ch){
         this.setpoints([ch]);
@@ -77,28 +76,35 @@ struct UnescapeRange(Range) if(isStringRange!Range){
     
     void xunescape(){
         try{
-            this.frontchar = cast(char) parsehex([
-                this.nextne, this.source.next
-            ]);
+            auto a = this.nextne;
+            auto b = this.nextne;
+            this.frontchar = cast(char) parsehex([a, b]);
         }catch(NumberParseException e){
             throw new StringUnescapeHexException(e);
         }
     }
     void u16unescape(){
         try{
-            this.setpoints(cast(wchar) parsehex([
-                this.nextne, this.nextne, this.nextne, this.source.next
-            ]));
+            auto a = this.nextne;
+            auto b = this.nextne;
+            auto c = this.nextne;
+            auto d = this.nextne;
+            this.setpoints(cast(wchar) parsehex([a, b, c, d]));
         }catch(NumberParseException e){
             throw new StringUnescapeHexException(e);
         }
     }
     void u32unescape(){
         try{
-            this.setpoints(cast(dchar) parsehex([
-                this.nextne, this.nextne, this.nextne, this.nextne,
-                this.nextne, this.nextne, this.nextne, this.source.next
-            ]));
+            auto a = this.nextne;
+            auto b = this.nextne;
+            auto c = this.nextne;
+            auto d = this.nextne;
+            auto e = this.nextne;
+            auto f = this.nextne;
+            auto g = this.nextne;
+            auto h = this.nextne;
+            this.setpoints(cast(dchar) parsehex([a, b, c, d, e, f, g, h]));
         }catch(NumberParseException e){
             throw new StringUnescapeHexException(e);
         }
