@@ -34,7 +34,7 @@ struct IEEEFormat{
     
     /// The minimum normal or subnormal exponent.
     @property sexpmin() const{
-        return this.expbias;
+        return -(cast(int) this.expbias);
     }
     /// The maximum normal exponent.
     @property sexpmax() const{
