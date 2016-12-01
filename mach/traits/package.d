@@ -29,3 +29,4 @@ import mach.traits.size;
 import mach.traits.string;
 import mach.traits.templates;
 import mach.traits.transform;
+import mach.traits.type;
