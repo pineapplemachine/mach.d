@@ -6,7 +6,8 @@ import std.experimental.allocator : make, dispose;
 import std.experimental.allocator.mallocator : Mallocator;
 import mach.traits : isIntegral, Unqual;
 import mach.traits : isFiniteIterable, isIterableOf, ElementType;
-import mach.traits : canReassign, isAllocator;
+import mach.traits : canReassign;
+import mach.traits.allocator : isAllocator;
 
 public:
 
