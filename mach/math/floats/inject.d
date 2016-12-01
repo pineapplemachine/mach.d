@@ -28,13 +28,33 @@ auto fcompose(T, Sig)(in bool sgn, in uint exp, in Sig sig) if(
 auto fcomposedec(T, Mant)(
     in bool sign, in Mant mantissa, in int exponent
 ) if(isFloatingPoint!T && isUnsignedIntegral!Mant){
-    static immutable T[] pow10 = [
-        10, 100, 1.0e4, 1.0e8, 1.0e16, 1.0e32, 1.0e64, 1.0e128, 1.0e256
-    ];
+    enum Format = IEEEFormatOf!T;
+    static if(Format.expsize == 8){
+        static immutable T[] pow10 = [
+            10, 100, 1.0e4, 1.0e8, 1.0e16, 1.0e32, 1.0e64
+        ];
+    }else static if(Format.expsize == 11){
+        static immutable T[] pow10 = [
+            10, 100, 1.0e4, 1.0e8, 1.0e16, 1.0e32, 1.0e64, 1.0e128, 1.0e256
+        ];
+    // TODO: Work around compiler bug that prevents this from working
+    //}else static if(Format.expsize == 15){
+    //    static immutable T[] pow10 = [
+    //        10, 100, 1.0e4, 1.0e8, 1.0e16, 1.0e32, 1.0e64, 1.0e128, 1.0e256,
+    //        1.0e512, 1.0e1024, 1.0e2048, 1.0e4096, 1.0e8192
+    //    ];
+    }else{
+        static assert(false, "Unsupported floating point type.");
+    }
+    
     T fraction = cast(T) mantissa;
     int exp = exponent < 0 ? -exponent : exponent;
+    // Keep exponent within sane limits. TODO: Why is the `/2` necessary??
+    if(exp < Format.sexpmin / 2) exp = Format.sexpmin / 2;
+    if(exp > Format.sexpmax / 2) exp = Format.sexpmax / 2;
     size_t d = 0;
     T fexp = 1.0;
+    
     while(exp != 0){
         if(exp & 1) fexp *= pow10[d];
         exp >>= 1;
