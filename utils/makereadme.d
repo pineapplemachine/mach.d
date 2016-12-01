@@ -19,6 +19,7 @@ immutable readmepaths = [
     "mach/meta/readme.d",
     "mach/range/readme.d",
     "mach/text/html/namedchar/readme.d",
+    "mach/text/json/readme.d"
 ];
 
 void main(){
@@ -37,6 +38,7 @@ auto makereadmecontent(dstring content){
     dstring mdline = "";
     bool addtext = false;
     bool addcode = false;
+    bool addmdcode = false;
     
     void flushmdline(){
         if(mdline.length){
@@ -52,12 +54,21 @@ auto makereadmecontent(dstring content){
             addtext = false;
             flushmdline();
         }else if(addtext){
-            auto l = line.strip!isWhite.asarray;
-            if(l.length){
-                if(mdline.length) mdline ~= " ";
-                mdline ~= l;
+            if(line.headis("``` D")){
+                addmdcode = true;
+            }else if(line.headis("```")){
+                addmdcode = false;
+            }
+            if(addmdcode){
+                markdown ~= [cast(string) line.utfencode.asarray];
             }else{
-                flushmdline();
+                auto l = line.strip!isWhite.asarray;
+                if(l.length){
+                    if(mdline.length) mdline ~= " ";
+                    mdline ~= l;
+                }else{
+                    flushmdline();
+                }
             }
         }else if(line.headis("unittest{")){
             addcode = true;

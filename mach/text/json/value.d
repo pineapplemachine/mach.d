@@ -6,7 +6,8 @@ import mach.text.parse.numeric : writeint, writefloat, WriteFloatSettings;
 import mach.traits : isNull, isBoolean, isNumeric, isIntegral, isFloatingPoint;
 import mach.traits : isCharacter, isString, isArray, isAssociativeArray;
 import mach.traits : ArrayElementType, ArrayKeyType, ArrayValueType;
-import mach.range : map, join, asarray;
+import mach.range : map, join, sum, all, orderstrings, asrange, asarray;
+import mach.range.sort : keysort = mergesort;
 import mach.text.utf : utf8encode;
 
 import mach.text.json.escape;
@@ -161,9 +162,7 @@ static struct JsonValue{
         }
     }
     
-    string encode(
-        WriteFloatSettings floatsettings = EncodeFloatSettingsDefault
-    )() const{
+    string encode() const{
         final switch(this.type){
             case Type.Null:
                 return NullLiteral;
@@ -176,16 +175,78 @@ static struct JsonValue{
             case Type.String:
                 return '"' ~ jsonescape(this.store.stringval) ~ '"';
             case Type.Array:
-                //auto parts = this.store.arrayval.map!(
-                //    e => e.encode(floatliterals)
-                //);
-                //return cast(string)('[' ~ parts.join(',').asarray ~ ']');
+                auto parts = this.store.arrayval.map!(
+                    e => e.encode
+                );
+                return cast(string)('[' ~ parts.join(',').asarray ~ ']');
             case Type.Object:
-                //auto parts = this.store.objectval.map!((e){
-                //    return '"' ~ jsonescape(e.key) ~ "\":" ~ e.value.encode(floatliterals);
-                //});
-                //return cast(string)('{' ~ parts.join(',').asarray ~ '}');
-                return "";
+                auto parts = this.store.objectval.map!((e){
+                    return '"' ~ jsonescape(e.key) ~ "\":" ~ e.value.encode;
+                });
+                return cast(string)('{' ~ parts.join(',').asarray ~ '}');
+        }
+    }
+    
+    string pretty(
+        string indent = "  ", string newline = "\n", size_t width = 80
+    )(in string prefix = "", in string key = null) const{
+        auto keyprefix(){
+            return key is null ? prefix : prefix ~ "\"" ~ key ~ "\": ";
+        }
+        final switch(this.type){
+            case Type.Null:
+            case Type.Boolean:
+            case Type.Integer:
+            case Type.Float:
+            case Type.String:
+                if(key is null) return prefix ~ this.encode;
+                else return keyprefix() ~ this.encode;
+            case Type.Array:
+                // Arrays get some special handling in that short ones are
+                // outputted on a single line and long ones, or ones with nested
+                // array or object members, are outputted on multiple lines.
+                if(this.store.arrayval.length == 0){
+                    return keyprefix() ~ "[]";
+                }else if(this.store.arrayval.all!(
+                    e => e.type !is Type.Array && e.type !is Type.Object
+                )){
+                    auto values = this.store.arrayval.map!(e => e.encode);
+                    immutable vlength = values.map!(e => e.length).sum + (values.length - 1) * 2;
+                    immutable klength = key is null ? 0 : key.length + 4;
+                    if(prefix.length + klength + 2 + vlength <= width){
+                        return keyprefix() ~ "[" ~ values.join(", ").asarray ~ "]";
+                    }else{
+                        return(
+                            keyprefix() ~ "[" ~ newline ~
+                            values.map!(e => prefix ~ indent ~ e).join("," ~ newline).asarray ~ "\n" ~
+                            prefix ~ "]"
+                        );
+                    }
+                }else{
+                    auto values = this.store.arrayval.map!(
+                        e => e.pretty!(indent, newline, width)(prefix ~ indent)
+                    );
+                    return(
+                        keyprefix() ~ "[" ~ newline ~
+                        values.join("," ~ newline).asarray ~ newline ~
+                        prefix ~ "]"
+                    );
+                }
+            case Type.Object:
+                if(this.store.objectval.length == 0){
+                    return keyprefix() ~ "{}";
+                }else{
+                    auto values = this.store.objectval.keys.keysort!(
+                        (a, b) => orderstrings(a, b) == -1
+                    ).map!(
+                        key => this[key].pretty!(indent, newline, width)(prefix ~ indent, key)
+                    );
+                    return(
+                        keyprefix() ~ "{" ~ newline ~
+                        values.join("," ~ newline).asarray ~ newline ~
+                        prefix ~ "}"
+                    );
+                }
         }
     }
     
@@ -372,7 +433,7 @@ static struct JsonValue{
     
     /// Append a value to an array type or string type.
     auto append(T)(auto ref T value) if(canAssign!T){
-        static if(is(T : string)){
+        static if(is(T : string) && !isNull!T){
             if(this.type is Type.String){
                 this.store.stringval ~= value;
                 return;
@@ -407,6 +468,26 @@ static struct JsonValue{
                 this.store.arrayval.length + value.store.arrayval.length
             );
             foreach(i; value.store.arrayval) this.store.arrayval ~= i.dup;
+        }else{
+            throw new JsonInvalidOperationException();
+        }
+    }
+    
+    /// Remove a key from an object type.
+    bool remove(in string key){
+        if(this.type is Type.Object){
+            return this.store.objectval.remove(key);
+        }else{
+            throw new JsonInvalidOperationException();
+        }
+    }
+    
+    /// Clear all values in an array or object type.
+    void clear(){
+        if(this.type is Type.Array){
+            this.store.arrayval.length = 0;
+        }else if(this.type is Type.Object){
+            this.store.objectval.clear();
         }else{
             throw new JsonInvalidOperationException();
         }
@@ -462,7 +543,7 @@ static struct JsonValue{
         }
     }
     /// Check for the presence of a key for object types.
-    auto haskey(in string key){
+    auto haskey(in string key) const{
         if(this.type is Type.Object){
             return key in this.store.objectval;
         }else{
@@ -470,7 +551,7 @@ static struct JsonValue{
         }
     }
     /// ditto
-    auto opBinaryRight(string op: "in")(in string key){
+    auto opBinaryRight(string op: "in")(in string key) const{
         return this.haskey(key);
     }
     
@@ -536,7 +617,7 @@ static struct JsonValue{
         }
     }
     /// ditto
-    auto opIndex(T)(auto ref T value, in size_t index) const if(canAssign!T){
+    auto opIndexAssign(T)(auto ref T value, in size_t index) if(canAssign!T){
         if(this.type is Type.Array){
             return this.store.arrayval[index] = JsonValue(value);
         }else{
@@ -553,7 +634,7 @@ static struct JsonValue{
         }
     }
     /// ditto
-    auto opIndex(T)(auto ref T value, in string key) const if(canAssign!T){
+    auto opIndexAssign(T)(auto ref T value, in string key) if(canAssign!T){
         if(this.type is Type.Object){
             return this.store.objectval[key] = JsonValue(value);
         }else{
@@ -669,7 +750,7 @@ static struct JsonValue{
                 else static if(isNumeric!T) return cast(T) this.store.floatval;
                 else throw new JsonInvalidOperationException();
             case Type.String:
-                static if(is(T : string)) return cast(T) this.store.stringval;
+                static if(is(T : string) && !isNull!T) return cast(T) this.store.stringval;
                 else throw new JsonInvalidOperationException();
             case Type.Array:
                 static if(isArray!T){
@@ -705,10 +786,34 @@ static struct JsonValue{
 version(unittest){
     private:
     import mach.test;
-    
-    import mach.io.log;
-    
     alias Type = JsonValue.Type;
+    
+enum prettyjsonarray = `[
+  0,
+  1,
+  2,
+  "hi",
+  ["hello", "again"]
+]`;
+enum prettyjsonobject = `{
+  "a": "apple",
+  "b": "bear",
+  "c": "car"
+}`;
+enum prettyjsonobjectnested = `{
+  "a": "apple",
+  "array": [],
+  "b": "bear",
+  "booleans": [true, false],
+  "c": "car",
+  "float": 1.0,
+  "int": 1,
+  "null": null,
+  "object": {
+    "d": "drop"
+  }
+}`;
+
 }
 unittest{
     tests("Json value", {
@@ -720,7 +825,8 @@ unittest{
             testeq(x, null);
             testeq(y, null);
             testeq(x, y);
-            testeq(x.toString, "null");
+            testeq(x.encode, "null");
+            testeq(x.pretty, "null");
         });
         tests("Boolean", {
             auto x = JsonValue(Type.Boolean);
@@ -732,9 +838,12 @@ unittest{
             testeq(x, false);
             testeq(y, false);
             testeq(z, true);
-            testeq(x.toString, "false");
-            testeq(y.toString, "false");
-            testeq(z.toString, "true");
+            testeq(x.encode, "false");
+            testeq(x.pretty, "false");
+            testeq(y.encode, "false");
+            testeq(y.pretty, "false");
+            testeq(z.encode, "true");
+            testeq(z.pretty, "true");
         });
         tests("Numeric", {
             auto x = JsonValue(Type.Integer);
@@ -747,8 +856,13 @@ unittest{
             testis(w.type, Type.Float);
             foreach(n; [x, y, z, w]){
                 // String
-                if(n.type is Type.Integer) testeq(n.toString, "0");
-                else testeq(n.toString, "0.0");
+                if(n.type is Type.Integer){
+                    testeq(n.encode, "0");
+                    testeq(n.pretty, "0");
+                }else{
+                    testeq(n.encode, "0.0");
+                    testeq(n.pretty, "0.0");
+                }
                 // Equality
                 testeq(n, int(0));
                 testeq(n, long(0));
@@ -877,8 +991,10 @@ unittest{
                 testeq(hi[0], 'H');
                 JsonValue slice = hi[0 .. 5];
                 testeq(slice, "Hello");
-                testeq(hi.toString(), `"Hello World! Hiya"`);
-                testeq(slice.toString(), `"Hello"`);
+                testeq(hi.encode(), `"Hello World! Hiya"`);
+                testeq(hi.pretty(), `"Hello World! Hiya"`);
+                testeq(slice.encode(), `"Hello"`);
+                testeq(slice.pretty(), `"Hello"`);
                 JsonValue concat = slice ~ " There";
                 testeq(concat, "Hello There");
                 testeq(slice ~ slice, "HelloHello");
@@ -889,10 +1005,12 @@ unittest{
                 auto array = JsonValue(Type.Array);
                 testeq(array.length, 0);
                 test(array.empty);
+                testeq(array, new int[0]);
             }{
                 auto array = JsonValue([0, 1, 2]);
                 testeq(array.length, 3);
                 testf(array.empty);
+                testeq(array, [0, 1, 2]);
                 testeq(array[0], 0);
                 testeq(array[1], 1);
                 testeq(array[2], 2);
@@ -900,7 +1018,72 @@ unittest{
                 testeq(array[0 .. 2], [0, 1]);
                 testeq(array[1 .. 3], [1, 2]);
                 testeq(array[0 .. 3], array);
+                // Test string encoding
+                testeq(JsonValue(Type.Array).encode, `[]`);
+                testeq(JsonValue(Type.Array).pretty, `[]`);
+                testeq(array.encode, `[0,1,2]`);
+                array.append("hi");
+                testeq(array.encode, `[0,1,2,"hi"]`);
+                testeq(array.pretty, `[0, 1, 2, "hi"]`);
+                // And where pretty results in multi-line
+                array.append(JsonValue(["hello", "again"]));
+                testeq(array.encode, `[0,1,2,"hi",["hello","again"]]`);
+                testeq(array.pretty, prettyjsonarray);
+                // Test append/extend
+                testeq(array.length, 5);
+                array.append(null);
+                testeq(array.length, 6);
+                array.extend([0, 1, 2]);
+                testeq(array.length, 9);
             }
+        });
+        tests("Object", {
+            tests("Empty object", {
+                auto obj = JsonValue(Type.Object);
+                testeq(obj.length, 0);
+                test(obj.empty);
+                string[string] aa;
+                testeq(obj, aa);
+            });
+            tests("Encode empty object", {
+                testeq(JsonValue(Type.Object).encode, `{}`);
+                testeq(JsonValue(Type.Object).pretty, `{}`);
+            });
+            tests("Encoding", {
+                auto aa = ["a": "apple", "b": "bear", "c": "car"];
+                auto obj = JsonValue(aa);
+                testeq(obj.length, 3);
+                testf(obj.empty);
+                testeq(obj, aa);
+                testeq(obj["a"], "apple");
+                obj.encode; // Can't compare because order of keys not guaranteed
+                testeq(obj.pretty, prettyjsonobject);
+                obj["null"] = null;
+                obj["booleans"] = [true, false];
+                obj["int"] = int(1);
+                obj["float"] = double(1);
+                obj["array"] = new int[0];
+                obj["object"] = JsonValue(["d": "drop"]);
+                testeq(obj["array"], JsonValue(Type.Array));
+                testeq(obj.length, 9);
+                testeq(obj.pretty, prettyjsonobjectnested);
+            });
+            tests("Clear and remove keys", {
+                auto obj = JsonValue(["a": "apple", "b": "bear", "c": "car"]);
+                testeq(obj.length, 3);
+                test("a" in obj);
+                test("b" in obj);
+                test("c" in obj);
+                testf(obj.remove("x"));
+                testeq(obj.length, 3);
+                test(obj.remove("a"));
+                testeq(obj.length, 2);
+                testf("a" in obj);
+                obj.clear();
+                testeq(obj.length, 0);
+                testf("b" in obj);
+                testf("c" in obj);
+            });
         });
     });
 }

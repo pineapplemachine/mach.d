@@ -23,6 +23,8 @@ class JsonInvalidOperationException : JsonException{
     }
 }
 
+
+
 /// Base class for exceptions encountered while decoding json.
 class JsonParseException : JsonException{
     this(string message, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
@@ -96,5 +98,53 @@ class JsonParseDupKeyException : JsonParsePositionalException{
     this(string key, size_t jline, size_t jpos, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
         super(text("Encountered duplicate key \"", key, '"'), jline, jpos, next, line, file);
         this.key = key;
+    }
+}
+
+
+
+/// Thrown when serializing a value as json fails.
+class JsonSerializationException: JsonException{
+    this(string message, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super(message, next, line, file);
+    }
+}
+
+/// Thrown when maximum depth is exceeded while attempting to serialize a value.
+class JsonSerializationDepthException: JsonSerializationException{
+    this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super(
+            "Failed to serialize value because it exceeds the maximum depth.",
+            next, line, file
+        );
+    }
+}
+
+/// Thrown when deserializing a value from json fails.
+class JsonDeserializationException: JsonException{
+    this(string message, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super(message, next, line, file);
+    }
+}
+
+/// Thrown when deserializing fails because the json value is of an incompatible
+/// type.
+class JsonDeserializationTypeException: JsonDeserializationException{
+    this(string type = "value", Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super(
+            "Failed to deserialize " ~ type ~ " because it is of an incompatible type.",
+            next, line, file
+        );
+    }
+}
+
+/// Thrown when deserializing fails because the json value is of a compatible
+/// type but its value is malformed.
+class JsonDeserializationValueException: JsonDeserializationException{
+    this(string type = "value", Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super(
+            "Failed to deserialize " ~ type ~ " because the value is malformed.",
+            next, line, file
+        );
     }
 }
