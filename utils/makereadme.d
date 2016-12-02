@@ -19,7 +19,8 @@ immutable readmepaths = [
     "mach/meta/readme.d",
     "mach/range/readme.d",
     "mach/text/html/namedchar/readme.d",
-    "mach/text/json/readme.d"
+    "mach/text/json/readme.d",
+    "mach/text/str/readme.d"
 ];
 
 void main(){
