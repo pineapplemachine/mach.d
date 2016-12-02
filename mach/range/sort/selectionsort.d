@@ -2,7 +2,8 @@ module mach.range.sort.selectionsort;
 
 private:
 
-import mach.traits : ElementType, isSavingRange, isFiniteIterable, hasNumericLength;
+import mach.traits : ElementType, isSavingRange, isFiniteIterable;
+import mach.traits : hasRemaining, hasNumericLength;
 import mach.range.asrange : asrange, validAsSavingRange;
 import mach.range.sort.common;
 
@@ -223,6 +224,11 @@ struct CopySelectionSortRange(alias compare, Range) if(
             return this.source.length;
         }
         alias opDollar = length;
+    }
+    static if(hasRemaining!Range){
+        @property auto remaining(){
+            return this.source.remaining;
+        }
     }
     
     @property typeof(this) save(){
