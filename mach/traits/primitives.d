@@ -162,6 +162,19 @@ template isPointer(T){
 
 
 
+/// Get whether a type is a primitive.
+/// Includes typeof(null), booleans, integrals, floats, imaginary and complex
+/// numbers, and characters.
+/// Does not include strings or other arrays, pointers, structs, or classes.
+template isPrimitive(T){
+    enum bool isPrimitive = (
+        isNull!T || isBoolean!T || isNumeric!T ||
+        isImaginary!T || isComplex!T || isCharacter!T
+    );
+}
+
+
+
 /// Given a signed or unsigned integral type, get its corresponding unsigned type.
 template Unsigned(T) if(isIntegral!T){
     alias U = Unqual!T;
@@ -182,6 +195,26 @@ template Signed(T) if(isIntegral!T){
     else static if(is(U == ulong)) alias Signed = Qualify!(T, long);
     else static if(isUCent!U) alias Signed = Qualify!(T, cent);
     else alias Signed = T;
+}
+
+
+
+/// Given an imaginary type, get its corresponding floating point type.
+template Unimaginary(T) if(isImaginary!T){
+    alias U = Unqual!T;
+    static if(is(U == ifloat)) alias Unimaginary = Qualify!(T, float);
+    else static if(is(U == idouble)) alias Unimaginary = Qualify!(T, double);
+    else static if(is(U == ireal)) alias Unimaginary = Qualify!(T, real);
+    else static assert(false, "Unknown type.");
+}
+
+/// Given a complex type, get its corresponding floating point type.
+template Uncomplex(T) if(isComplex!T){
+    alias U = Unqual!T;
+    static if(is(U == cfloat)) alias Uncomplex = Qualify!(T, float);
+    else static if(is(U == cdouble)) alias Uncomplex = Qualify!(T, double);
+    else static if(is(U == creal)) alias Uncomplex = Qualify!(T, real);
+    else static assert(false, "Unknown type.");
 }
 
 
@@ -209,7 +242,8 @@ version(unittest){
     );
     alias Chaff = Aliases!(
         void, string, int[], int*[], int[][], int[int],
-        TestStruct, TestClass, TestEnum, TestEnumI
+        TestStruct, TestClass, TestEnum, TestEnumI,
+        string, wstring, dstring
     );
 }
 unittest{
@@ -252,6 +286,9 @@ unittest{
     // isPointer
     static assert(All!(isPointer, Ptrs));
     static assert(None!(isPointer, Nulls, Bools, SInts, UInts, Floats, Imag, Complex, Chars, Chaff));
+    // isPrimitive
+    static assert(All!(isPrimitive, Nulls, Bools, UInts, SInts, Floats, Imag, Complex, Chars));
+    static assert(None!(isPrimitive, Ptrs, Chaff));
 }
 unittest{
     static assert(is(Signed!(int) == int));
@@ -274,4 +311,14 @@ unittest{
     static assert(is(Unsigned!(byte) == ubyte));
     static assert(is(Unsigned!(const ubyte) == const ubyte));
     static assert(is(Unsigned!(const byte) == const ubyte));
+}
+unittest{
+    static assert(is(Unimaginary!(ifloat) == float));
+    static assert(is(Unimaginary!(idouble) == double));
+    static assert(is(Unimaginary!(ireal) == real));
+    static assert(is(Unimaginary!(const ifloat) == const float));
+    static assert(is(Uncomplex!(cfloat) == float));
+    static assert(is(Uncomplex!(cdouble) == double));
+    static assert(is(Uncomplex!(creal) == real));
+    static assert(is(Uncomplex!(const cfloat) == const float));
 }
