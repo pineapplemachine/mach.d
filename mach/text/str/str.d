@@ -59,7 +59,7 @@ string str(
     }else static if(isCharacter!T){
         return value.charactertostring!(settings, quoteliterals);
     }else static if(isAssociativeArray!T){
-        return value.arraytostring;
+        return value.arraytostring!settings;
     }else static if(isString!T && isFiniteIterable!T){
         return value.stringtostring!(settings, quoteliterals);
     }else static if(isRange!T || isArray!T){
