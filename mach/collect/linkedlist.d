@@ -447,22 +447,6 @@ class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
     auto opBinaryRight(string op: "in")(T value){
         return this.contains(value);
     }
-    
-    override string toString() const nothrow{
-        import std.conv : to;
-        string str = "";
-        string append;
-        for(auto range = this.asrange!false; !range.empty; range.popFront()){
-            if(str.length) str ~= ", ";
-            try{
-                append = range.front.to!string;
-            }catch(Exception){
-                append = "";
-            }
-            str ~= append;
-        }
-        return "[" ~ str ~ "]";
-    }
 }
 
 

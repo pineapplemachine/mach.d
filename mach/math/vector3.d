@@ -178,11 +178,6 @@ struct Vector3(T) if(isNumeric!T){
         return Type(this);
     }
     
-    string toString(){
-        import std.conv : to;
-        return to!string(this.x) ~ ", " ~ to!string(this.y);
-    }
-    
 }
 
 

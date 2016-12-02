@@ -164,39 +164,6 @@ template MetaRangeMixin(
 
 
 
-static string MetaMultiRangeWrapperMixin(string rangetype, Iters...)(){
-    return MetaMultiRangeWrapperMixin!(rangetype, ``, ``, Iters);
-}
-
-/// TODO: Investigate using e.g. staticMap for this stuff instead of a gross
-/// string mixin.
-static string MetaMultiRangeWrapperMixin(
-    string rangetype, string ctortemplateparams, string ctorparams, Iters...
-)(){
-    import std.conv : to;
-    string templates = ``;
-    string params = ``;
-    for(size_t i = 0; i < Iters.length; i++){
-        if(i > 0) params ~= `, `;
-        if(i > 0) templates ~= `, `;
-        string ter = `ters[` ~ i.to!string ~ `]`;
-        params ~= `i` ~ ter ~ `.asrange`;
-        templates ~= `AsRangeType!(I` ~ ter ~ `)`;
-    }
-    static if(ctortemplateparams.length){
-        if(templates.length) templates = ctortemplateparams ~ `, ` ~ templates;
-        else templates = ctortemplateparams;
-    }
-    static if(ctorparams.length){
-        if(params.length) params = ctorparams ~ `, ` ~ params;
-        else params = ctorparams;
-    }
-    return `
-        import mach.range.asrange : asrange, AsRangeType;
-        return ` ~ rangetype ~ `!(` ~ templates ~ `)(` ~ params ~ `);
-    `;
-}
-
 template MetaMultiRangeEmptyMixin(string emptybody, string sources, Range...){
     import std.meta : anySatisfy;
     import mach.traits : hasFalseEmptyEnum;
@@ -205,28 +172,6 @@ template MetaMultiRangeEmptyMixin(string emptybody, string sources, Range...){
     }else{
         @property bool empty(){
             mixin(emptybody);
-        }
-    }
-}
-
-template MetaMultiRangeSaveMixin(string sources, Ranges...){
-    import std.meta : allSatisfy;
-    import mach.traits : isSavingRange;
-    // Build a return statement, this works even when the source range elements
-    // contain immutable members.
-    private static string SaveCtorMixin(Ranges...)(){
-        import std.conv : to;
-        string params = ``;
-        for(size_t i = 0; i < Ranges.length; i++){
-            if(i > 0) params ~= `, `;
-            params ~= `this.sources[` ~ i.to!string ~ `].save`;
-        }
-        return `return typeof(this)(` ~ params ~ `);`;
-    }
-    // And here's the actual save method
-    static if(allSatisfy!(isSavingRange, Ranges)){
-        @property typeof(this) save(){
-            mixin(SaveCtorMixin!Ranges);
         }
     }
 }

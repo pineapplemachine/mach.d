@@ -2,10 +2,9 @@ module mach.io.log;
 
 private:
 
-import std.stdio : writeln, stdout;
-import std.conv : to;
-import std.path : baseName;
 import mach.traits : hash;
+import mach.io.stdio : stdio;
+import mach.io.path : Path;
 
 public:
 
@@ -25,8 +24,8 @@ void log(
 )(
     auto ref Args args
 ){
-    writeln(args, " in " ~ file.baseName ~ "(" ~ to!string(line) ~ ")");
-    stdout.flush();
+    stdio.writeln(args, " in ", Path.basename(file), "(", line, ")");
+    stdio.flushout();
 }
 
 
@@ -45,8 +44,8 @@ void logv(
 )(
     auto ref Args args
 ){
-    writeln(args, " in " ~ func ~ " at " ~ file ~ "(" ~ to!string(line) ~ ")");
-    stdout.flush();
+    stdio.writeln(args, " in ", func, " at ", file, "(", line, ")");
+    stdio.flushout();
 }
 
 

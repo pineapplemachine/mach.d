@@ -2,10 +2,7 @@ module mach.text.json.parse;
 
 private:
 
-import std.conv : to;
-import std.ascii : isWhite;
 import mach.text.utf : utf8decode, UTFDecodeException;
-
 import mach.math.floats : fcomposedec;
 import mach.text.parse.numeric : WriteFloatSettings;
 import mach.text.escape : StringUnescapeException;
@@ -13,6 +10,13 @@ import mach.text.json.escape;
 import mach.text.json.exceptions;
 import mach.text.json.literals;
 import mach.text.json.value;
+
+bool isWhite(in char ch){
+    return (
+        ch == ' ' || ch == '\t' || ch == '\r' ||
+        ch == '\n' || ch == '\v' || ch == '\f'
+    );
+}
 
 public:
 

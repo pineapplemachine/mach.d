@@ -6,7 +6,6 @@ import mach.meta : Any, All, Map, varmap;
 import mach.traits : isFiniteIterable, isFiniteRange;
 import mach.traits : isMutableFrontRange, ElementType;
 import mach.range.asrange : asrange, validAsMutableFrontRange;
-import mach.range.meta : MetaMultiRangeWrapperMixin;
 
 public:
 

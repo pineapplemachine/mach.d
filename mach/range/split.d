@@ -244,7 +244,6 @@ version(unittest){
     import mach.range.compare : equals;
 }
 unittest{
-    import std.stdio;
     tests("Split", {
         tests("Range delimiter", {
             tests("Longer-than-one", {

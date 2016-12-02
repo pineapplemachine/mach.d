@@ -32,10 +32,17 @@ struct StreamRange(Stream, Element) if(isInputStream!Stream){
         this.source = source;
         this.popFront();
     }
-    this(Stream source, Element cachedfront, bool empty){
-        this.source = source;
-        this.cachedfront = cachedfront;
-        this.empty = empty;
+    static if(isFinite){
+        this(Stream source, Element cachedfront, bool empty){
+            this.source = source;
+            this.cachedfront = cachedfront;
+            this.empty = empty;
+        }
+    }else{
+        this(Stream source, Element cachedfront){
+            this.source = source;
+            this.cachedfront = cachedfront;
+        }
     }
     
     @property auto front(){

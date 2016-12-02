@@ -39,15 +39,6 @@ struct FindResultSingular(Index, Value){
         this.value = value;
         this.exists = exists;
     }
-    
-    string toString() const{
-        import std.conv : to;
-        if(this.exists){
-            return to!string(this.value) ~ " found at index " ~ to!string(this.index);
-        }else{
-            return "not found";
-        }
-    }
 }
 
 /// Result of a singular find operation with an index but no value.
@@ -61,14 +52,5 @@ struct FindResultIndexSingular(Index){
     this(Index index, bool exists = true){
         this.index = index;
         this.exists = exists;
-    }
-    
-    string toString() const{
-        import std.conv : to;
-        if(this.exists){
-            return "found at index " ~ to!string(this.index);
-        }else{
-            return "not found";
-        }
     }
 }

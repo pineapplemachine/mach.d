@@ -2,7 +2,6 @@ module mach.range.pad;
 
 private:
 
-import std.conv : to;
 import mach.traits : isBidirectionalRange, isRandomAccessRange, isSlicingRange;
 import mach.traits : isRange, ElementType, hasNumericLength, isIntegral;
 import mach.range.asrange : asrange, validAsRange;

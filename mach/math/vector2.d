@@ -203,11 +203,6 @@ struct Vector2(T) if(isNumeric!T){
         return Vector2!N(this);
     }
     
-    string toString(){
-        import std.conv : to;
-        return to!string(this.x) ~ ", " ~ to!string(this.y);
-    }
-    
 }
 
 version(unittest){

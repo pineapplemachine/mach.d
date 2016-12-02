@@ -144,9 +144,7 @@ struct FrameLimiter{
 
 version(unittest){
     private:
-    import mach.error.unit;
-    import std.math : abs;
-    import std.stdio : writeln;
+    import mach.test;
 }
 unittest{
     tests("Frame limiter", {

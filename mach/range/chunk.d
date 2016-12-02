@@ -2,7 +2,6 @@ module mach.range.chunk;
 
 private:
 
-import std.conv : to;
 import mach.math.round : divceil;
 import mach.traits : hasNumericLength, isSlicingRange, isSavingRange;
 import mach.range.asrange : asrange, validAsSlicingRange;
@@ -83,7 +82,7 @@ struct ChunkRange(Range) if(canChunkRange!(Range)){
     }body{
         auto low = index * this.size;
         auto high = low + this.size;
-        if(high > this.source.length) high = to!size_t(this.source.length);
+        if(high > this.source.length) high = cast(size_t)(this.source.length);
         return this.source[low .. high];
     }
     
@@ -94,10 +93,10 @@ struct ChunkRange(Range) if(canChunkRange!(Range)){
             size_t slicelow = low * this.size;
             size_t slicehigh = high * this.size;
             if(slicelow > this.source.length - 1){
-                slicelow = to!size_t(this.source.length - 1);
+                slicelow = cast(size_t)(this.source.length - 1);
             }
             if(slicehigh > this.source.length){
-                slicehigh = to!size_t(this.source.length);
+                slicehigh = cast(size_t)(this.source.length);
             }
             return typeof(this)(this.source[slicelow .. slicehigh], this.size);
         }else{

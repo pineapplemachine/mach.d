@@ -172,14 +172,4 @@ template SetMixin(T){
     ){
         return this.equals(values);
     }
-    
-    string toString() const{
-        import std.conv : to;
-        string str = "";
-        foreach(value; this){
-            if(str.length) str ~= ", ";
-            str ~= value.to!string;
-        }
-        return "[" ~ str ~ "]";
-    }
 }

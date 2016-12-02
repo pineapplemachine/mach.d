@@ -213,8 +213,6 @@ version(unittest){
 }
 unittest{
     tests("Cache", {
-        import std.stdio;
-        import mach.range.ends : head;
         tests("Internal cache data", {
             auto cache = Cache!int(3);
             testeq(cache.length, 0);

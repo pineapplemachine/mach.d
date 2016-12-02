@@ -2,7 +2,8 @@ module mach.test.checks;
 
 private:
 
-//
+import mach.traits : isString;
+import mach.text.str : str;
 
 public:
 
@@ -91,20 +92,18 @@ class TestFailureException: Exception{
     }
     
     static string inputstring(Args...)(auto ref Args args){
-        import std.conv : to;
-        import mach.traits : isString;
-        string str = "";
+        string result = "";
         foreach(arg; args){
             alias Arg = typeof(arg);
-            if(str.length) str ~= " and ";
-            auto immutable argstr = arg.to!string;
+            if(result.length) result ~= " and ";
+            auto immutable argstr = str(arg);
             static if(isString!Arg){
-                str ~= '`' ~ argstr ~ '`';
+                result ~= '`' ~ argstr ~ '`';
             }else{
-                str ~= argstr;
+                result ~= argstr;
             }
         }
-        return str;
+        return result;
     }
 }
 

@@ -205,10 +205,6 @@ struct SortedList(
         }
         return true;
     }
-    
-    string toString() const nothrow{
-        return this.empty ? "" : this.list.toString();
-    }
 }
 
 

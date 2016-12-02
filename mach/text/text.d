@@ -2,7 +2,7 @@ module mach.text.text;
 
 private:
 
-import std.conv : to;
+import mach.text.str : str, StrSettings;
 
 public:
 
@@ -10,12 +10,10 @@ public:
 
 /// Convert each argument to a string and return the concatenation of those
 /// strings.
-auto text(Args...)(Args args){
-    auto str = "";
-    foreach(arg; args){
-        str ~= arg.to!string;
-    }
-    return str;
+auto text(StrSettings settings = StrSettings.Default, Args...)(Args args){
+    auto result = "";
+    foreach(arg; args) result ~= str(arg);
+    return result;
 }
 
 

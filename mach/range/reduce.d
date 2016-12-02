@@ -61,7 +61,6 @@ auto reduceeager(alias func, Acc, Iter)(auto ref Iter iter, auto ref Acc initial
 }
 
 auto reduceeager(alias func, Acc, Iter)(auto ref Iter iter) if(canReduceEager!(Iter, Acc, func)){
-    import std.stdio;
     bool first = true;
     Acc* acc;
     foreach(element; iter){
@@ -184,13 +183,12 @@ version(unittest){
     private:
     import mach.error.unit;
     import mach.range.compare : equals;
-    import std.conv : to;
 }
 unittest{
     tests("Reduce", {
         int[] array = [1, 2, 3, 4];
         alias sum = (acc, next) => (acc + next);
-        alias concat = (acc, next) => (to!string(acc) ~ to!string(next));
+        alias concat = (acc, next) => (acc ~ cast(string)([next + '0']));
         tests("Eager", {
             testeq("No seed",
                 array.reduceeager!sum, 10
