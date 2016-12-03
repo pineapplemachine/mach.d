@@ -93,6 +93,13 @@ class JsonParseEscSeqException : JsonParsePositionalException{
     }
 }
 
+/// Thrown when json decoding encouters an unescaped control character in a string literal.
+class JsonParseControlCharException : JsonParseException{
+    this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super("Encountered unescaped control character in string literal", next, line, file);
+    }
+}
+
 /// Thrown when json decoding encounters invalid UTF-8.
 class JsonParseUTFException : JsonParsePositionalException{
     this(size_t jline, size_t jpos, Throwable next = null, size_t line = __LINE__, string file = __FILE__){

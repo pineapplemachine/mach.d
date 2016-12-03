@@ -162,7 +162,9 @@ static struct JsonValue{
         }
     }
     
-    string encode() const{
+    string encode(
+        WriteFloatSettings floatsettings = EncodeFloatSettingsDefault
+    )() const{
         final switch(this.type){
             case Type.Null:
                 return NullLiteral;
@@ -171,24 +173,26 @@ static struct JsonValue{
             case Type.Integer:
                 return this.store.integerval.writeint;
             case Type.Float:
-                return this.encodefloat(this.store.floatval);
+                return this.encodefloat!floatsettings(this.store.floatval);
             case Type.String:
                 return '"' ~ jsonescape(this.store.stringval) ~ '"';
             case Type.Array:
                 auto parts = this.store.arrayval.map!(
-                    e => e.encode
+                    e => e.encode!floatsettings
                 );
                 return cast(string)('[' ~ parts.join(',').asarray ~ ']');
             case Type.Object:
                 auto parts = this.store.objectval.map!((e){
-                    return '"' ~ jsonescape(e.key) ~ "\":" ~ e.value.encode;
+                    return '"' ~ jsonescape(e.key) ~ "\":" ~ e.value.encode!floatsettings;
                 });
                 return cast(string)('{' ~ parts.join(',').asarray ~ '}');
         }
     }
     
     string pretty(
-        string indent = "  ", string newline = "\n", size_t width = 80
+        string indent = "  ",
+        WriteFloatSettings floatsettings = EncodeFloatSettingsDefault,
+        string newline = "\n", size_t width = 80
     )(in string prefix = "", in string key = null) const{
         auto keyprefix(){
             return key is null ? prefix : prefix ~ "\"" ~ key ~ "\": ";
@@ -199,8 +203,8 @@ static struct JsonValue{
             case Type.Integer:
             case Type.Float:
             case Type.String:
-                if(key is null) return prefix ~ this.encode;
-                else return keyprefix() ~ this.encode;
+                if(key is null) return prefix ~ this.encode!floatsettings;
+                else return keyprefix() ~ this.encode!floatsettings;
             case Type.Array:
                 // Arrays get some special handling in that short ones are
                 // outputted on a single line and long ones, or ones with nested
@@ -210,7 +214,7 @@ static struct JsonValue{
                 }else if(this.store.arrayval.all!(
                     e => e.type !is Type.Array && e.type !is Type.Object
                 )){
-                    auto values = this.store.arrayval.map!(e => e.encode);
+                    auto values = this.store.arrayval.map!(e => e.encode!floatsettings);
                     immutable vlength = values.map!(e => e.length).sum + (values.length - 1) * 2;
                     immutable klength = key is null ? 0 : key.length + 4;
                     if(prefix.length + klength + 2 + vlength <= width){
@@ -224,7 +228,9 @@ static struct JsonValue{
                     }
                 }else{
                     auto values = this.store.arrayval.map!(
-                        e => e.pretty!(indent, newline, width)(prefix ~ indent)
+                        e => e.pretty!(indent, floatsettings, newline, width)(
+                            prefix ~ indent
+                        )
                     );
                     return(
                         keyprefix() ~ "[" ~ newline ~
@@ -239,7 +245,9 @@ static struct JsonValue{
                     auto values = this.store.objectval.keys.keysort!(
                         (a, b) => orderstrings(a, b) == -1
                     ).map!(
-                        key => this[key].pretty!(indent, newline, width)(prefix ~ indent, key)
+                        key => this[key].pretty!(indent, floatsettings, newline, width)(
+                            prefix ~ indent, key
+                        )
                     );
                     return(
                         keyprefix() ~ "{" ~ newline ~

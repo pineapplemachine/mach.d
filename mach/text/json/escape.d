@@ -11,7 +11,7 @@ public:
 
 /// Used to escape and unescape string literals.
 static immutable Escaper jsonescaper = {
-    xesc: true,
+    xesc: false,
     u16esc: true,
     unprintable: true,
     pairs: [

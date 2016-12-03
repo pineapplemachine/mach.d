@@ -11,11 +11,20 @@ import mach.text.json.exceptions;
 import mach.text.json.literals;
 import mach.text.json.value;
 
-bool isWhite(in char ch){
-    return (
-        ch == ' ' || ch == '\t' || ch == '\r' ||
-        ch == '\n' || ch == '\v' || ch == '\f'
-    );
+/// Note that this does not include all ASCII whitespace characters,
+/// let alone all unicode ones.
+/// These are characters which are allowed to be present before and after
+/// structual characters, and are ignored.
+bool iswhite(in char ch){
+    return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
+}
+
+/// Note that this differs from the strict unicode definition of what
+/// constitutes a control character.
+/// These are characters which may not appear in a string literal without
+/// being escaped.
+bool iscontrol(in dchar ch){
+    return ch <= 0x1f;
 }
 
 public:
@@ -40,7 +49,7 @@ static auto parsejson(
     auto result = parsevalue!floatsettings(str, 0, 1, 0);
     // Consume whitespace at the end of the string.
     auto pos = result.endpos;
-    while(pos < str.length && str[pos].isWhite) pos++;
+    while(pos < str.length && str[pos].iswhite) pos++;
     // If there's any trailing characters other than whitespace, throw an exception.
     if(pos < str.length){
         throw new JsonParseTrailingException(result.endline, result.endpos);
@@ -54,7 +63,7 @@ static auto parsejson(
 /// Utility used by parser functions to forward position in a string until a
 /// non-whitespace character is encountered.
 private static void consumews(in string str, ref size_t pos, ref size_t line){
-    while(pos < str.length && str[pos].isWhite){
+    while(pos < str.length && str[pos].iswhite){
         line += str[pos] == '\n';
         pos++;
     }
@@ -193,8 +202,8 @@ private static auto parsestring(
                 escape = false;
             }else if(utf.front == '\\'){
                 escape = true;
-            }else if(utf.front == '\n'){
-                line += 1;
+            }else if(utf.front.iscontrol){
+                throw new JsonParseControlCharException();
             }else if(utf.front == '"'){
                 try{
                     string result = cast(string) jsonunescape(
@@ -440,7 +449,7 @@ private static auto parsenumber(
     // Main parsing loop
     while(pos < str.length){
         immutable char ch = str[pos];
-        if(ch.isWhite || ch == ',' || ch == ']' || ch == '}'){
+        if(ch.iswhite || ch == ',' || ch == ']' || ch == '}'){
             break; // Valid terminating characters
         }else if(ch == '0' && (state is State.IntegralInitial || state is State.IntegralSigned)){
             state = State.IntegralZero;
@@ -490,7 +499,7 @@ private static auto parsenumber(
                 throw new JsonParseNumberException(line, pos);
             }
         }else if(ch == 'e' || ch == 'E'){
-            if(state is State.Fraction || state is State.Integral){
+            if(state is State.Fraction || state is State.Integral || state is State.IntegralZero){
                 state = State.ExponentInitial;
             }else{
                 throw new JsonParseNumberException(line, pos);
@@ -587,6 +596,7 @@ unittest{
             testeq(`0.0`.parsejson, 0.0);
             testeq(`0.5`.parsejson, 0.5);
             testeq(`-0.5`.parsejson, -0.5);
+            testeq(`0e1`.parsejson, 0e1);
             testeq(`1e2`.parsejson, 1e2);
             testeq(`1e-2`.parsejson, 1e-2);
             testeq(`1.5e2`.parsejson, 1.5e2);
@@ -600,10 +610,6 @@ unittest{
             testeq(`"\\"`.parsejson, "\\");
             testeq(`"\t"`.parsejson, "\t");
             testeq(`"\""`.parsejson, "\"");
-            testeq(
-                `"!\xD7\x90\xE3\x83\x84\xF0\x9F\x98\x83"`.parsejson,
-                "!\xD7\x90\xE3\x83\x84\xF0\x9F\x98\x83"
-            );
         });
         tests("Arrays", {
             tests("Empty", {

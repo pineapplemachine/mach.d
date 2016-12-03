@@ -23,9 +23,9 @@ void main(){
         auto json = cast(string) File.readall(file.path);
         Throwable exception = null;
         Json.ParseException jsonexception = null;
-        log("Testing: ", file.name);
+        //log("Testing: ", file.name);
         try{
-            Json.parse(json);
+            Json.parse!(Json.FloatSettings.Standard)(json);
         }catch(Json.ParseException e){
             jsonexception = e;
         }catch(Throwable e){
@@ -37,7 +37,7 @@ void main(){
         }
         if(file.name[0] == 'y'){
             if(jsonexception is null){
-                log("SUCCESS: ", file.name);
+                //log("SUCCESS: ", file.name);
                 success++;
             }else{
                 log("REJECTED VALID: ", file.name);
@@ -45,7 +45,7 @@ void main(){
             }
         }else if(file.name[0] == 'n'){
             if(jsonexception !is null){
-                log("SUCCESS: ", file.name);
+                //log("SUCCESS: ", file.name);
                 success++;
             }else{
                 log("ACCEPTED INVALID: ", file.name);
