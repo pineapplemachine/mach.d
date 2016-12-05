@@ -18,7 +18,7 @@ The `mach.sdl` package requires some additional dependencies. See the [package r
 
 ## Differences from Phobos
 
-Major departures from phobos' school of thought include:
+Major departures from Phobos' school of thought include:
 
 ### No auto-decoding strings
 
@@ -55,7 +55,9 @@ auto list = new LinkedList!int(0, 1, 2, 3);
 assert(list.filter!(n => n % 2).equals([1, 3]));
 ```
 
-### Range indexes don't change with iteration
+### Ranges are not "moving windows"
+
+In Phobos, ranges are conceptualized as moving windows over some source of data. In mach, ranges are as stationary windows with a moving cursor or, in the case of bidirectional ranges, a pair of moving cursors.
 
 The indexes referred to via opIndex and opSlice remain consistent even while consuming the range, as does length.
 
@@ -68,7 +70,7 @@ assert(range.length == 5);
 assert(range[0] == 'h');
 ```
 
-To get the number of elements remaining in a range, as the `length` property does in Phobos, this library supports a `remaining` property which returns the number of elements the range will still iterate over. (This property is not yet available for many range types, but it's on my todo list.)
+To get the number of elements remaining in a range, as the `length` property does in Phobos, ranges in this library support a `remaining` property which returns the number of elements the range will still iterate over.
 
 ``` D
 auto range = "hello".asrange;
