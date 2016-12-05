@@ -26,7 +26,7 @@ struct WriteFloatSettings{
         /// use as many zeros as is necessary. (Even when that's a lot.)
         Never,
         /// Always output an exponent when forming a string;
-        /// The value will always be in the form `\d(.\d+)?e-?\d+`.
+        /// The value will always be in the form `\d(\.\d+)?e-?\d+`.
         Always,
         /// When the number of preceding or trailing zeros that would need
         /// to be included to represent a value exceeds the threshold described
@@ -38,7 +38,7 @@ struct WriteFloatSettings{
     /// What to output when the input is positive NaN.
     string PosNaNLiteral = "nan";
     /// What to output when the input is negative NaN.
-    string NegNaNLiteral = "nan";
+    string NegNaNLiteral = "-nan";
     /// What to output when the input is positive infinity.
     string PosInfLiteral = "inf";
     /// What to output when the input is negative infinity.
@@ -69,7 +69,7 @@ string writefloat(
     }
     
     if(value.fisnan){
-        return value.fextractsgn ? settings.PosNaNLiteral : settings.NegNaNLiteral;
+        return value.fextractsgn ? settings.NegNaNLiteral : settings.PosNaNLiteral;
     }else if(value.fisinf){
         return value > 0 ? settings.PosInfLiteral : settings.NegInfLiteral;
     }else if(value.fiszero){
