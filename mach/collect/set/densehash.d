@@ -23,10 +23,10 @@ auto asdensehashset(bool dynamic = true, Iter)(auto ref Iter iter) if(
 struct DenseHashSetBucket(T){
     Unqual!T rawvalue = void;
     bool empty = true;
-    @property T value() const{
+    @property T value() const @trusted{ // TODO: Should this indeed be @trusted?
         return cast(T) this.rawvalue;
     }
-    @property void value(T value){
+    @property void value(T value) @trusted{ // TODO: Should this indeed be @trusted?
         this.rawvalue = cast(Unqual!T) value;
         this.empty = false;
     }
