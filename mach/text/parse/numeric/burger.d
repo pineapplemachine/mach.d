@@ -64,7 +64,7 @@ struct Bignum{
     +/
 }
 
-Bignum five[MAX_FIVE];
+Bignum[MAX_FIVE] five;
 
 
 
