@@ -18,7 +18,7 @@ struct stdio{
     }
     /// Write some text to stdout, terminated by a newline.
     static void writeln(Args...)(Args args){
-        StdOutStream().write(text(args), '\n');
+        StdOutStream().write(text(args, '\n'));
     }
     /// Flush stdout.
     static void flushout(){
