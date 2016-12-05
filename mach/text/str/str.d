@@ -7,28 +7,12 @@ import mach.traits : isImaginary, isComplex, isIterable, isFiniteIterable, isArr
 import mach.traits : isString, isPointer, isEnumType, isAssociativeArray, isRange;
 
 import mach.text.str.arrays : iterabletostring, arraytostring;
-import mach.text.str.types : typetostring;
+import mach.text.str.types : typetostring, typetostringtostring, hasToString, hasCustomToString;
 
 import mach.text.str.primitives;
 import mach.text.str.settings;
 
 public:
-
-
-
-/// Determine whether a type has a toString method other than the one
-/// that comes with the Object interface, because that one is stupid.
-private template hasToString(T){
-    static if(is(typeof({string x = T.init.toString();}))){
-        static if(is(typeof({enum x = &T.toString !is &Object.toString;}))){
-            enum bool hasToString = &T.toString !is &Object.toString;
-        }else{
-            enum bool hasToString = true;
-        }
-    }else{
-        enum bool hasToString = false;
-    }
-}
 
 
 
@@ -38,8 +22,8 @@ string str(
 )(
     auto ref T value
 ){
-    static if(hasToString!T){
-        return value.toString();
+    static if(hasCustomToString!T || (!settings.ignoreobjecttostring && hasToString!T)){
+        return value.typetostringtostring!settings;
     }else static if(isNull!T){
         return "null";
     }else static if(isEnumType!T){
@@ -104,10 +88,6 @@ version(unittest){
         this(string x){this.x = x;}
         override string toString(){return this.x;}
     }
-    static assert(!hasToString!TestStruct);
-    static assert(!hasToString!TestClass);
-    static assert(hasToString!ToStringStruct);
-    static assert(hasToString!ToStringClass);
 }
 
 unittest{

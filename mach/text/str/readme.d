@@ -28,5 +28,5 @@ unittest{
 unittest{
     struct Test{int x, y;}
     assert(str(Test(1, 2)) == "{x: 1, y: 2}");
-    assert(str!(StrSettings.Verbose)(Test(1, 2)) == "Test{x: int(1), y: int(2)}");
+    assert(str!(StrSettings.Verbose)(Test(1, 2)) == "struct:Test:{x: int(1), y: int(2)}");
 }

@@ -24,8 +24,9 @@ string booleantostring(in bool value){
 string integertostring(StrSettings settings = StrSettings.Default, T)(
     in T value
 ) if(isIntegral!T){
-    static if(settings.integers){
-        return Unqual!T.stringof ~ "(" ~ value.writeint ~ ")";
+    enum showtype = settings.showintegertype;
+    static if(showtype){
+        return settings.typeprefix!(showtype, T) ~ "(" ~ value.writeint ~ ")";
     }else{
         return value.writeint;
     }
@@ -34,20 +35,30 @@ string integertostring(StrSettings settings = StrSettings.Default, T)(
 string floattostring(StrSettings settings = StrSettings.Default, T)(
     in T value
 ) if(isFloatingPoint!T){
-    static if(settings.floats){
-        return Unqual!T.stringof ~ "(" ~ value.writefloat ~ ")";
+    string getcontent(){
+        enum fsettings = settings.floatsettings;
+        return writefloat!(fsettings)(cast(double) value);
+    }
+    enum showtype = settings.showfloattype;
+    static if(showtype){
+        return settings.typeprefix!(showtype, T) ~ "(" ~ getcontent() ~ ")";
     }else{
-        return value.writefloat;
+        return getcontent();
     }
 }
 
 string imaginarytostring(StrSettings settings = StrSettings.Default, T)(
     in T value
 ) if(isImaginary!T){
-    static if(settings.imaginary){
-        return Unqual!T.stringof ~ "(" ~ value.im.writefloat ~ "i)";
+    string getcontent(){
+        enum fsettings = settings.floatsettings;
+        return value.im.writefloat!(fsettings) ~ "i";
+    }
+    enum showtype = settings.showimaginarytype;
+    static if(showtype){
+        return settings.typeprefix!(showtype, T) ~ "(" ~ getcontent() ~ ")";
     }else{
-        return value.im.writefloat ~ "i";
+        return getcontent();
     }
 }
 
@@ -55,14 +66,22 @@ string complextostring(StrSettings settings = StrSettings.Default, T)(
     in T value
 ) if(isComplex!T){
     string getcontent(){
+        enum fsettings = settings.floatsettings;
         if(value.im < 0){
-            return value.re.writefloat ~ value.im.writefloat ~ "i";
+            return(
+                value.re.writefloat!(fsettings) ~
+                value.im.writefloat!(fsettings) ~ "i"
+            );
         }else{
-            return value.re.writefloat ~ "+" ~ value.im.writefloat ~ "i";
+            return(
+                value.re.writefloat!(fsettings) ~
+                "+" ~ value.im.writefloat!(fsettings) ~ "i"
+            );
         }
     }
-    static if(settings.complex){
-        return Unqual!T.stringof ~ "(" ~ getcontent() ~ ")";
+    enum showtype = settings.showcomplextype;
+    static if(showtype){
+        return settings.typeprefix!(showtype, T) ~ "(" ~ getcontent() ~ ")";
     }else{
         return getcontent();
     }
@@ -80,13 +99,10 @@ string charactertostring(
             return value.utf8encode.toString();
         }
     }
-    static if(settings.characters){
-        alias U = Unqual!T;
-        static if(is(U == char)) return `'` ~ getcontent() ~ `'`;
-        else static if(is(U == wchar)) return `'` ~ getcontent() ~ `'w`;
-        else static if(is(U == dchar)) return `'` ~ getcontent() ~ `'d`;
-        else static assert(false, "Unknown character type."); // Shouldn't happen
-    }else static if(quoteliterals){
+    enum showtype = settings.showcharactertype;
+    static if(showtype){
+        return settings.typeprefix!(showtype, T) ~ `('` ~ getcontent() ~ `')`;
+    }else static if(quoteliterals || !settings.omitcharquotes){
         return `'` ~ getcontent() ~ `'`;
     }else{
         return getcontent();
@@ -110,19 +126,26 @@ string stringtostring(
         }
         return result;
     }
-    static if(settings.strings){
+    enum showstringtype = settings.showstringtype;
+    enum showstringliketype = settings.showstringliketype;
+    static if(
+        (isArray!T && showstringtype) ||
+        (!isArray!T && showstringliketype)
+    ){
         string getquoted(){
             static if(isCharString!T) return `"` ~ getcontent() ~ `"`;
             else static if(isWString!T) return `"` ~ getcontent() ~ `"w`;
             else static if(isDString!T) return `"` ~ getcontent() ~ `"d`;
             else static assert(false, "Unknown string type."); // Shouldn't happen
         }
-        static if(isArray!T){
+        static if(isArray!T && showstringtype is settings.TypeDetail.Unqual){
             return getquoted();
+        }else static if(isArray!T){
+            return settings.typeprefix!(showstringtype, T) ~ ":" ~ getquoted();
         }else{
-            return T.stringof ~ "." ~ getquoted();
+            return settings.typeprefix!(showstringliketype, T) ~ ":" ~ getquoted();
         }
-    }else static if(quoteliterals){
+    }else static if(quoteliterals || !settings.omitstringquotes){
         return `"` ~ getcontent() ~ `"`;
     }else{
         return getcontent();
@@ -135,8 +158,9 @@ string pointertostring(StrSettings settings = StrSettings.Default, T)(
     string getcontent(){
         return value is null ? "null" : "0x" ~ (cast(size_t) value).writeptr;
     }
-    static if(settings.pointers){
-        return PointerType!T.stringof ~ "*" ~ getcontent();
+    enum showtype = settings.showpointertype;
+    static if(showtype){
+        return settings.typeprefix!(showtype, PointerType!T) ~ "*" ~ getcontent();
     }else{
         return getcontent();
     }
@@ -145,8 +169,9 @@ string pointertostring(StrSettings settings = StrSettings.Default, T)(
 string enumtostring(StrSettings settings = StrSettings.Default, T)(
     in T value
 ) if(isEnumType!T){
-    static if(settings.enums){
-        return T.stringof ~ "." ~ value.enummembername;
+    enum showtype = settings.showenumtype;
+    static if(showtype){
+        return settings.typeprefix!(showtype, T) ~ "." ~ value.enummembername;
     }else{
         return value.enummembername;
     }
@@ -184,8 +209,9 @@ unittest{
         assert(T(5.25).floattostring == "5.25");
         assert(T(-1).floattostring == "-1");
         assert((T.nan).floattostring == "nan");
-        assert((T.infinity).floattostring == "inf");
-        assert((-T.infinity).floattostring == "-inf");
+        assert((-T.nan).floattostring == "-nan");
+        assert((T.infinity).floattostring == "infinity");
+        assert((-T.infinity).floattostring == "-infinity");
     }
     assert(float(0).floattostring!Verbose == "float(0)");
     assert(double(0).floattostring!Verbose == "double(0)");
@@ -214,9 +240,9 @@ unittest{
     assert(char('x').charactertostring!(StrSettings.Concise, true) == "'x'");
     assert(wchar('x').charactertostring!(StrSettings.Concise, true) == "'x'");
     assert(dchar('x').charactertostring!(StrSettings.Concise, true) == "'x'");
-    assert(char('x').charactertostring!Verbose == "'x'");
-    assert(wchar('x').charactertostring!Verbose == "'x'w");
-    assert(dchar('x').charactertostring!Verbose == "'x'd");
+    assert(char('x').charactertostring!Verbose == "char('x')");
+    assert(wchar('x').charactertostring!Verbose == "wchar('x')");
+    assert(dchar('x').charactertostring!Verbose == "dchar('x')");
 }
 unittest{
     assert("".stringtostring == "");
@@ -254,9 +280,9 @@ unittest{
     assert(StringRange!char("hello").stringtostring!(StrSettings.Concise, true) == `"hello"`);
     assert(StringRange!wchar("hello").stringtostring!(StrSettings.Concise, true) == `"hello"`);
     assert(StringRange!dchar("hello").stringtostring!(StrSettings.Concise, true) == `"hello"`);
-    assert(StringRange!char("hello").stringtostring!Verbose == `StringRange!char."hello"`);
-    assert(StringRange!wchar("hello").stringtostring!Verbose == `StringRange!wchar."hello"w`);
-    assert(StringRange!dchar("hello").stringtostring!Verbose == `StringRange!dchar."hello"d`);
+    assert(StringRange!char("hello").stringtostring!Verbose == `struct:range:StringRange!char:"hello"`);
+    assert(StringRange!wchar("hello").stringtostring!Verbose == `struct:range:StringRange!wchar:"hello"w`);
+    assert(StringRange!dchar("hello").stringtostring!Verbose == `struct:range:StringRange!dchar:"hello"d`);
 }
 unittest{
     int* a = null;
