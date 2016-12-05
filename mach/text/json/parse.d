@@ -456,22 +456,28 @@ private static auto parsenumber(
         }else if(ch >= '0' && ch <= '9'){
             final switch(state){
                 case State.IntegralInitial:
+                    goto case;
                 case State.IntegralSigned:
                     state = State.Integral;
+                    goto case;
                 case State.Integral:
                     addmantdigit(ch);
                     decimal++;
                     break;
                 case State.IntegralZero:
                     throw new JsonParseNumberException(line, pos);
+                    goto case;
                 case State.FractionInitial:
                     state = State.Fraction;
+                    goto case;
                 case State.Fraction:
                     addmantdigit(ch);
                     break;
                 case State.ExponentInitial:
+                    goto case;
                 case State.ExponentSigned:
                     state = State.Exponent;
+                    goto case;
                 case State.Exponent:
                     exponent = (exponent * 10) + (ch - '0');
                     break;

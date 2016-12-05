@@ -38,6 +38,6 @@ unittest{
     varselect!false(x(), y());
     bool error = false;
     try{varselect!true(x(), y());}
-    catch{error = true;}
+    catch(Throwable){error = true;}
     assert(error);
 }
