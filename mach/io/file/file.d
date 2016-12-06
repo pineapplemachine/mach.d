@@ -78,6 +78,10 @@ abstract class File{
         scope(exit) file.close();
         return file.asarray!T;
     }
+    /// Read data from a file path as a string.
+    static auto readstring(string path){
+        return cast(string) typeof(this).readall(path);
+    }
     /// Write some data to a file path.
     static auto writeto(T)(string path, T data) if(isIterable!T){
         auto file = write(path);
