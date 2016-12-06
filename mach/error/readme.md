@@ -1,9 +1,5 @@
 # Overview
 
-### mach.error.assertf
-
-Is to `assert` as `writefln` is to `writeln`.
-
 ### mach.error.errno
 
 Handle errors related to functions that set errno to explain what went wrong, especially extern'd C code.
