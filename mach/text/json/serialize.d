@@ -7,7 +7,7 @@ import mach.traits : isIntegral, isFloatingPoint, isCharacter, isString;
 import mach.traits : isBoolean, isArray, isStaticArray, isAssociativeArray;
 import mach.traits : ArrayElementType, ArrayKeyType, ArrayValueType;
 import mach.traits : isClass, isPointer, Unqual, isCharString, isDString;
-import mach.traits : isEnum, getenummember, enummembername, NoSuchEnumMemberException;
+import mach.traits : isEnumType, getenummember, enummembername, NoSuchEnumMemberException;
 import mach.traits : hasAttribute;
 import mach.range : map, asarray;
 import mach.text.utf : utf8encode, utfdecode;
@@ -55,7 +55,7 @@ JsonValue jsonserialize(size_t maxdepth = DefaultMaxDepth, T)(
         return jsonserializearray!maxdepth(value, depth);
     }else static if(isAssociativeArray!T){
         return jsonserializearray!maxdepth(value, depth);
-    }else static if(isEnum!T){
+    }else static if(isEnumType!T){
         return jsonserializeenum(value);
     }else static if(is(typeof({JsonValue v = value.tojson;}))){
         return value.tojson;
@@ -86,7 +86,7 @@ T jsondeserialize(T)(in JsonValue value){
         return jsondeserializearrayof!(ArrayKeyType!T, ArrayValueType!T)(value);
     }else static if(isString!T){
         return jsondeserializestring!T(value);
-    }else static if(isEnum!T){
+    }else static if(isEnumType!T){
         return jsondeserializeenum!T(value);
     }else static if(is(typeof({JsonValue v = value.fromjson;}))){
         return value.fromjson;
@@ -198,7 +198,7 @@ auto jsondeserializetype(T)(in JsonValue value){
 
 
 /// Get a json object from an enum member.
-auto jsonserializeenum(T)(T value) if(isEnum!T){
+auto jsonserializeenum(T)(T value) if(isEnumType!T){
     return JsonValue(enummembername(value));
 }
 
@@ -250,7 +250,7 @@ auto jsondeserializenumber(T)(in JsonValue value) if(isIntegral!T || isFloatingP
         return cast(T) value.store.floatval;
     // TODO: Actually implement parsefloat
     //}else if(value.type is JsonValue.Type.String){
-    //    static if(isIntegral!T) return cast(T)(value.store.stringval.parseint);
+    //    static if(isIntegral!T) return value.store.stringval.parseint!T;
     //    else return cast(T)(value.store.stringval.parsefloat);
     }
     static if(isFloatingPoint!T){
@@ -385,18 +385,21 @@ auto jsondeserializestaticarrayof(T, size_t size)(in JsonValue value){
 auto jsonserializearray(size_t maxdepth = DefaultMaxDepth, K, V)(
     V[K] array, in size_t depth = 0
 ){
-    static if(is(K : string)){
+    alias UK = Unqual!K;
+    static if(is(UK == string)){
         alias tokey = k => k;
-    }else static if(is(K : dstring)){
+    }else static if(is(UK == dstring)){
         alias tokey = k => k.utf8encode;
-    }else static if(is(K : char)){
+    }else static if(is(UK == char)){
         alias tokey = k => cast(string)[k];
-    }else static if(is(K : dchar)){
+    }else static if(is(UK == dchar)){
         alias tokey = k => k.utf8encode.toString();
     }else static if(isIntegral!K){
         alias tokey = k => k.writeint;
     }else static if(isFloatingPoint!K){
         alias tokey = k => k.writefloat;
+    }else static if(isEnumType!K){
+        alias tokey = k => k.enummembername;
     }else{
         static assert(false,
             "Unable to serialize associative array with key type " ~ K.stringof ~ "."
@@ -414,26 +417,35 @@ auto jsondeserializearrayof(K, V)(in JsonValue value){
     if(value.type !is JsonValue.Type.Object){
         throw new JsonDeserializationTypeException("associative array");
     }
-    static if(is(K : string)){
+    alias UK = Unqual!K;
+    static if(is(UK == string)){
         alias tokey = k => k;
-    }else static if(is(K : dstring)){
+    }else static if(is(UK == dstring)){
         alias tokey = k => k.utfdecode.asarray;
-    }else static if(is(K : char)){
+    }else static if(is(UK == char)){
         alias tokey = (k){
             if(k.length != 1) throw new JsonDeserializationValueException("character");
             return k[0];
         };
-    }else static if(is(K : dchar)){
+    }else static if(is(UK == dchar)){
         alias tokey = (k){
             auto str = k.utfdecode.asarray;
             if(str.length != 1) throw new JsonDeserializationValueException("character");
             return str[0];
         };
     }else static if(isIntegral!K){
-        alias tokey = k => k.parseint;
+        alias tokey = k => k.parseint!K;
     // TODO: make parsefloat work
     //}else static if(isFloatingPoint!K){
     //    alias tokey = k => k.parsefloat;
+    }else static if(isEnumType!K){
+        alias tokey = (k){
+            try{
+                return getenummember!K(k);
+            }catch(NoSuchEnumMemberException!K e){
+                throw new JsonDeserializationValueException("enum member", e);
+            }
+        };
     }else{
         static assert(false,
             "Unable to deserialize associative array with key type " ~ K.stringof ~ "."
@@ -651,6 +663,10 @@ unittest{
             testeq(a.jsonserialize.jsondeserialize!ClassTest.x, 0);
             ClassTest b = new ClassTest(1, 2, 3);
             testeq(b.jsonserialize.jsondeserialize!ClassTest.x, 1);
+            ClassTest c = null;
+            JsonValue value = c.jsonserialize;
+            testis(value.type, JsonValue.Type.Null);
+            testis(value.jsondeserialize!ClassTest, null);
         });
         tests("Nesting", {
             NestSuccessTest a = new NestSuccessTest();
@@ -670,6 +686,35 @@ unittest{
             JsonValue value = skip.jsonserialize;
             test("x" in value);
             testf("y" in value);
+        });
+        tests("Arrays", {
+            struct Test{
+                int[4][] x;
+                int[4][char] y;
+            }
+            Test empty;
+            JsonValue value = empty.jsonserialize;
+            auto encoded = value.encode;
+            testeq(encoded, `{"x":[],"y":{}}`);
+            enum json = `{"x": [[1, 2, 3, 4]], "y": {"a": [1, 2, 3, 4]}}`;
+            Test filled = json.parsejson.jsondeserialize!Test;
+            testeq(filled, Test([[1, 2, 3, 4]], ['a': [1, 2, 3, 4]]));
+        });
+        tests("Array of enums", {
+            enum Enum{First, Second, Third}
+            auto array = [Enum.First, Enum.Second, Enum.Third];
+            JsonValue value = array.jsonserialize;
+            testis(value.type, JsonValue.Type.Array);
+            testeq(value.length, 3);
+            testeq(value.jsondeserialize!(Enum[]), array);
+        });
+        tests("Associative array enum key", {
+            enum Enum{First, Second, Third}
+            int[Enum] array = [Enum.First: 1, Enum.Second: 2, Enum.Third: 3];
+            testeq(array.jsonserialize.jsondeserialize!(int[Enum]), array);
+            testfail({
+                JsonValue(["First": 1, "Nope": 2]).jsondeserialize!(int[Enum]);
+            });
         });
     });
 }
