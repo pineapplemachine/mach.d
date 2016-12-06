@@ -3,7 +3,6 @@ module mach.misc.refcounter;
 private:
 
 import std.algorithm : count;
-import mach.error.assertf : assertf;
 
 public:
 
@@ -21,12 +20,12 @@ struct RefCounter(T){
     
     /// Returns the new number of references to this value.
     size_t decrement(T value) in{
-        assertf(
-            cast(bool) (value in this.counter), "Can't decrement unindexed value %s.", value
+        assert(
+            cast(bool) (value in this.counter), "Can't decrement unindexed value."
         );
-        assertf(
+        assert(
             this.counter[value] > 0,
-            "Can't decrement value %s because its reference count is already zero.", value
+            "Can't decrement value because its reference count is already zero."
         );
     }body{
         return this.counter[value] -= 1;

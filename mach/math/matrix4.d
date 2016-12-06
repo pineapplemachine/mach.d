@@ -8,7 +8,6 @@ import mach.math.vector2 : Vector2;
 import mach.math.vector3 : Vector3;
 import mach.math.box : Box;
 import mach.math.cube : Cube;
-import mach.error.assertf : assertf;
 
 public:
 
@@ -215,9 +214,9 @@ struct Matrix4(T = real) if(isNumeric!T){
     }
     
     size_t index(in size_t x, in size_t y) const{
-        assertf(
+        assert(
             (x >= 0) & (y >= 0) & (x < Width) & (y < Height),
-            "Coordinates (%d, %d) are out of bounds.", x, y
+            "Coordinates are out of bounds.",
         );
         return x + (y << 2);
         //return y + (x << 2);
