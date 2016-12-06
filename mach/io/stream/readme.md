@@ -7,10 +7,10 @@ This package contains functionality for stream IO, incuding file and stdio strea
 An input stream is one which implements at minimum `readbufferv` and `eof`.
 An output stream is one which implements at minimum `writebufferv` and `eof`.
 
-For example, `FileStream` implements these methods like so:
+For example, `FileStream` implements these methods essentially like so:
 
 ``` D
-struct StdInStream{
+struct FileStream{
     size_t readbufferv(void* buffer, size_t size, size_t count){
         return fread(buffer, size, count, this.target);
     }
