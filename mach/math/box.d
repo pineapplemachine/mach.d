@@ -232,6 +232,17 @@ struct Box(T) if(isNumeric!T){
         );
     }
     
+    /// Return a box the same as this one, but with width and height multiplied
+    /// by the specified amount.
+    auto scaled(N)(in N scale) if(isNumeric!N){
+        return typeof(this)(
+            this.minx,
+            this.miny,
+            this.minx + (this.maxx - this.minx) * scale,
+            this.miny + (this.maxy - this.miny) * scale
+        );
+    }
+    
     void moveto(N)(in Box!N vector){
         this.to(vector.minx, vector.miny);
     }
