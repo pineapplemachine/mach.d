@@ -149,7 +149,7 @@ struct Heap(T, alias compare = DefaultHeapCompare) if(canHeap!(T, compare)){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.traits : isRange;
     import mach.range.compare : equals;
 }

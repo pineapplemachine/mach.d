@@ -10,7 +10,7 @@ public:
 
 
 /// Write over all elements of a mutable iterable with some value.
-auto fill(Iter, Fill)(ref Iter iter, Fill fillwith) if(
+auto ref fill(Iter, Fill)(auto ref Iter iter, Fill fillwith) if(
     canMutate!(Iter, (element) => (fillwith))
 ){
     iter.mutate!((element) => (fillwith)).consume;
@@ -20,7 +20,7 @@ auto fill(Iter, Fill)(ref Iter iter, Fill fillwith) if(
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
 }
 unittest{
     tests("Fill", {

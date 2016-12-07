@@ -429,8 +429,7 @@ struct EventHistoryAggregation(
 
 version(unittest){
     private:
-    import mach.error.unit;
-    import mach.io.log;
+    import mach.test;
 }
 unittest{
     tests("Polled input helper", {

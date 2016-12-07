@@ -82,9 +82,12 @@ auto unique(alias by = DefaultUniqueBy, alias makehistory = DefaultUniqueMakeHis
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
-    import std.ascii : toLower;
+    auto tolower(in char ch){
+        if(ch >= 'A' && ch <= 'Z') return ch - ('A' - 'a');
+        else return ch;
+    }
 }
 unittest{
     tests("Unique", {
@@ -97,9 +100,9 @@ unittest{
             testf("aa".unique);
         });
         tests("Custom by", {
-            test("abc".unique!toLower);
-            test("ABC".unique!toLower);
-            testf("Aa".unique!toLower);
+            test("abc".unique!tolower);
+            test("ABC".unique!tolower);
+            testf("Aa".unique!tolower);
         });
     });
 }

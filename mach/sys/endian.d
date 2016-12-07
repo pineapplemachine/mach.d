@@ -28,7 +28,10 @@ T endianswap(T)(in T value) pure nothrow @nogc @trusted{
 
 
 
-version(unittest) private import mach.error.unit;
+version(unittest){
+    private:
+    import mach.test;
+}
 unittest{
     tests("Endian swap", {
         testeq(endianswap(ubyte(0xff)), 0xff);

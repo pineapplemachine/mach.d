@@ -87,7 +87,7 @@ struct LinearCongruentialRange(T) if(canLinearCongruential!T){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.consume : consume;
     import mach.range.ends : head;
 }

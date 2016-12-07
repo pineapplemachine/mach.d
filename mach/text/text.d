@@ -20,7 +20,7 @@ auto text(StrSettings settings = StrSettings.Default, Args...)(Args args){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
 }
 unittest{
     tests("Text", {

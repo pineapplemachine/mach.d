@@ -139,9 +139,11 @@ struct Vertexes(Pos = float, Tex = float, Col = float) if(
 alias Vertexesf = Vertexes!(float, float, float);
 
 /+ TODO
-version(unittest) import mach.error.unit;
+version(unittest){
+    private:
+    import mach.test;
+}
 unittest{
-    import std.stdio;
     writeln(Vertex!float.rect(Vector2!float(0, 0), Vector2!int(10, 10)));
 }
 +/

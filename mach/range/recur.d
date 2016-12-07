@@ -126,7 +126,7 @@ struct RecurUntilRange(
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
     import mach.range.ends : head;
 }

@@ -229,7 +229,10 @@ struct Color(T = float) if(isNumeric!T){
 
 
 
-version(unittest) import mach.error.unit;
+version(unittest){
+    private:
+    import mach.test;
+}
 unittest{
     enum WHITE_HEX = 0xffffffff;
     enum RED_HEX = 0xff0000ff;
@@ -267,8 +270,8 @@ unittest{
             testeq(col[3], 3);
             col[0] = 4;
             testeq(col[0], 4);
-            fail({col[4];});
-            fail({col[4] = 4;});
+            testfail({col[4];});
+            testfail({col[4] = 4;});
         });
         tests("Casting", {
             tests("Integral to float", {

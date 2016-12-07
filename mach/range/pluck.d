@@ -58,7 +58,7 @@ template pluck(properties...) if(properties.length){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
     struct PropertyPluckTest{
         int x, y;
@@ -69,7 +69,6 @@ version(unittest){
 }
 unittest{
     tests("Pluck", {
-        
         int[][] input;
         foreach(i; 0 .. 4) input ~= [0, i, i+i, i*i];
         tests("Numeric index", {

@@ -23,7 +23,7 @@ void eachreverse(alias func, Iter)(auto ref Iter iter) if(isFiniteIterableRevers
 
 
 version(unittest){
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
 }
 unittest{

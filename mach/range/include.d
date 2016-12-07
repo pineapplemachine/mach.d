@@ -29,7 +29,7 @@ auto exclude(alias pred = DefaultIncludePredicate, Iter, Element)(
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
 }
 unittest{

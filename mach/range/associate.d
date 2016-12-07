@@ -93,7 +93,7 @@ auto aadistribution(Iter)(Iter iter){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.enumerate : enumerate;
 }
 unittest{
@@ -110,7 +110,7 @@ unittest{
             testeq(
                 associate(inputa, inputb), [0:0, 1:2, 2:4]
             );
-            testeq("Enumerate",
+            testeq(
                 [10, 11, 12].enumerate.associate,
                 [cast(size_t) 0:10, cast(size_t) 1:11, cast(size_t) 2:12]
             );

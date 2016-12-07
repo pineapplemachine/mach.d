@@ -257,7 +257,7 @@ struct SelectFromUntilRange(
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
 }
 unittest{
@@ -270,80 +270,57 @@ unittest{
         tests("From", {
             auto input = [1, 2, 3, 4];
             tests("Inclusive", {
-                test("Iteration", input.from!(even, true).equals([2, 3, 4]));
-                test("Empty source", empty.from!(even, true).equals(empty));
+                test(input.from!(even, true).equals([2, 3, 4]));
+                test(empty.from!(even, true).equals(empty));
             });
             tests("Exclusive", {
-                test("Iteration", input.from!(even, false).equals([3, 4]));
-                test("Empty source", empty.from!(even, false).equals(empty));
+                test(input.from!(even, false).equals([3, 4]));
+                test(empty.from!(even, false).equals(empty));
             });
-            test("No beginning",
-                input.from!(e => e == 10).equals(empty)
-            );
-            test("Default predicate", 
-                input.from!true(2).equals([2, 3, 4])
-            );
+            // No beginning
+            test(input.from!(e => e == 10).equals(empty));
+            // Default predicate
+            test(input.from!true(2).equals([2, 3, 4]));
         });
         tests("Until", {
             auto input = [1, 2, 3, 4];
             tests("Inclusive", {
-                test("Iteration", input.until!(even, true).equals([1, 2]));
-                test("Empty source", empty.until!(even, true).equals(empty));
+                test(input.until!(even, true).equals([1, 2]));
+                test(empty.until!(even, true).equals(empty));
             });
             tests("Exclusive", {
-                test("Iteration", input.until!(even, false).equals([1]));
-                test("Empty source", empty.until!(even, false).equals(empty));
+                test(input.until!(even, false).equals([1]));
+                test(empty.until!(even, false).equals(empty));
             });
-            test("No end",
-                input.until!(e => e == 10).equals(input)
-            );
-            test("Default predicate", 
-                input.until!true(3).equals([1, 2, 3])
-            );
+            // No end
+            test(input.until!(e => e == 10).equals(input));
+            // Default predicate
+            test(input.until!true(3).equals([1, 2, 3]));
         });
         tests("From and until", {
             auto input = [1, 1, 2, 2, 1, 1, 2, 2];
             tests("Inclusive from, inclusive until", {
-                test("Iteration",
-                    input.select!(even, odd, true, true).equals([2, 2, 1])
-                );
-                test("Empty source",
-                    empty.select!(even, odd, true, true).equals(empty)
-                );
+                test(input.select!(even, odd, true, true).equals([2, 2, 1]));
+                test(empty.select!(even, odd, true, true).equals(empty));
             });
             tests("Inclusive from, exclusive until", {
-                test("Iteration",
-                    input.select!(even, odd, true, false).equals([2, 2])
-                );
-                test("Empty source",
-                    empty.select!(even, odd, true, false).equals(empty)
-                );
+                test(input.select!(even, odd, true, false).equals([2, 2]));
+                test(empty.select!(even, odd, true, false).equals(empty));
             });
             tests("Exclusive from, inclusive until", {
-                test("Iteration",
-                    input.select!(even, odd, false, true).equals([2, 1])
-                );
-                test("Empty source",
-                    empty.select!(even, odd, false, true).equals(empty)
-                );
+                test(input.select!(even, odd, false, true).equals([2, 1]));
+                test(empty.select!(even, odd, false, true).equals(empty));
             });
             tests("Exclusive from, exclusive until", {
-                test("Iteration",
-                    input.select!(even, odd, false, false).equals([2])
-                );
-                test("Empty source",
-                    empty.select!(even, odd, false, false).equals(empty)
-                );
+                test(input.select!(even, odd, false, false).equals([2]));
+                test(empty.select!(even, odd, false, false).equals(empty));
             });
-            test("No beginning",
-                input.select!(e => e == 10, odd).equals(empty)
-            );
-            test("No end",
-                input.select!(e => true, e => e == 10).equals(input)
-            );
-            test("Default predicate",
-                input.select!(true, true)(2, 1).equals([2, 2, 1])
-            );
+            // No beginning
+            test(input.select!(e => e == 10, odd).equals(empty));
+            // No end
+            test(input.select!(e => true, e => e == 10).equals(input));
+            // Default predicate
+            test(input.select!(true, true)(2, 1).equals([2, 2, 1]));
         });
     });
 }

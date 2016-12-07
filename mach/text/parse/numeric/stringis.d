@@ -74,7 +74,7 @@ bool isfloatstring(
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     void IsIntegralTests(alias func)(){
         test(func("0"));
         test(func("10"));

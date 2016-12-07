@@ -108,7 +108,7 @@ auto findallelementslazy(alias pred, Index = DefaultFindIndex, Iter)(
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
 }
 unittest{
     tests("Find element", {
@@ -135,13 +135,13 @@ unittest{
             tests("All", {
                 tests("Eager", {
                     auto result = input.findallelementseager!isdigit;
-                    testeq("Length", result.length, 2);
+                    testeq(result.length, 2);
                     testeq(result[0].index, 1);
                     testeq(result[0].value, '0');
                     testeq(result[1].index, 3);
                     testeq(result[1].value, '1');
                     auto none = input.findallelementseager!nomatch;
-                    testeq("Length", none.length, 0);
+                    testeq(none.length, 0);
                 });
                 tests("Lazy", {
                     auto range = input.findallelementslazy!isdigit;

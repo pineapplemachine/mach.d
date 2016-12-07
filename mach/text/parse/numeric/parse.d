@@ -119,11 +119,11 @@ auto parsefloat(
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     alias Reason = NumberParseException.Reason;
     void failbecause(Reason reason, in void delegate() dg){
-        fail(
-            (e){
+        testfail(
+            (in Throwable e){
                 auto ep = (cast(NumberParseException) e);
                 return ep !is null && ep.reason == reason;
             }, dg
@@ -142,7 +142,7 @@ version(unittest){
         failbecause(Reason.InvalidChar, {func("+a");});
         failbecause(Reason.InvalidChar, {func("0a");});
         // Really, either NoDigits or InvalidChar would be accurate
-        fail({func("++");});
+        testfail({func("++");});
     }
     void ParseFloatTests(alias func)(){
         testeq(func("0.0"), 0.0);
@@ -168,7 +168,7 @@ version(unittest){
         failbecause(Reason.MalformedExp, {func("1ex");});
         failbecause(Reason.MalformedExp, {func("1e1.0");});
         // Really, either NoDigits or MultDecimals would be accurate
-        fail({func("..");});
+        testfail({func("..");});
     }
     void ParseUnicodeTests(alias func)(){
         enum NumberParseSettings settings = {digits: "0π"d};
@@ -179,11 +179,11 @@ version(unittest){
         testeq(func!settings("ππ"d), 3);
         testeq(func!settings("+0π"d), +1);
         testeq(func!settings("-0π"d), -1);
-        fail({func!settings(""d);});
-        fail({func!settings(" "d);});
-        fail({func!settings("+"d);});
-        fail({func!settings("-"d);});
-        fail({func!settings("x"d);});
+        testfail({func!settings(""d);});
+        testfail({func!settings(" "d);});
+        testfail({func!settings("+"d);});
+        testfail({func!settings("-"d);});
+        testfail({func!settings("x"d);});
     }
 }
 unittest{

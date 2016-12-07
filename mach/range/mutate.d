@@ -102,7 +102,7 @@ struct MutateRange(alias transform, Range) if(canMutateRange!(Range, transform))
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
     import mach.range.consume : consume, consumereverse;
 }

@@ -55,14 +55,12 @@ auto cheapseed() @trusted nothrow{
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
 }
 unittest{
     tests("Seed", {
         testeq(seeds!2.length, 2);
         testeq(seeds!10.length, 10);
-        testtype!uint(seed!uint);
-        testtype!ulong(seed!ulong);
     });
 }
 
@@ -77,11 +75,11 @@ unittest{
         enum bool empty = false;
         ulong front;
         this(size_t front){
-            this.front = seeds!ulong[0];
+            this.front = seeds!(ulong, 1)[0];
         }
-        void popFront(){this.front = seeds!ulong[0];}
+        void popFront(){this.front = seeds!(ulong, 1)[0];}
     }
     auto range = Seeds(0).head(1_000_000).distinct;
-    assert(range.walk >= 999_990);
+    assert(range.walklength >= 999_990);
 }
 +/

@@ -25,7 +25,7 @@ void consumereverse(Range)(Range range) if(canConsumeReverse!Range){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.asrange : asrange;
     struct SomeRange{
         static size_t consumed = 0;

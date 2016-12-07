@@ -42,15 +42,15 @@ template ThrowableMixin(string DefaultMessage){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     class A: Exception{mixin ThrowableMixin!"A";}
     class B: Error{mixin ThrowableMixin!"B";}
     class C: A{mixin ThrowableMixin!"C";}
 }
 unittest{
     tests("Error mixins", {
-        fail({throw new A;});
-        fail({throw new B;});
-        fail({throw new C;});
+        testfail({throw new A;});
+        testfail({throw new B;});
+        testfail({throw new C;});
     });
 }

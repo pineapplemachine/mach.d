@@ -63,7 +63,7 @@ struct TapRange(alias func, Range) if(canTapRange!Range){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
     import mach.range.retro : retro;
 }
@@ -77,19 +77,16 @@ unittest{
                 forwards ~= ch;
                 backwards = ch ~ backwards;
             });
-            testeq("Length", range.length, input.length);
+            testeq(range.length, input.length);
             while(!range.empty) range.popFront();
             testeq(forwards, input);
             testeq(backwards, "dlrow olleh");
         });
-        test("Iteration",
-            input.tap!((e){}).equals(input)
-        );
-        test("Bidirectionality",
-            input.tap!((e){}).retro.equals(input.retro)
-        );
-        test("Slicing",
-            input.tap!((e){})[1 .. $-1].equals(input[1 .. $-1])
-        );
+        // Iteration
+        test(input.tap!((e){}).equals(input));
+        // Bidirectionality
+        test(input.tap!((e){}).retro.equals(input.retro));
+        // Slicing
+        test(input.tap!((e){})[1 .. $-1].equals(input[1 .. $-1]));
     });
 }

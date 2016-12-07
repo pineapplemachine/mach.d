@@ -2,7 +2,7 @@ module mach.range.strip;
 
 private:
 
-import mach.traits : isRange, isBidirectionalRange, isElementPredicate;
+import mach.traits : isRange, isBidirectionalRange, ElementType;
 import mach.traits : isMutableRange, isMutableFrontRange, isMutableBackRange;
 import mach.traits : isSlicingRange, isRandomAccessRange, hasNumericLength;
 import mach.range.asrange : asrange, validAsRange, validAsBidirectionalRange;
@@ -17,11 +17,15 @@ public:
 template canStrip(bool front, bool back, Iter, alias pred){
     static if(back){
         enum bool canStrip = (
-            validAsBidirectionalRange!Iter && isElementPredicate!(pred, Iter)
+            validAsBidirectionalRange!Iter && is(typeof({
+                if(pred(ElementType!Iter.init)){}
+            }))
         );
     }else static if(front){
         enum bool canStrip = (
-            validAsRange!Iter && isElementPredicate!(pred, Iter)
+            validAsRange!Iter && is(typeof({
+                if(pred(ElementType!Iter.init)){}
+            }))
         );
     }else{
         enum bool canStrip = true;
@@ -33,7 +37,9 @@ enum canStripRange(bool front, bool back, Range, alias pred) = (
 );
 
 enum canStripRange(Range, alias pred) = (
-    isElementPredicate!(pred, Range) && isRange!Range
+    isRange!Range && is(typeof({
+        if(pred(ElementType!Range.init)){}
+    }))
 );
 
 
@@ -217,10 +223,12 @@ struct StripRange(alias pred, Range) if(canStripRange!(Range, pred)){
 
 version(unittest){
     private:
-    import std.ascii : isDigit;
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
     import mach.range.next : nextback;
+    bool isdigit(in char ch){
+        return ch >= '0' && ch <= '9';
+    }
 }
 unittest{
     tests("Strip", {
@@ -230,7 +238,7 @@ unittest{
             test(blank.stripfront('0').equals(blank));
             test(input.stripfront('1').equals(input));
             test(input.stripfront('0').equals("11hi1100"));
-            test(input.stripfront!isDigit.equals("hi1100"));
+            test(input.stripfront!isdigit.equals("hi1100"));
             testeq(input.stripfront('0').length, input.length - 2);
             testeq(input.stripfront('0')[0], '1');
             testeq(input.stripfront('0')[$-1], '0');
@@ -240,7 +248,7 @@ unittest{
             test(blank.stripback('0').equals(blank));
             test(input.stripback('1').equals(input));
             test(input.stripback('0').equals("0011hi11"));
-            test(input.stripback!isDigit.equals("0011hi"));
+            test(input.stripback!isdigit.equals("0011hi"));
             testeq(input.stripback('0').length, input.length - 2);
             testeq(input.stripback('0')[0], '0');
             testeq(input.stripback('0')[$-1], '1');
@@ -250,7 +258,7 @@ unittest{
             test(blank.stripboth('0').equals(blank));
             test(input.stripboth('1').equals(input));
             test(input.stripboth('0').equals("11hi11"));
-            test(input.stripboth!isDigit.equals("hi"));
+            test(input.stripboth!isdigit.equals("hi"));
             testeq(input.stripboth('0').length, input.length - 4);
             testeq(input.stripboth('0')[0], '1');
             testeq(input.stripboth('0')[$-1], '1');

@@ -71,7 +71,7 @@ alias rstrip = stripback;
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.traits;
 }
 unittest{

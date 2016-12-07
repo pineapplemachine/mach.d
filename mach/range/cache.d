@@ -196,9 +196,9 @@ struct CacheRange(Range, Index = DefaultCacheIndex){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
-    /// Raise an AssertError if you attempt to access the front element more
+    /// Raise an AssertError upon attempting to access the front element more
     /// than once before popping; this helps make sure cache only ever accesses
     /// the front element once.
     struct TrickyRange{
@@ -263,7 +263,7 @@ unittest{
             tests("Only access front once", {
                 TrickyRange input;
                 auto range = input.cache;
-                fail({input.front; input.front;});
+                testfail({input.front; input.front;});
                 range.front; range.front;
                 range.popFront();
                 range.front; range.front;

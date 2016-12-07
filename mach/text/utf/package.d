@@ -15,7 +15,7 @@ alias utfdecode = utf8decode;
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
 }
 unittest{

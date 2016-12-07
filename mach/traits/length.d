@@ -31,33 +31,34 @@ enum hasDollar(T) = isArray!T || is(typeof(T.opDollar));
 
 
 version(unittest){
-    import mach.error.unit;
-    private struct LengthFieldTest{
+    private:
+    struct LengthFieldTest{
         double length;
     }
-    private struct LengthPropertyTest{
+    struct LengthPropertyTest{
         double len;
         @property auto length(){
             return this.len;
         }
     }
-    private struct NoLengthTest{
+    struct NoLengthTest{
         double len;
     }
-    private struct DollarAliasTest{
+    struct DollarAliasTest{
         int len;
         alias opDollar = len;
     }
-    private struct DollarPropertyTest{
+    struct DollarPropertyTest{
         int len;
         @property auto opDollar(){
             return this.len;
         }
     }
-    private struct NoDollarTest{
+    struct NoDollarTest{
         double notadollar;
     }
 }
+
 unittest{
     // hasLength
     static assert(hasLength!(int[]));

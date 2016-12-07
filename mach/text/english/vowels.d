@@ -19,7 +19,10 @@ bool isVowel(in char ch){
 // library's convention. Consequently, both isvowel and isVowel are valid.
 alias isvowel = isVowel;
 
-version(unittest) import mach.error.unit;
+version(unittest){
+    private:
+    import mach.test;
+}
 unittest{
     tests("Vowels", {
         test('a'.isVowel);

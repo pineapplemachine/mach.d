@@ -428,7 +428,12 @@ struct Surface{
     
 }
 
-version(unittest) import mach.error.unit;
+
+
+version(unittest){
+    private:
+    import mach.test;
+}
 unittest{
     
     // TODO: More tests

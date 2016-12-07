@@ -99,7 +99,7 @@ struct XorshiftRange(T) if(canXorshift!T){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.ends : head;
     import mach.range.map : map;
 }

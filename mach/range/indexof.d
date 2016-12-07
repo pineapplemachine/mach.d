@@ -67,7 +67,7 @@ auto indexofelement(Index = DefaultIndexOfIndex, Iter, Find)(
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
 }
 unittest{
     tests("Index of", {

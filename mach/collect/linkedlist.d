@@ -587,7 +587,7 @@ struct LinkedListRange(List){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
 }
 unittest{
     tests("Doubly-linked list", {
@@ -595,15 +595,9 @@ unittest{
         static assert(canLinkedList!string);
         static assert(canLinkedList!(const int));
         auto list = new LinkedList!int(0, 1, 2, 3, 4);
-        testeq("Front",
-            list.front, 0
-        );
-        testeq("Back",
-            list.back, 4
-        );
-        testeq("Length",
-            list.length, 5
-        );
+        testeq(list.front, 0);
+        testeq(list.back, 4);
+        testeq(list.length, 5);
         tests("Random access", {
             testeq(list[0], 0);
             testeq(list[1], 1);
@@ -613,7 +607,7 @@ unittest{
         });
         tests("Slices", {
             auto slice = list[1 .. $-1];
-            testeq("Length", slice.length, list.length - 2);
+            testeq(slice.length, list.length - 2);
             testeq(slice[0], 1);
             testeq(slice[1], 2);
             testeq(slice[$-1], 3);

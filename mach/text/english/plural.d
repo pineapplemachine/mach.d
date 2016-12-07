@@ -2,11 +2,9 @@ module mach.text.english.plural;
 
 private:
 
-import std.string : toLower, toUpper;
 import mach.text.utf : utf8encode;
-import mach.range : contains, tailis;
-import mach.text.english.vowels : isVowel;
-import mach.text.cases : isUpper;
+import mach.range : contains, all, tailis;
+import mach.text.ascii : tolower, toupper, isvowel, isupper; // TODO: Unicode instead of ASCII
 
 public:
 
@@ -61,7 +59,7 @@ class Pluralizer{
             "quarto", "kimono", "hello", "euro", "auto", "kilo", "intro"
         ];
         this.PluralFSuffixExceptions = [
-            "roof", "staff", "turf"
+            "roof", "turf"
         ];
     }
     
@@ -71,32 +69,32 @@ class Pluralizer{
             
         }else if(word.length == 1){
             // http://english.stackexchange.com/a/25280
-            return word ~ (isUpper(word[0]) ? "s" : "'s");
+            return word ~ (isupper(word[0]) ? "s" : "'s");
             
-        }else if(!allcaps && word.isUpper){
+        }else if(!allcaps && word.all!isupper){
             // If not allcaps, assume this is an abbreviation, e.g. CIA
             return word ~ "s";
             
-        }else if(word.toLower in PluralUniqueExceptions){
-            string result = PluralUniqueExceptions[word.toLower];
-            if(word[0].isUpper){
-                if(word.isUpper){
-                    return result.toUpper;
+        }else if(word.tolower in PluralUniqueExceptions){
+            string result = PluralUniqueExceptions[word.tolower];
+            if(word[0].isupper){
+                if(word.all!isupper){
+                    return result.toupper;
                 }else{
-                    return cast(string)(result[0].toUpper.utf8encode.chars) ~ result[1 .. $];
+                    return cast(string)(result[0].toupper.utf8encode.chars) ~ result[1 .. $];
                 }
             }else{
                 return result;
             }
             
-        }else if(PluralSameAsSingular.contains(word.toLower)){
+        }else if(PluralSameAsSingular.contains(word.tolower)){
             return word;
             
         }else{
             
             // Case-insensitive comparison of trailing characters
             bool ends(in string word, in string suffix){
-                return word.tailis!((a, b) => (a.toLower == b))(suffix);
+                return word.tailis!((a, b) => (a.tolower == b))(suffix);
             }
             
             string suffix = "s"; // String to append
@@ -104,25 +102,25 @@ class Pluralizer{
             
             if(ends(word, "o")){
                 if(
-                    word.length > 3 && !word[$-2].isVowel &&
-                    !PluralOSuffixExceptions.contains(word.toLower)
+                    word.length > 3 && !word[$-2].isvowel &&
+                    !PluralOSuffixExceptions.contains(word.tolower)
                 ){
                     suffix = "es";
                 }
             }else if(ends(word, "y")){
-                if(!word[$-2].isVowel){
+                if(!word[$-2].isvowel){
                     suffix = "ies";
                     trimright = 1;
                 }
             }else if(ends(word, "f")){
-                if(!ends(word, "ff") && !PluralFSuffixExceptions.contains(word.toLower)){
+                if(!ends(word, "ff") && !PluralFSuffixExceptions.contains(word.tolower)){
                     suffix = "ves";
                     trimright = 1;
                 }
             }else if(ends(word, "ife")){
                 suffix = "ives";
                 trimright = 3;
-            }else if(!allcaps && word[0].isUpper && ends(word, "ese")){
+            }else if(!allcaps && word[0].isupper && ends(word, "ese")){
                 // Assume a nationality e.g. Chinese, Japanese
                 suffix = "";
             }else if(word.length <= 3 && ends(word, "s") && !ends(word, "ss")){
@@ -136,14 +134,19 @@ class Pluralizer{
             }
             
             // Build the finished string
-            return word[0 .. $-trimright] ~ (word.isUpper ? suffix.toUpper : suffix);
+            return word[0 .. $-trimright] ~ (word.all!isupper ? suffix.toupper : suffix);
             
         }
     }
     
 }
 
-version(unittest) import mach.error.unit;
+
+
+version(unittest){
+    private:
+    import mach.test;
+}
 unittest{
     tests("Plurals", {
         testeq(plural("hello"), "hellos");

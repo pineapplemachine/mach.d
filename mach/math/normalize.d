@@ -36,7 +36,8 @@ static SI denormalize(SI, FP)(FP value) pure @safe @nogc nothrow if(
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
+    import mach.math.abs : abs;
 }
 unittest{
     tests("Normalize", {
@@ -52,11 +53,11 @@ unittest{
         testeq(byte.max.normalize, 1.0);
         // Ought to be very close to equal
         enum real intepsilon = 1e-9;
-        testnear(int(1 << 30).normalize, 0.5, intepsilon);
-        testnear(int(1 << 29).normalize, 0.25, intepsilon);
+        testlte(abs(int(1 << 30).normalize - 0.5), intepsilon);
+        testlte(abs(int(1 << 29).normalize - 0.25), intepsilon);
         enum real byteepsilon = 1e-2;
-        testnear(byte(1 << 6).normalize, 0.5, byteepsilon);
-        testnear(byte(1 << 5).normalize, 0.25, byteepsilon);
+        testlte(abs(byte(1 << 6).normalize - 0.5), byteepsilon);
+        testlte(abs(byte(1 << 5).normalize - 0.25), byteepsilon);
         // Make sure denormalization yields the same as normalization input
         void detest(T)(T[] values...){
             foreach(value; values){

@@ -93,18 +93,18 @@ struct IndexRange(
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
 }
 unittest{
     tests("Index Range", {
         auto input = "hello";
         auto range = input.asindexrange;
-        testeq("Length", range.length, input.length);
+        testeq(range.length, input.length);
         testeq(range.front, input[0]);
         testeq(range.back, input[$-1]);
-        testeq("Random access", range[1], input[1]);
-        test("Slicing", range[1 .. $-1].equals(input[1 .. $-1]));
+        testeq(range[1], input[1]);
+        test(range[1 .. $-1].equals(input[1 .. $-1]));
         size_t i = 0;
         foreach(e; range) testeq(e, input[i++]);
     });

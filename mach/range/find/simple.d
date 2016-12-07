@@ -138,7 +138,7 @@ alias find = findfirst;
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.asarray : asarray;
 }
 unittest{
@@ -146,8 +146,8 @@ unittest{
         tests("Element", {
             tests("With predicate", {
                 alias isL = (e) => (e == 'l');
-                testeq("First", "hello".findfirst!isL.index, 2);
-                testeq("Last", "hello".findlast!isL.index, 3);
+                testeq("hello".findfirst!isL.index, 2);
+                testeq("hello".findlast!isL.index, 3);
                 tests("All", {
                     auto result = "hello".findall!isL.asarray(2);
                     testeq(result[0].index, 2);
@@ -155,8 +155,8 @@ unittest{
                 });
             });
             tests("Default predicate", {
-                testeq("First", "hello".findfirst('l').index, 2);
-                testeq("Last", "hello".findlast('l').index, 3);
+                testeq("hello".findfirst('l').index, 2); 
+                testeq("hello".findlast('l').index, 3);
                 tests("All", {
                     auto result = "hello".findall('l').asarray(2);
                     testeq(result[0].index, 2);
@@ -167,8 +167,8 @@ unittest{
         tests("Iterable", {
             tests("With predicate", {
                 alias eq = (a, b) => (a == b);
-                testeq("First", "hihi".findfirst!eq("hi").index, 0);
-                testeq("Last", "hihi".findlast!eq("hi").index, 2);
+                testeq("hihi".findfirst!eq("hi").index, 0); 
+                testeq("hihi".findlast!eq("hi").index, 2);
                 tests("All", {
                     auto result = "hihi".findall!eq("hi").asarray(2);
                     testeq(result[0].index, 0);
@@ -176,8 +176,8 @@ unittest{
                 });
             });
             tests("Default predicate", {
-                testeq("First", "hihi".findfirst("hi").index, 0);
-                testeq("Last", "hihi".findlast("hi").index, 2);
+                testeq("hihi".findfirst("hi").index, 0); 
+                testeq("hihi".findlast("hi").index, 2);
                 tests("All", {
                     auto result = "hihi".findall("hi").asarray(2);
                     testeq(result[0].index, 0);

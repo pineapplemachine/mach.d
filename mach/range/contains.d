@@ -63,7 +63,7 @@ auto containselement(Index = DefaultFindIndex, Iter, Find)(
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
 }
 unittest{
     tests("Contains", {

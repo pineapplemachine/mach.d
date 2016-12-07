@@ -181,7 +181,7 @@ struct ReduceRange(Range, Acc, alias func, bool seeded = true) if(
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
 }
 unittest{
@@ -190,29 +190,22 @@ unittest{
         alias sum = (acc, next) => (acc + next);
         alias concat = (acc, next) => (acc ~ cast(string)([next + '0']));
         tests("Eager", {
-            testeq("No seed",
-                array.reduceeager!sum, 10
-            );
-            testeq("With seed",
-                array.reduceeager!((acc, next) => (acc + next))(2), 12
-            );
-            testeq("Disparate types",
-                array.reduceeager!concat(""), "1234"
-            );
-            fail("Empty source, no seed", {
-                array[0 .. 0].reduceeager!((a, n) => (a));
-            });
+            testeq(array.reduceeager!sum, 10);
+            testeq(array.reduceeager!((acc, next) => (acc + next))(2), 12);
+            testeq(array.reduceeager!concat(""), "1234");
+            // Empty source with no seed should fail
+            testfail({array[0 .. 0].reduceeager!((a, n) => (a));});
         });
         tests("Lazy", {
             tests("No seed", {
                 auto range = array.reducelazy!sum;
-                testeq("Length", range.length, 4);
-                test("Iteration", range.equals([1, 3, 6, 10]));
+                testeq(range.length, 4);
+                test(range.equals([1, 3, 6, 10]));
             });
             tests("With seed", {
                 auto range = array.reducelazy!sum(2);
-                testeq("Length", range.length, 5);
-                test("Iteration", range.equals([2, 3, 5, 8, 12]));
+                testeq(range.length, 5);
+                test(range.equals([2, 3, 5, 8, 12]));
             });
             tests("Saving", {
                 auto range = array.reducelazy!sum;
@@ -232,9 +225,8 @@ unittest{
                     auto range = input.reducelazy!((a, n) => (a + n.x))(0);
                 });
             });
-            fail("Empty source, no seed", {
-                array[0 .. 0].reducelazy!((a, n) => (a));
-            });
+            // Empty source with no seed should fail
+            testfail({array[0 .. 0].reducelazy!((a, n) => (a));});
         });
     });
 }

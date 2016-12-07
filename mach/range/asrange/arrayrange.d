@@ -123,7 +123,7 @@ struct ArrayRange(Array) if(canMakeArrayRange!(Array)){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.traits : isRange, isBidirectionalRange, isRandomAccessRange;
     import mach.traits : isSlicingRange, isSavingRange, hasNumericLength;
 }

@@ -2,10 +2,8 @@ module mach.text.english.aan;
 
 private:
 
-import mach.range : contains;
-import mach.text.english.vowels;
-import std.string : startsWith, toLower;
-import mach.text.cases;
+import mach.range : contains, all, headis;
+import mach.text.ascii : isvowel, isupper, tolower; // TODO: Unicode instead of ASCII
 
 public:
 
@@ -21,13 +19,13 @@ auto aan(bool allcaps = false)(string word){
         bool an = false;
         if(word.length == 1){
             an = true;
-        }else if(!allcaps && word.isUpper()){
+        }else if(!allcaps && word.all!isupper()){
             static enum string UseAn = "AEFHILMNORSX";
             an = UseAn.contains(word[0]);
-        }else if(word[0].isVowel()){
-            an = !word.toLower.startsWith("eu");
+        }else if(word[0].isvowel){
+            an = !word.tolower.headis("eu");
         }else if(word[0] == 'h' || word[0] == 'H'){
-            an = word[1].isVowel();
+            an = word[1].isvowel;
         }
         return (an ? "an " : "a ") ~ word;
     }
@@ -36,7 +34,8 @@ auto aan(bool allcaps = false)(string word){
 
 
 version(unittest){
-    import mach.error.unit;
+    private:
+    import mach.test;
 }
 unittest{
     tests("A and an", {

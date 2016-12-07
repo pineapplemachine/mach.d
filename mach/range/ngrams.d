@@ -94,7 +94,7 @@ struct NgramRange(Range, NgramSize size) if(canNgramRange!Range){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
 }
 unittest{
@@ -102,15 +102,15 @@ unittest{
         auto input = "hello";
         tests("Bigrams", {
             auto range = input.ngrams!2;
-            testeq("Length", range.length, 4);
-            test("Iteration", range.equals(["he", "el", "ll", "lo"]));
-            testeq("Random access", range[1], "el");
+            testeq(range.length, 4);
+            test(range.equals(["he", "el", "ll", "lo"]));
+            testeq(range[1], "el");
         });
         tests("Trigrams", {
             auto range = input.ngrams!3;
-            testeq("Length", range.length, 3);
-            test("Iteration", range.equals(["hel", "ell", "llo"]));
-            testeq("Random access", range[1], "ell");
+            testeq(range.length, 3);
+            test(range.equals(["hel", "ell", "llo"]));
+            testeq(range[1], "ell");
         });
     });
 }

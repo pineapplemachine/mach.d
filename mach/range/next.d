@@ -30,7 +30,7 @@ alias next = nextfront;
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.asrange : asrange;
 }
 unittest{

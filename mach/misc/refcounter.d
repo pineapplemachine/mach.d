@@ -115,7 +115,12 @@ struct RefCounter(T){
     
 }
 
-version(unittest) import mach.error.unit;
+
+
+version(unittest){
+    private:
+    import mach.test;
+}
 unittest{
     // TODO: more
     tests("Reference counting", {
@@ -131,7 +136,7 @@ unittest{
             testeq(counter.expired, 0);
             counter -= 5;
             testeq(counter.expired, 1);
-            fail({counter -= 5;}); // No more references, throw an AssertError
+            testfail({counter -= 5;}); // No more references, throw an AssertError
         });
     });
 }

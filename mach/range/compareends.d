@@ -58,7 +58,8 @@ bool tailis(alias pred = DefaultCompareEnds, Iter, Sub)(
 
 
 version(unittest){
-    import mach.error.unit;
+    private:
+    import mach.test;
 }
 unittest{
     tests("Compare ends", {

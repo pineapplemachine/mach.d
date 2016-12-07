@@ -75,7 +75,7 @@ struct NamedChar{
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
 }
 unittest{
     tests("HTML5 named chars", {

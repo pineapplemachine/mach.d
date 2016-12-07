@@ -21,7 +21,7 @@ auto zip(Iters...)(auto ref Iters iters) if(canZip!Iters){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
 }
 unittest{
     tests("Zip", {

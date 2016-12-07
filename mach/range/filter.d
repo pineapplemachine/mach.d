@@ -94,7 +94,7 @@ struct FilterRange(alias pred, Range) if(canFilterRange!(Range, pred)){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
     import mach.range.consume : consume;
     import mach.range.mutate : mutate;

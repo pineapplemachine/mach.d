@@ -190,7 +190,7 @@ struct PoppingStrideRange(Range, Stride = DefaultStride){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
     import mach.range.retro : retro;
     struct PoppingStrideTest(T){
@@ -235,8 +235,8 @@ unittest{
                 test(range.equals("420"));
             });
             tests("Disallow stride < 1", {
-                fail({"xyz".stride(0);});
-                fail({"xyz".stride(-1);});
+                testfail({"xyz".stride(0);});
+                testfail({"xyz".stride(-1);});
             });
             tests("Length", {
                 testeq("0123".stride(1).length, 4);

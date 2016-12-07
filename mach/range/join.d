@@ -206,7 +206,7 @@ struct JoinRange(
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
     import mach.range.filter: filter;
     import mach.range.split : split;

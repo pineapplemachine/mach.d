@@ -2,7 +2,6 @@ module mach.text;
 
 public:
 
-import mach.text.cases;
 import mach.text.ascii;
 import mach.text.english;
 import mach.text.escape;

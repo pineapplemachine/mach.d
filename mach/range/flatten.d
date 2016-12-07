@@ -38,7 +38,7 @@ auto ref flatten(Iter)(auto ref Iter iter) if(canFlatten!Iter){
 
 version(unittest){
     private:
-    import mach.error.unit;
+    import mach.test;
     import mach.range.compare : equals;
 }
 unittest{

@@ -28,20 +28,21 @@ template hasNumericRemaining(T...) if(T.length == 1){
 
 
 version(unittest){
-    import mach.error.unit;
-    private struct RemainingFieldTest{
+    private:
+    struct RemainingFieldTest{
         size_t remaining;
     }
-    private struct RemainingPropertyTest{
+    struct RemainingPropertyTest{
         double rem;
         @property auto remaining(){
             return this.rem;
         }
     }
-    private struct NoRemainingTest{
+    struct NoRemainingTest{
         double rem;
     }
 }
+
 unittest{
     // hasRemaining
     static assert(hasRemaining!RemainingFieldTest);
