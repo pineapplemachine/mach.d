@@ -13,7 +13,7 @@ as json.
 
 The `Json` namespace provides several methods for achieving the most common functions.
 
-## `Json.parse`
+## Json.parse
 
 This method can be used to parse a Json.Value object, or to deserialize another
 object of a given type.
@@ -46,7 +46,7 @@ unittest{
 
 /++ md
 
-## `Json.encode`
+## Json.encode
 
 This method can be used to serialize a value as json.
 The output is as concise as possible.
@@ -61,7 +61,7 @@ unittest{
 
 /++ md
 
-## `Json.pretty`
+## Json.pretty
 
 This method can be used to serialize a value as human-readable json,
 similar to `Json.encode`.

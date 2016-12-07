@@ -4,7 +4,7 @@ This package provides functionality for serializing and deserializing values as 
 
 The `Json` namespace provides several methods for achieving the most common functions.
 
-## `Json.parse`
+## Json.parse
 
 This method can be used to parse a Json.Value object, or to deserialize another object of a given type.
 
@@ -32,7 +32,7 @@ try{
 assert(caught);
 ```
 
-## `Json.encode`
+## Json.encode
 
 This method can be used to serialize a value as json. The output is as concise as possible.
 
@@ -42,7 +42,7 @@ assert(Json.encode([1, 2, 3]) == `[1,2,3]`);
 assert(Json.encode(["hello": "world"]) == `{"hello":"world"}`);
 ```
 
-## `Json.pretty`
+## Json.pretty
 
 This method can be used to serialize a value as human-readable json, similar to `Json.encode`.
 
