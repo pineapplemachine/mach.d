@@ -2,6 +2,7 @@ module mach.math;
 
 public:
 
+import mach.math.abs;
 import mach.math.bits;
 import mach.math.box;
 import mach.math.cube;
