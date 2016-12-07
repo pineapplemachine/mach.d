@@ -15,7 +15,7 @@ The `Json` namespace provides several methods for achieving the most common func
 
 ## Json.parse
 
-This method can be used to parse a Json.Value object, or to deserialize another
+This method can be used to parse a `Json.Value` object, or to deserialize another
 object of a given type.
 
 A `Json.ParseException` is thrown when the inputted json is invalid.
