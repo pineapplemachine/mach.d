@@ -85,7 +85,11 @@ struct IndexRange(
     }
     
     @property typeof(this) save(){
-        return typeof(this)(this.subject, this.frontindex, this.backindex);
+        static if(isBidirectional){
+            return typeof(this)(this.subject, this.frontindex, this.backindex);
+        }else{
+            return typeof(this)(this.subject, this.frontindex);
+        }
     }
 }
 
