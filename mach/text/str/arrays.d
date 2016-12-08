@@ -27,6 +27,9 @@ string iterabletostring(StrSettings settings = StrSettings.Default, T)(
     }
     // Do the stuff
     string getcontent(){
+        static if(!isArray!T && is(typeof({if(iter is null){}}))){
+            if(iter is null) return "null";
+        }
         string result = "";
         foreach(item; iter){
             if(result.length != 0) result ~= ", ";
@@ -50,6 +53,9 @@ string iterabletostring(StrSettings settings = StrSettings.Default, T)(
     auto ref T iter, in size_t limit = 8
 ) if(isInfiniteIterable!T){
     string getcontent(){
+        static if(is(typeof({if(iter is null){}}))){
+            if(iter is null) return "null";
+        }
         string result = "";
         size_t count = 0;
         foreach(item; iter){
@@ -150,6 +156,33 @@ unittest{
     assert(InfRange().iterabletostring!Verbose ==
         "struct:range:InfRange:[int(0), int(1), int(2), int(3), int(4), int(5), int(6), int(7), ...]"
     );
+}
+
+unittest{
+    class NullableEmptyRange{
+        enum bool empty = true;
+        @property int front(){assert(false); return 0;}
+        void popFront(){}
+    }
+    assert(new NullableEmptyRange().iterabletostring == "[]");
+    assert(new NullableEmptyRange().iterabletostring!Verbose == "class:range:NullableEmptyRange:[]");
+    NullableEmptyRange nullrange = null;
+    assert(nullrange.iterabletostring == "null");
+    assert(nullrange.iterabletostring!Verbose == "class:range:NullableEmptyRange:null");
+}
+unittest{
+    class NullableInfRange{
+        enum bool empty = false;
+        int front = 0;
+        void popFront(){this.front++;}
+    }
+    assert(new NullableInfRange().iterabletostring == "[0, 1, 2, 3, 4, 5, 6, 7, ...]");
+    assert(new NullableInfRange().iterabletostring!Verbose ==
+        "class:range:NullableInfRange:[int(0), int(1), int(2), int(3), int(4), int(5), int(6), int(7), ...]"
+    );
+    NullableInfRange nullrange = null;
+    assert(nullrange.iterabletostring == "null");
+    assert(nullrange.iterabletostring!Verbose == "class:range:NullableInfRange:null");
 }
 
 unittest{
