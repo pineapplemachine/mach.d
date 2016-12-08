@@ -2,7 +2,7 @@ module mach.range.compare;
 
 private:
 
-import mach.range.asrange : asrange, validAsRange;
+import mach.range.asrange : asrange, validAsRange, AsRangeType;
 import mach.traits : ElementType, isFiniteIterable, isFiniteRange;
 import mach.traits : hasNumericLength, isPredicate;
 
@@ -17,7 +17,7 @@ template canCompareIterables(alias pred, IterA, IterB){
         validAsRange!(isFiniteIterable, IterB)
     ){
         enum bool canCompareIterables = isPredicate!(
-            pred, ElementType!IterA, ElementType!IterB
+            pred, ElementType!(AsRangeType!IterA), ElementType!(AsRangeType!IterB)
         );
     }else{
         enum bool canCompareIterables = false;
