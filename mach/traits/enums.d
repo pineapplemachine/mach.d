@@ -59,18 +59,25 @@ template isEnumValue(alias T){
 /// Thrown by `enummember` when passed a nonexistent member name.
 class NoSuchEnumMemberException(T): Exception{
     alias Enum = T; /// The enum type for which the exception was thrown.
-    string name; /// The nonexistent member name for which the exception was thrown.
     this(string name, size_t line = __LINE__, string file = __FILE__){
-        this.name = name;
         super("No enum member with name \"" ~ name ~ "\".", file, line, null);
+    }
+    this(size_t line = __LINE__, string file = __FILE__){
+        super("No enum member at index.", file, line, null);
     }
 }
 
 
 
+/// Get the number of members belonging to an enum type.
+template getEnumLength(Enum) if(isEnumType!Enum){
+    enum getEnumLength = __traits(allMembers, Enum).length;
+}
+
+
 /// Get the member of an enum by name.
 /// Causes a static assertion error when no such member exists.
-template getEnumMember(Enum, string name){
+template getEnumMember(Enum, string name) if(isEnumType!Enum){
     template namefilter(string member){
         enum bool namefilter = member == name;
     }
@@ -84,13 +91,34 @@ template getEnumMember(Enum, string name){
 
 /// Get the member of an enum by name.
 /// Throws NoSuchEnumMemberException when no such member exists.
-Enum getenummember(Enum)(in string name){
+Enum getenummember(Enum)(in string name) if(isEnumType!Enum){
     foreach(member; __traits(allMembers, Enum)){
         if(member == name){
             mixin(`return Enum.` ~ member ~ `;`);
         }
     }
     throw new NoSuchEnumMemberException!Enum(name);
+}
+
+
+
+/// Get the member of an enum by index.
+/// Causes a static assertion error when no such member exists.
+template getEnumMember(Enum, size_t index) if(isEnumType!Enum){
+    static if(index < getEnumLength!Enum){
+        mixin(`enum getEnumMember = Enum.` ~ __traits(allMembers, Enum)[index] ~ `;`);
+    }else{
+        static assert(false, "Enum member index out of bounds.");
+    }
+}
+
+/// Get the member of an enum by index.
+/// Throws NoSuchEnumMemberException when no such member exists.
+Enum getenummember(Enum)(in size_t index){
+    foreach(i, member; __traits(allMembers, Enum)){
+        if(i == index) mixin(`return Enum.` ~ member ~ `;`);
+    }
+    throw new NoSuchEnumMemberException!Enum();
 }
 
 
@@ -157,6 +185,15 @@ unittest{
 }
 
 unittest{
+    enum One{A}
+    enum Two{A, B}
+    enum Five{A, B, C, D, E}
+    static assert(getEnumLength!One == 1);
+    static assert(getEnumLength!Two == 2);
+    static assert(getEnumLength!Five == 5);
+}
+
+unittest{
     static assert(getEnumMember!(Ints, "A") is Ints.A);
     static assert(getEnumMember!(Ints, "B") is Ints.B);
     static assert(getEnumMember!(Enum, "A") is Enum.A);
@@ -173,6 +210,25 @@ unittest{
     bool nomember = false;
     try{
         getenummember!(Enum)("D");
+    }catch(NoSuchEnumMemberException!Enum){
+        nomember = true;
+    }
+    assert(nomember);
+}
+
+unittest{
+    static assert(getEnumMember!(Enum, 0) == Enum.A);
+    static assert(getEnumMember!(Enum, 1) == Enum.B);
+    static assert(getEnumMember!(Enum, 2) == Enum.C);
+    static assert(!is(getEnumMember!(Enum, 3)));
+}
+unittest{
+    assert(getenummember!(Enum)(0) is Enum.A);
+    assert(getenummember!(Enum)(1) is Enum.B);
+    assert(getenummember!(Enum)(2) is Enum.C);
+    bool nomember = false;
+    try{
+        getenummember!(Enum)(3);
     }catch(NoSuchEnumMemberException!Enum){
         nomember = true;
     }
