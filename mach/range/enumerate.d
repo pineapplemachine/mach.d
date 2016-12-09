@@ -184,7 +184,6 @@ version(unittest){
     import mach.test;
     import mach.range.compare : equals;
     import mach.range.pluck : pluck;
-    import mach.collect : aslist;
 }
 unittest{
     tests("Enumerate", {
@@ -207,20 +206,6 @@ unittest{
                 testeq(input[$-1], 'y');
                 range[1] = 'z';
                 testeq(input[1], 'z');
-            });
-            tests("Linked list", {
-                auto input = ['a', 'b', 'c'].aslist;
-                auto range = input.enumerate;
-                range.front = 'x';
-                testeq(input[0], 'x');
-                range.back = 'y';
-                testeq(input[$-1], 'y');
-                range.removeFront();
-                testeq(input.asarray, "by");
-                range.removeBack();
-                testeq(input.asarray, "b");
-                range.insert('z');
-                testeq(input.length, 2);
             });
         });
         tests("Static array", {
