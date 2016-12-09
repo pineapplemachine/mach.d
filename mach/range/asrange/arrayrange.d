@@ -23,6 +23,8 @@ auto asarrayrange(Array)(Array array) if(canMakeArrayRange!Array){
 struct ArrayRange(Array) if(canMakeArrayRange!(Array)){
     alias Element = ArrayElementType!Array;
     
+    enum bool mutable = is(typeof({this.array[0] = this.array[0];}));
+    
     /// The array over which this range iterates.
     Array array;
     /// The index in the array where this range begins.
@@ -87,24 +89,7 @@ struct ArrayRange(Array) if(canMakeArrayRange!(Array)){
         return typeof(this)(this.array, low + this.startindex, high + this.startindex);
     }
     
-    static if(is(typeof({this.array[0] = this.array[0];}))){
-        enum bool mutable = true;
-        @property void front(Element value){
-            this.array[this.frontindex + this.startindex] = value;
-        }
-        @property void back(Element value){
-            this.array[this.backindex + this.startindex - 1] = value;
-        }
-        void opIndexAssign(Element value, in size_t index) in{
-            enforcebounds(index, this);
-        }body{
-            this.array[index + this.startindex] = value;
-        }
-    }else{
-        enum bool mutable = false;
-    }
-    
-    @property auto save(){
+    @property typeof(this) save(){
         return this;
     }
     
@@ -185,6 +170,8 @@ unittest{
             testeq(range.back, 'o');
             range.front = 'i';
             testeq(data[1], 'i');
+            range.back = 's';
+            testeq(data, "hills");
         });
         tests("Immutability", {
             tests("Const int", {
