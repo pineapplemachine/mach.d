@@ -145,6 +145,14 @@ struct SortedList(T, alias compare = DefaultSortedListCompare) if(is(typeof({
     void remove(Node* node){
         this.list.remove(node);
     }
+    /// Remove a contiguous region of nodes from the list starting with `head`
+    /// and ending with, and including, `tail`.
+    /// If the list's root node is in the nodes to remove, then it must be the
+    /// head. It must not be the tail or any node in between head and tail,
+    /// unless it is also the head.
+    void remove(Node* head, Node* tail){
+        this.list.remove(head, tail);
+    }
     
     /// Clear all values from the list.
     void clear(){
@@ -172,6 +180,16 @@ struct SortedList(T, alias compare = DefaultSortedListCompare) if(is(typeof({
             last = value;
         }
         return true;
+    }
+    
+    /// Determine whether a node belongs to this list.
+    bool opBinaryRight(string op: "in")(Node* node){
+        return this.contains(node);
+    }
+    
+    /// Insert a value into the list.
+    void opOpAssign(string op: "~")(T value){
+        this.insert(value);
     }
 }
 
@@ -248,6 +266,19 @@ unittest{
                 list.insertsorted([1, 2, -2, -3, 5]);
                 test!equals(list.ivalues, [0, -1, 1, 2, -2, 3, -3, -4, 5]);
             }
+        });
+        tests("Remove", {
+            auto list = new SortedList!int();
+            list.insert([0, 1, 2, 3, 4, 5]);
+            test!equals(list.ivalues, [0, 1, 2, 3, 4, 5]);
+            list.remove(list.head);
+            test!equals(list.ivalues, [1, 2, 3, 4, 5]);
+            list.remove(list.tail);
+            test!equals(list.ivalues, [1, 2, 3, 4]);
+            list.remove(list.head.next, list.tail.prev);
+            test!equals(list.ivalues, [1, 4]);
+            list.remove(list.head, list.tail);
+            test(list.empty);
         });
         tests("Range", {
             {

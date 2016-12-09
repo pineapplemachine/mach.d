@@ -195,10 +195,23 @@ auto asdoublylinkedlist(Values)(auto ref Values values) if(isIterable!Values){
             "Can't remove node without neighbors."
         );
     }body{
-        node.prev.next = node.next;
-        node.next.prev = node.prev;
-        if(node is this.root){
-            this.root = node.next is this.root ? null : node.next;
+        this.remove(node, node);
+    }
+    /// Remove a contiguous region of nodes from the list starting with `head`
+    /// and ending with, and including, `tail`.
+    /// If the list's root node is in the nodes to remove, then it must be the
+    /// head. It must not be the tail or any node in between head and tail,
+    /// unless it is also the head.
+    void remove(Node* head, Node* tail) in{
+        assert(head !is null && tail !is null, "Input must not be null.");
+        assert(head.prev !is null && tail.next !is null,
+            "Can't remove nodes without neighbors."
+        );
+    }body{
+        head.prev.next = tail.next;
+        tail.next.prev = head.prev;
+        if(head is this.root){
+            this.root = tail.next is this.root ? null : tail.next;
         }
     }
     
@@ -325,6 +338,18 @@ auto asdoublylinkedlist(Values)(auto ref Values values) if(isIterable!Values){
                 node.next = head;
             }
         }
+    }
+    
+    /// Determine whether a node belongs to this list.
+    bool opBinaryRight(string op: "in")(Node* node){
+        return this.contains(node);
+    }
+    
+    /// Append a value or values to the end of the list.
+    void opOpAssign(string op: "~", V)(V value) if(
+        is(typeof({this.append(value);}))
+    ){
+        this.append(value);
     }
 }
 
@@ -616,6 +641,13 @@ unittest{
             test!equals(list.ivalues, [0, 1, 2]);
             list.remove(list.head);
             test!equals(list.ivalues, [1, 2]);
+            // Remove multiple
+            auto region = list.append([3, 4, 5]);
+            test!equals(list.ivalues, [1, 2, 3, 4, 5]);
+            list.remove(list.head, region.head);
+            test!equals(list.ivalues, [4, 5]);
+            list.remove(list.head, list.tail);
+            test(list.empty);
         });
         tests("Clear", {
             auto list = new List!int(0, 1, 2);
@@ -704,6 +736,16 @@ unittest{
                 testfail({nodes.back;});
                 testfail({nodes.popBack();});
             }
+        });
+        tests("Operator overloads", {
+            // TODO: Any way to make the dereferencing not necessary here?
+            auto list = new List!int();
+            testf(null in *list);
+            *list ~= 0;
+            test!equals(list.ivalues, [0]);
+            test(list.head in *list);
+            *list ~= [1, 2];
+            test!equals(list.ivalues, [0, 1, 2]);
         });
     });
 }
