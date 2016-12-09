@@ -13,21 +13,10 @@ public:
 
 
 
-/// Determine whether a range can be created from a type using makerange.
-enum canMakeRange(Base) = (
-    canMakeArrayRange!Base ||
-    canMakeAssociativeArrayRange!Base ||
-    canMakeIndexRange!Base
-);
-
 /// Determine if a range can be created from a type, or if it already is a range.
-enum validAsRange(alias T) = validAsRange!(typeof(T));
-/// ditto
 template validAsRange(T){
-    static if(isRange!T || canMakeRange!T){
-        enum bool validAsRange = true;
-    }else static if(is(typeof({auto r = T.init.asrange;}))){
-        enum bool validAsRange = isRange!(typeof(T.init.asrange));
+    static if(is(typeof({auto x = T.init.asrange;}))){
+        enum bool validAsRange = isRange!(typeof({return T.init.asrange;}()));
     }else{
         enum bool validAsRange = false;
     }
@@ -43,6 +32,8 @@ template validAsRange(alias isType, T){
     }
 }
 
+
+
 enum validAsBidirectionalRange(T) = validAsRange!(isBidirectionalRange, T);
 enum validAsRandomAccessRange(T) = validAsRange!(isRandomAccessRange, T);
 enum validAsSlicingRange(T) = validAsRange!(isSlicingRange, T);
@@ -51,25 +42,17 @@ enum validAsMutableFrontRange(T) = validAsRange!(isMutableFrontRange, T);
 enum validAsMutableBackRange(T) = validAsRange!(isMutableBackRange, T);
 enum validAsMutableRandomRange(T) = validAsRange!(isMutableRandomRange, T);
 
-template MakeRangeType(T) if(canMakeRange!T){
-    static if(canMakeArrayRange!T){
-        alias MakeRangeType = ArrayRange!T;
-    }else static if(canMakeAssociativeArrayRange!T){
-        alias MakeRangeType = AssociativeArrayRange!T;
-    }else static if(canMakeIndexRange!T){
-        alias MakeRangeType = IndexRange!T;
-    }else{
-        static assert(false); // This shouldn't happen
-    }
-}
+
 
 template AsRangeType(T) if(validAsRange!T){
+    alias AsRangeType = typeof({return T.init.asrange;}());
+}
+
+template AsRangeElementType(T) if(validAsRange!T){
     static if(isRange!T){
-        alias AsRangeType = T;
-    }else static if(canMakeRange!T){
-        alias AsRangeType = MakeRangeType!T;
-    }else static if(is(typeof({auto r = T.init.asrange;}))){
-        alias AsRangeType = typeof(T.init.asrange());
+        alias AsRangeElementType = typeof({return T.init.front;}());
+    }else{
+        alias AsRangeElementType = typeof({return T.init.asrange.front;}());
     }
 }
 
@@ -81,17 +64,34 @@ auto asrange(T)(auto ref T range) if(isRange!T){
 }
 
 /// ditto
-auto asrange(T)(auto ref T basis) if(canMakeRange!T && !isRange!T){
-    return makerange(basis);
+auto asrange(T)(auto ref T array) if(canMakeArrayRange!T){
+    return ArrayRange!T(array);
 }
 
-/// Create a range for iterating over some object.
-auto makerange(T)(auto ref T basis) if(canMakeRange!T){
-    return MakeRangeType!T(basis);
+/// ditto
+auto asrange(T)(auto ref T array) if(canMakeAssociativeArrayRange!T){
+    return AssociativeArrayRange!T(array);
 }
 
 
 
+// TODO: More tests
+version(unittest){
+    private:
+    import mach.types : KeyValuePair;
+    struct TestRange{
+        enum bool empty = false;
+        @property int front(){return 0;}
+        void popFront(){}
+    }
+}
 unittest{
-    // TODO
+    static assert(is(AsRangeType!TestRange == TestRange));
+    static assert(is(AsRangeType!(int[]) == ArrayRange!(int[])));
+    static assert(is(AsRangeType!(int[int]) == AssociativeArrayRange!(int[int])));
+}
+unittest{
+    static assert(is(AsRangeElementType!TestRange == int));
+    static assert(is(AsRangeElementType!(int[]) == int));
+    static assert(is(AsRangeElementType!(int[int]) == KeyValuePair!(int, int)));
 }
