@@ -2,583 +2,507 @@ module mach.collect.linkedlist;
 
 private:
 
-import std.experimental.allocator : make, dispose;
-import std.experimental.allocator.mallocator : Mallocator;
-import mach.traits : isIntegral, Unqual;
-import mach.traits : isFiniteIterable, isIterableOf, ElementType;
-import mach.traits : canReassign;
-import mach.traits.allocator : isAllocator;
+import mach.traits : isIterable, isIterableOf;
 
 public:
 
 
 
-alias DefaultLinkedListAllocator = Mallocator;
-
-template canLinkedList(T, Allocator = DefaultLinkedListAllocator){
-    enum bool canLinkedList = isAllocator!Allocator;
-}
-
-template validAsLinkedList(Iter, Allocator = DefaultLinkedListAllocator){
-    static if(isFiniteIterable!Iter){
-        enum bool validAsLinkedList = canLinkedList!(ElementType!Iter, Allocator);
-    }else{
-        enum bool validAsLinkedList = false;
-    }
+auto asdoublylinkedlist(Values)(auto ref Values values) if(isIterable!Values){
+    alias T = typeof({foreach(value; values) return value; assert(false);}());
+    return DoublyLinkedList!T(values);
 }
 
 
 
-auto aslist(Allocator = DefaultLinkedListAllocator, Iter)(
-    auto ref Iter iter
-) if(validAsLinkedList!(Iter, Allocator)){
-    return new LinkedList!(ElementType!Iter, Allocator)(iter);
-}
-
-
-
-/// Implements a cyclic doubly-linked list.
-class LinkedList(T, Allocator = DefaultLinkedListAllocator) if(
-    canLinkedList!(T, Allocator)
-){
-    alias Node = LinkedListNode!(T, Allocator);
-    alias Nodes = LinkedListNodes!(T, Allocator);
-    alias opDollar = length;
-    alias insert = insertbefore;
-    alias Element = T;
-    
-    private enum isNodes(N) = is(N == Node*) || is(N == Nodes);
-    
-    Node* frontnode; /// First node in the list.
-    Node* backnode; /// Last node in the list.
-    size_t length; /// Number of nodes currently in the list.
-    
-    this(){}
-    this(T[] elements...){
-        this.append(elements);
-    }
-    this(Iter)(Iter iter) if(isIterableOf!(Iter, T)){
-        this.append(iter);
-    }
-    
-    ~this(){
-        this.clear();
-    }
-    
-    /// Safe postblitting would require copying; since that's potentially
-    /// expensive require that it be done explicitly.
-    //this(this) @disable;
-    
-    void setnodes(Node* node) pure nothrow @safe @nogc in{
-        assert(this.empty, "Unsafe to perform this operation upon a list that is not empty.");
-    }body{
-        node.prev = node;
-        node.next = node;
-        this.frontnode = node;
-        this.backnode = node;
-        this.length = 1;
-    }
-    void setnodes(Nodes nodes) pure nothrow @safe @nogc in{
-        assert(this.empty, "Unsafe to perform this operation upon a list that is not empty.");
-    }body{
-        this.frontnode = nodes.front;
-        this.backnode = nodes.back;
-        nodes.front.prev = this.backnode;
-        nodes.back.next = this.frontnode;
-        this.length = nodes.length;
-    }
-    
-    /// True when the list contains no elements.
-    @property bool empty() const pure nothrow @safe @nogc{
-        return this.frontnode is null;
-    }
-    
-    /// Get the frontmost value in the list.
-    @property auto ref front() const pure nothrow @safe @nogc in{
-        assert(!this.empty);
-    } body{
-        return this.frontnode.value;
-    }
-    /// Get the backmost value in the list.
-    @property auto ref back() const pure nothrow @safe @nogc in{
-        assert(!this.empty);
-    } body{
-        return this.backnode.value;
-    }
-    
-    static if(canReassign!T){
-        /// Set the frontmost value in the list.
-        @property void front(ref T value) pure nothrow @safe @nogc in{
-            assert(!this.empty);
-        } body{
-            this.frontnode.value = value;
-        }
-        /// Set the frontmost value in the list.
-        @property void back(ref T value) pure nothrow @safe @nogc in{
-            assert(!this.empty);
-        } body{
-            this.backnode.value = value;
-        }
-    }
-    
-    bool contains(in Node* node) const pure @safe nothrow @nogc{
-        foreach(listnode; this.nodes){
-            if(listnode is node) return true;
-        }
-        return false;
-    }
-    bool contains(in T value) const{
-        foreach(listvalue; this.values){
-            if(listvalue == value) return true;
-        }
-        return false;
-    }
-    
-    alias insertbefore = AddAtAction!true;
-    alias insertafter = AddAtAction!false;
-    alias prepend = AddAction!true;
-    alias append = AddAction!false;
-    
-    enum canAdd(X) = (
-        is(typeof({T t = X.init;})) ||
-        isIterableOf!(X, T) || isNodes!X
-    );
-    
-    /// Used to define append and prepend methods
-    private template AddAction(bool front){
-        auto action(T value) nothrow @nogc{
-            auto node = Allocator.instance.make!Node(value);
-            action(node);
-            return node;
-        }
-        auto action(T[] values...) nothrow @nogc{
-            auto nodes = Node.many(values);
-            action(nodes);
-            return nodes;
-        }
-        auto action(Iter)(auto ref Iter values) nothrow @nogc if(isIterableOf!(Iter, T)){
-            auto nodes = Node.many(values);
-            action(nodes);
-            return nodes;
-        }
-        
-        auto action(ref typeof(this) list) nothrow @nogc{
-            auto range = list.asrange;
-            static assert(isIterableOf!(typeof(range), T));
-            return action!(typeof(range))(range);
-        }
-        void action(N)(ref N nodes) pure nothrow @safe @nogc if(isNodes!N){
-            if(this.empty){
-                this.setnodes(nodes);
-            }else{
-                static if(front) this.insertbefore(this.frontnode, nodes);
-                else this.insertafter(this.backnode, nodes);
-            }
-        }
-        
-        alias AddAction = action;
-    }
-    
-    /// Used to define insertbefore and insertafter methods
-    private template AddAtAction(bool before){
-        auto action(size_t index, T value){
-            auto node = Allocator.instance.make!Node(value);
-            action(index, node);
-            return node;
-        }
-        auto action(size_t index, T[] values...){
-            auto nodes = Node.many(values);
-            action(index, nodes);
-            return nodes;
-        }
-        auto action(Iter)(size_t index, Iter values) if(isIterableOf!(Iter, T)){
-            auto nodes = Node.many(values);
-            action(index, nodes);
-            return nodes;
-        }
-        
-        auto action(Node* atnode, T value){
-            auto node = Allocator.instance.make!Node(value);
-            action(atnode, node);
-            return node;
-        }
-        auto action(Node* atnode, T[] values...){
-            auto nodes = Node.many(values);
-            action(atnode, nodes);
-            return nodes;
-        }
-        auto action(Iter)(Node* atnode, Iter values) if(isIterableOf!(Iter, T)){
-            auto nodes = Node.many(values);
-            action(atnode, nodes);
-            return nodes;
-        }
-        
-        void action(N)(size_t index, N nodes) pure nothrow @safe @nogc if(
-            isNodes!N
-        ) in{
-            assert(index >= 0 && index < this.length);
-        }body{
-            if(this.empty) this.setnodes(nodes);
-            else action(this.nodeat(index), nodes);
-        }
-        
-        void action(Node* atnode, Node* node) pure nothrow @safe @nogc{
-            action(atnode, node, node, 1);
-        }
-        
-        void action(Iter)(Node* atnode, Iter values) pure nothrow @safe @nogc if(
-            isIterableOf!(Iter, T)
-        ){
-            action(atnode, Node.many(values));
-        }
-        
-        void action(Node* atnode, Nodes nodes) pure nothrow @safe @nogc{
-            action(atnode, nodes.front, nodes.back, nodes.length);
-        }
-        
-        void action(
-            Node* atnode, Node* front, Node* back, size_t length
-        ) pure nothrow @safe @nogc{
-            static if(before){
-                alias before = atnode;
-                back.next = before;
-                front.prev = before.prev;
-                before.prev.next = front;
-                before.prev = back;
-                this.length += length;
-                if(before is this.frontnode) this.frontnode = front;
-            }else{
-                alias after = atnode;
-                front.prev = after;
-                back.next = after.next;
-                after.next.prev = back;
-                after.next = front;
-                this.length += length;
-                if(after is this.backnode) this.backnode = back;
-            }
-        }
-        
-        alias AddAtAction = action;
-    }
-    
-    /// Remove some node from this list.
-    auto remove(Node* node) nothrow @nogc in{
-        assert(!this.empty);
-    }body{
-        auto value = node.value;
-        node.prev.next = node.next;
-        node.next.prev = node.prev;
-        if(node is this.frontnode){
-            if(node is this.backnode){
-                this.frontnode = null;
-                this.backnode = null;
-            }else{
-                this.frontnode = node.next;
-            }
-        }else if(node is this.backnode){
-            this.backnode = node.prev;
-        }
-        Allocator.instance.dispose(node);
-        this.length--;
-        return value;
-    }
-    
-    auto removefront() nothrow @nogc in{assert(!this.empty);} body{
-        return this.remove(this.frontnode);
-    }
-    auto removeback() nothrow @nogc in{assert(!this.empty);} body{
-        return this.remove(this.backnode);
-    }
-    alias popfront = removefront;
-    alias popback = removeback;
-    
-    /// Clear the list, optionally calling some callbacks on each element of the
-    /// list, for example a function that frees newly-unused memory.
-    void clear() nothrow @nogc{
-        if(!this.empty){
-            Node* current = this.frontnode;
-            do{
-                auto next = current.next;
-                Allocator.instance.dispose(current);
-                current = next;
-            } while(current != this.frontnode);
-            this.frontnode = null;
-            this.backnode = null;
-            this.length = 0;
-        }
-    }
-    
-    /// Create a new list containing the same elements as this one.
-    @property typeof(this) dup() nothrow{
-        auto list = new typeof(this);
-        foreach(value; this.values) list.append(value);
-        return list;
-    }
-    
-    /// Concatenate this list with some other value.
-    typeof(this) concat(Rhs, callbacks...)(ref Rhs rhs) if(canAdd!Rhs){
-        typeof(this) list = this.copy!callbacks();
-        list.append(rhs);
-        return list;
-    }
-    
-    /// Get the list node at some index.
-    auto nodeat(Index)(in Index index) const pure nothrow @trusted @nogc if(
-        isIntegral!Index
-    )in{
-        assert(index >= 0 && index < this.length);
-    }body{
-        if(index < this.length / 2){
-            Index i = 0;
-            for(auto range = this.nodes; !range.empty; range.popFront()){
-                if(i++ == index) return range.front;
-            }
-        }else{
-            Index i = this.length - 1;
-            for(auto range = this.nodes; !range.empty; range.popBack()){
-                if(i-- == index) return range.back;
-            }
-        }
-        assert(false);
-    }
-    
-    /// Get the index of some node in this list.
-    auto nodeindex(in Node* node, in size_t start = 0) const pure nothrow @trusted @nogc{
-        size_t index = start;
-        foreach(listnode; this.nodes){
-            if(listnode is node) return index;
-            index++;
-        }
-        assert(false, "Node is not a member of the list.");
-    }
-    
-    /// Get a range for iterating over this list whose contents can be mutated.
-    auto asrange()() pure nothrow @safe @nogc{
-        return this.asrange!(canReassign!(typeof(this)));
-    }
-    /// ditto
-    auto asrange(bool mutable)() pure nothrow @safe @nogc if(mutable){
-        return LinkedListRange!(typeof(this))(this);
-    }
-    /// Get a range for iterating over this list which may not itself alter the list.
-    auto asrange(bool mutable)() pure nothrow @safe @nogc const if(!mutable){
-        return LinkedListRange!(const typeof(this))(this);
-    }
-    
-    /// Get the contents of this list as an array.
-    auto asarray() pure nothrow @safe{
-        T[] array;
-        array.reserve(this.length);
-        foreach(value; this.values) array ~= value;
-        return array;
-    }
-    
-    /// Get a range representing the values in this list.
-    alias values = this.asrange!false;
-    /// Get a range representing the nodes in this list.
-    auto nodes() pure const nothrow @safe @nogc{
-        return Nodes(this.frontnode, this.backnode, this.length);
-    }
-    
-    /// Get the element at an index.
-    /// Please note, this is not especially efficient.
-    auto ref opIndex(in size_t index) const pure nothrow @trusted @nogc in{
-        assert(index >= 0 && index < this.length);
-    }body{
-        return this.nodeat(index).value;
-    }
-    
-    static if(canReassign!T){
-        /// Assign the element at an index.
-        /// Please note, this is not especially efficient.
-        void opIndexAssign(T value, in size_t index) pure nothrow @trusted @nogc in{
-            assert(index >= 0 && index < this.length);
-        }body{
-            this.nodeat(index).value = value;
-        }
-    }
-    
-    /// Get a list containing elements of this one from a low until a high index.
-    auto ref opSlice()(in size_t low, in size_t high) nothrow in{
-        assert(low >= 0 && high >= low && high <= this.length);
-    }body{
-        auto slice = new typeof(this);
-        size_t index = 0;
-        foreach(value; this.values){
-            if(index >= low){
-                if(index >= high) break;
-                slice.append(value);
-            }
-            index++;
-        }
-        return slice;
-    }
-    
-    /// Append some value to this list.
-    void opOpAssign(string op: "~", Rhs)(Rhs rhs) if(canAdd!Rhs){
-        this.append(rhs);
-    }
-    
-    /// Concatenate this list with some other value.
-    auto opBinary(string op: "~", Rhs)(Rhs rhs) if(canAdd!Rhs){
-        auto result = this.dup;
-        result.append(rhs);
-        return result;
-    }
-    /// ditto
-    auto opBinaryRight(string op: "~", Lhs)(Lhs lhs) if(canAdd!Lhs){
-        auto result = typeof(this)(lhs);
-        result.append(this);
-        return result;
-    }
-    
-    /// ditto
-    auto opBinary(string op: "~")(ref typeof(this) rhs){
-        auto result = this.dup;
-        result.append(rhs);
-        return result;
-    }
-    
-    /// Determine if a node is contained within this list.
-    auto opBinaryRight(string op: "in")(ref Node* node){
-        return this.contains(node);
-    }
-    /// Determine if a value is contained within this list.
-    auto opBinaryRight(string op: "in")(T value){
-        return this.contains(value);
-    }
-}
-
-
-
-struct LinkedListNode(T, Allocator = DefaultLinkedListAllocator){
+/// Node belonging to a `DoublyLinkedList` instance.
+@safe pure nothrow struct DoublyLinkedListNode(T){
     alias Node = typeof(this);
-    alias Nodes = LinkedListNodes!(T, Allocator);
     
     T value;
-    Node* prev;
-    Node* next;
+    Node* prev = null;
+    Node* next = null;
+}
+
+/// Used to represent a pair of nodes, which themselves represent a contiguous
+/// chain.
+@safe pure nothrow struct DoublyLinkedListNodePair(T){
+    alias Node = DoublyLinkedListNode!T;
+    alias NodePair = typeof(this);
     
-    static auto many(Iter)(ref Iter values) if(isIterableOf!(Iter, T)){
-        Node* first;
-        Node* current, previous;
-        size_t length;
-        foreach(value; values){
-            current = Allocator.instance.make!Node(value);
-            current.prev = previous;
-            if(previous !is null){
-                previous.next = current;
+    Node* head;
+    Node* tail;
+    
+    static NodePair make(Values)(auto ref Values values) if(isIterableOf!(Values, T)){
+        Node* head = null;
+        Node* tail = null;
+        foreach(item; values){
+            Node* node = new Node(item);
+            if(head is null){
+                head = node;
+            }
+            if(tail !is null){
+                node.prev = tail;
+                tail.next = node;
+            }
+            tail = node;
+        }
+        return NodePair(head, tail);
+    }
+}
+
+
+
+/// Represents a cyclic doubly-linked list.
+@safe pure nothrow struct DoublyLinkedList(T){
+    alias Node = DoublyLinkedListNode!T;
+    alias NodePair = DoublyLinkedListNodePair!T;
+    
+    Node* root = null;
+    
+    this(T[] values...){
+        this.append(values);
+    }
+    this(Values)(auto ref Values values) if(isIterableOf!(Values, T)){
+        this.append(values);
+    }
+    
+    /// Get the first node in the list.
+    @property Node* head(){
+        return this.root;
+    }
+    /// ditto
+    @property const(Node*) head() const{
+        return this.root;
+    }
+    
+    /// Get the last node in the list.
+    @property Node* tail(){
+        return this.root is null ? null : this.root.prev;
+    }
+    /// ditto
+    @property const(Node*) tail() const{
+        return this.root is null ? null : this.root.prev;
+    }
+    
+    /// True when the list contains no values.
+    @property bool empty() const{
+        return this.root is null;
+    }
+    
+    /// Clear all values from the list.
+    void clear(){
+        this.root = null;
+    }
+    
+    /// Set the entire contents of the list to a single node.
+    Node* setnode(Node* node){
+        this.root = node;
+        if(node !is null){
+            node.prev = node;
+            node.next = node;
+        }
+        return node;
+    }
+    /// Set the entire contents of the list to some nodes.
+    NodePair setnodes(NodePair pair){
+        if(pair.head is null || pair.tail is null){
+            this.root = null;
+        }else{
+            pair.head.prev = pair.tail;
+            pair.tail.next = pair.head;
+            this.root = pair.head;
+        }
+        return pair;
+    }
+    
+    /// Returns a range for iterating over the nodes in this list.
+    /// The resulting range does not allow modification.
+    @property auto inodes() const{
+        return DoublyLinkedListRange!(
+            T, DoublyLinkedListRangeValues.Nodes,
+            DoublyLinkedListRangeMutability.Immutable
+        )(this);
+    }
+    /// Returns a range for iterating over the values in this list.
+    /// The resulting range does not allow modification.
+    @property auto ivalues() const{
+        return DoublyLinkedListRange!(
+            T, DoublyLinkedListRangeValues.Values,
+            DoublyLinkedListRangeMutability.Immutable
+        )(this);
+    }
+    /// Make the list valid as a range.
+    @property auto asrange() const{
+        return this.ivalues;
+    }
+    
+    /// Returns a range for iterating over the nodes in a list.
+    /// The resulting range allows modification.
+    @property auto nodes(){
+        return DoublyLinkedListRange!(
+            T, DoublyLinkedListRangeValues.Nodes,
+            DoublyLinkedListRangeMutability.Mutable
+        )(&this);
+    }
+    /// Returns a range for iterating over the values in a list.
+    /// The resulting range allows modification.
+    @property auto values(){
+        return DoublyLinkedListRange!(
+            T, DoublyLinkedListRangeValues.Values,
+            DoublyLinkedListRangeMutability.Mutable
+        )(&this);
+    }
+    /// Returns a range for iterating over the values in a list.
+    /// The resulting range allows modification.
+    @property auto asrange(){
+        return this.values;
+    }
+    
+    /// Determine whether a node belongs to this list.
+    bool contains(in Node* find) const{
+        if(find !is null){
+            foreach(node; this.inodes){
+                if(node is find) return true;
+            }
+        }
+        return false;
+    }
+    
+    /// Replace one node in the list with another.
+    Node* replace(Node* replacenode, T value) in{
+        assert(replacenode !is null, "Input must not be null.");
+    }body{
+        Node* replacewith = new Node(value);
+        this.replace(replacenode, replacewith);
+        return replacewith;
+    }
+    /// ditto
+    void replace(Node* replacenode, Node* replacewith) in{
+        assert(replacenode !is null && replacewith !is null, "Inputs must not be null.");
+    }body{
+        replacenode.prev.next = replacewith;
+        replacenode.next.prev = replacewith;
+        replacewith.next = replacenode.next;
+        replacewith.prev = replacenode.prev;
+        if(replacenode is this.root) this.root = replacewith;
+    }
+    
+    /// Remove a node in the list.
+    void remove(Node* node) in{
+        assert(node !is null, "Input must not be null.");
+        assert(node.prev !is null && node.next !is null,
+            "Can't remove node without neighbors."
+        );
+    }body{
+        node.prev.next = node.next;
+        node.next.prev = node.prev;
+        if(node is this.root){
+            this.root = node.next is this.root ? null : node.next;
+        }
+    }
+    
+    /// Add a value to the back of the list.
+    Node* append(T value){
+        if(this.root is null) return this.setnode(new Node(value));
+        else return this.insertafter(this.tail, value);
+    }
+    /// Add the values in an iterable to the back of the list.
+    NodePair append(Values)(auto ref Values values) if(isIterableOf!(Values, T)){
+        if(this.root is null) return this.setnodes(NodePair.make(values));
+        else return this.insertafter(this.tail, values);
+    }
+    /// Add a node to the back of the list.
+    void append(Node* node){
+        if(this.root is null) this.setnode(node);
+        else this.insertafter(this.tail, node);
+    }
+    /// Add nodes to the back of the list.
+    void append(Node* head, Node* tail){
+        if(this.root is null) this.setnodes(NodePair(head, tail));
+        else this.insertafter(this.tail, head, tail);
+    }
+    
+    /// Add a value to the front of the list.
+    Node* prepend(T value){
+        if(this.root is null) return this.setnode(new Node(value));
+        else return this.insertbefore(this.head, value);
+    }
+    /// Add the values in an iterable to the front of the list.
+    NodePair prepend(Values)(auto ref Values values) if(isIterableOf!(Values, T)){
+        if(this.root is null) return this.setnodes(NodePair.make(values));
+        else return this.insertbefore(this.head, values);
+    }
+    /// Add a node to the front of the list.
+    void prepend(Node* node){
+        if(this.root is null) this.setnode(node);
+        else this.insertbefore(this.head, node);
+    }
+    /// Add nodes to the front of the list.
+    void prepend(Node* head, Node* tail){
+        if(this.root is null) this.setnodes(NodePair(head, tail));
+        else this.insertbefore(this.head, head, tail);
+    }
+    
+    /// Insert a value before a node in the list.
+    Node* insertbefore(Node* node, T value) in{
+        assert(node !is null, "Reference node must not be null.");
+    }body{
+        Node* insert = new Node(value);
+        this.insertbefore(node, insert);
+        return insert;
+    }
+    /// Insert the value in an iterable before a node in the list.
+    NodePair insertbefore(Values)(Node* node, auto ref Values values) if(
+        isIterableOf!(Values, T)
+    )in{
+        assert(node !is null, "Reference node must not be null.");
+    }body{
+        NodePair pair = NodePair.make(values);
+        this.insertbefore(node, pair.head, pair.tail);
+        return pair;
+    }
+    /// Insert a new node before a node in the list.
+    void insertbefore(Node* node, Node* insert) in{
+        assert(node !is null, "Reference node must not be null.");
+    }body{
+        this.insertbefore(node, insert, insert);
+    }
+    /// Insert new nodes before a node in the list.
+    void insertbefore(Node* node, Node* head, Node* tail) in{
+        assert(node !is null, "Reference node must not be null.");
+    }body{
+        if(head !is null && tail !is null){
+            if(this.root is null){
+                this.root = head;
+                this.root.prev = tail;
             }else{
-                first = current;
+                head.prev = node.prev;
+                tail.next = node;
+                node.prev.next = head;
+                node.prev = tail;
+                if(node is this.root) this.root = head;
             }
-            previous = current;
-            length++;
         }
-        return Nodes(first, current, length);
+    }
+    
+    /// Insert a value after a node in the list.
+    Node* insertafter(Node* node, T value) in{
+        assert(node !is null, "Reference node must not be null.");
+    }body{
+        Node* insert = new Node(value);
+        this.insertafter(node, insert);
+        return insert;
+    }
+    /// Insert the value in an iterable after a node in the list.
+    NodePair insertafter(Values)(Node* node, auto ref Values values) if(
+        isIterableOf!(Values, T)
+    )in{
+        assert(node !is null, "Reference node must not be null.");
+    }body{
+        NodePair pair = NodePair.make(values);
+        this.insertafter(node, pair.head, pair.tail);
+        return pair;
+    }
+    /// Insert a new node after a node in the list.
+    void insertafter(Node* node, Node* insert) in{
+        assert(node !is null, "Reference node must not be null.");
+    }body{
+        this.insertafter(node, insert, insert);
+    }
+    /// Insert new nodes after a node in the list.
+    void insertafter(Node* node, Node* head, Node* tail) in{
+        assert(node !is null, "Reference node must not be null.");
+    }body{
+        if(head !is null && tail !is null){
+            if(this.root is null){
+                this.root = head;
+                this.root.prev = tail;
+            }else{
+                head.prev = node;
+                tail.next = node.next;
+                node.next.prev = tail;
+                node.next = head;
+            }
+        }
     }
 }
 
-struct LinkedListNodes(T, Allocator){
-    alias Node = LinkedListNode!(T, Allocator);
-    Node* front = null;
-    Node* back = null;
-    size_t length = 0;
-    
-    this(const(Node*) front, const(Node*) back, in size_t length) @trusted @nogc nothrow{
-        this(cast(Node*) front, cast(Node*) back, cast(size_t) length);
-    }
-    this(Node* front, Node* back, size_t length) @safe @nogc nothrow{
-        this.front = front;
-        this.back = back;
-        this.length = length;
-    }
-    
-    @property bool empty() @safe pure nothrow @nogc{
-        return this.front is null || this.back is null;
-    }
-    void popFront() @safe pure nothrow @nogc in{assert(!this.empty);} body{
-        if(this.front is this.back) this.front = null;
-        else this.front = this.front.next;
-    }
-    void popBack() @safe pure nothrow @nogc in{assert(!this.empty);} body{
-        if(this.front is this.back) this.back = null;
-        else this.back = this.back.prev;
-    }
+
+
+enum DoublyLinkedListRangeValues{
+    Nodes, // The range enumerates nodes.
+    Values // The range enumerates values.
+}
+enum DoublyLinkedListRangeMutability{
+    Immutable, // The range is not mutable.
+    Removable, // Elements may be removed, but not mutated.
+    Mutable // Elements may be removed and mutated.
 }
 
-
-
-struct LinkedListRange(List){
-    alias Element = ElementType!List;
-    alias Node = List.Node;
+/// Range for enumerating the members of a `DoublyLinkedList` instance.
+@safe pure nothrow struct DoublyLinkedListRange(
+    T, DoublyLinkedListRangeValues values, DoublyLinkedListRangeMutability mutability
+){
+    alias Element = T;
     
-    List list = null;
-    Node* frontnode = null;
-    Node* backnode = null;
-    bool empty = true;
+    enum bool mutable = mutability !is DoublyLinkedListRangeMutability.Immutable;
     
-    this(List list) @trusted{
-        this(list, cast(Node*) list.frontnode, cast(Node*) list.backnode, list.empty);
-    }
-    this(List list, Node* frontnode, Node* backnode, bool empty){
-        this.list = list;
-        this.frontnode = frontnode;
-        this.backnode = backnode;
-        this.empty = empty;
+    static if(mutable){
+        alias Node = DoublyLinkedListNode!T;
+        alias NodePair = DoublyLinkedListNodePair!T;
+        alias List = DoublyLinkedList!T;
+    }else{
+        alias Node = const(DoublyLinkedListNode!T);
+        alias NodePair = const(DoublyLinkedListNodePair!T);
+        alias List = const(DoublyLinkedList!T);
     }
     
-    @property auto length() const{
-        return this.list.length;
-    }
+    Node* head;
+    Node* tail;
+    bool isempty = false;
+    static if(mutable) List* list;
     
-    @property Element front() pure @trusted const nothrow{
-        return cast(Element) this.frontnode.value;
-    }
-    void popFront(){
-        this.frontnode = this.frontnode.next;
-        this.empty = this.frontnode.prev is this.backnode;
-    }
-    
-    @property Element back() pure @trusted const nothrow{
-        return cast(Element) this.backnode.value;
-    }
-    void popBack(){
-        this.backnode = this.backnode.prev;
-        this.empty = this.frontnode.prev is this.backnode;
-    }
-    
-    static if(canReassign!List){
-        enum bool mutable = true;
-        
-        static if(canReassign!Element){
-            @property void front(Element value){
-                this.frontnode.value = value;
-            }
-            @property void back(Element value){
-                this.backnode.value = value;
+    static if(mutable){
+        this(Node* head, Node* tail, List* list){
+            this(head, tail, list, head is null || tail is null);
+        }
+        this(Node* head, Node* tail, List* list, bool isempty){
+            this.head = head;
+            this.tail = tail;
+            this.list = list;
+            this.isempty = isempty;
+        }
+        this(List* list){
+            if(list is null){
+                this(null, null, null, true);
+            }else{
+                this(list.head, list.tail, list);
             }
         }
-        
-        auto insert(Element value){
-            this.backnode = this.list.append(value);
+    }else{
+        this(Node* head, Node* tail){
+            this(head, tail, head is null || tail is null);
+        }
+        this(Node* head, Node* tail, bool isempty = false){
+            this.head = head;
+            this.tail = tail;
+            this.isempty = isempty;
+        }
+        this(List list){
+            this(list.head, list.tail);
+        }
+        this(List* list){
+            if(list is null){
+                this(null, null, true);
+            }else{
+                this(list.head, list.tail);
+            }
+        }
+    }
+    
+    @property bool empty() const{
+        return this.isempty;
+    }
+    
+    @property auto front() in{
+        assert(!this.empty, "Range is empty.");
+        assert(this.head !is null, "Range is not valid.");
+    }body{
+        static if(values) return this.head.value;
+        else return this.head;
+    }
+    void popFront() in{
+        assert(!this.empty, "Range is empty.");
+        assert(this.head !is null, "Range is not valid.");
+    }body{
+        this.isempty = this.head is this.tail;
+        this.head = this.head.next;
+        assert(this.head !is null, "Range is not valid.");
+    }
+    
+    @property auto back() in{
+        assert(!this.empty, "Range is empty.");
+        assert(this.tail !is null, "Range is not valid.");
+    }body{
+        static if(values) return this.tail.value;
+        else return this.tail;
+    }
+    void popBack() in{
+        assert(!this.empty, "Range is empty.");
+        assert(this.tail !is null, "Range is not valid.");
+    }body{
+        this.isempty = this.head is this.tail;
+        this.tail = this.tail.prev;
+        assert(this.tail !is null, "Range is not valid.");
+    }
+    
+    @property typeof(this) save(){
+        static if(mutable){
+            return typeof(this)(this.head, this.tail,  this.list, this.isempty);
+        }else{
+            return typeof(this)(this.head, this.tail, this.isempty);
+        }
+    }
+    
+    static if(mutable){
+        /// Remove the frontmost element from the backing list.
+        /// Progresses the front of the range to the next element as though
+        /// popFront was called.
+        @property void removeFront() in{
+            assert(this.head !is null, "Range is not valid.");
+            assert(!this.empty, "Range is empty.");
+        }body{
+            this.isempty = this.head is this.tail;
+            this.list.remove(this.head);
+            this.head = this.head.next;
+        }
+        /// Remove the backmost element from the backing list.
+        /// Progresses the back of the range to the next element as though
+        /// popBack was called.
+        @property void removeBack() in{
+            assert(this.tail !is null, "Range is not valid.");
+            assert(!this.empty, "Range is empty.");
+        }body{
+            this.isempty = this.head is this.tail;
+            this.list.remove(this.tail);
+            this.tail = this.tail.prev;
         }
         
-        auto removeFront(){
-            auto next = this.frontnode.next;
-            this.list.remove(this.frontnode);
-            this.frontnode = next;
-        }
-        auto insertFront(Element value){
-            this.frontnode = this.list.insertbefore(this.frontnode, value);
-        }
-        
-        auto removeBack(){
-            auto prev = this.backnode.prev;
-            this.list.remove(this.backnode);
-            this.backnode = prev;
-        }
-        auto insertBack(Element value){
-            this.backnode = this.list.insertafter(this.backnode, value);
+        static if(mutability is DoublyLinkedListRangeMutability.Mutable){
+            @property void front(T value) in{
+                assert(this.list !is null, "List associated with range must not be null.");
+                assert(!this.empty, "Range is empty.");
+            }body{
+                this.front(new Node(value));
+            }
+            @property void front(Node* node) in{
+                assert(this.list !is null, "List associated with range must not be null.");
+                assert(node !is null, "Input must not be null.");
+                assert(this.head !is null, "Range is not valid.");
+                assert(!this.empty, "Range is empty.");
+            }body{
+                this.list.replace(this.head, node);
+                if(this.head is this.tail) this.tail = node;
+                this.head = node;
+            }
+            
+            @property void back(T value) in{
+                assert(this.list !is null, "List associated with range must not be null.");
+                assert(!this.empty, "Range is empty.");
+            }body{
+                this.back(new Node(value));
+            }
+            @property void back(Node* node) in{
+                assert(this.list !is null, "List associated with range must not be null.");
+                assert(node !is null, "Input must not be null.");
+                assert(this.tail !is null, "Range is not valid.");
+                assert(!this.empty, "Range is empty.");
+            }body{
+                this.list.replace(this.tail, node);
+                if(this.head is this.tail) this.head = node;
+                this.tail = node;
+            }
         }
     }
 }
@@ -588,106 +512,198 @@ struct LinkedListRange(List){
 version(unittest){
     private:
     import mach.test;
+    import mach.range : walklength, equals, map;
+    import mach.range.asrange : validAsRange;
+    alias List = DoublyLinkedList;
+    alias Node = DoublyLinkedListNode;
+    
+    import mach.io.log;
 }
 unittest{
     tests("Doubly-linked list", {
-        static assert(canLinkedList!int);
-        static assert(canLinkedList!string);
-        static assert(canLinkedList!(const int));
-        auto list = new LinkedList!int(0, 1, 2, 3, 4);
-        testeq(list.front, 0);
-        testeq(list.back, 4);
-        testeq(list.length, 5);
-        tests("Random access", {
-            testeq(list[0], 0);
-            testeq(list[1], 1);
-            testeq(list[2], 2);
-            testeq(list[3], 3);
-            testeq(list[$-1], 4);
+        static assert(validAsRange!(List!int));
+        tests("Empty", {
+            auto list = new List!int();
+            test(list.empty);
+            test!equals(list.ivalues, new int[0]);
+            list = new List!int(new int[0]);
+            test(list.empty);
+            test!equals(list.ivalues, new int[0]);
         });
-        tests("Slices", {
-            auto slice = list[1 .. $-1];
-            testeq(slice.length, list.length - 2);
-            testeq(slice[0], 1);
-            testeq(slice[1], 2);
-            testeq(slice[$-1], 3);
+        tests("Construction", {
+            test!equals(new List!int(0), [0]);
+            test!equals(new List!int(0, 1, 2), [0, 1, 2]);
+            test!equals(new List!int([0, 1, 2]), [0, 1, 2]);
         });
-        tests("Iteration", {
-            foreach(value; list.values) testeq(value, list[value]);
-        });
-        tests("Iterate nodes", {
-            auto nodes = list.nodes;
-            size_t count = 0;
-            foreach(node; nodes) count++;
-            testeq(count, list.length);
-        });
-        tests("Appending", {
-            auto copy = list.dup;
-            copy.append(5);
-            copy.append(6, 7);
-            testeq(copy.asarray, [0, 1, 2, 3, 4, 5, 6, 7]);
-        });
-        tests("Prepending", {
-            auto copy = list.dup;
-            copy.prepend(-1);
-            copy.prepend(-3, -2);
-            testeq(copy.asarray, [-3, -2, -1, 0, 1, 2, 3, 4]);
-        });
-        tests("Insertion", {
-            auto copy = list.dup;
-            copy.insert(1, 8);
-            copy.insert(3, 8, 8);
-            testeq(copy.asarray, [0, 8, 1, 8, 8, 2, 3, 4]);
-        });
-        tests("Removal", {
-            auto copy = list.dup;
-            copy.removefront();
-            copy.removeback();
-            testeq(copy.asarray, [1, 2, 3]);
-        });
-        tests("Index assignment", {
-            auto copy = list.dup;
-            copy[0] = 1;
-            copy[1] = 2;
-            testeq(copy[0], 1);
-            testeq(copy[1], 2);
-        });
-        tests("As range", {
-            auto range = list.asrange;
-            testeq(range.length, list.length);
-            foreach(i; 0 .. list.length) range.popFront();
-            test(range.empty);
-        });
-        tests("Contains", {
-            test(0 in list);
-            test(1 in list);
-            testf(11 in list);
-        });
-        tests("Concatenation", {
-            auto copy = list.dup;
-            copy ~= 5;
-            copy ~= [6, 7];
-            testeq(copy.length, list.length + 3);
-            auto concat = list ~ copy ~ 0 ~ [1, 2];
-            testeq(concat.length, list.length + copy.length + 3);
-            testeq(concat.asarray, [
-                0, 1, 2, 3, 4,
-                0, 1, 2, 3, 4, 5, 6, 7,
-                0, 1, 2
-            ]);
-        });
-        tests("Iterable as list", {
-            auto input = "hello world";
-            auto list = input.aslist;
-            testeq(list.length, input.length);
-            foreach(i; 0 .. input.length){
-                testeq(list[i], input[i]);
+        tests("Appending & prepending", {
+            { // Append
+                auto list = new List!int();
+                list.append(0);
+                test!equals(list.ivalues, [0]);
+                testeq(list.ivalues.walklength, 1);
+                list.append([1, 2]);
+                test!equals(list.ivalues, [0, 1, 2]);
+                testeq(list.ivalues.walklength, 3);
+            }{ // Prepend
+                auto list = new List!int();
+                list.prepend(0);
+                test!equals(list.ivalues, [0]);
+                testeq(list.ivalues.walklength, 1);
+                list.prepend([-2, -1]);
+                test!equals(list.ivalues, [-2, -1, 0]);
+                testeq(list.ivalues.walklength, 3);
+            }{ // Both
+                auto list = new List!int();
+                list.append(0);
+                list.append(1);
+                list.prepend(-1);
+                test!equals(list.ivalues, [-1, 0, 1]);
             }
         });
-        tests("Start blank", {
-            auto list = new LinkedList!int;
-            list.append(1, 2);
-            testeq(list.asarray, [1, 2]);
+        tests("Insert before & after", {
+            auto list = new List!int();
+            list.append([0, 1]);
+            auto node = list.append(2);
+            list.append([3, 4]);
+            test!equals(list.ivalues, [0, 1, 2, 3, 4]);
+            auto five = list.insertbefore(node, 5);
+            auto six = list.insertafter(node, 6);
+            test!equals(list.ivalues, [0, 1, 5, 2, 6, 3, 4]);
+            list.insertbefore(five, [-1, -2]);
+            list.insertafter(six, [-3, -4]);
+            test!equals(list.ivalues, [0, 1, -1, -2, 5, 2, 6, -3, -4, 3, 4]);
+            list.insertbefore(list.head, 10);
+            test!equals(list.ivalues, [10, 0, 1, -1, -2, 5, 2, 6, -3, -4, 3, 4]);
+        });
+        tests("Contains", {
+            auto list = new List!int(0, 1, 2, 3);
+            test(list.contains(list.head));
+            test(list.contains(list.head.next));
+            test(list.contains(list.tail));
+            testf(list.contains(new Node!int(0)));
+            testf(list.contains(new List!int(0, 1).head));
+            testf(list.contains(null));
+            auto empty = new List!int();
+            testf(empty.contains(list.head));
+            testf(empty.contains(list.tail));
+            testf(empty.contains(null));
+        });
+        tests("Replace", {
+            auto list = new List!int();
+            auto head = list.append(0);
+            list.append([1, 2]);
+            auto tail = list.append(3);
+            test!equals(list.ivalues, [0, 1, 2, 3]);
+            list.replace(head, -1);
+            test!equals(list.ivalues, [-1, 1, 2, 3]);
+            list.replace(tail, -2);
+            test!equals(list.ivalues, [-1, 1, 2, -2]);
+        });
+        tests("Remove", {
+            auto list = new List!int();
+            auto head = list.append(0);
+            auto mid = list.append(1);
+            auto tail = list.append(2);
+            test!equals(list.ivalues, [0, 1, 2]);
+            list.remove(mid);
+            test!equals(list.ivalues, [0, 2]);
+            list.remove(tail);
+            test!equals(list.ivalues, [0]);
+            list.remove(head);
+            test!equals(list.ivalues, new int[0]);
+            test(list.empty);
+            list.append([0, 1, 2]);
+            test!equals(list.ivalues, [0, 1, 2]);
+            list.remove(list.head);
+            test!equals(list.ivalues, [1, 2]);
+        });
+        tests("Clear", {
+            auto list = new List!int(0, 1, 2);
+            testf(list.empty);
+            list.clear;
+            test(list.empty);
+        });
+        tests("Immutable members", {
+            auto list = new List!(const(int))(0, 1, 2);
+            test!equals(list.values, [0, 1, 2]);
+            test!equals(list.ivalues, [0, 1, 2]);
+            list.append(3);
+            test!equals(list.ivalues, [0, 1, 2, 3]);
+            list.prepend(-1);
+            test!equals(list.ivalues, [-1, 0, 1, 2, 3]);
+            list.remove(list.tail);
+            test!equals(list.ivalues, [-1, 0, 1, 2]);
+            list.remove(list.head);
+            test!equals(list.ivalues, [0, 1, 2]);
+            list.replace(list.head, -1);
+            test!equals(list.ivalues, [-1, 1, 2]);
+            list.clear();
+            test(list.empty);
+        });
+        tests("Range", {
+            {
+                auto empty = new List!int();
+                test!equals(empty.values, new int[0]);
+                test!equals(empty.ivalues, new int[0]);
+                test!equals(empty.nodes.map!(e => e.value), new int[0]);
+                test!equals(empty.inodes.map!(e => e.value), new int[0]);
+                auto list = new List!int(0, 1, 2, 3);
+                test!equals(list.values, [0, 1, 2, 3]);
+                test!equals(list.ivalues, [0, 1, 2, 3]);
+                test!equals(list.nodes.map!(e => e.value), [0, 1, 2, 3]);
+                test!equals(list.inodes.map!(e => e.value), [0, 1, 2, 3]);
+            }{
+                auto list = new List!int(0, 1, 2, 3);
+                auto values = list.values;
+                testeq(values.front, 0);
+                testeq(values.back, 3);
+                values.popFront();
+                testeq(values.front, 1);
+                values.popBack();
+                testeq(values.back, 2);
+                auto saved = values.save();
+                saved.popFront();
+                testeq(saved.front, 2);
+                testeq(values.front, 1);
+                values.front = -1;
+                values.back = -2;
+                testeq(values.front, -1);
+                testeq(values.back, -2);
+                test!equals(list.ivalues, [0, -1, -2, 3]);
+                values.removeFront();
+                test!equals(list.ivalues, [0, -2, 3]);
+                testeq(values.front, -2);
+                values.removeBack();
+                test!equals(list.ivalues, [0, 3]);
+                test(values.empty);
+                testfail({values.front;});
+                testfail({values.popFront();});
+                testfail({values.back;});
+                testfail({values.popBack();});
+            }{
+                auto list = new List!int(0, 1, 2, 3);
+                auto nodes = list.nodes;
+                test(list.contains(nodes.head));
+                test(list.contains(nodes.tail));
+                test!equals(list.ivalues, [0, 1, 2, 3]);
+                nodes.removeFront();
+                testeq(nodes.front.value, 1);
+                test!equals(list.ivalues, [1, 2, 3]);
+                nodes.removeBack();
+                testeq(nodes.back.value, 2);
+                test!equals(list.ivalues, [1, 2]);
+                nodes.popFront();
+                testeq(nodes.front.value, 2);
+                nodes.front = 5;
+                testeq(nodes.front.value, 5);
+                test!equals(list.ivalues, [1, 5]);
+                nodes.popFront();
+                test(nodes.empty);
+                testfail({nodes.front;});
+                testfail({nodes.popFront();});
+                testfail({nodes.back;});
+                testfail({nodes.popBack();});
+            }
         });
     });
 }
