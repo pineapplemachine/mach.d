@@ -6,6 +6,8 @@ import mach.traits : isNull, isBoolean, isIntegral, isFloatingPoint, isCharacter
 import mach.traits : isImaginary, isComplex, isIterable, isFiniteIterable, isArray;
 import mach.traits : isString, isPointer, isEnumType, isAssociativeArray, isRange;
 
+import mach.range.asrange : validAsRange;
+
 import mach.text.str.arrays : iterabletostring, arraytostring;
 import mach.text.str.types : typetostring, typetostringtostring, hasToString, hasCustomToString;
 
@@ -48,6 +50,8 @@ string str(
         return value.stringtostring!(settings, quoteliterals);
     }else static if(isRange!T || isArray!T){
         return value.iterabletostring!settings;
+    }else static if(validAsRange!T && settings.valueasrange){
+        return value.asrange.iterabletostring!(settings, T);
     }else static if(is(T == struct) || is(T == class) || is(T == union)){
         return value.typetostring!settings;
     }else{
@@ -88,6 +92,10 @@ version(unittest){
         this(string x){this.x = x;}
         override string toString(){return this.x;}
     }
+    struct AsRangeTest{
+        int i = 0;
+        @property auto asrange(){return EmptyRange();}
+    }
 }
 
 unittest{
@@ -117,4 +125,6 @@ unittest{
     assert(str(new TestClass("hello")) == `{hi: "hello"}`);
     assert(str(ToStringStruct("hi")) == "hi");
     assert(str(new ToStringClass("hi")) == "hi");
+    assert(str(AsRangeTest()) == "[]");
+    assert(str!Verbose(AsRangeTest()) == "struct:asrange:AsRangeTest:[]");
 }

@@ -31,7 +31,7 @@ struct StrSettings{
         else static if(detail is TypeDetail.Full) return T.stringof;
         return "";
     }
-    string typelabel(T)() const{
+    string typelabel(T, bool asrange = false)() const{
         string getlabel(){
             static if(is(T == struct)){
                 return this.showstructlabel ? "struct:" : "";
@@ -45,13 +45,17 @@ struct StrSettings{
         }
         static if(isRange!T){
             return getlabel() ~ "range:";
+        }else static if(asrange){
+            return getlabel() ~ "asrange:";
         }else{
             return getlabel();
         }
     }
-    string typeprefix(TypeDetail detail, T, bool label = true)() const{
+    string typeprefix(
+        TypeDetail detail, T, bool label = true, bool asrange = false
+    )() const{
         static if(label){
-            return this.typelabel!(T) ~ this.typestring!(detail, T);
+            return this.typelabel!(T, asrange) ~ this.typestring!(detail, T);
         }else{
             return this.typestring!(detail, T);
         }
@@ -113,6 +117,10 @@ struct StrSettings{
     /// If true, the `showstructlabel`, `showclasslabel`, `showunionlabel`, and
     /// `showrangelabel` flags are used. If false, labels are not shown.
     bool showtostringlabels = false;
+    
+    /// Whether to stringify the result of `value.asrange` as available, when
+    /// the value would otherwise be stringified in the form `{field: value}`.
+    bool valueasrange = true;
     
     /// Settings for float stringification.
     WriteFloatSettings floatsettings = {

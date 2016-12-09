@@ -12,9 +12,11 @@ public:
 
 
 /// Get a string representation of a finite iterable.
-string iterabletostring(StrSettings settings = StrSettings.Default, T)(
+string iterabletostring(StrSettings settings = StrSettings.Default, RangeFrom = void, T)(
     auto ref T iter
 ) if(isFiniteIterable!T){
+    static if(is(RangeFrom == void)) alias Type = T;
+    else alias Type = RangeFrom;
     // Print "int[].[0, 1]" instead of "int[].[int(0), int(1)]".
     static if(isArray!T && settings.showarraytype){
         static if(isPrimitive!(ArrayElementType!T)){
@@ -40,18 +42,20 @@ string iterabletostring(StrSettings settings = StrSettings.Default, T)(
     enum showarraytype = settings.showarraytype;
     enum showiterabletype = settings.showiterabletype;
     static if(isArray!T && showarraytype){
-        return settings.typeprefix!(showarraytype, T) ~ ":" ~ getcontent();
+        return settings.typeprefix!(showarraytype, Type, true, !is(Type == T)) ~ ":" ~ getcontent();
     }else static if(!isArray!T && showiterabletype){
-        return settings.typeprefix!(showiterabletype, T) ~ ":" ~ getcontent();
+        return settings.typeprefix!(showiterabletype, Type, true, !is(Type == T)) ~ ":" ~ getcontent();
     }else{
         return getcontent();
     }
 }
 
 /// Get a string representation of an infinite iterable.
-string iterabletostring(StrSettings settings = StrSettings.Default, T)(
+string iterabletostring(StrSettings settings = StrSettings.Default, RangeFrom = void, T)(
     auto ref T iter, in size_t limit = 8
 ) if(isInfiniteIterable!T){
+    static if(is(RangeFrom == void)) alias Type = T;
+    else alias Type = RangeFrom;
     string getcontent(){
         static if(is(typeof({if(iter is null){}}))){
             if(iter is null) return "null";
@@ -68,7 +72,7 @@ string iterabletostring(StrSettings settings = StrSettings.Default, T)(
     }
     enum showtype = settings.showiterabletype;
     static if(settings.showiterabletype !is settings.TypeDetail.None){
-        return settings.typeprefix!(showtype, T) ~ ":" ~ getcontent();
+        return settings.typeprefix!(showtype, Type, true, !is(Type == T)) ~ ":" ~ getcontent();
     }else{
         return getcontent();
     }
