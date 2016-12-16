@@ -43,9 +43,9 @@ struct DenseHashSetBucket(T){
 /// of dynamically-sized sets.
 struct DenseHashSet(
     T, bool dynamic = true,
-    real upsize_factor = 2.0, real downsize_factor = 0.5,
-    real upsize_at = 0.75, real downsize_at = 0.25
-){
+    double upsize_factor = 2.0, double downsize_factor = 0.5,
+    double upsize_at = 0.75, double downsize_at = 0.25
+) if(canHash!T){
     alias Element = T;
     
     static assert(upsize_factor > 1);
