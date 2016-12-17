@@ -49,16 +49,16 @@ void glVertex(T)(T x, T y, T z){
 
 
 void glset(V)(V vector) if(isVector2!V){
-    glVertex!T(vector.x, vector.y);
+    glVertex(vector.x, vector.y);
 }
 
 void glset(V)(V vector) if(isVector3!V){
-    glVertex!T(vector.x, vector.y, vector.z);
+    glVertex(vector.x, vector.y, vector.z);
 }
 
 
 
-auto primitives(uint  mode, C, T)(Color!C color, Vector2!T[] vectors...){
+auto primitives(uint mode, C, T)(Color!C color, Vector2!T[] vectors...){
     if(vectors && vectors.length){
         scope(exit) GLError.enforce();
         color.glset();
