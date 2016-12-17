@@ -57,6 +57,9 @@ abstract class Application{
     /// A code indicating the reason for quitting.
     QuitReason quitreason = QuitReason.None;
     
+    /// The number of times that `main` has been called.
+    long ticks;
+    
     /// Call this method to indicate that the application should be terminated.
     void quit(QuitReason reason = QuitReason.Unspecified){
         this.quitreason = reason;
@@ -219,6 +222,7 @@ abstract class Application{
                 if(!this.suspended){
                     this.window.use();
                     this.main();
+                    this.ticks++;
                 }
                 this.framelimiter.update();
             }
