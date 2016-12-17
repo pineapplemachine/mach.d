@@ -58,7 +58,7 @@ abstract class Application{
     QuitReason quitreason = QuitReason.None;
     
     /// The number of times that `main` has been called.
-    long ticks;
+    ulong ticks;
     
     /// Call this method to indicate that the application should be terminated.
     void quit(QuitReason reason = QuitReason.Unspecified){
