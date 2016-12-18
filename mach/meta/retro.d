@@ -2,7 +2,7 @@ module mach.meta.retro;
 
 private:
 
-//
+import mach.meta.aliases : Aliases;
 
 public:
 
@@ -10,7 +10,6 @@ public:
 
 /// Get a sequence with the items in reverse order.
 template Retro(T...){
-    import mach.meta : Aliases;
     static if(T.length <= 1){
         alias Retro = T;
     }else{
