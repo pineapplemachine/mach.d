@@ -2,7 +2,8 @@
 
 This area is under construction. Please check back later.
 
-https://twitter.com/PineMach/status/772921246912655360
+https://twitter.com/PineMach/status/772921246912655360  
+https://twitter.com/PineMach/status/810185839951089664
 
 ## Functionality
 
@@ -13,9 +14,12 @@ Current:
 - [TTF rendering](https://github.com/pineapplemachine/mach.d/tree/master/mach/sdl/graphics/ttf)
 - [Force feedback](https://github.com/pineapplemachine/mach.d/tree/master/mach/sdl/haptic)
 
-Planned:
+Partially Complete:
 
 - Input helpers for smoother input checking
+
+Planned:
+
 - Audio playback using SDL_mixer
 - Spritesheets and other forms of animation
 - Cleaner interface for primitive rendering
