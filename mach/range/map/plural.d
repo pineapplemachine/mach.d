@@ -3,7 +3,7 @@ module mach.range.map.plural;
 private:
 
 import mach.meta : All, Any, Filter, AdjoinFlat, varmap, varfilter, varany, varmin;
-import mach.traits : hasTrueEmptyEnum, hasFalseEmptyEnum;
+import mach.traits : hasTrueEmptyEnum, hasFalseEmptyEnum, isInfiniteRange;
 import mach.traits : hasNumericLength, hasNumericRemaining;
 import mach.traits : isRange, isSlicingRange, isSavingRange;
 import mach.traits : isBidirectionalRange, isRandomAccessRange;
@@ -56,14 +56,21 @@ struct MapPluralRange(alias transform, Ranges...) if(canMapPluralRange!(transfor
         }
     }
     
-    static if(Any!(hasNumericLength, Ranges)){
+    private template isInfOrHasLength(T){
+        enum bool isInfOrHasLength = hasNumericLength!T || isInfiniteRange!T;
+    }
+    private template isInfOrHasRemaining(T){
+        enum bool isInfOrHasRemaining = hasNumericRemaining!T || isInfiniteRange!T;
+    }
+    
+    static if(All!(isInfOrHasLength, Ranges)){
         @property auto length(){
             auto withlen = varfilter!hasNumericLength(this.sources).expand;
             return withlen.varmap!(e => e.length).expand.varmin;
         }
         alias opDollar = length;
     }
-    static if(Any!(hasNumericRemaining, Ranges)){
+    static if(All!(isInfOrHasRemaining, Ranges)){
         @property auto remaining(){
             auto withlen = varfilter!hasNumericRemaining(this.sources).expand;
             return withlen.varmap!(e => e.remaining).expand.varmin;
