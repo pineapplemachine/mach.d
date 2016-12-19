@@ -8,6 +8,7 @@ import derelict.sdl2.image;
 import std.string : toStringz;
 
 import mach.sdl.error : SDLError;
+import mach.sdl.init.sdl : SDL;
 import mach.math.box : Box;
 import mach.math.vector2 : Vector2;
 import mach.sdl.graphics.color : Color;
@@ -31,6 +32,22 @@ SDL_Rect toSDLrect(in Box!int box){
 Box!int toBox(in SDL_Rect rect){
     return Box!int(rect.x, rect.y, rect.x + rect.w, rect.y + rect.h);
 }
+
+
+
+// TODO: Move this elsewhere?
+private auto loadsurface(in string path){
+    if(!SDL.loaded.image) throw new SDLError(
+        "Failed to load image \"" ~ path ~ "\" because image libraries have not been loaded."
+    );
+    SDL_Surface* image = IMG_Load(toStringz(path));
+    if(image is null) throw new SDLError(
+        "Failed to load image \"" ~ path ~ "\"."
+    );
+    return image;
+}
+
+
 
 /// Wraps an SDL_Surface, which stores image data in RAM.
 struct Surface{
@@ -91,9 +108,7 @@ struct Surface{
     
     /// Load image from file path.
     this(in string path){
-        SDL_Surface* image = IMG_Load(toStringz(path));
-        if(image is null) throw new SDLError("Failed to load image at \"" ~ path ~ "\".");
-        this(image);
+        this(loadsurface(path));
     }
     this(SDL_Surface* surface){
         surface.refcount++;

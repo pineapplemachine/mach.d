@@ -35,7 +35,7 @@ struct Core{
     /// https://wiki.libsdl.org/SDL_InitSubSystem
     static void initialize(Systems systems){
         if(SDL_Init(systems.flags) != 0){
-            throw new SDLError("Failed to initialize core.");
+            throw new SDLError("Failed to initialize system.");
         }
     }
     /// Get which systems have so far been successfully initialized.

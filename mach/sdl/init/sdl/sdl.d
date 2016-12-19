@@ -62,7 +62,7 @@ struct SDL{
             string status(in bool loaded, in DerelictException exception){
                 if(exception !is null) return "Error";
                 else if(loaded) return "Loaded";
-                else return "Not loaded";
+                else return "Not Loaded";
             }
             return text(
                 "Core: ", status(this.core, this.coreerror), ", ",
@@ -173,24 +173,34 @@ struct SDL{
         /// Attempt to initialize SDL with the given options.
         void initialize() const{
             if(enabledbool(Enable.Yes, loaded.core)){
-                if(!loaded.core) throw new SDLError("Can't init unloaded core.");
+                if(!loaded.core) throw new SDLError(
+                    "Failed to initialize core because it has not been loaded."
+                );
                 Core.initialize(this.coresystems);
             }
             if(enabledbool(this.image, loaded.image)){
-                if(!loaded.image) throw new SDLError("Can't init unloaded image library.");
+                if(!loaded.image) throw new SDLError(
+                    "Failed to initialize image library because it has not been loaded."
+                );
                 Image.initialize(this.imageformats);
             }
             if(enabledbool(this.mixer, loaded.mixer)){
-                if(!loaded.mixer) throw new SDLError("Can't init unloaded mixer library.");
+                if(!loaded.mixer) throw new SDLError(
+                    "Failed to initialize mixer library because it has not been loaded."
+                );
                 Mixer.initialize(this.mixerformats);
                 this.audiosettings.open();
             }
             if(enabledbool(this.ttf, loaded.ttf)){
-                if(!loaded.ttf) throw new SDLError("Can't init unloaded TTF library.");
+                if(!loaded.ttf) throw new SDLError(
+                    "Failed to initialize TTF library because it has not been loaded."
+                );
                 TTF.initialize();
             }
             if(enabledbool(this.net, loaded.net)){
-                if(!loaded.net) throw new SDLError("Can't init unloaded net library.");
+                if(!loaded.net) throw new SDLError(
+                    "Failed to initialize net library because it has not been loaded."
+                );
                 Net.initialize();
             }
         }

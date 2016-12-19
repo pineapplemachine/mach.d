@@ -2,6 +2,7 @@ module mach.sdl.init.sdl.mixer;
 
 private:
 
+import derelict.sdl2.sdl : SDL_ClearError;
 import derelict.sdl2.types;
 import derelict.sdl2.mixer;
 import mach.sdl.error : SDLError;
@@ -84,6 +85,9 @@ struct Mixer{
         void open() const{
             auto result = Mix_OpenAudio(this.frequency, this.format, this.channels, this.chunksize);
             if(result != 0) throw new SDLError("Failed to open audio.");
+            // Clear error "No SoundFonts have been requested"
+            // http://stackoverflow.com/questions/26779307/sdl2-mixer-no-soundfonts-have-been-requested
+            SDL_ClearError();
         }
         /// Get the number of times that open has been called.
         static int countopen(){
