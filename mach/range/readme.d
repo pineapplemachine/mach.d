@@ -583,6 +583,7 @@ in reverse order.
 +/
 
 unittest{
+    assert([0, 1, 2].retro.equals([2, 1, 0]));
     assert("hello".retro.equals("olleh"));
 }
 

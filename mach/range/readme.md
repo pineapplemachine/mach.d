@@ -385,6 +385,7 @@ assert([0, 1, 2, 3].reducelazy!((a, b) => (a + b)).asarray == [0, 1, 3, 6]);
 The `retro` function can be used to enumerate the contents of an input iterable in reverse order.
 
 ``` D
+assert([0, 1, 2].retro.equals([2, 1, 0]));
 assert("hello".retro.equals("olleh"));
 ```
 

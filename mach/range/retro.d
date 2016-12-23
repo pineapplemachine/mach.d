@@ -3,6 +3,8 @@ module mach.range.retro;
 private:
 
 import mach.traits : isBidirectionalRange, isRandomAccessRange, hasNumericLength;
+import mach.traits : isMutableRange, isMutableFrontRange, isMutableBackRange;
+import mach.traits : isMutableRemoveFrontRange, isMutableRemoveBackRange;
 import mach.traits : isSlicingRange, isSavingRange, isTemplateOf;
 import mach.range.asrange : asrange, validAsBidirectionalRange;
 import mach.range.meta : MetaRangeEmptyMixin, MetaRangeLengthMixin;
@@ -11,14 +13,24 @@ public:
 
 
 
-alias canRetro = validAsBidirectionalRange;
-alias canRetroRange = isBidirectionalRange;
+/// Determine if an input iterable can be enumerated in reverse via `retro`.
+template canRetro(T){
+    enum bool canRetro = validAsBidirectionalRange!T;
+}
 
-enum isRetroRange(Range) = isTemplateOf!(Range, RetroRange);
+/// Determine if an input range can be enumerated in reverse via `RetroRange`.
+template canRetroRange(T){
+    enum bool canRetroRange = isBidirectionalRange!T;
+}
+
+/// Determine whether a range is one resulting from a call to `retro`.
+template isRetroRange(Range){
+    enum bool isRetroRange = isTemplateOf!(Range, RetroRange);
+}
 
 
 
-/// Return a range which iterates over some iterable in reverse-order.
+/// Return a range which iterates over some iterable in reverse order.
 auto retro(Iter)(auto ref Iter iter) if(canRetro!Iter){
     static if(!isRetroRange!Iter){
         auto range = iter.asrange;
@@ -31,7 +43,10 @@ auto retro(Iter)(auto ref Iter iter) if(canRetro!Iter){
 
 
 
+/// Range for enumerating over the elements of an input range in reverse order.
 struct RetroRange(Range) if(canRetroRange!Range){
+    alias Element = typeof(Range.front);
+    
     mixin MetaRangeEmptyMixin!Range;
     mixin MetaRangeLengthMixin!Range;
     
@@ -79,6 +94,32 @@ struct RetroRange(Range) if(canRetroRange!Range){
             return typeof(this)(this.source.save);
         }
     }
+    
+    static if(isMutableRange!Range){
+        enum bool mutable = true;
+        static if(isMutableFrontRange!Range){
+            @property void front(Element value) in{assert(!this.empty);} body{
+                this.source.back = value;
+            }
+        }
+        static if(isMutableBackRange!Range){
+            @property void back(Element value) in{assert(!this.empty);} body{
+                this.source.front = value;
+            }
+        }
+        static if(isMutableRemoveFrontRange!Range){
+            auto removeFront(){
+                return this.source.removeBack();
+            }
+        }
+        static if(isMutableRemoveBackRange!Range){
+            auto removeBack(){
+                return this.source.removeFront();
+            }
+        }
+    }else{
+        enum bool mutable = false;
+    }
 }
 
 
@@ -88,6 +129,7 @@ version(unittest){
     import mach.test;
     import mach.range.compare : equals;
     import mach.range.next : nextback;
+    import mach.collect : DoublyLinkedList;
 }
 unittest{
     tests("Reversed", {
@@ -123,6 +165,51 @@ unittest{
             testfail({range.popFront;});
             testfail({range.back;});
             testfail({range.popBack;});
+        });
+        tests("Length & Remaining", {
+            auto range = input.retro;
+            testeq(range.length, 4);
+            testeq(range.remaining, 4);
+            range.popFront();
+            testeq(range.length, 4);
+            testeq(range.remaining, 3);
+            range.popFront();
+            range.popFront();
+            range.popFront();
+            testeq(range.length, 4);
+            testeq(range.remaining, 0);
+        });
+        tests("Saving", {
+            auto range = input.retro;
+            auto saved = range.save;
+            range.popFront();
+            testeq(range.remaining, 3);
+            testeq(saved.remaining, 4);
+        });
+        tests("Mutability", {
+            auto list = new DoublyLinkedList!int(0, 1, 2, 3);
+            auto range = list.values.retro;
+            test!equals(list.ivalues, [0, 1, 2, 3]);
+            testeq(range.front, 3);
+            range.front = 4;
+            testeq(range.front, 4);
+            test!equals(list.ivalues, [0, 1, 2, 4]);
+            testeq(range.back, 0);
+            range.back = 5;
+            testeq(range.back, 5);
+            test!equals(list.ivalues, [5, 1, 2, 4]);
+            range.removeFront();
+            test!equals(list.ivalues, [5, 1, 2]);
+            range.removeBack();
+            test!equals(list.ivalues, [1, 2]);
+            range.popFront();
+            testeq(range.front, 1);
+            range.front = 3;
+            testeq(range.front, 3);
+            test!equals(list.ivalues, [3, 2]);
+            range.removeFront();
+            test!equals(list.ivalues, [2]);
+            test(range.empty);
         });
     });
 }
