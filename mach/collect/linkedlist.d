@@ -541,8 +541,6 @@ version(unittest){
     import mach.range.asrange : validAsRange;
     alias List = DoublyLinkedList;
     alias Node = DoublyLinkedListNode;
-    
-    import mach.io.log;
 }
 unittest{
     tests("Doubly-linked list", {
