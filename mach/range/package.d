@@ -45,7 +45,7 @@ import mach.range.rangeof : rangeof, infrangeof, finiterangeof;
 import mach.range.recur : recur;
 import mach.range.reduce : reduce, reduceeager, reducelazy;
 import mach.range.reduction : sum, product;
-import mach.range.repeat : repeat, repeatrandomaccess, repeatsaving, repeatelement;
+import mach.range.repeat : repeat;
 import mach.range.retro : retro;
 import mach.range.rotate : rotate;
 import mach.range.select : select, from, until;
