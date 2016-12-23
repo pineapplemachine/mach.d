@@ -12,12 +12,14 @@ public:
 
 
 
+/// Get whether an input can be filtered.
 template canFilter(T, alias pred){
     enum bool canFilter = validAsRange!T && is(typeof({
         if(pred(AsRangeElementType!T.init)){}
     }));
 }
 
+/// Get whether a `FilterRange` can be constructed from a given type.
 template canFilterRange(T, alias pred){
     enum bool canFilterRange = isRange!T && canFilter!(T, pred);
 }
@@ -33,11 +35,13 @@ auto filter(alias pred, Iter)(Iter iter) if(canFilter!(Iter, pred)){
 
 
 
+/// Range for filtering the elements of an input according to a predicate function.
 struct FilterRange(alias pred, Range) if(canFilterRange!(Range, pred)){
     alias Element = typeof(Range.front);
     
     mixin MetaRangeEmptyMixin!Range;
     
+    /// Represents the input being filtered.
     Range source;
     
     this(Range source){
@@ -46,14 +50,17 @@ struct FilterRange(alias pred, Range) if(canFilterRange!(Range, pred)){
         static if(isBidirectionalRange!Range) this.consumeBack();
     }
     
+    /// Get the front element.
     @property auto front() in{assert(!this.empty);} body{
         return this.source.front;
     }
+    /// Pop the front element.
     void popFront() in{assert(!this.empty);} body{
         this.source.popFront();
         this.consumeFront();
     }
-    /// Pop values from source range until a matching value is found.
+    /// Pop values from the source range until a value matching the
+    /// predicate is found.
     void consumeFront(){
         while(!this.source.empty && !pred(this.source.front)){
             this.source.popFront();
@@ -61,13 +68,17 @@ struct FilterRange(alias pred, Range) if(canFilterRange!(Range, pred)){
     }
     
     static if(isBidirectionalRange!Range){
+        /// Get the back element.
         @property auto back() in{assert(!this.empty);} body{
             return this.source.back;
         }
+        /// Pop the back element.
         void popBack() in{assert(!this.empty);} body{
             this.source.popBack();
             this.consumeBack();
         }
+        /// Pop values from the source range until a value matching the
+        /// predicate is found.
         void consumeBack(){
             while(!this.source.empty && !pred(this.source.back)){
                 this.source.popBack();
@@ -75,37 +86,39 @@ struct FilterRange(alias pred, Range) if(canFilterRange!(Range, pred)){
         }
     }
     
-    static if(isMutableRange!Range){
-        enum bool mutable = true;
-        static if(isMutableFrontRange!Range){
-            @property void front(Element value) in{assert(!this.empty);} body{
-                this.source.front = value;
-            }
-        }
-        static if(isMutableBackRange!Range){
-            @property void back(Element value) in{assert(!this.empty);} body{
-                this.source.back = value;
-            }
-        }
-        static if(isMutableRemoveFrontRange!Range){
-            auto removeFront(){
-                scope(exit) this.consumeFront();
-                return this.source.removeFront();
-            }
-        }
-        static if(isMutableRemoveBackRange!Range){
-            auto removeBack(){
-                scope(exit) this.consumeBack();
-                return this.source.removeBack();
-            }
-        }
-    }else{
-        enum bool mutable = false;
-    }
-    
     static if(isSavingRange!Range){
+        /// Save the range.
         @property typeof(this) save(){
             return typeof(this)(this.source.save);
+        }
+    }
+
+    enum bool mutable = isMutableRange!Range;
+    
+    static if(isMutableFrontRange!Range){
+        /// Set the front element.
+        @property void front(Element value) in{assert(!this.empty);} body{
+            this.source.front = value;
+        }
+    }
+    static if(isMutableBackRange!Range){
+        /// Set the back element.
+        @property void back(Element value) in{assert(!this.empty);} body{
+            this.source.back = value;
+        }
+    }
+    static if(isMutableRemoveFrontRange!Range){
+        /// Remove the front element.
+        auto removeFront(){
+            scope(exit) this.consumeFront();
+            return this.source.removeFront();
+        }
+    }
+    static if(isMutableRemoveBackRange!Range){
+        /// Remove the back element.
+        auto removeBack(){
+            scope(exit) this.consumeBack();
+            return this.source.removeBack();
         }
     }
 }
@@ -154,11 +167,12 @@ unittest{
             testeq(saved.front, 0);
         });
         tests("Mutability", {
-            {
+            tests("Mutation", {
                 auto array = [1, 2, 3, 4, 5, 6];
                 array.filter!even.mutate!((n) => (n - 1)).consume;
                 testeq(array, [1, 1, 3, 3, 5, 5]);
-            }{
+            });
+            tests("Mutation & Removal", {
                 auto list = new DoublyLinkedList!int(0, 1, 2, 3, 4, 5);
                 auto range = list.filter!(n => n % 2);
                 testeq(range.front, 1);
@@ -182,7 +196,7 @@ unittest{
                 testfail({range.back = 0;});
                 testfail({range.removeFront();});
                 testfail({range.removeBack();});
-            }
+            });
         });
     });
 }
