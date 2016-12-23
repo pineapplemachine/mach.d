@@ -77,10 +77,10 @@ struct MapPluralRange(alias transform, Ranges...) if(canMapPluralRange!(transfor
         }
     }
     
-    @property auto ref front(){
+    @property auto ref front() in{assert(!this.empty);} body{
         return transform(varmap!(e => e.front)(this.sources).expand);
     }
-    void popFront(){
+    void popFront() in{assert(!this.empty);} body{
         foreach(i, _; Ranges) this.sources[i].popFront();
     }
     
@@ -125,14 +125,16 @@ unittest{
         alias sumtwo = (a, b) => (a + b);
         alias sumthree = (a, b, c) => (a + b + c);
         alias product = (a, b) => (a * b);
-        auto inputa = [0, 0, 1, 1];
-        auto inputb = [1, 2, 3, 4];
-        auto inputc = [1, 2, 2, 3];
+        int[] inputa = [0, 0, 1, 1];
+        int[] inputb = [1, 2, 3, 4];
+        int[] inputc = [1, 2, 2, 3];
         tests("Length", {
             auto inputshort = [1, 2];
             auto inputlong = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
             testeq(mapplural!sumtwo(inputa, inputshort).length, inputshort.length);
             testeq(mapplural!sumtwo(inputa, inputlong).length, inputa.length);
+            testeq(mapplural!sumthree(inputa, inputb, inputc).length, inputa.length);
+            testeq(mapplural!sumthree(inputlong, inputb, inputc).length, inputa.length);
         });
         tests("Iteration", {
             test!equals(mapplural!sumtwo(inputa, inputb), [1, 2, 4, 5]);
