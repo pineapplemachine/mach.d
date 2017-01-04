@@ -356,13 +356,13 @@ auto asdoublylinkedlist(Values)(auto ref Values values) if(isIterable!Values){
 
 
 enum DoublyLinkedListRangeValues{
-    Nodes, // The range enumerates nodes.
-    Values // The range enumerates values.
+    Nodes, /// The range enumerates nodes.
+    Values /// The range enumerates values.
 }
 enum DoublyLinkedListRangeMutability{
-    Immutable, // The range is not mutable.
-    Removable, // Elements may be removed, but not mutated.
-    Mutable // Elements may be removed and mutated.
+    Immutable, /// The range is not mutable.
+    Removable, /// Elements may be removed, but not mutated.
+    Mutable /// Elements may be removed and mutated.
 }
 
 /// Range for enumerating the members of a `DoublyLinkedList` instance.
@@ -474,7 +474,7 @@ enum DoublyLinkedListRangeMutability{
         /// Remove the frontmost element from the backing list.
         /// Progresses the front of the range to the next element as though
         /// popFront was called.
-        @property void removeFront() in{
+        void removeFront() in{
             assert(this.head !is null, "Range is not valid.");
             assert(!this.empty, "Range is empty.");
         }body{
@@ -485,7 +485,7 @@ enum DoublyLinkedListRangeMutability{
         /// Remove the backmost element from the backing list.
         /// Progresses the back of the range to the next element as though
         /// popBack was called.
-        @property void removeBack() in{
+        void removeBack() in{
             assert(this.tail !is null, "Range is not valid.");
             assert(!this.empty, "Range is empty.");
         }body{
