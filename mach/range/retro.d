@@ -134,9 +134,9 @@ version(unittest){
 unittest{
     tests("Reversed", {
         auto input = [0, 1, 2, 3];
-        test("Iteration",
-            input.retro.equals([3, 2, 1, 0])
-        );
+        tests("Iteration", {
+            input.retro.equals([3, 2, 1, 0]);
+        });
         tests("Random access", {
             testeq(input.retro[0], 3);
             testeq(input.retro[3], 0);

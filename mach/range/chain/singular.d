@@ -275,9 +275,9 @@ version(unittest){
     template ChainTestCommon(alias chainfunc){
         void ChainTestCommon(){
             int[][] input = [[1, 2], [3, 4], [5]];
-            test("Iteration",
-                chainfunc(input).equals([1, 2, 3, 4, 5])
-            );
+            tests("Iteration", {
+                chainfunc(input).equals([1, 2, 3, 4, 5]);
+            });
             tests("Length", {
                 auto range = chainfunc(input);
                 while(!range.empty){

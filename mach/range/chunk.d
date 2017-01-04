@@ -126,13 +126,13 @@ unittest{
         auto input = "abcdefghijklmnop";
         tests("Exact", {
             auto range = input.chunk(4);
-            test(range.length, 4);
-            test("Iteration",
-                range.equals(["abcd", "efgh", "ijkl", "mnop"])
-            );
-            test("Backwards",
-                range.retro.equals(["mnop", "ijkl", "efgh", "abcd"])
-            );
+            testeq(range.length, 4);
+            tests("Iteration", {
+                range.equals(["abcd", "efgh", "ijkl", "mnop"]);
+            });
+            tests("Backwards", {
+                range.retro.equals(["mnop", "ijkl", "efgh", "abcd"]);
+            });
             tests("Random access", {
                 test(range[0].equals("abcd"));
                 test(range[1].equals("efgh"));
@@ -154,12 +154,12 @@ unittest{
         tests("Inexact", {
             auto range = input.chunk(5);
             testeq(range.length, 4);
-            test("Iteration",
-                range.equals(["abcde", "fghij", "klmno", "p"])
-            );
-            test("Backwards",
-                range.retro.equals(["p", "klmno", "fghij", "abcde"])
-            );
+            tests("Iteration", {
+                range.equals(["abcde", "fghij", "klmno", "p"]);
+            });
+            tests("Backwards", {
+                range.retro.equals(["p", "klmno", "fghij", "abcde"]);
+            });
         });
     });
 }
