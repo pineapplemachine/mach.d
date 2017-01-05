@@ -77,7 +77,7 @@ assert(range.any!(e => e.key == "one" && e.value == 1));
 Collections in this library implement their own `asrange` methods, allowing those collections to be passed directly to functions which operate upon ranges. (Or, more strictly speaking, upon iterables which are valid as ranges.)
 
 ``` D
-auto list = new LinkedList!int(0, 1, 2, 3);
+auto list = new LinkedList!int([0, 1, 2, 3]);
 auto range = list.asrange;
 assert(range.equals([0, 1, 2, 3]));
 assert(list.map!(e => e + 1).equals([1, 2, 3, 4]));

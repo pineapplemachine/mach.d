@@ -187,7 +187,7 @@ unittest{
             testeq(saved.remaining, 4);
         });
         tests("Mutability", {
-            auto list = new DoublyLinkedList!int(0, 1, 2, 3);
+            auto list = new DoublyLinkedList!int([0, 1, 2, 3]);
             auto range = list.values.retro;
             test!equals(list.ivalues, [0, 1, 2, 3]);
             testeq(range.front, 3);

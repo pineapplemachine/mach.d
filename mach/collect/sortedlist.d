@@ -22,7 +22,11 @@ struct SortedList(T, alias compare = DefaultSortedListCompare) if(is(typeof({
     alias List = DoublyLinkedList!T;
     alias Node = DoublyLinkedListNode!T;
     
-    List list = null;
+    List list;
+    
+    /// Disallow blitting.
+    /// (Note that the DoublyLinkedList type itself disallows blitting.)
+    @disable this(this);
     
     /// True when the list contains no values.
     @property bool empty() const{
@@ -203,8 +207,6 @@ version(unittest){
     import mach.range.asrange : validAsRange;
     alias List = DoublyLinkedList;
     alias Node = DoublyLinkedListNode;
-    
-    import mach.io.log;
 }
 unittest{
     tests("Sorted list", {
@@ -217,8 +219,8 @@ unittest{
             test(SortedList!int.issorted([0, 0, 1, 2, 2]));
             testf(SortedList!int.issorted([1, 0]));
             testf(SortedList!int.issorted([0, 1, 2, 3, 1]));
-            test(SortedList!int.issorted(new List!int(0, 1, 2).ivalues));
-            test(SortedList!(const(int)).issorted(new List!(const(int))(0, 1, 2).ivalues));
+            test(SortedList!int.issorted(new List!int([0, 1, 2]).ivalues));
+            test(SortedList!(const(int)).issorted(new List!(const(int))([0, 1, 2]).ivalues));
         });
         tests("Construction", {
             auto list = new SortedList!int();

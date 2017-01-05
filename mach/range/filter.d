@@ -173,7 +173,7 @@ unittest{
                 testeq(array, [1, 1, 3, 3, 5, 5]);
             });
             tests("Mutation & Removal", {
-                auto list = new DoublyLinkedList!int(0, 1, 2, 3, 4, 5);
+                auto list = new DoublyLinkedList!int([0, 1, 2, 3, 4, 5]);
                 auto range = list.filter!(n => n % 2);
                 testeq(range.front, 1);
                 testeq(range.back, 5);

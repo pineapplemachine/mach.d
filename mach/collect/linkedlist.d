@@ -60,9 +60,9 @@ auto asdoublylinkedlist(Values)(auto ref Values values) if(isIterable!Values){
     
     Node* root = null;
     
-    this(T[] values...){
-        this.append(values);
-    }
+    /// Disallow blitting.
+    @disable this(this);
+    
     this(Values)(auto ref Values values) if(isIterableOf!(Values, T)){
         this.append(values);
     }
@@ -122,7 +122,7 @@ auto asdoublylinkedlist(Values)(auto ref Values values) if(isIterable!Values){
         return DoublyLinkedListRange!(
             T, DoublyLinkedListRangeValues.Nodes,
             DoublyLinkedListRangeMutability.Immutable
-        )(this);
+        )(&this);
     }
     /// Returns a range for iterating over the values in this list.
     /// The resulting range does not allow modification.
@@ -130,7 +130,7 @@ auto asdoublylinkedlist(Values)(auto ref Values values) if(isIterable!Values){
         return DoublyLinkedListRange!(
             T, DoublyLinkedListRangeValues.Values,
             DoublyLinkedListRangeMutability.Immutable
-        )(this);
+        )(&this);
     }
     /// Make the list valid as a range.
     @property auto asrange() const{
@@ -414,9 +414,6 @@ enum DoublyLinkedListRangeMutability{
             this.tail = tail;
             this.isempty = isempty;
         }
-        this(List list){
-            this(list.head, list.tail);
-        }
         this(List* list){
             if(list is null){
                 this(null, null, true);
@@ -554,8 +551,8 @@ unittest{
             test!equals(list.ivalues, new int[0]);
         });
         tests("Construction", {
-            test!equals(new List!int(0), [0]);
-            test!equals(new List!int(0, 1, 2), [0, 1, 2]);
+            test!equals(new List!int([0]), [0]);
+            test!equals(new List!int([0, 1, 2]), [0, 1, 2]);
             test!equals(new List!int([0, 1, 2]), [0, 1, 2]);
         });
         tests("Appending & prepending", {
@@ -599,12 +596,12 @@ unittest{
             test!equals(list.ivalues, [10, 0, 1, -1, -2, 5, 2, 6, -3, -4, 3, 4]);
         });
         tests("Contains", {
-            auto list = new List!int(0, 1, 2, 3);
+            auto list = new List!int([0, 1, 2, 3]);
             test(list.contains(list.head));
             test(list.contains(list.head.next));
             test(list.contains(list.tail));
             testf(list.contains(new Node!int(0)));
-            testf(list.contains(new List!int(0, 1).head));
+            testf(list.contains(new List!int([0, 1]).head));
             testf(list.contains(null));
             auto empty = new List!int();
             testf(empty.contains(list.head));
@@ -648,13 +645,13 @@ unittest{
             test(list.empty);
         });
         tests("Clear", {
-            auto list = new List!int(0, 1, 2);
+            auto list = new List!int([0, 1, 2]);
             testf(list.empty);
             list.clear;
             test(list.empty);
         });
         tests("Immutable members", {
-            auto list = new List!(const(int))(0, 1, 2);
+            auto list = new List!(const(int))([0, 1, 2]);
             test!equals(list.values, [0, 1, 2]);
             test!equals(list.ivalues, [0, 1, 2]);
             list.append(3);
@@ -677,13 +674,13 @@ unittest{
                 test!equals(empty.ivalues, new int[0]);
                 test!equals(empty.nodes.map!(e => e.value), new int[0]);
                 test!equals(empty.inodes.map!(e => e.value), new int[0]);
-                auto list = new List!int(0, 1, 2, 3);
+                auto list = new List!int([0, 1, 2, 3]);
                 test!equals(list.values, [0, 1, 2, 3]);
                 test!equals(list.ivalues, [0, 1, 2, 3]);
                 test!equals(list.nodes.map!(e => e.value), [0, 1, 2, 3]);
                 test!equals(list.inodes.map!(e => e.value), [0, 1, 2, 3]);
             }{
-                auto list = new List!int(0, 1, 2, 3);
+                auto list = new List!int([0, 1, 2, 3]);
                 auto values = list.values;
                 testeq(values.front, 0);
                 testeq(values.back, 3);
@@ -711,7 +708,7 @@ unittest{
                 testfail({values.back;});
                 testfail({values.popBack();});
             }{
-                auto list = new List!int(0, 1, 2, 3);
+                auto list = new List!int([0, 1, 2, 3]);
                 auto nodes = list.nodes;
                 test(list.contains(nodes.head));
                 test(list.contains(nodes.tail));

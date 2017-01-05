@@ -129,7 +129,7 @@ those collections to be passed directly to functions which operate upon ranges.
 +/
 
 unittest{
-    auto list = new LinkedList!int(0, 1, 2, 3);
+    auto list = new LinkedList!int([0, 1, 2, 3]);
     auto range = list.asrange;
     assert(range.equals([0, 1, 2, 3]));
     assert(list.map!(e => e + 1).equals([1, 2, 3, 4]));
