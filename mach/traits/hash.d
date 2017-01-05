@@ -21,8 +21,13 @@ template canHash(T){
 
 
 /// Get the hash of some value.
-auto hash(T)(auto ref T value) @trusted nothrow if(canHash!T){
-    return typeid(value).getHash(&value);
+auto hash(T)(auto ref T value) if(canHash!T){
+    static if(is(typeof({size_t h = value.toHash();}))){
+        return value.toHash();
+    }else{
+        size_t gethash() @trusted{return typeid(value).getHash(&value);}
+        return gethash();
+    }
 }
 
 
