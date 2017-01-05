@@ -13,53 +13,21 @@ public:
 
 
 /// Determine whether a `by` function is valid for some iterable.
-enum validDistinctBy(Iter, alias by) = (
-    canHash!(typeof(by(ElementType!Iter.init)))
-);
-
-/// Determine whether a `makehistory` function is valid for some iterable.
-template validDistinctMakeHistory(Iter, alias by, alias makehistory){
-    static if(isIterable!Iter){
-        alias ByType = typeof(by(ElementType!Iter.init));
-        enum bool validDistinctMakeHistory = is(typeof({
-            auto history = makehistory!by(Iter.init);
-            history.add(ByType.init);
-            if(ByType.init in history) return;
-        }));
-    }else{
-        enum bool validDistinctMakeHistory = false;
-    }
+template validDistinctBy(T, alias by){
+    enum bool validDistinctBy = canHash!(typeof(by((ElementType!T).init)));
 }
 
-enum canDistinct(
-    Iter, alias by = DefaultDistinctBy,
-    alias makehistory = DefaultDistinctMakeHistory
-) = (
-    validAsRange!Iter && validDistinctBy!(Iter, by) &&
-    validDistinctMakeHistory!(Iter, by, makehistory)
-);
-
-enum canDistinctRange(
-    Range, alias by = DefaultDistinctBy,
-    alias makehistory = DefaultDistinctMakeHistory
-) = (
-    isRange!Range && canDistinct!(Range, by, makehistory)
-);
-
-alias DefaultDistinctBy = (element) => (element);
+alias DefaultDistinctBy = (e) => (e);
+static assert(validDistinctBy!(int[], DefaultDistinctBy));
 
 
 
-/// Default for makehistory argument of distinct range. Given an iterable and
-/// a `by` function, any function passed for that argument should return an
-/// object supporting both `history.add(element)` and `element in history`
-/// syntax, such as a set.
-auto DefaultDistinctMakeHistory(alias by, Iter)(auto ref Iter iter){
-    alias ByType = typeof(by(ElementType!Iter.init));
-    enum hasLength = hasNumericLength!Iter;
-    DenseHashSet!(ByType, !hasLength) history;
-    static if(hasLength) history.reserve(iter.length * 4);
-    return history;
+template canDistinct(T, alias by = DefaultDistinctBy){
+    enum bool canDistinct = validAsRange!T && validDistinctBy!(T, by);
+}
+
+template canDistinctRange(T, alias by = DefaultDistinctBy){
+    enum bool canDistinctRange = isRange!T && canDistinct!(T, by);
 }
 
 
@@ -70,30 +38,30 @@ auto DefaultDistinctMakeHistory(alias by, Iter)(auto ref Iter iter){
 /// for uniqueness by providing a different by alias. For example,
 /// `input.distinct!((e) => (e.name))` would iterate over those elements of
 /// input having distinct names.
-auto distinct(alias by = DefaultDistinctBy, alias makehistory = DefaultDistinctMakeHistory, Iter)(
-    auto ref Iter iter
-) if(canDistinct!(Iter, by, makehistory)){
+auto distinct(alias by = DefaultDistinctBy, Iter)(auto ref Iter iter) if(
+    canDistinct!(Iter, by)
+){
     auto range = iter.asrange;
-    return DistinctRange!(typeof(range), by, makehistory)(range);
+    return DistinctRange!(typeof(range), by)(range);
 }
 
 
 
 struct DistinctRange(
-    Range, alias by = DefaultDistinctBy,
-    alias makehistory = DefaultDistinctMakeHistory
-) if(canDistinctRange!(Range, by, makehistory)){
+    Range, alias by = DefaultDistinctBy
+) if(canDistinctRange!(Range, by)){
     mixin MetaRangeEmptyMixin!Range;
     
-    alias History = typeof(makehistory!by(Range.init));
+    alias History = DenseHashSet!(typeof(by(ElementType!Range.init)));
     
     Range source;
-    History history;
+    History* history;
     
     this(Range source){
-        this(source, makehistory!by(source));
+        this(source, new History());
+        this.history.accommodate(source);
     }
-    this(Range source, History history){
+    this(Range source, History* history){
         this.source = source;
         this.history = history;
     }
@@ -104,14 +72,14 @@ struct DistinctRange(
     void popFront(){
         this.history.add(by(this.source.front));
         this.source.popFront();
-        while(!this.source.empty && by(this.source.front) in this.history){
+        while(!this.source.empty && this.history.contains(by(this.source.front))){
             this.source.popFront();
         }
     }
     
     static if(isSavingRange!Range){
         @property typeof(this) save(){
-            return typeof(this)(this.source.save, this.history);
+            return typeof(this)(this.source.save, this.history.dup);
         }
     }
 }
