@@ -85,6 +85,17 @@ auto asdoublylinkedlist(Values)(auto ref Values values) if(isIterable!Values){
         return this.root is null ? null : this.root.prev;
     }
     
+    /// Get the first value in the list.
+    @property auto front(){
+        assert(this.head !is null);
+        return this.head.value;
+    }
+    /// Get the last value in the list.
+    @property auto back(){
+        assert(this.tail !is null);
+        return this.tail.value;
+    }
+    
     /// True when the list contains no values.
     @property bool empty() const{
         return this.root is null;

@@ -51,6 +51,17 @@ struct SortedList(T, alias compare = DefaultSortedListCompare) if(is(typeof({
         return this.list.tail;
     }
     
+    /// Get the first value in the list.
+    @property auto front(){
+        assert(this.head !is null);
+        return this.head.value;
+    }
+    /// Get the last value in the list.
+    @property auto back(){
+        assert(this.tail !is null);
+        return this.tail.value;
+    }
+    
     /// Returns a range for iterating over the nodes in this list.
     /// The resulting range does not allow modification.
     @property auto inodes() const{
