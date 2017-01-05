@@ -12,6 +12,10 @@ public:
 /// function.
 enum canHeap(T, alias compare) = isPredicate!(compare, T, T);
 
+/// Put the least element at the root of the heap by default.
+alias DefaultHeapCompare = (a, b) => (a < b);
+static assert(canHeap!(int, DefaultHeapCompare));
+
 /// Determine whether a heap can be constructed from some iterable given its
 /// type and a comparison function.
 template canHeapify(Iter, alias compare){
@@ -21,9 +25,6 @@ template canHeapify(Iter, alias compare){
         enum bool canHeapify = false;
     }
 }
-
-/// Put the greatest element on top by default.
-alias DefaultHeapCompare = (a, b) => (a > b);
 
 
 
@@ -41,19 +42,19 @@ auto heapify(alias compare = DefaultHeapCompare, Iter)(auto ref Iter iter) if(
 struct Heap(T, alias compare = DefaultHeapCompare) if(canHeap!(T, compare)){
     T[] elements;
     
-    this(typeof(this) heap){
-        this.elements = heap.elements;
+    this(in size_t size){
+        this.reserve(size);
     }
-    this(T[] values...){
-        this.clear();
-        this.push(values);
-    }
-    this(Iter)(Iter values) if(isIterableOf!(Iter, T)){
+    this(Values)(Values values) if(isIterableOf!(Values, T)){
         this.clear();
         this.push(values);
     }
     
-    /// Get the length of the heap.
+    void reserve(in size_t size){
+        this.elements.reserve(size);
+    }
+    
+    /// Get the number of values in the heap.
     @property auto length(){
         if(this.elements.length){
             return this.elements.length - 1;
@@ -68,7 +69,7 @@ struct Heap(T, alias compare = DefaultHeapCompare) if(canHeap!(T, compare)){
     
     /// Clear all elements from the heap.
     void clear(){
-        this.elements = new T[1];
+        this.elements.length = 1;
     }
     
     /// Create a copy of the heap.
@@ -82,8 +83,8 @@ struct Heap(T, alias compare = DefaultHeapCompare) if(canHeap!(T, compare)){
     auto push(ref T value){
         if(!this.elements.length) this.clear();
         this.elements ~= value;
-        auto index = this.perlocateup(this.length);
-        if(index > 0) index = this.perlocatedown(index);
+        auto index = this.siftup(this.length);
+        if(index > 0) index = this.siftdown(index);
         return index;
     }
     /// ditto
@@ -104,11 +105,12 @@ struct Heap(T, alias compare = DefaultHeapCompare) if(canHeap!(T, compare)){
         auto element = this.elements[1];
         this.elements[1] = this.elements[this.length];
         this.elements.length = this.elements.length - 1;
-        this.perlocatedown(1);
+        this.siftdown(1);
         return element;
     }
     
-    auto perlocateup(size_t index){
+    auto siftup(in size_t startindex){
+        size_t index = startindex;
         while(index / 2 > 0){
             auto temp = this.elements[index / 2];
             this.elements[index / 2] = this.elements[index];
@@ -117,7 +119,8 @@ struct Heap(T, alias compare = DefaultHeapCompare) if(canHeap!(T, compare)){
         }
         return index;
     }
-    auto perlocatedown(size_t index){
+    auto siftdown(in size_t startindex){
+        size_t index = startindex;
         while(index * 2 <= this.length){
             auto min = this.child(index);
             if(compare(this.elements[min], this.elements[index])){
@@ -129,7 +132,7 @@ struct Heap(T, alias compare = DefaultHeapCompare) if(canHeap!(T, compare)){
         }
         return index;
     }
-    auto child(size_t index){
+    auto child(in size_t index){
         if(index * 2 + 1 > this.length){
             return index * 2;
         }else if(compare(this.elements[index * 2], this.elements[index * 2 + 1])){
@@ -139,9 +142,11 @@ struct Heap(T, alias compare = DefaultHeapCompare) if(canHeap!(T, compare)){
         }
     }
     
-    // Make it a range
+    /// Make it a range.
     alias front = top;
+    /// ditto
     alias popFront = pop;
+    /// ditto
     alias save = dup;
 }
 
@@ -157,8 +162,8 @@ unittest{
     tests("Heap", {
         static assert(isRange!(Heap!int));
         tests("Iteration", {
-            test(Heap!int(2, -1, -2, 1, 0).equals([2, 1, 0, -1, -2]));
-            test(Heap!int(2, 1, 1, 2, 1).equals([2, 2, 1, 1, 1]));
+            test!equals(Heap!int([2, -1, -2, 1, 0]), [-2, -1, 0, 1, 2]);
+            test!equals(Heap!int([2, 1, 1, 2, 1]), [1, 1, 1, 2, 2]);
         });
         tests("Length", {
             Heap!int heap;
@@ -175,7 +180,7 @@ unittest{
         });
         tests("Heapify", {
             auto heap = heapify([4, 1, 3, 2]);
-            test(heap.equals([4, 3, 2, 1]));
+            test!equals(heap, [1, 2, 3, 4]);
         });
     });
 }
