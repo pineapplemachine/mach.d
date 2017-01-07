@@ -2,6 +2,7 @@ module mach.range.find.findlazy;
 
 private:
 
+import mach.types : Rebindable;
 import mach.traits : ElementType, hasNumericLength, isPredicate, isRange;
 import mach.traits : isFiniteIterable, isRandomAccessIterable;
 import mach.traits : isFiniteRange, isSlicingRange, isSavingRange;
@@ -66,7 +67,7 @@ struct FindAllRange(alias pred, Range, Subject, Index = DefaultFindIndex) if(
         alias Thread = FindSavingThread!(pred, true, Index, Subject);
     }
     static if(isSlicing){
-        alias Result = FindResultPlural!(Index, Range);
+        alias Result = Rebindable!(FindResultPlural!(Index, Range));
     }else{
         alias Result = FindResultIndexPlural!Index;
     }
