@@ -2,48 +2,76 @@ module mach.range.chunk;
 
 private:
 
-import mach.math.round : divceil;
+import mach.meta : varmin;
 import mach.traits : hasNumericLength, isSlicingRange, isSavingRange;
 import mach.range.asrange : asrange, validAsSlicingRange;
+import mach.math.round : divceil;
+
+/++ Docs
+
+The `chunk` function returns a range for enumerating sequential chunks of an
+input, its first argument being the input iterable and its second argument being
+the size of the chunks to produce.
+If the iterable is not evenly divisible by the given chunk size, then the
+final element of the chunk range will be shorter than the given size.
+
+The input iterable must support slicing and have numeric length. The outputted
+range is bidirectional, has `length` and `remaining` properties, allows random
+access and slicing operations, and can be saved.
+
++/
+
+unittest{ /// Example
+    auto range = "abc123xyz!!".chunk(3);
+    assert(range.length == 4);
+    assert(range[0] == "abc");
+    assert(range[1] == "123");
+    assert(range[2] == "xyz");
+    // Final chunk is shorter because the input wasn't evenly divisble by 3.
+    assert(range[3] == "!!");
+}
 
 public:
 
 
 
-enum canChunk(Iter) = (
-    validAsSlicingRange!Iter && hasNumericLength!Iter
+/// Determine whether the `chunk` function can be applied to some type.
+enum canChunk(T) = (
+    hasNumericLength!T && is(typeof({
+        size_t low, high;
+        auto slice = T.init[low .. high];
+    }))
 );
 
-enum canChunkRange(Range) = (
-    isSlicingRange!Range && hasNumericLength!Range
-);
 
 
-
-/// Breaks down a single range into a range of smaller ranges. The final chunk
-/// in the resulting range may be shorter than the provided size, but all others
-/// will be that exact length.
-auto chunk(Iter)(auto ref Iter iter, size_t size) if(canChunk!Iter)in{
+/// Get a range for lazily enumerating chunks of a sliceable input.
+auto chunk(T)(auto ref T iter, size_t size) if(canChunk!T) in{
     assert(size > 0);
 }body{
-    auto range = iter.asrange;
-    return ChunkRange!(typeof(range))(range, size);
+    return ChunkRange!T(iter, size);
 }
 
 
 
-struct ChunkRange(Range) if(canChunkRange!(Range)){
-    Range source; /// Make chunks from this range
-    size_t size; /// Maximum size of each chunk
+/// Range for lazily enumerating chunks of an input.
+struct ChunkRange(Source) if(canChunk!Source){
+    /// Input to be chunked.
+    Source source;
+    /// Maximum size of each chunk.
+    size_t size;
+    /// Cursor representing the front of the range.
     size_t frontindex;
+    /// Cursor representing the back of the range.
     size_t backindex;
     
-    this(Range source, size_t size, size_t frontindex = size_t.init) in{
+    this(Source source, size_t size, size_t frontindex = 0) in{
         assert(size > 0);
     }body{
         this(source, size, frontindex, divceil(source.length, size));
     }
-    this(Range source, size_t size, size_t frontindex, size_t backindex) in{
+    
+    this(Source source, size_t size, size_t frontindex, size_t backindex) in{
         assert(size > 0);
     }body{
         this.source = source;
@@ -52,37 +80,38 @@ struct ChunkRange(Range) if(canChunkRange!(Range)){
         this.backindex = backindex;
     }
     
-    @property bool empty(){
+    @property bool empty() const{
         return this.frontindex >= this.backindex;
     }
-    @property auto remaining(){
-        return this.backindex - this.frontindex;
-    }
+    
     @property auto length(){
         return divceil(cast(size_t) this.source.length, this.size);
     }
     alias opDollar = length;
     
-    @property auto ref front() in{assert(!this.empty);} body{
+    @property auto remaining() const{
+        return this.backindex - this.frontindex;
+    }
+    
+    @property auto front() in{assert(!this.empty);} body{
         return this[this.frontindex];
     }
     void popFront() in{assert(!this.empty);} body{
         this.frontindex++;
     }
     
-    @property auto ref back() in{assert(!this.empty);} body{
+    @property auto back() in{assert(!this.empty);} body{
         return this[this.backindex - 1];
     }
     void popBack() in{assert(!this.empty);} body{
         this.backindex--;
     }
     
-    auto ref opIndex(in size_t index) in{
+    auto opIndex(in size_t index) in{
         assert(index >= 0 && index < this.length);
     }body{
-        auto low = index * this.size;
-        auto high = low + this.size;
-        if(high > this.source.length) high = cast(size_t)(this.source.length);
+        immutable low = index * this.size;
+        immutable high = varmin(low + this.size, cast(size_t) this.source.length);
         return this.source[low .. high];
     }
     
@@ -104,12 +133,12 @@ struct ChunkRange(Range) if(canChunkRange!(Range)){
         }
     }
     
-    static if(isSavingRange!Range){
-        @property typeof(this) save(){
-            return typeof(this)(
-                this.source.save, this.size, this.frontindex, this.backindex
-            );
-        }
+    /// Save the range.
+    /// Assumes slicing and random access do not modify the range's content.
+    @property typeof(this) save(){
+        return typeof(this)(
+            this.source, this.size, this.frontindex, this.backindex
+        );
     }
 }
 
