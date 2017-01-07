@@ -83,31 +83,6 @@ unittest{ /// Example
 
 /++ Docs
 
-When length is known at compile time, the expected length can be passed as a
-template argument and the function will create and return a static array.
-
-If the provided length is incorrect, then `asarray` will fail.
-
-+/
-
-unittest{ /// Example
-    import mach.range.rangeof : rangeof;
-    auto range = rangeof!int(0, 1, 2, 3);
-    int[4] array = range.asarray!4;
-    assert(array == [0, 1, 2, 3]);
-}
-
-unittest{ /// Example
-    import mach.range.rangeof : rangeof;
-    import mach.error.mustthrow : mustthrow;
-    auto range = rangeof!int(0, 1, 2, 3);
-    mustthrow({
-        range.asarray!10; // Fails because of incorrect length.
-    });
-}
-
-/++ Docs
-
 The `asarray` function is also implemented for associative arrays.
 The constructed array is a sequence of key, value pairs represented
 by the `KeyValuePair` type defined in `mach.types.keyvaluepair`.
@@ -251,31 +226,6 @@ auto asknownlengtharray(Element, Iter)(auto ref Iter iter, size_t length) if(
 
 
 
-/// Create array from an iterable where exact length is known at compile time.
-auto asarray(size_t length, Iter)(auto ref Iter iter) if(canMakeArray!(Iter)){
-    return asarray!(ElementType!Iter, length, Iter)(iter);
-}
-
-/// ditto
-auto asarray(Element, size_t length, Iter)(auto ref Iter iter) if(
-    canMakeMaxLengthArrayOf!(Element, Iter)
-){
-    Element[length] array;
-    size_t index = 0;
-    foreach(item; iter){
-        assert(index < array.length,
-            text("Iterable is longer than assumed length ", length, ".")
-        );
-        array[index++] = item;
-    }
-    assert(index == array.length,
-        text("Iterable is shorter than assumed length ", length, ".")
-    );
-    return array;
-}
-
-
-
 /// Create an array of key, value pairs from an associative array.
 auto asarray(T)(auto ref T input) if(isAssociativeArray!T){
     alias Pair = KeyValuePair!(ArrayKeyType!T, ArrayValueType!T);
@@ -324,12 +274,6 @@ unittest{
         });
         tests("Finite range, max length", {
             testeq(KnownLengthTest(0, 4).asarray(2), [0, 1]);
-        });
-        tests("Finite range, static length", {
-            // Correct length
-            testeq(KnownLengthTest(0, 4).asarray!4, [0, 1, 2, 3]);
-            // Incorrect length
-            testfail({KnownLengthTest(0, 4).asarray!6;});
         });
         tests("Infinite range, max length", {
             testeq(InfiniteRangeTest(0).asarray(4), [0, 1, 2, 3]);
