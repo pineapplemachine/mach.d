@@ -2,10 +2,11 @@ module mach.io.stream.filestream;
 
 private:
 
-import mach.error : enforceerrno;
+import mach.error : ErrnoException;
 import mach.io.file.sys : FileHandle, Seek;
 import mach.io.file.sys : fopen, fclose, fread, fwrite, fflush, fsync, fseek, ftell, feof, tmpfile, rewind;
 import mach.io.file.stat : Stat;
+import mach.io.stream.exceptions;
 
 public:
 
@@ -25,9 +26,11 @@ struct FileStream{
     }
     
     static FileStream temp(){
-        return FileStream(
-            enforceerrno(tmpfile(), "Failed to create temporary file.")
+        auto file = tmpfile();
+        if(!file) throw new StreamException(
+            "Failed to create temporary file", new ErrnoException
         );
+        return FileStream(file);
     }
     
     @property bool active(){
@@ -46,7 +49,8 @@ struct FileStream{
     }
     
     void flush() @trusted in{assert(this.active);} body{
-        enforceerrno(fflush(this.target) == 0);
+        auto result = fflush(this.target);
+        if(result != 0) throw new StreamFlushException(new ErrnoException);
     }
     void sync() in{assert(this.active);} body{
         fsync(this.target);
@@ -62,7 +66,7 @@ struct FileStream{
     
     @property size_t position() in{assert(this.active);} body{
         auto tell = ftell(this.target);
-        enforceerrno(tell >= 0);
+        if(tell < 0) throw new StreamTellException(new ErrnoException);
         return cast(size_t) tell;
     }
     @property void position(in size_t index) in{assert(this.active);} body{
@@ -72,16 +76,21 @@ struct FileStream{
     void seek(in size_t offset, in Seek origin = Seek.Set) in{
         assert(this.active);
     }body{
-        enforceerrno(fseek(this.target, offset, origin) == 0);
+        auto result = fseek(this.target, offset, origin);
+        if(result != 0) throw new StreamSeekException(new ErrnoException);
     }
     
     size_t skip(in size_t count) in{assert(this.active);} body{
-        auto before = ftell(this.target);
-        enforceerrno(before >= 0);
-        this.seek(count, Seek.Cur);
-        auto after = ftell(this.target);
-        enforceerrno(after >= 0);
-        return after - before;
+        try{
+            auto before = ftell(this.target);
+            if(before < 0) throw new StreamTellException(new ErrnoException);
+            this.seek(count, Seek.Cur);
+            auto after = ftell(this.target);
+            if(after < 0) throw new StreamTellException(new ErrnoException);
+            return after - before;
+        }catch(StreamException e){
+            throw new StreamSkipException(e);
+        }
     }
     
     void reset() in{assert(this.active);} body{
@@ -89,7 +98,8 @@ struct FileStream{
     }
     
     void close() in{assert(this.active);} body{
-        enforceerrno(fclose(this.target) == 0);
+        auto result = fclose(this.target);
+        if(result != 0) throw new StreamCloseException(new ErrnoException);
         this.target = null;
     }
     

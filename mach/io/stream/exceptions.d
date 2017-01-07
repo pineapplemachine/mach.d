@@ -34,3 +34,38 @@ class StreamWriteException: StreamException{
         super("Error writing to stream: " ~ message, next, line, file);
     }
 }
+
+/// Exception thrown when failing to set position in a stream.
+class StreamSeekException: StreamException{
+    this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super("Failed to set position in stream.", next, line, file);
+    }
+}
+
+/// Exception thrown when failing to get position in a stream.
+class StreamTellException: StreamException{
+    this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super("Failed to get position in stream.", next, line, file);
+    }
+}
+
+/// Exception thrown when failing to skip content in a stream.
+class StreamSkipException: StreamException{
+    this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super("Failed to skip content in stream.", next, line, file);
+    }
+}
+
+/// Exception thrown when failing to flush a stream.
+class StreamFlushException: StreamException{
+    this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super("Failed to flush stream.", next, line, file);
+    }
+}
+
+/// Exception thrown when failing to close a stream.
+class StreamCloseException: StreamException{
+    this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super("Failed to close stream.", next, line, file);
+    }
+}
