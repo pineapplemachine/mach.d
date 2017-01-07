@@ -447,6 +447,9 @@ unittest{
             // consumed range doesn't make much sense, does it?
             // Attempting to do so should probably produce an error but, at
             // least for now, I'm just going to test for consistent behavior.
+            // Another idea: Maybe any partially-consumed input produces a
+            // pad range where all its front padding elements have already
+            // been consumed?
             auto input = "abcde".asrange;
             input.popFront();
             auto padded = input.pad('_', 2, 2);
