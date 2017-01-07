@@ -2,12 +2,10 @@ module mach.io.file.traverse;
 
 private:
 
-import std.datetime : FILETIMEToSysTime;
 import std.internal.cstring : tempCString;
-import mach.error : ErrnoException, SysErrorException;
+import mach.error : errno, ErrnoException, SysErrorException;
 import mach.text : text;
 import mach.io.file.attributes : Attributes;
-import mach.io.file.stat : Stat;
 import mach.io.file.common;
 import mach.io.file.exceptions;
 
@@ -15,36 +13,63 @@ public:
 
 
 
-alias FileListDirException = FilePathExceptionTemplate!"Failed to list files in directory";
+/// Exception thrown when listing or traversing a directory fails.
+class FileListDirException: FileException{
+    string path;
+    this(string path, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super(text("Failure listing files in directory \"", path, "\"."), next, line, file);
+        this.path = path;
+    }
+}
 
 
 
-auto listdir(string path){
+/// Get a range for enumerating the files in a directory.
+auto listdir(in string path){
     return ListDirRange(path);
+}
+
+/// Get a range for traversing all the files and subdirectories in a directory.
+/// Accepts a template argument determining whether the traversal is depth-first
+/// or breadth-first.
+auto traversedir(TraverseDirMode mode = TraverseDirMode.DepthFirst)(in string path){
+    return TraverseDirRange!mode(path);
 }
 
 
 
 struct ListDirRange{
-    string path; /// The directory being listed.
-    bool skipdots = true; /// Whether to include "." and ".." in the output.
+    /// The directory being listed.
+    string path;
+    /// Whether to include "." and ".." in the output.
+    bool skipdots = true;
+    
+    string toString() const{
+        return this.path;
+    }
     
     version(Windows){
+        import std.datetime : FILETIMEToSysTime; // TODO: Don't depend on this
         import core.sys.windows.winbase;
         import core.sys.windows.winnt;
         
         /// https://msdn.microsoft.com/en-us/library/windows/desktop/aa365740(v=vs.85).aspx
         static struct Entry{
             string listpath;
-            WinHandle handle;
             WIN32_FIND_DATAW finddata;
             
             @property auto attributes() const{
                 return Attributes(this.finddata.dwFileAttributes);
             }
-            @property bool isfile() const{return this.attributes.isfile;}
-            @property bool isdir() const{return this.attributes.isdir;}
-            @property bool islink() const{return this.attributes.islink;}
+            @property bool isfile() const{
+                return this.attributes.isfile;
+            }
+            @property bool isdir() const{
+                return this.attributes.isdir;
+            }
+            @property bool islink() const{
+                return this.attributes.islink;
+            }
             
             @property auto creationtime() const{
                 return FILETIMEToSysTime(&this.finddata.ftCreationTime);
@@ -69,10 +94,10 @@ struct ListDirRange{
                 return cast(string) this.finddata.cFileName.until!false(0).utfencode.asarray;
             }
             @property string path() const{
-                return this.listpath ~ '\\' ~ this.name;
+                return this.listpath ~ "/" ~ this.name;
             }
             
-            @property bool isdots(){
+            @property bool isdots() const{
                 return (
                     this.finddata.cFileName[0 .. 2] == ".\0"w ||
                     this.finddata.cFileName[0 .. 3] == "..\0"w
@@ -97,7 +122,7 @@ struct ListDirRange{
             return this.isempty;
         }
         @property auto front() in{assert(!this.empty);} body{
-            return Entry(this.path, this.handle, this.finddata);
+            return Entry(this.path, this.finddata);
         }
         void popFront() in{assert(!this.empty);} body{
             auto result = FindNextFile(this.handle, &this.finddata);
@@ -113,29 +138,249 @@ struct ListDirRange{
             }
         }
     }else{
-        // TODO: Posix
+        import core.sys.posix.dirent;
+        import std.string : fromStringz;
+        
+        DIR* handle;
+        dirent* current;
+        
+        /// http://pubs.opengroup.org/onlinepubs/009695399/functions/readdir_r.html
+        static struct Entry{
+            string listpath;
+            dirent* entry;
+            string entryname;
+            
+            this(string listpath, dirent* entry){
+                this.listpath = listpath;
+                this.entry = entry;
+                // This memory is liable to be overwritten later, so dup it now.
+                static if(is(typeof({size_t x = entry.d_namlen;}))){
+                    // Optimization available on most posix platforms
+                    this.entryname = entry.d_name[0 .. entry.d_namlen].idup;
+                }else{
+                    this.entryname = fromStringz(entry.d_name);
+                }
+            }
+            
+            @property auto fileno() const{
+                return this.entry.d_fileno;
+            }
+            
+            @property bool isfile() const{
+                return this.entry.d_type == DT_REG;
+            }
+            @property bool isdir() const{
+                return this.entry.d_type == DT_DIR;
+            }
+            @property bool islink() const{
+                return this.entry.d_type == DT_LNK;
+            }
+            
+            @property string name() const{
+                return this.entryname;
+            }
+            @property string path() const{
+                return this.listpath ~ "/" ~ this.name;
+            }
+            @property bool isdots() const{
+                return this.entryname == "." || this.entryname == "..";
+            }
+        }
+        
+        this(string path){
+            this.path = path;
+            this.handle = opendir(path.tempCString);
+            if(this.handle is null){
+                throw new FileListDirException(path, new ErrnoException);
+            }else{
+                this.nextFront();
+            }
+        }
+        
+        @property bool empty() const{
+            return this.current is null;
+        }
+        @property auto front() in{assert(!this.empty);} body{
+            return Entry(this.path, this.current);
+        }
+        void popFront() in{assert(!this.empty);} body{
+            this.nextFront();
+        }
+        private void nextFront() in{assert(this.handle !is null);} body{
+            // According to readdir docs, setting errno and checking after the
+            // readdir call is the only way to reliably distinguish between eof
+            // and an an error having occurred, when readdir returns null.
+            errno = 0;
+            this.current = readdir(this.handle);
+            ErrnoException.check(
+                "Failure listing directory \"" ~ this.path ~ "\"."
+            );
+            if(this.current !is null){
+                if(this.skipdots && (
+                    this.current.d_name[0 .. 2] == ".\0" ||
+                    this.current.d_name[0 .. 3] == "..\0"
+                )){
+                    this.nextFront();
+                }
+            }else{
+                closedir(this.handle);
+            }
+        }
     }
 }
 
-struct TraverseDirRange{
-    /// If set, then the traversal will be depth-first. Otherwise, the
-    /// traversal with be breadth-first.
-    bool depth = true;
-    /// If set, only files in the same file system as the root path will be
-    /// reported.
-    bool mount = true;
+
+
+static enum TraverseDirMode{
+    DepthFirst, BreadthFirst
+}
+
+struct TraverseDirRange(TraverseDirMode mode = TraverseDirMode.DepthFirst){
+    import mach.collect : LinkedList;
+    
+    alias Mode = TraverseDirMode;
+    
+    /// The directory being traversed.
+    string path;
     /// If set, the traversal will follow symbolic links.
-    bool links = true;
+    bool traverselinks = true;
     
+    static if(mode is Mode.DepthFirst){
+        ListDirRange*[] dirstack;
+    }else{
+        LinkedList!(ListDirRange*)* dirstack;
+    }
     
+    static struct Entry{
+        string traversepath;
+        ListDirRange.Entry listentry;
+        alias listentry this;
+    }
+    
+    this(string path){
+        this.path = path;
+        this.initdirstack(path);
+    }
+    
+    /// Initialize the stack of directory list ranges.
+    private void initdirstack(in string path){
+        static if(mode is Mode.BreadthFirst){
+            this.dirstack = new LinkedList!(ListDirRange*)();
+        }
+        this.pushdir(path);
+    }
+    /// Append a new path to the stack of directories to list.
+    private void pushdir(in string path){
+        auto dir = new ListDirRange(path);
+        if(!dir.empty){
+            static if(mode is Mode.DepthFirst){
+                this.dirstack ~= dir;
+            }else{
+                this.dirstack.append(dir);
+            }
+        }
+    }
+    /// Remove the current path from the directory list stack.
+    /// When depth-first, this is the most recently pushed item.
+    /// When breadth-first, this is the oldest pushed item.
+    private void popdir() in{assert(!this.empty);} body{
+        static if(mode is Mode.DepthFirst){
+            this.dirstack.length -= 1;
+        }else{
+            this.dirstack.remove(this.dirstack.head);
+        }
+    }
+    /// Get the current directory being listed.
+    /// When depth-first, this is the most recently pushed item.
+    /// When breadth-first, this is the oldest pushed item.
+    private auto currentdir() in{assert(!this.empty);} body{
+        static if(mode is Mode.DepthFirst){
+            return this.dirstack[$-1];
+        }else{
+            return this.dirstack.front;
+        }
+    }
+    
+    /// Get whether all entries in the directory have been traversed.
+    @property bool empty() const{
+        static if(mode is Mode.DepthFirst){
+            return this.dirstack.length == 0;
+        }else{
+            return this.dirstack.empty;
+        }
+    }
+    /// Get the file path at the front of the range.
+    @property auto front() in{assert(!this.empty);} body{
+        return Entry(this.path, this.currentdir.front);
+    }
+    /// Pop the front file path and continue traversal of the directory tree.
+    void popFront() in{assert(!this.empty);} body{
+        auto addpath = "";
+        if(this.currentdir.front.isdir && (
+            this.traverselinks || !this.currentdir.front.islink
+        )){
+            addpath = this.currentdir.front.path;
+        }
+        this.currentdir.popFront();
+        if(this.currentdir.empty) this.popdir();
+        if(addpath != "") this.pushdir(addpath);
+    }
 }
 
 
 
-//import mach.io.log;
+version(unittest){
+    import mach.test;
+    import mach.range : filter, asarray;
+    struct Entry{
+        string path;
+        bool isdir = false;
+    }
+}
 unittest{
-    // TODO
-    //import mach.range;
-    //auto range = listdir("C:\\Program Files");
-    //range.head(30).each!(e => e.name.log);
+    tests("Directory listing", {
+        auto expected = [
+            Entry("./traverse/dir", true),
+            Entry("./traverse/a.txt"),
+            Entry("./traverse/b.txt"),
+            Entry("./traverse/c"),
+            Entry("./traverse/readme.txt"),
+            Entry("./traverse/unicodeツ.txt"),
+        ];
+        auto files = listdir("./traverse").asarray;
+        testeq(files.length, expected.length);
+        foreach(entry; expected){
+            auto file = files.filter!(f => f.path == entry.path).asarray;
+            testeq(file.length, 1);
+            testeq(file[0].isdir, entry.isdir);
+        }
+    });
+    tests("Directory traversal", {
+        auto expected = [
+            Entry("./traverse/dir", true),
+            Entry("./traverse/a.txt"),
+            Entry("./traverse/b.txt"),
+            Entry("./traverse/c"),
+            Entry("./traverse/readme.txt"),
+            Entry("./traverse/unicodeツ.txt"),
+            Entry("./traverse/dir/d.txt"),
+            Entry("./traverse/dir/nesteddir", true),
+            Entry("./traverse/dir/nesteddir/deep.txt", true),
+        ];
+        void TestTraverse(TraverseDirMode mode)(){
+            auto files = traversedir!mode("./traverse").asarray;
+            testeq(files.length, expected.length);
+            foreach(entry; expected){
+                auto file = files.filter!(f => f.path == entry.path).asarray;
+                testeq(file.length, 1);
+                testeq(file[0].isdir, entry.isdir);
+            }
+        }
+        tests("Depth-first", {
+            TestTraverse!(TraverseDirMode.DepthFirst)();
+        });
+        tests("Breadth-first", {
+            TestTraverse!(TraverseDirMode.BreadthFirst)();
+        });
+    });
 }
