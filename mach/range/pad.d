@@ -2,10 +2,59 @@ module mach.range.pad;
 
 private:
 
-import mach.traits : isBidirectionalRange, isRandomAccessRange, isSlicingRange;
-import mach.traits : isRange, ElementType, hasNumericLength, isIntegral;
+import mach.traits : isBidirectionalRange, isRandomAccessRange;
+import mach.traits : isRange, isSlicingRange, isSavingRange;
+import mach.traits : hasNumericLength, hasNumericRemaining, ElementType;
 import mach.range.asrange : asrange, validAsRange;
-import mach.range.meta : MetaRangeMixin;
+
+/++ Docs
+
+This module implements the `pad` function and its derivatives, which produce
+a range enumerating the contents of an input iterable, with additional elements
+added to its front or back.
+
+The `padfront` and `padback` functions can be used to perform the common
+string manipulation of adding elements to the front or back such that the
+total length of the output is at most or at minimum a given length.
+
++/
+
+unittest{ /// Example
+    import mach.range.compare : equals;
+    assert("123".padfront('0', 6).equals("000123"));
+    assert("345".padback('0', 6).equals("345000"));
+}
+
+/++ Docs
+
+Since these functions generate lazy sequences, functions like string
+concatenation will require using a function like `asarray` in order to
+create an in-memory array from the padded output.
+
++/
+
+unittest{ /// Example
+    import mach.range.asarray : asarray;
+    auto text = "hello" ~ "world".padfront('_', 7).asarray;
+    assert(text == "hello__world");
+}
+
+/++ Docs
+
+The `pad` function provides several overloads for producing an output
+which enumerates the input with a given number of elements appended or
+prepended to the input.
+
++/
+
+unittest{ /// Example
+    // Pad with two underscores at the front and the back.
+    assert("hi".pad('_', 2).equals("__hi__"));
+    // Pad with one underscore at the front and three at the back.
+    assert("yo".pad('_', 1, 3).equals("_yo___"));
+    // Pad with two underscores at the front and three bangs at the back.
+    assert("bro".pad('_', 2, '!', 3).equals("__bro!!!"));
+}
 
 public:
 
@@ -22,7 +71,7 @@ enum canPad(Iter, Element) = (
 );
 
 enum canPadLength(Iter) = (
-    validAsRange!Iter && hasNumericLength!Iter
+    validAsRange!Iter && (hasNumericRemaining!Iter || hasNumericLength!Iter)
 );
 
 enum canPadLength(Iter, Element) = (
@@ -37,108 +86,129 @@ enum canPadRange(Range) = (
 
 
 
-/// Pad a range on both the left and right sides by a specified amount.
+/// Pad both the front and back of an input iterable by the specified amount,
+/// using the same element for the front and back padding.
 auto pad(Iter, Element)(
-    auto ref Iter iter, auto ref Element padding, size_t leftright
+    auto ref Iter iter, auto ref Element padding, in size_t amount
 ) if(canPad!(Iter, Element)){
-    return pad(iter, padding, leftright, leftright);
+    return pad(iter, padding, amount, amount);
 }
+
 /// ditto
 auto pad(Iter)(
-    auto ref Iter iter, size_t leftright
+    auto ref Iter iter, in size_t amount
 ) if(canPad!(Iter)){
-    return pad(iter, ElementType!Iter.init, leftright);
+    return pad(iter, ElementType!Iter.init, amount);
 }
 
 
 
-/// Pad a range on both the left and right sides by specified amounts.
+/// Pad the front and back of an input iterable by the specified amounts,
+/// using the same element for the front and back padding.
 auto pad(Iter, Element)(
-    auto ref Iter iter, auto ref Element padding, size_t left, size_t right
+    auto ref Iter iter, auto ref Element padding, in size_t front, in size_t back
 ) if(canPad!(Iter, Element)){
-    return pad(iter, padding, padding, left, right);
+    return pad(iter, padding, front, padding, back);
 }
+
 /// ditto
 auto pad(Iter)(
-    auto ref Iter iter, size_t left, size_t right
+    auto ref Iter iter, size_t front, size_t back
 ) if(canPad!(Iter)){
-    return pad(iter, ElementType!Iter.init, left, right);
+    return pad(iter, ElementType!Iter.init, front, back);
 }
 
 
 
-/// Pad a range on both the left and right sides by specified amounts.
+/// Pad the front and back of an input iterable by the specified amounts,
+/// using differing elements for the front and back padding.
 auto pad(Iter, Element)(
-    auto ref Iter iter, auto ref Element paddingleft, auto ref Element paddingright, size_t left, size_t right
+    auto ref Iter iter,
+    auto ref Element paddingfront, in size_t front,
+    auto ref Element paddingback, in size_t back
 ) if(canPad!(Iter, Element)){
     auto range = iter.asrange;
     return PadRange!(typeof(range))(
-        range, paddingleft, paddingright, left, right
+        range, paddingfront, paddingback, front, back
     );
 }
 
 
 
-/// Pad a range on the left such that it is at least as long as the given length.
+/// Pad the front of the input such that it is at least as long as the given length.
 auto padfront(Iter, Element)(
-    auto ref Iter iter, auto ref Element padding, size_t length
+    auto ref Iter iter, auto ref Element padding, in size_t length
 ) if(canPadLength!(Iter, Element)){
-    auto left = length <= iter.length ? 0 : length - iter.length;
-    return padfrontcount(iter, padding, left);
+    static if(hasNumericRemaining!Iter){
+        auto front = length <= iter.remaining ? 0 : length - iter.remaining;
+    }else{
+        auto front = length <= iter.length ? 0 : length - iter.length;
+    }
+    return padfrontcount(iter, padding, front);
 }
+
 /// ditto
 auto padfront(Iter)(
-    auto ref Iter iter, size_t length
+    auto ref Iter iter, in size_t length
 ) if(canPadLength!(Iter)){
     return padfront(iter, ElementType!Iter.init, length);
 }
 
 
 
-/// Pad a range on the right such that it is at least as long as the given length.
+/// Pad the back of the input such that it is at least as long as the given length.
 auto padback(Iter, Element)(
-    auto ref Iter iter, auto ref Element padding, size_t length
+    auto ref Iter iter, auto ref Element padding, in size_t length
 ) if(canPadLength!(Iter, Element)){
-    auto right = length <= iter.length ? 0 : length - iter.length;
-    return padbackcount(iter, padding, right);
+    static if(hasNumericRemaining!Iter){
+        auto back = length <= iter.remaining ? 0 : length - iter.remaining;
+    }else{
+        auto back = length <= iter.length ? 0 : length - iter.length;
+    }
+    return padbackcount(iter, padding, back);
 }
+
 /// ditto
 auto padback(Iter)(
-    auto ref Iter iter, size_t length
+    auto ref Iter iter, in size_t length
 ) if(canPadLength!(Iter)){
     return padback(iter, ElementType!Iter.init, length);
 }
 
 
 
-/// Pad a range on the left by the specified amount.
+/// Pad the front of the input with a specified number of occurrences of the
+/// provided element.
 auto padfrontcount(Iter, Element)(
-    auto ref Iter iter, auto ref Element padding, size_t left
+    auto ref Iter iter, auto ref Element padding, in size_t front
 ) if(canPad!(Iter, Element)){
     auto range = iter.asrange;
-    return PadRange!(typeof(range))(range, padding, left, 0);
+    return PadRange!(typeof(range))(range, padding, front, 0);
 }
+
 /// ditto
 auto padfrontcount(Iter)(
-    auto ref Iter iter, size_t left
+    auto ref Iter iter, in size_t front
 ) if(canPadLength!(Iter)){
-    return padfrontcount(iter, ElementType!Iter.init, left);
+    return padfrontcount(iter, ElementType!Iter.init, front);
 }
 
 
 
-/// Pad a range on the right by the specified amount.
+/// Pad the back of the input with a specified number of occurrences of the
+/// provided element.
 auto padbackcount(Iter, Element)(
-    auto ref Iter iter, auto ref Element padding, size_t right
+    auto ref Iter iter, auto ref Element padding, in size_t back
 ) if(canPad!(Iter, Element)){
     auto range = iter.asrange;
-    return PadRange!(typeof(range))(range, padding, 0, right);
+    return PadRange!(typeof(range))(range, padding, 0, back);
 }
+
 /// ditto
 auto padbackcount(Iter)(
-    auto ref Iter iter, size_t right
+    auto ref Iter iter, in size_t back
 ) if(canPadLength!(Iter)){
-    return padbackcount(iter, ElementType!Iter.init, right);
+    return padbackcount(iter, ElementType!Iter.init, back);
 }
 
 
@@ -146,17 +216,20 @@ auto padbackcount(Iter)(
 struct PadRange(Range) if(canPadRange!(Range)){
     alias Element = ElementType!Range;
     
-    mixin MetaRangeMixin!(
-        Range, `source`, `Save`
-    );
-    
-    Range source; /// Range to pad
-    Element frontpadding; /// Element to use as padding to the left
-    Element backpadding; /// Element to use as padding to the right
-    size_t frontcount; /// Number of padding elements enumerated so far in front
-    size_t backcount; /// Number of padding elements enumerated so far in back
-    size_t frontmax; /// Number of padding elements to enumerate in total to the range's left
-    size_t backmax; /// Number of padding elements to enumerate in total to the range's right
+    /// Range to pad.
+    Range source;
+    /// Element to use as padding at the front.
+    Element frontpadding;
+    /// Element to use as padding at the back.
+    Element backpadding;
+    /// Number of padding elements enumerated so far in front.
+    size_t frontcount;
+    /// Number of padding elements enumerated so far in back.
+    size_t backcount;
+    /// Number of padding elements to enumerate in total at the front.
+    size_t frontmax;
+    /// Number of padding elements to enumerate in total at the back.
+    size_t backmax;
     
     this(Range source, Element padding, size_t frontmax, size_t backmax){
         this(source, padding, padding, frontmax, backmax);
@@ -183,7 +256,7 @@ struct PadRange(Range) if(canPadRange!(Range)){
         );
     }
 
-    @property auto ref front(){
+    @property auto front(){
         if(this.frontcount < this.frontmax){
             return this.frontpadding;
         }else if(!this.source.empty){
@@ -202,7 +275,7 @@ struct PadRange(Range) if(canPadRange!(Range)){
         }
     }
     static if(isBidirectionalRange!Range){
-        @property auto ref back(){
+        @property auto back(){
             if(this.backcount < this.backmax){
                 return this.backpadding;
             }else if(!this.source.empty){
@@ -222,9 +295,31 @@ struct PadRange(Range) if(canPadRange!(Range)){
         }
     }
     
+    static if(isSavingRange!Range){
+        @property typeof(this) save(){
+            return typeof(this)(
+                this.source.save, this.frontpadding, this.backpadding,
+                this.frontmax, this.backmax, this.frontcount, this.backcount
+            );
+        }
+    }
+    
+    static if(hasNumericRemaining!Range){
+        @property auto remaining(){
+            return (
+                (this.frontmax - this.frontcount) +
+                (this.backmax - this.backcount) +
+                cast(size_t) this.source.remaining
+            );
+        }
+    }
+    
     static if(hasNumericLength!Range){
         @property auto length(){
-            return this.frontmax + this.source.length + this.backmax;
+            return (
+                this.frontmax + this.backmax +
+                cast(size_t) this.source.length
+            );
         }
         alias opDollar = length;
     
@@ -287,6 +382,7 @@ struct PadRange(Range) if(canPadRange!(Range)){
 version(unittest){
     private:
     import mach.test;
+    import mach.range.asrange : asrange;
     import mach.range.compare : equals;
 }
 unittest{
@@ -315,7 +411,7 @@ unittest{
             });
         });
         tests("Both", {
-            auto range = input.pad('F', 'B', 2, 3);
+            auto range = input.pad('F', 2, 'B', 3);
             testeq(range.length, 7);
             test!equals(range, "FFhiBBB");
             tests("Random access", {
@@ -344,6 +440,19 @@ unittest{
                 testeq(range.front, 'F');
                 testeq(copy.front, 'h');
             });
+        });
+        tests("Pad partially-consumed range", {
+            // TODO: I'm not really sure whether this should be desireable
+            // behavior. The notion of left-padding an already partially-
+            // consumed range doesn't make much sense, does it?
+            // Attempting to do so should probably produce an error but, at
+            // least for now, I'm just going to test for consistent behavior.
+            auto input = "abcde".asrange;
+            input.popFront();
+            auto padded = input.pad('_', 2, 2);
+            testeq(padded.length, input.length + 4);
+            testeq(padded.remaining, input.remaining + 4);
+            test!equals(padded, "__bcde__");
         });
     });
 }
