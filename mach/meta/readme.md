@@ -141,8 +141,8 @@ static assert(is(Last!(isNum, void, int, long) == long));
 ``` D
 enum isNum(T) = is(T == int) || is(T == long);
 static assert(!is(typeof({
-// Fails to compile because no arguments satisfy the predicate.
-alias T = First!(isNum, void, void, void);
+    // Fails to compile because no arguments satisfy the predicate.
+    alias T = First!(isNum, void, void, void);
 })));
 ```
 
@@ -167,59 +167,14 @@ for template arguments.
 The first template argument to `Map` represents a transformation function, which
 is applied to the sequence represented by the subsequent template arguments.
 
-+/
-
-unittest{ /// Example
+``` D
 enum AddOne(alias n) = n + 1;
 alias added = Map!(AddOne, 3, 2, 1);
 static assert(added.length == 3);
 static assert(added[0] == 4);
 static assert(added[1] == 3);
 static assert(added[2] == 2);
-}
-
-public:
-
-
-
-template Map(alias transform, T...){
-static if(T.length == 0){
-alias Map = Aliases!();
-}else static if(T.length == 1){
-alias Map = Aliases!(transform!(T[0]));
-}else{
-alias Map = Aliases!(
-Map!(transform, T[0]),
-Map!(transform, T[1 .. $])
-);
-}
-}
-
-
-
-version(unittest){
-private:
-import mach.traits.primitives : isIntegral;
-template Embiggen(T){
-static if(is(T == int)){
-alias Embiggen = long;
-}else static if(is(T == float)){
-alias Embiggen = double;
-}else{
-alias Embiggen = T;
-}
-}
-}
-unittest{
-static assert(is(
-Map!(Embiggen, int, float, double) == Aliases!(long, double, double)
-));
-alias integrals = Map!(isIntegral, int, float, double);
-static assert(integrals.length == 3);
-static assert(integrals[0] == true);
-static assert(integrals[1] == false);
-static assert(integrals[2] == false);
-}
+```
 
 
 ## mach.meta.numericseq
@@ -307,8 +262,8 @@ static assert(Reduce!(max, 0, 1, 7, 3) == 7);
 
 ``` D
 template larger(a, b){
-static if(a.sizeof > b.sizeof) alias larger = a;
-else alias larger = b;
+    static if(a.sizeof > b.sizeof) alias larger = a;
+    else alias larger = b;
 }
 static assert(is(Reduce!(larger, short, byte, long, int) == long));
 ```
@@ -360,8 +315,8 @@ static assert(is(Select!(2, short, int, long) == long));
 
 ``` D
 static assert(!is(typeof(
-// Index out of bounds produces a compile error.
-Select!(3, short, int, long))
+    // Index out of bounds produces a compile error.
+    Select!(3, short, int, long))
 ));
 ```
 
@@ -491,7 +446,7 @@ assert(varselect!2(0, 1, 2) == 2);
 
 ``` D
 static assert(!is(typeof({
-varselect!10(0, 1, 2); // Index out of bounds
+    varselect!10(0, 1, 2); // Index out of bounds
 })));
 ```
 

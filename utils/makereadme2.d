@@ -4,7 +4,7 @@
 
 private:
 
-import std.uni;
+import mach.text.ascii;
 import mach.io;
 import mach.range;
 import mach.text.utf;
@@ -59,7 +59,7 @@ ParseResult parsemodule(in string path, in dstring content, ref dstring[][dstrin
     uint countlines = 0;
     auto lines = content.split("\n");
     dstring stripws(dstring str){
-        return cast(dstring) str.strip(' ').asarray;
+        return cast(dstring) str.strip!iswhitespace.asarray;
     }
     dstring nextline(){
         return stripws(cast(dstring) lines.next.asarray);
@@ -90,13 +90,19 @@ ParseResult parsemodule(in string path, in dstring content, ref dstring[][dstrin
             dstring[] codelines;
             uint braces = 1;
             uint commonws = 0;
+            bool first = true;
             while(!lines.empty){
-                auto codeline = nextline();
+                auto codeline = cast(dstring) lines.next.asarray;
                 braces += codeline.count('{');
                 braces -= codeline.count('}');
                 if(braces == 0) break;
                 uint ws = codeline.until!(ch => ch != ' ').walklength;
-                commonws = ws < commonws ? ws : commonws;
+                if(first){
+                    commonws = ws;
+                    first = false;
+                }else{
+                    commonws = ws < commonws ? ws : commonws;
+                }
                 codelines ~= codeline;
                 countlines++;
             }
