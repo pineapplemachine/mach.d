@@ -20,7 +20,7 @@ unittest{ /// Example
     static assert(zero == 0);
 }
 
-/++ md
+/++ Docs: mach.meta.aliases
 
 The `Aliases` template can be used to produce an alias for a sequence of values.
 

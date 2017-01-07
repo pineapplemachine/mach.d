@@ -56,6 +56,9 @@ alias zero = Alias!0;
 static assert(zero == 0);
 ```
 
+
+The `Aliases` template can be used to produce an alias for a sequence of values.
+
 ``` D
 alias seq = Aliases!(0, 1, void);
 static assert(seq[0] == 0);
