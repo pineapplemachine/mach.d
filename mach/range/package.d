@@ -9,6 +9,7 @@ public:
 import mach.range.asarray : asarray;
 import mach.range.asrange : asrange, asindexrange;
 import mach.range.associate : associate, aagroup, aadistribution;
+import mach.range.asstaticarray : asstaticarray;
 import mach.range.cache : cache;
 import mach.range.chain : chain, chainiter, chainiters;
 import mach.range.chunk : chunk;
