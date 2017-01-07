@@ -4,6 +4,27 @@ private:
 
 import mach.meta.aliases : Alias;
 
+/++ Docs: mach.meta.select
+
+This module provides a `Select` template, which aliases itself to the argument
+at an index. The first argument represents the zero-based index to select from
+in the sequence represented by the subsequent arguments.
+
++/
+
+unittest{ /// Example
+    static assert(is(Select!(0, short, int, long) == short));
+    static assert(is(Select!(1, short, int, long) == int));
+    static assert(is(Select!(2, short, int, long) == long));
+}
+
+unittest{ /// Example
+    static assert(!is(typeof(
+        // Index out of bounds produces a compile error.
+        Select!(3, short, int, long))
+    ));
+}
+
 public:
 
 

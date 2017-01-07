@@ -2,7 +2,12 @@ module mach.meta;
 
 private:
 
-import mach.meta.readme;
+/++ Docs: mach.meta
+
+This package primarily contains templates useful for doing operations at
+compile time.
+
++/
 
 public:
 

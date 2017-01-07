@@ -4,6 +4,26 @@ private:
 
 import mach.meta.aliases : Aliases;
 
+/++ Docs: mach.meta.filter
+
+Given a sequence of values, `Filter` generates a new sequence containing
+only those values which meet a predicate.
+
+The first template argument must be a predicate,
+and subsequent arguments constitute the sequence to be filtered.
+
++/
+
+unittest{ /// Example
+    enum bool NotVoid(T) = !is(T == void);
+    static assert(is(Filter!(NotVoid, void, int, void, long) == Aliases!(int, long)));
+}
+
+unittest{ /// Example
+    enum bool isInt(T) = is(T == int);
+    static assert(is(Filter!(isInt, double, float, long) == Aliases!()));
+}
+
 public:
 
 

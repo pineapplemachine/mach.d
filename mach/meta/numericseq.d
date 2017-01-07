@@ -4,10 +4,38 @@ private:
 
 import mach.meta.aliases : Aliases;
 
+/++ Docs: mach.meta.numericseq
+
+The `NumericSequence` template accepts a `low` argument, a `high` argument,
+and an optional `increment` argument. `low` must be less than or equal to `high`,
+and `increment` must be greater than zero. A sequence is produced by adding
+`increment` to `low` in steps until `high` is met or exceeded.
+
++/
+
+unittest{ /// Example
+    // Increment by 1 from 0 until 3
+    alias seq = NumericSequence!(0, 3);
+    static assert(seq.length == 3);
+    static assert(seq[0] == 0);
+    static assert(seq[1] == 1);
+    static assert(seq[2] == 2);
+}
+
+unittest{ /// Example
+    // Increment by 2 from 0 until 6
+    alias seq = NumericSequence!(0, 6, 2);
+    static assert(seq.length == 3);
+    static assert(seq[0] == 0);
+    static assert(seq[1] == 2);
+    static assert(seq[2] == 4);
+}
+
 public:
 
 
 
+/// Produces a sequence of numbers at compile time.
 template NumericSequence(alias low, alias high, alias increment = 1) if(
     high >= low && increment > 0
 ){

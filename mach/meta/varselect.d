@@ -2,7 +2,29 @@ module mach.meta.varselect;
 
 private:
 
-//
+/++ Docs: mach.meta.varselect
+
+The `varselect` function accepts a number as a template argument and at least
+one runtime argument.
+It returns the argument at the zero-based index indicated by its template argument.
+Because the arguments are lazily-evaluated, only the selected argument will
+actually be evaluated.
+
+The function will not compile if the index given is outside the bounds of the
+argument list.
+
++/
+
+unittest{ /// Example
+    assert(varselect!0(0, 1, 2) == 0);
+    assert(varselect!2(0, 1, 2) == 2);
+}
+
+unittest{ /// Example
+    static assert(!is(typeof({
+        varselect!10(0, 1, 2); // Index out of bounds
+    })));
+}
 
 public:
 

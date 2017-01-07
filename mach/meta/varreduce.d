@@ -2,7 +2,37 @@ module mach.meta.varreduce;
 
 private:
 
-//
+/++ Docs: mach.meta.varreduce
+
+Provides an implementation of the
+[reduce higher-order function](https://en.wikipedia.org/wiki/Fold_(higher-order_function)),
+operating upon a sequence of variadic arguments.
+
+The reduction operation can be given a seed by prepending the seed as an
+additional argument.
+
++/
+
+unittest{ /// Example
+    alias summod2 = (a, b) => (a + (b % 2));
+    assert(varreduce!summod2(0, 1, 2, 3) == 2);
+}
+
+/++ Docs: mach.meta.varreduce
+
+The module also provides some common abstractions of the reduce function.
+
++/
+
+unittest{ /// Example
+    assert(varmin(1, 2, 3) == 1); // Minimum
+    assert(varmax(1, 2, 3) == 3); // Maximum
+}
+
+unittest{ /// Example
+    assert(varsum(1, 2, 3, 4) == 10); // Sum
+    assert(varproduct(1, 2, 3, 4) == 24); // Product
+}
 
 public:
 
@@ -48,8 +78,6 @@ alias VarReduceMin = (a, b) => (a < b ? a : b);
 alias VarReduceMax = (a, b) => (a > b ? a : b);
 alias VarReduceSum = (a, b) => (a + b);
 alias VarReduceProduct = (a, b) => (a * b);
-alias VarReduceAll = (a, b) => (a && b);
-alias VarReduceAny = (a, b) => (a || b);
 alias VarReduceCount = (a, b) => (a + (b ? 1 : 0));
 
 /// Get the least value of the passed arguments.

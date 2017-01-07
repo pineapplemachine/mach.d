@@ -4,6 +4,25 @@ private:
 
 import mach.meta.aliases : Aliases;
 
+/++ Docs: mach.meta.map
+
+Implements the
+[map higher-order function](https://en.wikipedia.org/wiki/Map_(higher-order_function))
+for template arguments.
+The first template argument to `Map` represents a transformation function, which
+is applied to the sequence represented by the subsequent template arguments.
+
++/
+
+unittest{ /// Example
+    enum AddOne(alias n) = n + 1;
+    alias added = Map!(AddOne, 3, 2, 1);
+    static assert(added.length == 3);
+    static assert(added[0] == 4);
+    static assert(added[1] == 3);
+    static assert(added[2] == 2);
+}
+
 public:
 
 

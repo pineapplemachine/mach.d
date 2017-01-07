@@ -4,6 +4,34 @@ private:
 
 import mach.types : tuple;
 
+/++ Docs: mach.meta.varmap
+
+Performs the
+[map higher-order function](https://en.wikipedia.org/wiki/Map_(higher-order_function))
+for inputs passed as a sequence of variadic arguments.
+
+Given a sequence of variadic arguments, `varmap` returns a tuple containing the
+result of each argument being transformed by a passed function.
+
++/
+
+unittest{ /// Example
+    assert(varmap!(e => e + 1)(0, 1, 2) == tuple(1, 2, 3));
+}
+
+/++ Docs: mach.meta.varmap
+
+The module also provides a `varmapi` function, which passes the zero-based
+index of the argument being mapped to the transformation function,
+in addition to the element being transformed.
+
++/
+
+unittest{ /// Example
+    alias func = (index, element) => (index + element);
+    assert(varmapi!func(1, 1, 1) == tuple(1, 2, 3));
+}
+
 public:
 
 

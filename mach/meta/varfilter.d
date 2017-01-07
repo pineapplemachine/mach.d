@@ -4,6 +4,26 @@ private:
 
 import mach.types : tuple;
 
+/++ Docs: mach.meta.varfilter
+
+Provides an implementation of the
+[filter higher-order function](https://en.wikipedia.org/wiki/Filter_(higher-order_function)),
+operating upon a sequence of variadic arguments.
+
+Given a sequence of variadic arguments, `varfilter` will return a tuple
+containing only those arguments whose types meet a template predicate.
+
++/
+
+unittest{ /// Example
+    enum NotInt(T) = !is(T == int);
+    auto values = varfilter!NotInt(byte(1), short(2), int(3), "hi");
+    static assert(values.length == 3);
+    assert(values[0] == 1);
+    assert(values[1] == 2);
+    assert(values[2] == "hi");
+}
+
 public:
 
 

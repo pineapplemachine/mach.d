@@ -4,6 +4,43 @@ private:
 
 import mach.types : Types;
 
+/++ Docs: mach.meta.adjoin
+
+The `Adjoin` template generates a function from several input functions,
+where the return value of the generated function is a tuple containing each
+value returned by the adjoined functions.
+
++/
+
+unittest{ /// Example
+    alias fn = Adjoin!(e => e - 1, e => e + 1);
+    auto result = fn(0);
+    assert(result[0] == -1);
+    assert(result[1] == 1);
+}
+
+/++ Docs: mach.meta.adjoin
+
+A function generated using Adjoin will return a tuple unconditionally, even
+when adjoining only one function.
+
+The module also defines an `AdjoinFlat` template, which produces the same
+behavior as `Adjoin` except for the case where its input is a single function.
+In that case, the template is aliased to that function and does not wrap the
+output in a tuple, as `Adjoin` would.
+
++/
+
+unittest{ /// Example
+    alias fn = AdjoinFlat!(e => e - 1);
+    assert(fn(0) == -1); // Output is the same as the passed function
+}
+
+unittest{ /// Example
+    alias fn = AdjoinFlat!(e => e - 1, e => e + 1);
+    assert(fn(0).length == 2); // Output is a tuple
+}
+
 public:
 
 

@@ -4,6 +4,35 @@ private:
 
 import mach.meta.aliases;
 
+/++ Docs: mach.meta.reduce
+
+Provides an implementation of the
+[reduce higher-order function](https://en.wikipedia.org/wiki/Fold_(higher-order_function)),
+operating upon a sequence of template arguments.
+
+The first argument of the `Reduce` template is an accumulation function,
+and it is applied sequentially to the following template arguments.
+
++/
+
+unittest{ /// Example
+    enum sum(alias a, alias b) = a + b;
+    static assert(Reduce!(sum, 1, 2, 3, 4) == 10);
+}
+
+unittest{ /// Example
+    enum max(alias a, alias b) = a > b ? a : b;
+    static assert(Reduce!(max, 0, 1, 7, 3) == 7);
+}
+
+unittest{ /// Example
+    template larger(a, b){
+        static if(a.sizeof > b.sizeof) alias larger = a;
+        else alias larger = b;
+    }
+    static assert(is(Reduce!(larger, short, byte, long, int) == long));
+}
+
 public:
 
 

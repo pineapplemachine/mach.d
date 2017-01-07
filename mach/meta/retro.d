@@ -4,6 +4,21 @@ private:
 
 import mach.meta.aliases : Aliases;
 
+/++ Docs: mach.meta.retro
+
+Given a sequence of template arguments, the `Retro` template will generate a
+new sequence which is the original sequence in reverse order.
+
++/
+
+unittest{ /// Example
+    static assert(is(Retro!(byte, short, int) == Aliases!(int, short, byte)));
+}
+
+unittest{ /// Example
+    static assert(is(Retro!(int) == Aliases!(int)));
+}
+
 public:
 
 
