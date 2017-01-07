@@ -2,7 +2,6 @@ module mach.error.enforce.errno;
 
 private:
 
-import core.stdc.errno : errno;
 import core.stdc.string : strlen;
 import mach.text : text;
 
@@ -10,6 +9,7 @@ public:
 
 
 
+import core.stdc.errno : errno;
 alias Errno = typeof(errno());
 
 
@@ -41,6 +41,20 @@ class ErrnoException: Exception{
         }else{
             return text("Error code ", error, ": ", errstring);
         }
+    }
+    
+    static auto enforce(T)(
+        T condition, string message = null,
+        size_t line = __LINE__, string file = __FILE__
+    ){
+        if(!condition) throw new ErrnoException(message, line, file);
+        return condition;
+    }
+    
+    static auto check(
+        string message = null, size_t line = __LINE__, string file = __FILE__
+    ){
+        typeof(this).enforce(errno == 0, message, line, file);
     }
 }
 
