@@ -2,7 +2,7 @@ module mach.types.tuple.tuple;
 
 private:
 
-import mach.meta : Any, All, Contains, IndexOf;
+import mach.meta : Any, All, Contains;
 import mach.types.types : Types, isTypes;
 import mach.traits : AsUnaryOp, isUnaryOpPlural, AsBinaryOp, isBinaryOpPlural;
 import mach.traits : canCastPlural, canHash, hash, isTemplateOf, isCallable;
