@@ -129,7 +129,7 @@ struct NgramRange(Range, size_t size) if(size > 0 && canNgramRange!Range){
     static if(hasNumericRemaining!Range){
         /// Get the number of elements remaining in the range.
         @property auto remaining(){
-            return cast(size_t) this.source.remaining + 2 - size;
+            return cast(size_t) this.source.remaining;
         }
     }
     
@@ -231,6 +231,7 @@ unittest{
         tests("Trigrams", {
             auto range = "hello".ngrams!3;
             testeq(range.length, 3);
+            testeq(range.remaining, 3);
             test(range.equals(["hel", "ell", "llo"]));
             testeq(range[1], "ell");
         });
