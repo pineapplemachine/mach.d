@@ -2,11 +2,77 @@ module mach.range.reduce;
 
 private:
 
-import mach.traits : isIterable, isFiniteIterable, ElementType;
-import mach.traits : isRange, isSavingRange, hasNumericLength, Unqual;
+import mach.types : Rebindable, rebindable;
+import mach.traits : ElementType, hasNumericLength, hasNumericRemaining;
+import mach.traits : isIterable, isFiniteIterable, isRange, isSavingRange;
 import mach.range.asrange : asrange, validAsRange;
 
+/++ Docs
+
+This module implements the
+[reduce higher-order function](https://en.wikipedia.org/wiki/Fold_(higher-order_function))
+for iterable inputs.
+
+The `reduce` function accepts an accumulation function as its template argument,
+and applies that function sequentially to the elements of an input iterable.
+The function optionally accepts a seed, which sets the initial value of the
+accumulator.
+This module implements both `lazyreduce` and `eagerreduce`; the `reduce` symbol
+aliases `eagerreduce` because it is by far the more common application of the
+function.
+
+An accumulation function must accept two arguments. The first is an accumulator,
+which is either explicitly seeded or taken from the first element of the input.
+The first is an element from the input. The function must return a new value
+for the accumulator. The `reduce` function operates by repeatedly applying this
+function, sequentially updating the accumulator value with the elements of the
+input.
+
+For example, a `sum` function can be implemented using `reduce`.
+
++/
+
+unittest{ /// Example
+    alias sum = (acc, next) => (acc + next);
+    assert([1, 2, 3, 4].reduce!sum(10) == 20); // With seed
+}
+
+unittest{ /// Example
+    alias sum = (acc, next) => (acc + next);
+    assert([5, 6, 7].reduce!sum == 18); // No seed
+}
+
+/++ Docs
+
+Both lazy and eager `reduce` functions will produce an error if the function
+is not seeded with an initial value, and the input is empty.
+In this case a `ReduceEmptyError` is thrown, except for code compiled in
+release mode, for which this check is ommitted.
+
++/
+
+unittest{ /// Example
+    import mach.error.mustthrow : mustthrow;
+    alias sum = (acc, next) => (acc + next);
+    mustthrow!ReduceEmptyError({
+        new int[0].reduceeager!sum;
+    });
+    mustthrow!ReduceEmptyError({
+        new int[0].reducelazy!sum;
+    });
+}
+
 public:
+
+
+
+/// Exception thrown when attempting to reduce an empty input without
+/// providing a seed.
+class ReduceEmptyError: Error{
+    this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super("Cannot reduce empty input without an initial value.", file, line, next);
+    }
+}
 
 
 
@@ -45,44 +111,57 @@ template validReduceFunction(Iter, Acc, alias func){
 
 alias reduce = reduceeager;
 
+/// Eagerly apply a reduction function to some input.
 auto reduceeager(alias func, Iter)(auto ref Iter iter) if(canReduceEager!(Iter, func)){
     return reduceeager!(func, ElementType!Iter, Iter)(iter);
 }
 
+/// ditto
+auto reduceeager(alias func, Acc, Iter)(auto ref Iter iter) if(
+    canReduceEager!(Iter, Acc, func)
+){
+    bool first = true;
+    Rebindable!Acc acc;
+    foreach(element; iter){
+        if(first){
+            acc = cast(Acc) element;
+            first = false;
+        }else{
+            acc = func(cast(Acc) acc, element);
+        }
+    }
+    version(assert){
+        static const error = new ReduceEmptyError();
+        if(first) throw error;
+    }
+    return cast(Acc) acc;
+}
+
+/// Eagerly apply a reduction function to some input, given an initial value.
 auto reduceeager(alias func, Acc, Iter)(auto ref Iter iter, auto ref Acc initial) if(
     canReduceEager!(Iter, Acc, func)
 ){
-    Acc* acc = &initial;
+    Rebindable!Acc acc = rebindable(initial);
     foreach(element; iter){
-        Acc result = func(*acc, element);
-        acc = &result;
+        acc = func(cast(Acc) acc, element);
     }
-    return *acc;
-}
-
-auto reduceeager(alias func, Acc, Iter)(auto ref Iter iter) if(canReduceEager!(Iter, Acc, func)){
-    bool first = true;
-    Acc* acc;
-    foreach(element; iter){
-        if(first){
-            auto firstelem = cast(Acc) element;
-            acc = &firstelem;
-            first = false;
-        }else{
-            Acc result = func(*acc, element);
-            acc = &result;
-        }
-    }
-    assert(!first, "Cannot reduce empty range without an initial value.");
-    return *acc;
+    return cast(Acc) acc;
 }
 
 
 
+/// Lazily apply a reduction function to some input.
 auto reducelazy(alias func, Iter)(auto ref Iter iter) if(canReduceLazy!(Iter, func)){
     return reducelazy!(func, ElementType!Iter, Iter)(iter);
 }
 
+/// ditto
+auto reducelazy(alias func, Acc, Iter)(auto ref Iter iter) if(canReduceLazy!(Iter, Acc, func)){
+    auto range = iter.asrange;
+    return ReduceRange!(typeof(range), Acc, func, false)(range);
+}
+
+/// Lazily apply a reduction function to some input, given an initial value.
 auto reducelazy(alias func, Acc, Iter)(auto ref Iter iter, Acc initial) if(
     canReduceLazy!(Iter, Acc, func)
 ){
@@ -90,76 +169,51 @@ auto reducelazy(alias func, Acc, Iter)(auto ref Iter iter, Acc initial) if(
     return ReduceRange!(typeof(range), Acc, func, true)(range, initial);
 }
 
-auto reducelazy(alias func, Acc, Iter)(auto ref Iter iter) if(canReduceLazy!(Iter, Acc, func)){
-    auto range = iter.asrange;
-    return ReduceRange!(typeof(range), Acc, func, false)(range);
-}
 
 
-
+/// Range for lazily evaluating a reduce function.
 struct ReduceRange(Range, Acc, alias func, bool seeded = true) if(
     canReduceLazyRange!(Range, Acc, func) &&
     (seeded || is(typeof({Acc x = ElementType!Range.init;})))
 ){
-    import core.stdc.stdlib : malloc, free;
-    import core.stdc.string : memcpy;
+    alias Accumulator = Rebindable!Acc;
     
     Range source;
-    Acc* valueptr;
-    bool empty;
+    Accumulator accumulator;
+    bool isempty;
     
-    this(Range source, Acc value, bool empty = false){
+    this(Range source, Acc acc, bool isempty = false){
         this.source = source;
-        this.value = value;
-        this.empty = empty;
-    }
-    this(Range source, Acc* valueptr, bool empty = false){
-        this.source = source;
-        this.valueptr = valueptr;
-        this.empty = empty;
+        this.accumulator = acc;
+        this.isempty = isempty;
     }
     
-    // Makes unittests fail with a "pointer being freed was not allocated" error?
-    // TODO: I really need to just use some kind of Rebindable template
-    //~this(){
-    //    if(this.valueptr){
-    //        free(this.valueptr);
-    //        this.valueptr = null;
-    //    }
-    //}
-    
-    @property Acc value() const{
-        return *(this.valueptr);
-    }
-    @property void value()(in Acc value){
-        if(this.valueptr) free(cast(void*) this.valueptr);
-        this.valueptr = cast(Acc*) malloc(Acc.sizeof);
-        assert(this.valueptr !is null, "Failed to allocate memory.");
-        memcpy(cast(void*) this.valueptr, &value, Acc.sizeof);
+    @property bool empty() const{
+        return this.isempty;
     }
     
     static if(!seeded){
         this(Range source){
-            this.source = source;
-            this.empty = false;
-            if(this.source.empty){
-                assert(false, "Cannot reduce empty range without an initial value.");
-            }else{
-                this.value = this.source.front;
-                this.source.popFront();
+            version(assert){
+                static const error = new ReduceEmptyError();
+                if(source.empty) throw error;
             }
+            this.source = source;
+            this.accumulator = this.source.front;
+            this.isempty = false;
+            this.source.popFront();
         }
     }
     
-    @property auto ref front() const{
-        return this.value;
+    @property auto front() const in{assert(!this.empty);} body{
+        return this.accumulator;
     }
-    void popFront(){
+    void popFront() in{assert(!this.empty);} body{
         if(!this.source.empty){
-            this.value = func(this.value, this.source.front);
+            this.accumulator = func(cast(Acc) this.accumulator, this.source.front);
             this.source.popFront();
         }else{
-            this.empty = true;
+            this.isempty = true;
         }
     }
     
@@ -169,10 +223,15 @@ struct ReduceRange(Range, Acc, alias func, bool seeded = true) if(
         }
         alias opDollar = length;
     }
+    static if(hasNumericRemaining!Range){
+        @property auto remaining(){
+            return cast(size_t) this.source.remaining + !this.isempty;
+        }
+    }
     
     static if(isSavingRange!Range){
         @property typeof(this) save(){
-            return typeof(this)(this.source.save, this.value, this.empty);
+            return typeof(this)(this.source.save, this.accumulator, this.isempty);
         }
     }
 }
@@ -186,29 +245,67 @@ version(unittest){
 }
 unittest{
     tests("Reduce", {
-        int[] array = [1, 2, 3, 4];
         alias sum = (acc, next) => (acc + next);
         alias concat = (acc, next) => (acc ~ cast(string)([next + '0']));
         tests("Eager", {
-            testeq(array.reduceeager!sum, 10);
-            testeq(array.reduceeager!((acc, next) => (acc + next))(2), 12);
-            testeq(array.reduceeager!concat(""), "1234");
-            // Empty source with no seed should fail
-            testfail({array[0 .. 0].reduceeager!((a, n) => (a));});
+            testeq([1, 2, 3, 4].reduceeager!sum, 10);
+            testeq([1, 2, 3, 4].reduceeager!sum(2), 12);
+            testeq([1, 2, 3, 4].reduceeager!concat(""), "1234");
+            tests("Empty", {
+                testfail({
+                    // Empty source with no seed should fail
+                    new int[0].reduceeager!((a, n) => (a));
+                });
+            });
         });
         tests("Lazy", {
             tests("No seed", {
-                auto range = array.reducelazy!sum;
+                auto range = [1, 2, 3, 4].reducelazy!sum;
                 testeq(range.length, 4);
-                test(range.equals([1, 3, 6, 10]));
+                testeq(range.remaining, 4);
+                testeq(range.front, 1);
+                range.popFront();
+                testeq(range.length, 4);
+                testeq(range.remaining, 3);
+                testeq(range.front, 3);
+                range.popFront();
+                testeq(range.remaining, 2);
+                testeq(range.front, 6);
+                range.popFront();
+                testeq(range.remaining, 1);
+                testeq(range.front, 10);
+                range.popFront();
+                testeq(range.remaining, 0);
+                test(range.empty);
+                testfail({range.front;});
+                testfail({range.popFront();});
             });
             tests("With seed", {
-                auto range = array.reducelazy!sum(2);
+                auto range = [1, 2, 3, 4].reducelazy!sum(2);
                 testeq(range.length, 5);
-                test(range.equals([2, 3, 5, 8, 12]));
+                testeq(range.remaining, 5);
+                testeq(range.front, 2);
+                range.popFront();
+                testeq(range.length, 5);
+                testeq(range.remaining, 4);
+                testeq(range.front, 3);
+                range.popFront();
+                testeq(range.remaining, 3);
+                testeq(range.front, 5);
+                range.popFront();
+                testeq(range.remaining, 2);
+                testeq(range.front, 8);
+                range.popFront();
+                testeq(range.remaining, 1);
+                testeq(range.front, 12);
+                range.popFront();
+                testeq(range.remaining, 0);
+                test(range.empty);
+                testfail({range.front;});
+                testfail({range.popFront();});
             });
             tests("Saving", {
-                auto range = array.reducelazy!sum;
+                auto range = [1, 2, 3, 4].reducelazy!sum;
                 auto saved = range.save;
                 range.popFront();
                 testeq(range.front, 3);
@@ -216,8 +313,9 @@ unittest{
             });
             tests("Const elements", {
                 tests("Ints", {
-                    auto range = (cast(const int[]) array).reducelazy!sum;
-                    test(range.equals([1, 3, 6, 10]));
+                    const(int)[] array = [1, 2, 3, 4];
+                    auto range = array.reducelazy!sum;
+                    test!equals(range, [1, 3, 6, 10]);
                 });
                 tests("Struct with const member", {
                     struct ConstMember{const int x;}
@@ -225,8 +323,12 @@ unittest{
                     auto range = input.reducelazy!((a, n) => (a + n.x))(0);
                 });
             });
-            // Empty source with no seed should fail
-            testfail({array[0 .. 0].reducelazy!((a, n) => (a));});
+            tests("Empty", {
+                testfail({
+                    // Empty source with no seed should fail
+                    new int[0].reducelazy!((a, n) => (a));
+                });
+            });
         });
     });
 }
