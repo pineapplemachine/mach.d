@@ -264,9 +264,20 @@ void testthrow(Fn)(Fn func, size_t line = __LINE__, string file = __FILE__){
 }
 
 /// If the passed delegate does not itself throw an exception, or if it does
+/// throw an exception but the thrown object is not of the type specified,
+/// throw a TestFailureException.
+void testthrow(E, Fn)(
+    Fn func, size_t line = __LINE__, string file = __FILE__
+){
+    testthrow((Throwable e) => (cast(E) e !is null), func, line, file);
+}
+
+/// If the passed delegate does not itself throw an exception, or if it does
 /// throw an exception but the thrown object does not meet the predicate,
 /// throw a TestFailureException.
-void testthrow(Pred, Fn)(Pred pred, Fn func, size_t line = __LINE__, string file = __FILE__){
+void testthrow(Pred, Fn)(
+    Pred pred, Fn func, size_t line = __LINE__, string file = __FILE__
+){
     Throwable caught = null;
     try{
         func();
@@ -409,6 +420,24 @@ unittest{
     testfail({assert(false);});
     // Enforce failure of (enforcing failure of (non-failing operation))
     testfail({testfail({});});
+}
+unittest{
+    // Enforce failure with exception type
+    testfail!AssertError({
+        assert(false);
+    });
+    // Enforce failure due to incorrect exception type
+    testfail({
+        testfail!TestFailureException({
+            assert(false);
+        });
+    });
+    // Enforce failure due to no error thrown
+    testfail!TestFailureException({
+        testfail!AssertError({
+            return;
+        });
+    });
 }
 unittest{
     // Enforce failure with predicate
