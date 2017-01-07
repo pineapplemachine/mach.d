@@ -71,18 +71,6 @@ unittest{
 
 /++ md
 
-Calling `asarray` for a type that is already an array will simply return the
-argument.
-
-+/
-
-unittest{
-    auto array = [0, 1, 2];
-    assert(array.asarray is array);
-}
-
-/++ md
-
 ## mach.range.asrange
 
 Get a range for enumerating elements belonging to a range, or an object which

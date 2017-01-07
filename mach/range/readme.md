@@ -37,13 +37,6 @@ assert(array.length == 2);
 assert(array == [0, 1]);
 ```
 
-Calling `asarray` for a type that is already an array will simply return the argument.
-
-``` D
-auto array = [0, 1, 2];
-assert(array.asarray is array);
-```
-
 ## mach.range.asrange
 
 Get a range for enumerating elements belonging to a range, or an object which is valid as a range via its own `asrange` property. This package provides default implementations for static, dynamic, and associative arrays.
