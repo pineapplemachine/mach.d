@@ -61,10 +61,12 @@ struct RebindableType(T){
     }
     
     this(this) @trusted @nogc{
-        T* newptr = malloc!T;
-        version(unittest) alive++;
-        memcpy(newptr, this.rebind, T.sizeof);
-        this.rebind = newptr;
+        if(this.rebind !is null){
+            T* newptr = malloc!T;
+            version(unittest) alive++;
+            memcpy(newptr, this.rebind, T.sizeof);
+            this.rebind = newptr;
+        }
     }
     ~this() @trusted @nogc{
         if(this.rebind !is null){
@@ -174,15 +176,19 @@ unittest{
 }
 
 unittest{
-    // Test added after realizing a never-initialized value produced
-    // an error in the destructor.
+    // Test uninitialized value
     Rebindable!ConstMember val;
 }
 unittest{
-    // Test added after realizing assigning a never-initialized value
-    // also was producing an error.
+    // Test assignment for uninitialized value
     Rebindable!ConstMember val;
     val = ConstMember(0);
+    val = ConstMember(1);
+}
+unittest{
+    // Test postblit for uninitialized value
+    Rebindable!ConstMember a;
+    Rebindable!ConstMember b = a;
 }
 unittest{
     auto x = ConstMember(0);
