@@ -2,13 +2,77 @@ module mach.meta.logical;
 
 private:
 
-//
+/++ Docs: mach.meta.logical
+
+The `Any`, `All`, and `None` templates evaluate whether a predicate,
+described by the first template argument, evaluates true for any of the
+subsequent template arguments.
+
++/
+
+unittest{ /// Example
+    enum isInt(T) = is(T == int);
+    static assert(Any!(isInt, void, int));
+    static assert(!Any!(isInt, void, void));
+}
+
+unittest{ /// Example
+    enum isLong(T) = is(T == long);
+    static assert(All!(isLong, long, long));
+    static assert(!All!(isLong, long, void));
+}
+
+unittest{ /// Example
+    enum isDouble(T) = is(T == double);
+    static assert(None!(isDouble, void, void));
+    static assert(!None!(isDouble, void, double));
+}
+
+/++ Docs: mach.meta.logical
+
+The `First` and `Last` templates can be used to find the first or the last
+item in their template arguments matching a predicate, respectively.
+The first argument represents the predicate, and subsequent arguments
+represent the sequence to be searched in.
+
+These templates produce compile errors when the sequence contains no value
+meeting the predicate.
+
++/
+
+unittest{ /// Example
+    enum isNum(T) = is(T == int) || is(T == long);
+    static assert(is(First!(isNum, void, int, long) == int));
+    static assert(is(Last!(isNum, void, int, long) == long));
+}
+
+unittest{ /// Example
+    enum isNum(T) = is(T == int) || is(T == long);
+    static assert(!is(typeof({
+        // Fails to compile because no arguments satisfy the predicate.
+        alias T = First!(isNum, void, void, void);
+    })));
+}
+
+/++ Docs: mach.meta.logical
+
+The `Count` template determines the number of elements meeting a predicate.
+The first argument represents the predicate, and subsequent arguments
+represent the sequence to be searched in.
+
++/
+
+unittest{ /// Example
+    enum isChar(T) = is(T == char);
+    static assert(Count!(isChar, char, void, char) == 2);
+    static assert(Count!(isChar, void) == 0);
+}
 
 public:
 
 
 
-/// True when any of the types meet a predicate.
+/// True when any of the inputs meet a predicate.
 template Any(alias predicate, T...){
     static if(T.length == 0){
         enum bool Any = false;
@@ -21,7 +85,7 @@ template Any(alias predicate, T...){
         );
     }
 }
-/// True when all of the types meet a predicate.
+/// True when all of the inputs meet a predicate.
 template All(alias predicate, T...){
     static if(T.length == 0){
         enum bool All = true;
@@ -35,10 +99,12 @@ template All(alias predicate, T...){
     }
 }
 
-/// True when none of the types meet a predicate.
+/// True when none of the inputs meet a predicate.
 enum bool None(alias predicate, T...) = !Any!(predicate, T);
 
-/// Returns the number of types meeting a predicate.
+
+
+/// Returns the number of inputs meeting a predicate.
 template Count(alias predicate, T...){
     static if(T.length == 0){
         enum size_t Count = 0;
@@ -52,6 +118,8 @@ template Count(alias predicate, T...){
     }
 }
 
+
+
 /// Returns the first element to meet a predicate.
 template First(alias predicate, T...){
     static if(T.length == 0){
@@ -61,7 +129,7 @@ template First(alias predicate, T...){
     }else static if(T.length > 1){
         alias First = First!(predicate, T[1 .. $]);
     }else{
-        alias First = void;
+        static assert(false, "Found no elements matching the predicate.");
     }
 }
 /// Returns the last element to meet a predicate.
@@ -73,7 +141,7 @@ template Last(alias predicate, T...){
     }else static if(T.length > 1){
         alias Last = Last!(predicate, T[0 .. $-1]);
     }else{
-        alias Last = void;
+        static assert(false, "Found no elements matching the predicate.");
     }
 }
 
