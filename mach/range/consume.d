@@ -2,23 +2,72 @@ module mach.range.consume;
 
 private:
 
-import mach.traits : isFiniteRange, isBidirectionalRange;
+import mach.traits : isRange, isFiniteIterable, isIterableReverse;
+
+/++ Docs
+
+The `consume` function consumes an input iterable.
+This is primarily useful for ranges which may modify state while they are
+being enumerated.
+
+For example, the `tap` function adds a callback for each element of an input
+iterable. The callback is only evaluated as that element is popped from the
+range.
+
++/
+
+unittest{ /// Example
+    import mach.range.tap : tap;
+    int count = 0;
+    // Increment `count` every time an element is popped.
+    auto range = [0, 1, 2, 3].tap!((e){count++;});
+    assert(count == 0);
+    range.consume; // Consume the range
+    assert(count == 4);
+}
+
+/++ Docs
+
+The module also provides a `consumereverse` function for performing the same
+consumption operation, but in reverse.
+
++/
+
+unittest{ /// Example
+    import mach.range.tap : tap;
+    string str = "";
+    auto range = "forwards".tap!((ch){str ~= ch;});
+    assert(str == "");
+    range.consumereverse;
+    assert(str == "sdrawrof");
+}
 
 public:
 
 
 
-alias canConsume = isFiniteRange;
-enum canConsumeReverse(Range) = canConsume!Range && isBidirectionalRange!Range;
-
-
-
-void consume(Range)(Range range) if(canConsume!Range){
-    while(!range.empty) range.popFront();
+/// Consume an iterable.
+void consume(Iter)(auto ref Iter iter) if(
+    isFiniteIterable!Iter
+){
+    static if(isRange!Iter){
+        // Optimization for ranges: Don't ever actually acquire `front`.
+        while(!iter.empty) iter.popFront();
+    }else{
+        foreach(_; iter){}
+    }
 }
 
-void consumereverse(Range)(Range range) if(canConsumeReverse!Range){
-    while(!range.empty) range.popBack();
+/// Consume an iterable, in reverse.
+void consumereverse(Iter)(auto ref Iter iter) if(
+    isFiniteIterable!Iter && isIterableReverse!Iter
+){
+    static if(isRange!Iter){
+        // Optimization for ranges: Don't ever actually acquire `back`.
+        while(!iter.empty) iter.popBack();
+    }else{
+        foreach_reverse(_; iter){}
+    }
 }
 
 
@@ -26,8 +75,8 @@ void consumereverse(Range)(Range range) if(canConsumeReverse!Range){
 version(unittest){
     private:
     import mach.test;
-    import mach.range.asrange : asrange;
-    struct SomeRange{
+    import mach.range.tap : tap;
+    struct TestRange{
         static size_t consumed = 0;
         int index;
         int end;
@@ -39,16 +88,32 @@ version(unittest){
         }
         void popFront(){
             this.index++;
-            SomeRange.consumed++;
+            TestRange.consumed++;
         }
     }
 }
 unittest{
     tests("Consume", {
-        auto range = SomeRange(0, 10);
-        testf(range.empty);
-        testeq(SomeRange.consumed, 0);
-        range.consume;
-        testeq(SomeRange.consumed, 10);
+        tests("Arrays", {
+            new int[0].consume;
+            [1, 2, 3].consume;
+            new int[0].consumereverse;
+            [1, 2, 3].consumereverse;
+        });
+        tests("Ranges", {
+            TestRange.consumed = 0;
+            auto range = TestRange(0, 10);
+            testf(range.empty);
+            testeq(TestRange.consumed, 0);
+            range.consume;
+            testeq(TestRange.consumed, 10);
+        });
+        tests("Reverse", {
+            int[] array;
+            auto range = [0, 1, 2].tap!((n){array ~= n;});
+            assert(array.length == 0);
+            range.consumereverse;
+            assert(array == [2, 1, 0]);
+        });
     });
 }
