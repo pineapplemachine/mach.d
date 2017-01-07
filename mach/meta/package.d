@@ -8,7 +8,6 @@ public:
 
 import mach.meta.adjoin;
 import mach.meta.aliases;
-import mach.meta.contains;
 import mach.meta.filter;
 import mach.meta.logical;
 import mach.meta.map;
