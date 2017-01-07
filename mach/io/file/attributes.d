@@ -74,13 +74,13 @@ version(Windows){
         /// Get whether the handle identifies a file.
         /// Is the same as not(isdir).
         @property bool isfile() const{
-            return (this.attr & FILE_ATTRIBUTE_DIRECTORY) != 0;
+            return (this.attr & FILE_ATTRIBUTE_DIRECTORY) == 0;
         }
         /// Set whether the handle identifies a file.
         /// Is the same as not(isdir).
         @property void isfile(in bool value){
-            if(!value) this.attr &= ~FILE_ATTRIBUTE_DIRECTORY;
-            else this.attr |= FILE_ATTRIBUTE_DIRECTORY;
+            if(!value) this.attr |= FILE_ATTRIBUTE_DIRECTORY;
+            else this.attr &= ~FILE_ATTRIBUTE_DIRECTORY;
         }
         /// Get whether the file or directory is encrypted.
         @property bool isencrypted() const{
