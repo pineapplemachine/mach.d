@@ -40,6 +40,12 @@ template mapplural(transformations...) if(transformations.length){
 /// Map range which accepts multiple input ranges and transforms each group of
 /// elements into a single element belonging to the output range.
 struct MapPluralRange(alias transform, Ranges...) if(canMapPluralRange!(transform, Ranges)){
+    enum bool isBidirectional = (
+        All!(isBidirectionalRange, Ranges) &&
+        All!(hasNumericRemaining, Ranges) &&
+        !Any!(isInfiniteRange, Ranges)
+    );
+    
     Ranges sources;
     
     this(Ranges sources){
@@ -84,15 +90,26 @@ struct MapPluralRange(alias transform, Ranges...) if(canMapPluralRange!(transfor
         foreach(i, _; Ranges) this.sources[i].popFront();
     }
     
-    // TOOD: Fix for ranges of differing lengths
-    //static if(All!(isBidirectionalRange, Ranges)){
-    //    @property auto ref back(){
-    //        mixin(MergeAttributeMixin!(`transform`, `.back`, Ranges));
-    //    }
-    //    void popBack(){
-    //        foreach(i, _; Ranges) this.sources[i].popBack();
-    //    }
-    //}
+    static if(isBidirectional){
+        @property auto ref back(){
+            // Get least number of remaining elements in any member range
+            auto remaining = this.remaining;
+            // Pop trailing elements from each member until all inputs
+            // have the same number of elements remaining.
+            // This operation ensures correctness of the range's
+            // bidirectionality for inputs of varying lengths.
+            foreach(i, _; this.sources){
+                while(this.sources[i].remaining > remaining){
+                    debug assert(!this.sources[i].empty); // Shouldn't happen
+                    this.sources[i].popBack();
+                }
+            }
+            return transform(varmap!(e => e.back)(this.sources).expand);
+        }
+        void popBack(){
+            foreach(i, _; Ranges) this.sources[i].popBack();
+        }
+    }
     
     static if(All!(isRandomAccessRange, Ranges)){
         auto ref opIndex(size_t index){
@@ -118,7 +135,7 @@ version(unittest){
     import mach.test;
     import mach.range.compare : equals;
     import mach.range.rangeof : infrangeof;
-    //import mach.range.retro : retro; // TODO
+    import mach.range.retro : retro;
 }
 unittest{
     tests("Plural Map", {
@@ -140,10 +157,52 @@ unittest{
             test!equals(mapplural!sumtwo(inputa, inputb), [1, 2, 4, 5]);
             test!equals(mapplural!sumthree(inputa, inputb, inputc), [2, 4, 6, 8]);
         });
-        //tests("Backwards", { // TODO
-        //    test!equals(mapplural!sumtwo(inputa, inputb).retro, [5, 4, 2, 1]);
-        //    test!equals(mapplural!sumthree(inputa, inputb, inputc).retro, [8, 6, 4, 2]);
-        //});
+        tests("Bidirectionality", {
+            tests("Same length", {
+                auto range = mapplural!sumtwo([1, 2, 3], [3, 4, 5]);
+                testeq(range.length, 3);
+                testeq(range.remaining, 3);
+                testeq(range.front, 4);
+                testeq(range.back, 8);
+                range.popFront();
+                testeq(range.front, 6);
+                testeq(range.length, 3);
+                testeq(range.remaining, 2);
+                range.popBack();
+                testeq(range.back, 6);
+                testeq(range.remaining, 1);
+                range.popFront();
+                test(range.empty);
+                testeq(range.remaining, 0);
+                testfail({range.front;});
+                testfail({range.popFront;});
+                testfail({range.back;});
+                testfail({range.popBack;});
+            });
+            tests("Differing length", {
+                auto range = mapplural!sumtwo([1, 3], [5, 6, 10]);
+                testeq(range.length, 2);
+                testeq(range.remaining, 2);
+                testeq(range.front, 6);
+                testeq(range.back, 9);
+                range.popBack();
+                testeq(range.back, 6);
+                testeq(range.remaining, 1);
+                range.popBack();
+                test(range.empty);
+                testeq(range.remaining, 0);
+            });
+            tests("Empty input", {
+                auto range = mapplural!sumtwo([1, 2, 3], new int[0]);
+                test(range.empty);
+                testeq(range.length, 0);
+                testeq(range.remaining, 0);
+            });
+        });
+        tests("Backwards", {
+            test!equals(mapplural!sumtwo(inputa, inputb).retro, [5, 4, 2, 1]);
+            test!equals(mapplural!sumthree(inputa, inputb, inputc).retro, [8, 6, 4, 2]);
+        });
         tests("Random access", {
             auto range = mapplural!sumtwo(inputa, inputb);
             testeq(range[0], 1);
