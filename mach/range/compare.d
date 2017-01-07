@@ -3,7 +3,7 @@ module mach.range.compare;
 private:
 
 import mach.range.asrange : asrange, validAsRange, AsRangeElementType;
-import mach.traits : isFiniteIterable, hasNumericLength;
+import mach.traits : isFiniteIterable, hasNumericRemaining, hasNumericLength;
 
 public:
 
@@ -46,15 +46,23 @@ bool compare(
 )(
     auto ref IterA itera, auto ref IterB iterb
 ) if(canCompareIterables!(pred, IterA, IterB)){
-    static if(length && hasNumericLength!IterA && hasNumericLength!IterB){
-        if(itera.length != iterb.length) return false;
+    static if(length){
+        static if(hasNumericRemaining!IterA) immutable alen = itera.remaining;
+        else static if(hasNumericLength!IterA) immutable alen = itera.length;
+        static if(hasNumericRemaining!IterB) immutable blen = iterb.remaining;
+        else static if(hasNumericLength!IterB) immutable blen = iterb.length;
+        static if(is(typeof(alen)) && is(typeof(blen))){
+            if(alen != blen) return false;
+        }
     }
     auto rangea = itera.asrange;
     auto rangeb = iterb.asrange;
     while(!rangea.empty && !rangeb.empty){
         auto elementa = rangea.front;
         auto elementb = rangeb.front;
-        if(!pred(elementa, elementb)) return false;
+        if(!pred(elementa, elementb)){
+            return false;
+        }
         rangea.popFront();
         rangeb.popFront();
     }
@@ -136,6 +144,11 @@ unittest{
             test([2, 3, 4, 5].equals(TestRange(2, 6)));
             test([2, 3, 4, 5].asrange.equals(TestRange(2, 6)));
             test(TestRange(2, 6).equals([2, 3, 4, 5].asrange));
+        });
+        tests("Partially-consumed range", {
+            auto range = [1, 2, 3, 4, 5].asrange;
+            range.popFront();
+            test(range.equals([2, 3, 4, 5]));
         });
     });
 }
