@@ -67,8 +67,10 @@ struct RebindableType(T){
         this.rebind = newptr;
     }
     ~this() @trusted @nogc{
-        free(this.rebind);
-        version(unittest) alive--;
+        if(this.rebind !is null){
+            free(this.rebind);
+            version(unittest) alive--;
+        }
     }
     
     /// The `init` property is overriden in an attempt to avoid the edge-casey
@@ -88,7 +90,11 @@ struct RebindableType(T){
         return *this.rebind;
     }
     /// Set the value wrapped by this rebindable type.
-    @property void value(T value) @trusted pure nothrow in{this.assertbound();} body{
+    @property void value(T value) @trusted nothrow{
+        if(this.rebind is null){
+            this.rebind = malloc!T;
+            version(unittest) alive++;
+        }
         memcpy(this.rebind, &value, T.sizeof);
     }
     
@@ -108,7 +114,7 @@ struct RebindableType(T){
     }))){
         mixin(`return value ` ~ op ~ ` this.value;`);
     }
-    void opAssign(T value) @safe pure nothrow{
+    void opAssign(T value) @safe nothrow{
         this.value = value;
     }
     auto ref opOpAssign(string op, X)(auto ref X value) if(is(typeof({
@@ -121,7 +127,6 @@ struct RebindableType(T){
 
 
 version(unittest){
-    import mach.io.log;
     private:
     struct MutMember{int x;}
     struct ConstMember{
@@ -168,6 +173,17 @@ unittest{
     static assert(is(typeof(rebindable(const(MutMember).init)) == MutMember));
 }
 
+unittest{
+    // Test added after realizing a never-initialized value produced
+    // an error in the destructor.
+    Rebindable!ConstMember val;
+}
+unittest{
+    // Test added after realizing assigning a never-initialized value
+    // also was producing an error.
+    Rebindable!ConstMember val;
+    val = ConstMember(0);
+}
 unittest{
     auto x = ConstMember(0);
     static assert(!isRebindable!(typeof(x)));

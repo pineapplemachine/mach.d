@@ -181,7 +181,7 @@ struct FindAllRange(alias pred, Range, Subject, Index = DefaultFindIndex) if(
             static if(isRandomAccess) bool matched = thread.next(element, this.subject);
             else bool matched = thread.next(element);
             if(matched){
-                this.result = cast(Result) thread.result(this.source, this.index);
+                this.result = thread.result(this.source, this.index);
                 found = true;
             }
         }
@@ -194,7 +194,7 @@ struct FindAllRange(alias pred, Range, Subject, Index = DefaultFindIndex) if(
                 thread.searchrange.popFront();
             }
             if(this.subject.length == 1){
-                this.result = cast(Result) thread.result(this.source, this.index);
+                this.result = thread.result(this.source, this.index);
                 found = true;
             }else{
                 this.threads.add(thread);
@@ -286,6 +286,18 @@ version(unittest){
                 range.popFront();
                 testeq(saved.front.index, 2);
                 testeq(range.front.index, 8);
+            });
+            tests("Const results", {
+                const(string) str = "hello";
+                auto range = str.asrange;
+                // Verify range is uncopyable due to const
+                static assert(!is(typeof({range = str.asrange;})));
+                auto find = range.findalliterlazy(transformsubject("l"));
+                testeq(find.front.index, 2);
+                find.popFront();
+                testeq(find.front.index, 3);
+                find.popFront();
+                test(find.empty);
             });
         }
     }
