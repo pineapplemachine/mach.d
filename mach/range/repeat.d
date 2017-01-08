@@ -11,7 +11,80 @@ import mach.range.asrange : validAsRandomAccessRange, validAsSavingRange;
 import mach.range.rangeof : infrangeof, finiterangeof;
 import mach.error : enforcebounds;
 
+/++ Docs
+
+The `repeat` function can be used to repeat an inputted iterable either
+infinitely or a specified number of times, depending on whether a limit is
+passed to it.
+
+In order for an iterable to repeated either finitely or infinitely, it must be
+infinite, have random access and length, or be valid as a saving range.
+Repeating an already-infinite iterable returns the selfsame iterable,
+regardless of whether the repeating was intended to be finite or infinite.
+
+When `repeat` is called for an iterable without any additional arguments,
+that iterable is repeated infinitely.
+
++/
+
+unittest{ /// Example
+    import mach.range.compareends : headis;
+    auto range = "hi".repeat;
+    assert(range.headis("hihihihihi"));
+}
+
+unittest{ /// Example
+    // Fun fact: Infinitely repeated ranges are technically bidirectional.
+    assert("NICE".repeat.back == 'E');
+}
+
+/++ Docs
+
+When the function is called with an additional integer argument, that argument
+dictates how many times the input will be repeated before the resulting range
+is exhausted.
+
+Finitely repeated ranges support `length` and `remaining` properties when their
+inputs support them. They allow random access when the input has random access
+and numeric length. All finitely and infinitely repeated ranges allow saving.
+
++/
+
+unittest{ /// Example
+    import mach.range.compare : equals;
+    auto range = "yo".repeat(3);
+    assert(range.equals("yoyoyo"));
+}
+
+/++ Docs
+
+The `repeat` function does not support infinitely repeating an empty iterable,
+because attempting to do so would invalidate many of the compile-time checks
+made possible by assuming the result of infinitely repeating an input is in
+fact an infinite range.
+An `InfiniteRepeatEmptyError` is thrown when this operation is attempted,
+unless the code has been compiled in release mode, in which case the check is
+omitted and a nastier error may occur instead.
+
++/
+
+unittest{ /// Example
+    import mach.error.mustthrow : mustthrow;
+    mustthrow!InfiniteRepeatEmptyError({
+        "".repeat; // Can't infinitely repeat an empty input.
+    });
+}
+
 public:
+
+
+
+/// Exception thrown when attempting to infinitely repeat an empty input.
+class InfiniteRepeatEmptyError: Error{
+    this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super("Cannot infinitely repeat an empty range.", file, line, next);
+    }
+}
 
 
 
@@ -117,22 +190,24 @@ struct InfiniteRepeatRandomAccessRange(Source) if(
     this(Source source, size_t frontindex = 0){
         this(source, frontindex, source.length);
     }
-    this(Source source, size_t frontindex, size_t backindex) in{
-        assert(source.length, "Cannot infinitely repeat an empty input.");
-    }body{
+    this(Source source, size_t frontindex, size_t backindex){
+        version(assert){
+            static const error = new InfiniteRepeatEmptyError();
+            if(source.length == 0) throw error; // Can't repeat an empty input
+        }
         this.source = source;
         this.frontindex = frontindex;
         this.backindex = backindex;
     }
     
-    @property auto ref front(){
+    @property auto front(){
         return this.source[this.frontindex];
     }
     void popFront(){
         this.frontindex = (this.frontindex + 1) % cast(size_t) this.source.length;
     }
     
-    @property auto ref back(){
+    @property auto back(){
         return this.source[this.backindex - 1];
     }
     void popBack(){
@@ -180,7 +255,7 @@ struct FiniteRepeatRandomAccessRange(Source) if(
     }
     
     /// Determine whether the range is empty.
-    @property bool empty() const{
+    @property bool empty(){
         return (
             this.source.length == 0 || this.limit == 0 ||
             this.count >= (this.limit - (this.frontindex >= this.backindex))
@@ -190,11 +265,11 @@ struct FiniteRepeatRandomAccessRange(Source) if(
     /// multiplied by the number of times it is being repeated.
     /// May be incorrect due to overflow for especially large inputs or
     /// number of times repeated.
-    @property auto length() const{
+    @property auto length(){
         return this.source.length * this.limit;
     }
     /// Get the number of elements remaining in the range.
-    @property auto remaining() const{
+    @property auto remaining(){
         return (
             (cast(size_t) this.source.length) * (this.limit - this.count - 1) +
             (this.backindex - this.frontindex)
@@ -204,7 +279,7 @@ struct FiniteRepeatRandomAccessRange(Source) if(
     alias opDollar = length;
     
     /// Get the frontmost element of the range.
-    @property auto ref front() in{assert(!this.empty);} body{
+    @property auto front() in{assert(!this.empty);} body{
         return this.source[this.frontindex];
     }
     /// Pop the frontmost element of the range.
@@ -217,7 +292,7 @@ struct FiniteRepeatRandomAccessRange(Source) if(
     }
     
     /// Get the backmost element of the range.
-    @property auto ref back() in{assert(!this.empty);} body{
+    @property auto back() in{assert(!this.empty);} body{
         return this.source[this.backindex - 1];
     }
     /// Pop the backmost element of the range.
@@ -237,7 +312,7 @@ struct FiniteRepeatRandomAccessRange(Source) if(
     }
     
     /// Save the range.
-    @property auto ref save(){
+    @property typeof(this) save(){
         return this;
     }
 }
@@ -254,32 +329,38 @@ struct InfiniteRepeatSavingRange(Range) if(canRepeatSavingRange!Range){
     Rebindable!Range forward = void;
     static if(isBidirectional) Rebindable!Range backward = void;
     
-    this(Range source) in{
-        assert(!source.empty, "Cannot infinitely repeat an empty input.");
-    }body{
+    this(Range source){
+        version(assert){
+            static const error = new InfiniteRepeatEmptyError();
+            if(source.empty) throw error; // Can't repeat an empty input
+        }
         this.source = source;
         this.forward = this.source.save;
         static if(isBidirectional) this.backward = this.source.save;
     }
     
     static if(!isBidirectional){
-        this(Range source, Rebindable!Range forward) in{
-            assert(!source.empty, "Cannot infinitely repeat an empty input.");
-        }body{
+        this(Range source, Rebindable!Range forward){
+            version(assert){
+                static const error = new InfiniteRepeatEmptyError();
+                if(source.empty) throw error; // Can't repeat an empty input
+            }
             this.source = source;
             this.forward = forward;
         }
     }else{
-        this(Range source, Rebindable!Range forward, Rebindable!Range backward) in{
-            assert(!source.empty, "Cannot infinitely repeat an empty input.");
-        }body{
+        this(Range source, Rebindable!Range forward, Rebindable!Range backward){
+            version(assert){
+                static const error = new InfiniteRepeatEmptyError();
+                if(source.empty) throw error; // Can't repeat an empty input
+            }
             this.source = source;
             this.forward = forward;
             this.backward = backward;
         }
     }
     
-    @property auto ref front(){
+    @property auto front(){
         return this.forward.front;
     }
     void popFront(){
@@ -288,7 +369,7 @@ struct InfiniteRepeatSavingRange(Range) if(canRepeatSavingRange!Range){
     }
     
     static if(isBidirectional){
-        @property auto ref back(){
+        @property auto back(){
             return this.backward.back;
         }
         void popBack(){
@@ -337,11 +418,11 @@ struct FiniteRepeatSavingRange(Range) if(
         this.forward = forward;
     }
     
-    @property bool empty() const{
+    @property bool empty(){
         return this.source.empty || this.count >= this.limit;
     }
     
-    @property auto ref front() in{assert(!this.empty);} body{
+    @property auto front() in{assert(!this.empty);} body{
         return this.forward.front;
     }
     void popFront() in{assert(!this.empty);} body{
