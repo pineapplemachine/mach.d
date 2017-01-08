@@ -21,7 +21,7 @@ unittest{ /// Example
     struct Test{int x; int y; int z;}
     // Equivalent to `input.map!(e => e.x)`.
     auto range = [Test(0, 1, 2), Test(2, 3, 4)].pluck!`x`;
-    assert(range.equals(0, 2));
+    assert(range.equals([0, 2]));
 }
 
 unittest{ /// Example
