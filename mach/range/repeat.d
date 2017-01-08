@@ -8,7 +8,6 @@ import mach.traits : isFiniteRange, isRandomAccessRange, isSavingRange;
 import mach.traits : isBidirectionalRange, hasNumericLength, hasNumericRemaining;
 import mach.range.asrange : asrange, validAsRange;
 import mach.range.asrange : validAsRandomAccessRange, validAsSavingRange;
-import mach.range.rangeof : infrangeof, finiterangeof;
 import mach.error : enforcebounds;
 
 /++ Docs
