@@ -7,6 +7,57 @@ import mach.traits : hasCommonElementType, CommonElementType, ElementType;
 import mach.range.asrange : asrange, validAsRange, validAsSavingRange, AsRangeType;
 import mach.range.chain : chainiter, canChainIterableOfIterables;
 
+/++ Docs
+
+The `join` function accepts an iterable of iterables, then enumerates the
+contents of those nested iterables in sequence, interrupting the output
+with a separator whenever a nested iterable ends or begins.
+
+The first argument accepted by `join` is the iterable of iterables to be
+joined, and the second argument is the separator to insert between its
+constituent iterables. The separator may either be an iterable with the
+same element type as the iterables in the input iterable, or may be an
+element of the type that such an iterable would possess.
+
+`join` is most commonly used to manipulate strings; when using it for this
+purpose mind that the outputted iterable is lazily-evaluated, and a function
+like `asarray` from `mach.range.asarray` will be needed to create an in-memory
+string from the range.
+
+Its complement is `split`, in `mach.range.split`.
+
++/
+
+unittest{ /// Example
+    // Join on a separator that is an element of the constituent iterables.
+    import mach.range.compare : equals;
+    assert(["hello", "how", "are", "you"].join(' ').equals("hello how are you"));
+}
+
+unittest{ /// Example
+    // Join on a separator that is also an iterable.
+    import mach.range.compare : equals;
+    assert(["100", "200", "300"].join("___").equals("100___200___300"));
+}
+
+/++ Docs
+
+Though the default behavior is to insert the separator only in between
+elements, and not at the beginning or the end of the range, the `join`
+function accepts optional template arguments which may alter this behavior.
+
++/
+
+unittest{ /// Example.
+    import mach.range.compare : equals;
+    // Include the separator at the front of the output.
+    assert(["abc", "xyz"].join!(true, false)('.').equals(".abc.xyz"));
+    // Include the separator at the back of the output.
+    assert(["abc", "xyz"].join!(false, true)('.').equals("abc.xyz."));
+    // Include the separator at the front and back of the output.
+    assert(["abc", "xyz"].join!(true, true)('.').equals(".abc.xyz."));
+}
+
 public:
 
 
