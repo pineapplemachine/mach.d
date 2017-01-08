@@ -5,6 +5,7 @@ private:
 import mach.traits : isRange, isSavingRange, isRandomAccessRange;
 import mach.traits : isBidirectionalRange, isSlicingRange, canReassign;
 import mach.traits : isMutableFrontRange, isMutableBackRange, isMutableRandomRange;
+import mach.traits : isArray, isAssociativeArray;
 import mach.range.asrange.aarange;
 import mach.range.asrange.arrayrange;
 import mach.range.asrange.indexrange;
@@ -64,12 +65,12 @@ auto asrange(T)(auto ref T range) if(isRange!T){
 }
 
 /// ditto
-auto asrange(T)(auto ref T array) if(canMakeArrayRange!T){
+auto asrange(T)(auto ref T array) if(isArray!T){
     return ArrayRange!T(array);
 }
 
 /// ditto
-auto asrange(T)(auto ref T array) if(canMakeAssociativeArrayRange!T){
+auto asrange(T)(auto ref T array) if(isAssociativeArray!T){
     return AssociativeArrayRange!T(array);
 }
 

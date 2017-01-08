@@ -11,6 +11,8 @@ import mach.sdl.framelimiter : FrameLimiter;
 import mach.sdl.input.event : Event, EventQueue;
 import mach.sdl.input.helper : KeyHelper, MouseHelper;
 
+import mach.io : log;
+
 public:
 
 
@@ -186,14 +188,18 @@ abstract class Application{
     /// Loads and initializes SDL and OpenGL, and makes a window.
     /// Also calls the subclass' initialize method.
     void metainitialize(){
+        log("Loading OpenGL");
         GL.load();
+        log("Loading SDL");
         SDL.load();
+        log("Initializing SDL");
         this.sdlsupport.initialize();
         this.initialize();
         if(this.window is null){
             throw new ApplicationError("Application must have a window.");
         }
         this.window.raise();
+        log("Initializing OpenGL");
         GL.initialize();
     }
     /// Quits and unloads SDL and OpenGL.

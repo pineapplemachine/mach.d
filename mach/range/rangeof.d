@@ -4,7 +4,7 @@ private:
 
 import mach.traits : CommonType, hasCommonType;
 import mach.range.asrange : asarrayrange;
-import mach.error : enforcebounds;
+import mach.error : IndexOutOfBoundsError, InvalidSliceBoundsError;
 
 public:
 
@@ -76,14 +76,19 @@ struct EmptyRangeOf(T = DefaultEmptyRangeOfElement){
     static enum size_t length = 0;
     static enum size_t remaining = 0;
     alias opDollar = length;
-    @property T front(){assert(false, "Empty range has no front.");}
-    @property T back(){assert(false, "Empty range has no back.");}
-    void popFront(){assert(false, "Range is already empty.");}
-    void popBack(){assert(false, "Range is already empty.");}
+    
+    @property T front(){assert(false);}
+    @property T back(){assert(false);}
+    void popFront(){assert(false);}
+    void popBack(){assert(false);}
+    
     @property typeof(this) save(){return this;}
-    T opIndex(in size_t index){assert(false, "Empty range has no elements.");}
-    typeof(this) opSlice(in size_t low, in size_t high){
-        assert(low == 0 && high == 0, "Slice indexes out of bounds.");
+    
+    T opIndex(in size_t index){assert(false);}
+    typeof(this) opSlice(in size_t low, in size_t high) in{
+        static const error = new InvalidSliceBoundsError();
+        if(low != 0 || high != 0) throw error;
+    }body{
         return this;
     }
 }
@@ -94,16 +99,25 @@ struct SingularRangeOf(T){
     bool isempty = false;
     static enum size_t length = 1;
     alias opDollar = length;
+    
     @property bool empty() const{return this.isempty;}
     @property size_t remaining() const{return this.isempty ? 0 : 1;}
     @property auto front() in{assert(!this.empty);} body{return this.value;}
     @property auto back() in{assert(!this.empty);} body{return this.value;}
     void popFront() in{assert(!this.empty);} body{this.isempty = true;}
     void popBack() in{assert(!this.empty);} body{this.isempty = true;}
+    
     @property typeof(this) save(){return this;}
-    auto opIndex(in size_t index) in{assert(index == 0);} body{return this.value;}
+    
+    auto opIndex(in size_t index) in{
+        static const error = new IndexOutOfBoundsError();
+        if(index != 0) throw error;
+    }body{
+        return this.value;
+    }
     typeof(this) opSlice(in size_t low, in size_t high) in{
-        assert(low >= 0 && high <= 1);
+        static const error = new InvalidSliceBoundsError();
+        error.enforce(low, high, 0, 1);
     }body{
         return typeof(this)(this.value, low == high);
     }
@@ -114,6 +128,7 @@ struct FiniteSingularRangeOf(T){
     T value;
     size_t values;
     size_t index = 0;
+    
     this(size_t length){
         this(length, T.init, 0);
     }
@@ -122,20 +137,28 @@ struct FiniteSingularRangeOf(T){
         this.values = length;
         this.index = index;
     }
+    
     @property bool empty() const{return this.index >= this.values;}
     @property auto length() const{return this.values;}
     @property auto remaining() const{return this.values - this.index;}
     alias opDollar = length;
+    
     @property auto front() in{assert(!this.empty);} body{return this.value;}
     @property auto back() in{assert(!this.empty);} body{return this.value;}
     void popFront() in{assert(!this.empty);} body{this.index++;}
     void popBack() in{assert(!this.empty);} body{this.index++;}
+    
     @property typeof(this) save(){return this;}
-    auto opIndex(in size_t index) in{enforcebounds(index, this);} body{
+    
+    auto opIndex(in size_t index) in{
+        static const error = new IndexOutOfBoundsError();
+        error.enforce(index, this);
+    }body{
         return this.value;
     }
     auto opSlice(in size_t low, in size_t high) in{
-        assert(low >= 0 && high >= low && high <= this.length);
+        static const error = new InvalidSliceBoundsError();
+        error.enforce(low, high, this);
     }body{
         return typeof(this)(high - low, this.value, 0);
     }
@@ -145,14 +168,15 @@ struct FiniteSingularRangeOf(T){
 struct InfSingularRangeOf(T){
     static enum bool empty = false;
     T value;
+    
     @property auto front(){return this.value;}
     @property auto back(){return this.value;}
     void popFront() const{}
     void popBack() const{}
+    
     @property typeof(this) save(){return this;}
+    
     auto opIndex(in size_t index){return this.value;}
-    // TODO: opSlice should really be meaningful for this range but that will
-    // be tricky to get right.
 }
 
 

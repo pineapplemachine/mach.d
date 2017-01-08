@@ -4,6 +4,34 @@ private:
 
 import mach.traits : isRange, isBidirectionalRange;
 
+/++ Docs
+
+This module provides, very simply, methods for simultaneously retrieving the
+front or back element of a range and popping that element, in the form of
+`nextfront` and `nextback`.
+
+The `nextfront` method can additionally be referenced by the name `next`.
+
++/
+
+unittest{ /// Example
+    import mach.range.rangeof : rangeof;
+    auto range = rangeof(0, 1, 2);
+    assert(range.next == 0);
+    assert(range.next == 1);
+    assert(range.next == 2);
+    assert(range.empty);
+}
+
+unittest{ /// Example
+    import mach.range.rangeof : rangeof;
+    auto range = rangeof(5, 6, 7);
+    assert(range.nextback == 7);
+    assert(range.nextback == 6);
+    assert(range.nextback == 5);
+    assert(range.empty);
+}
+
 public:
 
 
@@ -34,7 +62,7 @@ version(unittest){
     import mach.range.asrange : asrange;
 }
 unittest{
-    tests("next", {
+    tests("Next", {
         auto input = [1, 2, 3, 4];
         auto range = input.asrange;
         testeq(range.nextfront, 1);

@@ -47,7 +47,7 @@ template Rebindable(T){
 /// Wraps a value that would normally not be rebindable in a struct whose value
 /// can be freely rebound.
 struct RebindableType(T){
-    T* rebind = null;
+    T* boundvalue = null;
     
     alias value this;
     
@@ -55,22 +55,22 @@ struct RebindableType(T){
     version(unittest) static long alive = 0;
     
     this(T value) @trusted @nogc{
-        this.rebind = malloc!T;
+        this.boundvalue = malloc!T;
         version(unittest) alive++;
-        memcpy(this.rebind, &value, T.sizeof);
+        memcpy(this.boundvalue, &value, T.sizeof);
     }
     
     this(this) @trusted @nogc{
-        if(this.rebind !is null){
+        if(this.boundvalue !is null){
             T* newptr = malloc!T;
             version(unittest) alive++;
-            memcpy(newptr, this.rebind, T.sizeof);
-            this.rebind = newptr;
+            memcpy(newptr, this.boundvalue, T.sizeof);
+            this.boundvalue = newptr;
         }
     }
     ~this() @trusted @nogc{
-        if(this.rebind !is null){
-            free(this.rebind);
+        if(this.boundvalue !is null){
+            free(this.boundvalue);
             version(unittest) alive--;
         }
     }
@@ -81,29 +81,29 @@ struct RebindableType(T){
         return typeof(this)(T.init);
     }
     
-    /// Throws an AssertError if the internal `rebind` pointer is null,
+    /// Throws an AssertError if the internal `boundvalue` pointer is null,
     /// which should be considered an illegal state.
     void assertbound() const @safe pure nothrow{
-        assert(this.rebind !is null, "Rebindable type has no value.");
+        assert(this.boundvalue !is null, "Rebindable type has no value.");
     }
     
     /// Get the value wrapped by this rebindable type.
     @property auto value() @safe pure nothrow in{this.assertbound();} body{
-        return *this.rebind;
+        return *this.boundvalue;
     }
     /// Set the value wrapped by this rebindable type.
     @property void value(T value) @trusted nothrow{
-        if(this.rebind is null){
-            this.rebind = malloc!T;
+        if(this.boundvalue is null){
+            this.boundvalue = malloc!T;
             version(unittest) alive++;
         }
-        memcpy(this.rebind, &value, T.sizeof);
+        memcpy(this.boundvalue, &value, T.sizeof);
     }
     
     auto ref opUnary(string op)() if(is(typeof({
-        mixin(`return `~ op ~ `(*this.rebind);`);
+        mixin(`return `~ op ~ `(*this.boundvalue);`);
     }))) in{this.assertbound();} body{
-        mixin(`return `~ op ~ `(*this.rebind);`);
+        mixin(`return `~ op ~ `(*this.boundvalue);`);
     }
     
     auto ref opBinary(string op, X)(auto ref X value) if(is(typeof({

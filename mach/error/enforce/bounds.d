@@ -2,161 +2,150 @@ module mach.error.enforce.bounds;
 
 private:
 
-import mach.traits : hasNumericLength, LengthType;
-import mach.text : text;
+import mach.traits : isIntegral, isNumeric, hasNumericLength;
+
+/++ Docs
+
+This module provides the throwable types `IndexOutOfBoundsError` and
+`InvalidSliceBoundsError`. These are mainly intended to be used as
+static singletons, rather than created and thrown anew.
+
++/
+
+//unittest{ /// Example
+//    import mach.error.mustthrow : mustthrow;
+//    static const error = new IndexOutOfBoundsError();
+//    error.enforce(5, 0, 10); // High-exclusive check: enforce 0 <= 5 < 10.
+//    error.enforcei(6, 0, 10); // High-exclusive check: enforce 0 <= 6 <= 10.
+//    mustthrow!(e => e is error)({
+//        error.enforce(100, 0, 10); // Index out of bounds.
+//    });
+//}
+
+//unittest{ /// Example
+//    import mach.error.mustthrow : mustthrow;
+//    static const error = new InvalidSliceBoundsError();
+//    error.enforce(1, 2, 0, 10); // Slice 1 .. 2 is contained within 0 .. 10.
+//    mustthrow!(e => e is error)({
+//        error.enforce(100, 200, 0, 10); // Slice 100 .. 200 isn't contained within 0 .. 10.
+//    });
+//}
+
+/++ Docs
+
+Optionally, some object with a numeric `length` property may be passed to these
+types' `enforce` methods instead of a low and a high bound;
+in this case the low bound is considered to be zero and the high bound the
+length of the passed object.
+
++/
+
+unittest{
+    static const error = new IndexOutOfBoundsError();
+    error.enforce(0, [0, 1, 2]); // Index 0 is within the bounds of this array.
+}
+
+unittest{
+    static const error = new InvalidSliceBoundsError();
+    error.enforce(0, 1, [0, 1, 2]); // Slice 0 .. 1 is valid for this array.
+}
 
 public:
 
 
 
-auto enforcelowbound(string lop = `>=`, I, L)(
-    I index, L low, size_t line = __LINE__, string file = __FILE__
-)if(canLOOB!(lop, I, L)){
-    return LOutOfBoundsException!(lop, I, L).enforce(index, low, line, file);
-}
-
-auto enforcehighbound(string hop = `<`, I, H)(
-    I index, H high, size_t line = __LINE__, string file = __FILE__
-)if(canHOOB!(hop, I, H)){
-    return HOutOfBoundsException!(hop, I, H).enforce(index, high, line, file);
-}
-
-auto enforcebounds(string lop = `>=`, string hop = `<`, I, L, H)(
-    I index, L low, H high, size_t line = __LINE__, string file = __FILE__
-)if(canLHOOB!(lop, hop, I, L, H)){
-    return LHOutOfBoundsException!(lop, hop, I, L, H).enforce(index, low, high, line, file);
-}
-
-auto enforcebounds(string lop = `>=`, string hop = `<`, I, Obj)(
-    I index, Obj obj, size_t line = __LINE__, string file = __FILE__
-)if(is(typeof({
-    mixin(`if(!(index ` ~ lop ~ ` 0 && index ` ~ hop ~ ` obj.length)){}`);
-}))){
-    return enforcebounds!(lop, hop)(index, 0, obj.length, line, file);
-}
-
-auto enforceboundsincl(I, L, H)(
-    I index, L low, H high, size_t line = __LINE__, string file = __FILE__
-)if(canLHOOB!(`>=`, `<=`, I, L, H)){
-    return enforcebounds!(`>=`, `<=`)(index, low, high, line, file);
-}
-
-
-
-private enum canLOOB(string lop, I, L) = is(typeof({
-    mixin(`if(!(I.init ` ~ lop ~ ` L.init)){}`);
-}));
-private enum canHOOB(string hop, I, H) = is(typeof({
-    mixin(`if(!(I.init ` ~ hop ~ `H.init)){}`);
-}));
-private enum canLHOOB(string lop, string hop, I, L, H) = is(typeof({
-    mixin(`if(!(I.init ` ~ lop ~ ` L.init && I.init ` ~ hop ~ `H.init)){}`);
-}));
-
-
-
-abstract class OutOfBoundsException(Index): Exception{
-    this(string message, size_t line = __LINE__, string file = __FILE__){
-        super(message, file, line, null);
+/// Error class for failed index bounds checks.
+class IndexOutOfBoundsError: Error{
+    this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        this("Index out of bounds.");
     }
-    @property Index index() const;
-    @property bool toolow() const;
-    @property bool toohigh() const;
-}
-
-class LOutOfBoundsException(string lop, Index, Low): OutOfBoundsException!Index if(
-    canLOOB!(lop, Index, Low)
-){
-    Index idx;
-    Low low;
-    
-    this(Index index, Low low, size_t line = __LINE__, string file = __FILE__){
-        immutable auto message = text(
-            "Value ", index, " out of bounds; must be ", lop, " ", low, "."
-        );
-        this.idx = index;
-        this.low = low;
-        super(message, line, file);
+    this(string message, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super(message, file, line, next);
     }
     
-    static auto enforce(Index index, Low low, size_t line = __LINE__, string file = __FILE__){
-        mixin(`auto cond = index ` ~ lop ~ ` low;`);
-        if(!cond){
-            throw new typeof(this)(index, low, line, file);
-        }
-        return index;
+    /// High-exclusive bounds check.
+    /// If the condition (low <= value < high) is not satisfied, throw this error.
+    /// Returns the value being bounds-checked.
+    auto enforce(V, L, H)(in V value, in L low, in H high) const if(
+        isNumeric!V && isNumeric!L && isNumeric!H
+    ){
+        if(value < low || value >= high) throw this;
+        return value;
     }
     
-    override @property Index index() const{return this.idx;}
-    override @property bool toolow() const{mixin(`
-        return !(this.idx ` ~ lop ~ ` this.low);
-    `);}
-    override @property bool toohigh() const{return false;}
+    /// High-inclusive bounds check.
+    /// If the condition (low <= value <= high) is not satisfied, throw this error.
+    /// Returns the value being bounds-checked.
+    auto enforcei(V, L, H)(in V value, in L low, in H high) const if(
+        isNumeric!V && isNumeric!L && isNumeric!H
+    ){
+        if(value < low || value > high) throw this;
+        return value;
+    }
+    
+    /// High-exclusive bounds check.
+    /// Low is 0 and high is the length of the passed object.
+    /// Returns the value being bounds-checked.
+    auto enforce(V, Obj)(in V value, auto ref Obj object) const if(
+        isNumeric!V && hasNumericLength!Obj
+    ){
+        return this.enforce(value, 0, object.length);
+    }
+    
+    /// High-inclusive bounds check.
+    /// Low is 0 and high is the length of the passed object.
+    /// Returns the value being bounds-checked.
+    auto enforcei(V, Obj)(in V value, auto ref Obj object) const if(
+        isNumeric!V && hasNumericLength!Obj
+    ){
+        return this.enforcei(value, 0, object.length);
+    }
 }
 
-class HOutOfBoundsException(string hop, Index, High): OutOfBoundsException!Index if(
-    canHOOB!(hop, Index, High)
-){
-    Index idx;
-    High high;
-    
-    this(Index index, High high, size_t line = __LINE__, string file = __FILE__){
-        immutable auto message = text(
-            "Value ", index, " out of bounds; must be ", hop, " ", high, "."
-        );
-        this.idx = index;
-        this.high = high;
-        super(message, line, file);
+
+
+/// Error class for failed slice bounds checks.
+class InvalidSliceBoundsError: IndexOutOfBoundsError{
+    this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        this("Invalid slice.");
+    }
+    this(string message, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super(message, next, line, file);
     }
     
-    static auto enforce(Index index, High high, size_t line = __LINE__, string file = __FILE__){
-        mixin(`auto cond = index ` ~ hop ~ ` high;`);
-        if(!cond){
-            throw new typeof(this)(index, high, line, file);
-        }
-        return index;
+    /// Check that the slice represented by `slow .. shigh` is entirely
+    /// contained within the slice `ilow .. ihigh` and throw this error if not.
+    auto enforce(SliceLow, SliceHigh, InLow, InHigh)(
+        in SliceLow slow, in SliceHigh shigh, in InLow ilow, in InHigh ihigh
+    ) const if(
+        isNumeric!SliceLow && isNumeric!SliceHigh &&
+        isNumeric!InLow && isNumeric!InHigh
+    ){
+        if(slow < ilow || shigh < slow || ihigh < shigh) throw this;
     }
     
-    override @property Index index() const{return this.idx;}
-    override @property bool toolow() const{return false;}
-    override @property bool toohigh() const{mixin(`
-        return !(this.idx ` ~ hop ~ ` this.high);
-    `);}
+    /// Check that the slice represented by `slow .. shigh` is entirely
+    /// contained within the slice `0 .. obj.length` and throw this error if not.
+    auto enforce(SliceLow, SliceHigh, InObj)(
+        in SliceLow slow, in SliceHigh shigh, auto ref InObj obj
+    ) const if(
+        isNumeric!SliceLow && isNumeric!SliceHigh && hasNumericLength!InObj
+    ){
+        return this.enforce(slow, shigh, 0, obj.length);
+    }
 }
 
-class LHOutOfBoundsException(string lop, string hop, Index, Low, High): OutOfBoundsException!Index if(
-    canLHOOB!(lop, hop, Index, Low, High)
-){
-    Index idx;
-    Low low;
-    High high;
-    
-    this(Index index, Low low, High high, size_t line = __LINE__, string file = __FILE__){
-        immutable auto message = text(
-            "Value ", index, " out of bounds; must be ",
-            lop, " ", low, " and ", hop, " ", high, "."
-        );
-        this.idx = index;
-        this.low = low;
-        this.high = high;
-        super(message, line, file);
-    }
-    
-    static auto enforce(Index index, Low low, High high, size_t line = __LINE__, string file = __FILE__){
-        mixin(`auto cond = index ` ~ lop ~ ` low && index ` ~ hop ~ ` high;`);
-        if(!cond){
-            throw new typeof(this)(index, low, high, line, file);
-        }
-        return index;
-    }
-    
-    override @property Index index() const{return this.idx;}
-    override @property bool toolow() const{mixin(`
-        return !(this.idx ` ~ lop ~ ` this.low);
-    `);}
-    override @property bool toohigh() const{mixin(`
-        return !(this.idx ` ~ hop ~ ` this.high);
-    `);}
+
+
+/// TODO: Remove this
+auto enforcebounds(A...)(A args){
+    static const error = new IndexOutOfBoundsError();
+    error.enforce(args);
+}
+/// ditto
+auto enforceboundsincl(A...)(A args){
+    static const error = new IndexOutOfBoundsError();
+    error.enforcei(args);
 }
 
 
@@ -166,37 +155,37 @@ version(unittest){
     import mach.test;
 }
 unittest{
-    tests("Index Bounds", {
-        tests("Low", {
-            testeq(enforcelowbound(0, 0), 0);
-            testeq(enforcelowbound(0, -1), 0);
-            testeq(enforcelowbound(100, 0), 100);
-            testfail({enforcelowbound(0, 1);});
+    tests("Index bounds", {
+        tests("High-exclusive", {
+            static const error = new IndexOutOfBoundsError();
+            testeq(error.enforce(0, -1, 1), 0);
+            testeq(error.enforce(1, [0, 1, 2]), 1);
+            testfail((Throwable e) => (e is error), {
+                error.enforce(1, 0, 1);
+            });
+            testfail((Throwable e) => (e is error), {
+                error.enforce(10, [0, 1]);
+            });
         });
-        tests("High", {
-            testeq(enforcehighbound(0, 1), 0);
-            testeq(enforcehighbound(-1, 1), -1);
-            testeq(enforcehighbound(0, 100), 0);
-            testfail({enforcehighbound(1, 0);});
+        tests("High-inclusive", {
+            static const error = new IndexOutOfBoundsError();
+            testeq(error.enforcei(0, -1, 1), 0);
+            testeq(error.enforcei(1, 0, 1), 1);
+            testeq(error.enforcei(1, [0, 1, 2]), 1);
+            testfail((Throwable e) => (e is error), {
+                error.enforcei(10, 0, 1);
+            });
+            testfail((Throwable e) => (e is error), {
+                error.enforcei(10, [0, 1]);
+            });
         });
-        tests("Low And High", {
-            testeq(enforcebounds(0, 0, 10), 0);
-            testeq(enforcebounds(0, -10, 10), 0);
-            testfail({enforcebounds(10, 0, 10);});
-            testfail({enforcebounds(-1, 0, 10);});
-            testfail({enforcebounds(11, -10, 10);});
-            testfail({enforcebounds(0, 1, 10);});
-            testeq(enforceboundsincl(0, 0, 10), 0);
-            testeq(enforceboundsincl(10, 0, 10), 10);
-            testeq(enforceboundsincl(0, -10, 10), 0);
-            testfail({enforceboundsincl(-1, 0, 10);});
-            testfail({enforceboundsincl(11, -10, 10);});
-            testfail({enforceboundsincl(0, 1, 10);});
-        });
-        tests("Type with length", {
-            struct Obj{size_t length;}
-            testeq(enforcebounds(10, Obj(20)), 10);
-            testfail({enforcebounds(10, Obj(1));});
+    });
+    tests("Slice validity", {
+        static const error = new InvalidSliceBoundsError();
+        error.enforce(0, 0, 0, 0);
+        error.enforce(1, 2, 0, 10);
+        testfail((Throwable e) => (e is error), {
+            error.enforce(0, 2, 0, 1);
         });
     });
 }

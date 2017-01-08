@@ -8,6 +8,8 @@ import mach.sdl.error : GLError;
 import mach.sdl.init.gl.settings;
 import mach.sdl.init.gl.versions;
 
+import mach.io : log;
+
 public:
 
 
@@ -20,8 +22,12 @@ struct GL{
     alias Version = GLVersions;
     
     static void initialize(){
+        log("Reloading bindings");
         Version.reload();
+        log("Verifying version");
         Version.verify();
+        
+        log("Setting OpenGL flags and options");
         
         glDisable(GL_DITHER);
         glDisable(GL_LIGHTING); // Deprecated

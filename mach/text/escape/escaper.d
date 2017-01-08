@@ -5,7 +5,7 @@ private:
 import mach.types : tuple;
 import mach.traits : isCharString, validAsStringRange;
 import mach.range : asrange, map, chain, any;
-import mach.error : enforceboundsincl;
+import mach.error : IndexOutOfBoundsError;
 
 import mach.text.utf : utf8encode;
 import mach.text.html : NamedChar;
@@ -335,17 +335,29 @@ struct Escaper{
     
     /// Given a character in the range 0x00 - 0xff,
     /// return an escape sequence like "\x00"
-    static string xescape(in dchar ch, in char esc) in{enforceboundsincl(ch, 0, 0xff);} body{
+    static string xescape(in dchar ch, in char esc){
+        version(assert){
+            static const error = new IndexOutOfBoundsError("Character out of bounds.");
+            error.enforcei(cast(uint) ch, 0, 0xff);
+        }
         return cast(string)([esc, 'x'] ~ writehex(cast(ubyte) ch));
     }
     /// Given a character in the range 0x0000 - 0xffff,
     /// return an escape sequence like "\u0000"
-    static string u16escape(in dchar ch, in char esc) in{enforceboundsincl(ch, 0, 0xffff);} body{
+    static string u16escape(in dchar ch, in char esc){
+        version(assert){
+            static const error = new IndexOutOfBoundsError("Character out of bounds.");
+            error.enforcei(cast(uint) ch, 0, 0xffff);
+        }
         return cast(string)([esc, 'u'] ~ writehex(cast(ushort) ch));
     }
     /// Given a character in the range 0x00000000 - 0xffffffff,
     /// return an escape sequence like "\U00000000"
-    static string u32escape(in dchar ch, in char esc) in{enforceboundsincl(ch, 0, 0xffffffff);} body{
+    static string u32escape(in dchar ch, in char esc){
+        version(assert){
+            static const error = new IndexOutOfBoundsError("Character out of bounds.");
+            error.enforcei(cast(uint) ch, 0, 0xffffffff);
+        }
         return cast(string)([esc, 'U'] ~ writehex(cast(uint) ch));
     }
     /// Given a character of arbitrary value,

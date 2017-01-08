@@ -12,7 +12,7 @@ import mach.sdl.init.sdl.mixer;
 import mach.sdl.init.sdl.ttf;
 import mach.sdl.init.sdl.net;
 
-debug import mach.io.log;
+import mach.io : log;
 
 public:
 
@@ -83,6 +83,7 @@ struct SDL{
     )in{
         assert(!loaded.anyloaded, "Unload before attempting to load again.");
     }body{
+        log("Loading dynamic libraries.");
         loaded = Loaded.init;
         if(core){
             try{
@@ -91,6 +92,7 @@ struct SDL{
                 loaded.coreerror = exception;
             }
             loaded.core = loaded.coreerror is null;
+            log("Loaded core bindings: ", loaded.core);
         }
         if(image){
             try{
@@ -99,6 +101,7 @@ struct SDL{
                 loaded.imageerror = exception;
             }
             loaded.image = loaded.imageerror is null;
+            log("Loaded image bindings: ", loaded.image);
         }
         if(mixer){
             try{
@@ -107,6 +110,7 @@ struct SDL{
                 loaded.mixererror = exception;
             }
             loaded.mixer = loaded.mixererror is null;
+            log("Loaded mixer bindings: ", loaded.mixer);
         }
         if(ttf){
             try{
@@ -115,6 +119,7 @@ struct SDL{
                 loaded.ttferror = exception;
             }
             loaded.ttf = loaded.ttferror is null;
+            log("Loaded ttf bindings: ", loaded.ttf);
         }
         if(net){
             try{
@@ -123,8 +128,9 @@ struct SDL{
                 loaded.neterror = exception;
             }
             loaded.net = loaded.neterror is null;
+            log("Loaded net bindings: ", loaded.net);
         }
-        debug log(loaded);
+        log("Status of dynamic library loading:\n", loaded);
         return loaded;
     }
     static void unload(){
@@ -173,18 +179,21 @@ struct SDL{
         /// Attempt to initialize SDL with the given options.
         void initialize() const{
             if(enabledbool(Enable.Yes, loaded.core)){
+                log("Initializing core bindings");
                 if(!loaded.core) throw new SDLError(
                     "Failed to initialize core because it has not been loaded."
                 );
                 Core.initialize(this.coresystems);
             }
             if(enabledbool(this.image, loaded.image)){
+                log("Initializing image bindings");
                 if(!loaded.image) throw new SDLError(
                     "Failed to initialize image library because it has not been loaded."
                 );
                 Image.initialize(this.imageformats);
             }
             if(enabledbool(this.mixer, loaded.mixer)){
+                log("Initializing mixer bindings");
                 if(!loaded.mixer) throw new SDLError(
                     "Failed to initialize mixer library because it has not been loaded."
                 );
@@ -192,12 +201,14 @@ struct SDL{
                 this.audiosettings.open();
             }
             if(enabledbool(this.ttf, loaded.ttf)){
+                log("Initializing ttf bindings");
                 if(!loaded.ttf) throw new SDLError(
                     "Failed to initialize TTF library because it has not been loaded."
                 );
                 TTF.initialize();
             }
             if(enabledbool(this.net, loaded.net)){
+                log("Initializing net bindings");
                 if(!loaded.net) throw new SDLError(
                     "Failed to initialize net library because it has not been loaded."
                 );

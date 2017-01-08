@@ -11,7 +11,6 @@ import mach.math.box : Box;
 import mach.sdl.error : GLError;
 import mach.sdl.glenum : TextureTarget, TextureParam;
 import mach.sdl.glenum : PixelsType, PixelsFormat;
-import mach.sdl.glenum : TextureMinFilter, TextureMagFilter;
 import mach.sdl.glenum : GLPrimitive, VertexType, getvertextype, validvertextype;
 import mach.sdl.graphics.surface : Surface;
 import mach.sdl.graphics.pixelformat : SDLPixelFormat = PixelFormat;
@@ -22,6 +21,9 @@ import mach.io.log;
 public:
 
 import mach.sdl.glenum : TextureWrap, TextureFilter;
+import mach.sdl.glenum : TextureMinFilter, TextureMagFilter;
+
+
 
 struct Texture{
     
@@ -159,7 +161,10 @@ struct Texture{
     
     void mipmap(bool atomic = true)(){
         mixin(AtomicMethodMixin);
-        glGenerateMipmap(TextureTarget.Texture2D);
+        // Doesn't work (Crashes because glGenerateMipmap isn't loaded)
+        //glGenerateMipmapEXT(TextureTarget.Texture2D);
+        // Not sure if this works or not honestly, but at least it doesn't crash
+        glTexParameteri(TextureTarget.Texture2D, GL_GENERATE_MIPMAP, true);
     }
     
     @property Vector2!int size() const{
@@ -222,11 +227,11 @@ struct Texture{
     /// Draw a portion of the texture to a position.
     /// The subrect represents integral pixel coordinates on the texture.
     void drawsub(X, Y)(in Vector2!X position, in Box!Y sub){
-        this.draw(position, Box!real(sub) / this.size);
+        this.draw(position, Box!double(sub) / this.size);
     }
     /// Draw a portion of the texture to a rectangular target.
     /// The subrect represents integral pixel coordinates on the texture.
     void drawsub(X, Y)(in Box!X target, in Box!Y sub){
-        this.draw(target, Box!real(sub) / this.size);
+        this.draw(target, Box!double(sub) / this.size);
     }
 }

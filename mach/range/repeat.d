@@ -8,7 +8,7 @@ import mach.traits : isFiniteRange, isRandomAccessRange, isSavingRange;
 import mach.traits : isBidirectionalRange, hasNumericLength, hasNumericRemaining;
 import mach.range.asrange : asrange, validAsRange;
 import mach.range.asrange : validAsRandomAccessRange, validAsSavingRange;
-import mach.error : enforcebounds;
+import mach.error : IndexOutOfBoundsError;
 
 /++ Docs
 
@@ -305,7 +305,8 @@ struct FiniteRepeatRandomAccessRange(Source) if(
     
     /// Implement random access.
     auto opIndex(in size_t index) in{
-        enforcebounds(index, this);
+        static const error = new IndexOutOfBoundsError();
+        error.enforce(index, this);
     }body{
         return this.source[index % (cast(size_t) this.source.length)];
     }
@@ -455,7 +456,8 @@ struct FiniteRepeatSavingRange(Range) if(
     
     static if(isRandomAccessRange!Range && hasNumericLength!Range){
         auto opIndex(in size_t index) in{
-            enforcebounds(index, this);
+            static const error = new IndexOutOfBoundsError();
+            error.enforce(index, this);
         }body{
             return this.source[cast(size_t)(index % this.source.length)];
         }

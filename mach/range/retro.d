@@ -5,9 +5,27 @@ private:
 import mach.traits : isBidirectionalRange, isRandomAccessRange, hasNumericLength;
 import mach.traits : isMutableRange, isMutableFrontRange, isMutableBackRange;
 import mach.traits : isMutableRemoveFrontRange, isMutableRemoveBackRange;
-import mach.traits : isSlicingRange, isSavingRange, isTemplateOf;
+import mach.traits : isMutableRandomRange, isSlicingRange, isSavingRange;
+import mach.traits : isTemplateOf;
 import mach.range.asrange : asrange, validAsBidirectionalRange;
 import mach.range.meta : MetaRangeEmptyMixin, MetaRangeLengthMixin;
+
+/++ Docs
+
+The `retro` function returns a range which enumerates the elements of its input
+in reverse order. Its input must be an iterable valid as a bidirectional range.
+
+When the input iterable provides `length` and `remaining` properties, so does
+the output of `retro`. Infiniteness is similarly propagated. Saving, slicing,
+random access reading and writing, front and back mutability, and element
+removal are supported when the inputted iterable supports them.
+
++/
+
+unittest{ /// Example
+    import mach.range.compare : equals;
+    assert("hello".retro.equals("olleh"));
+}
 
 public:
 
@@ -117,6 +135,13 @@ struct RetroRange(Range) if(canRetroRange!Range){
                 return this.source.removeFront();
             }
         }
+        static if(isMutableRandomRange!Range){
+            auto opIndexAssign(Element value, in size_t index) in{
+                assert(index >= 0 && index < this.length);
+            }body{
+                this.source[cast(size_t)(this.source.length - index - 1)] = value;
+            }
+        }
     }else{
         enum bool mutable = false;
     }
@@ -210,6 +235,14 @@ unittest{
             range.removeFront();
             test!equals(list.ivalues, [2]);
             test(range.empty);
+        });
+        tests("Random-access writing", {
+            auto array = [0, 1, 2];
+            auto range = array.retro;
+            range[0] = 5;
+            testeq(array, [0, 1, 5]);
+            range[$-1] = 6;
+            testeq(array, [6, 1, 5]);
         });
     });
 }

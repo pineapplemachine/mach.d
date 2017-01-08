@@ -4,7 +4,7 @@ private:
 
 import mach.traits : isRange, isBidirectionalRange, isRandomAccessRange, isSavingRange;
 import mach.traits : isInfiniteIterable, isInfiniteRange, hasNumericLength;
-import mach.error : enforcebounds;
+import mach.error : IndexOutOfBoundsError, InvalidSliceBoundsError;
 import mach.range.asrange : asrange, validAsRange, validAsRandomAccessRange;
 
 public:
@@ -81,7 +81,7 @@ struct SimpleHeadRange(Range) if(canGetSimpleHeadRange!(Range)){
         this.index = index;
     }
     
-    @property auto ref front() in{assert(!this.empty);} body{
+    @property auto front() in{assert(!this.empty);} body{
         return this.source.front;
     }
     void popFront() in{assert(!this.empty);} body{
@@ -104,11 +104,13 @@ struct SimpleHeadRange(Range) if(canGetSimpleHeadRange!(Range)){
     }
     
     static if(isSavingRange!Range){
-        @property auto ref save(){
+        @property typeof(this) save(){
             return typeof(this)(this.source.save, this.limit, this.index);
         }
     }
 }
+
+
 
 struct EndRange(Range, bool tail) if(canGetEndRange!(Range)){
     Range source;
@@ -132,14 +134,14 @@ struct EndRange(Range, bool tail) if(canGetEndRange!(Range)){
         this.limit = limit;
     }
     
-    @property auto ref front() in{assert(!this.empty);} body{
+    @property auto front() in{assert(!this.empty);} body{
         return this[this.frontindex];
     }
     void popFront() in{assert(!this.empty);} body{
         this.frontindex++;
     }
     
-    @property auto ref back() in{assert(!this.empty);} body{
+    @property auto back() in{assert(!this.empty);} body{
         return this[this.backindex - 1];
     }
     void popBack() in{assert(!this.empty);} body{
@@ -155,20 +157,32 @@ struct EndRange(Range, bool tail) if(canGetEndRange!(Range)){
 
     alias opDollar = length;
     
-    auto ref opIndex(size_t index) in{
-        enforcebounds(index, this);
+    auto opIndex(in size_t index) in{
+        static const error = new IndexOutOfBoundsError();
+        error.enforce(index, this);
     }body{
         static if(!tail){
             return this.source[index];
         }else{
-            return this.source[this.source.length - this.length + index];
+            return this.source[cast(size_t) this.source.length - this.length + index];
         }
     }
     
-    // TODO: Slice
+    auto opSlice(in size_t low, in size_t high) in{
+        static const error = new InvalidSliceBoundsError();
+        //error.enforce(low, high, this); // TODO: ??????????????????
+        if(low < 0 || high < low || high > this.length) throw error;
+    }body{
+        static if(!tail){
+            return this.source[low .. high];
+        }else{
+            immutable startindex = cast(size_t) this.source.length - this.length;
+            return this.source[startindex + low .. startindex + high];
+        }
+    }
     
     static if(isSavingRange!Range){
-        @property auto ref save(){
+        @property typeof(this) save(){
             return typeof(this)(
                 this.source.save, this.limit, this.frontindex, this.backindex
             );
@@ -201,6 +215,17 @@ unittest{
         tests("Head", {
             test(input.head(3).equals([1, 2, 3]));
             testeq(input.head(3)[0], 1);
+            //tests("Slicing", {
+                auto range = [0, 1, 2, 3, 4, 5, 6].head(4);
+                test(range[0 .. 0].empty);
+                test(range[$ .. $].empty);
+                test!equals(range[0 .. 1], [0]);
+                test!equals(range[0 .. 2], [0, 1]);
+                test!equals(range[0 .. $], [0, 1, 2, 3]);
+                test!equals(range[1 .. $], [1, 2, 3]);
+                test!equals(range[3 .. $], [3]);
+                //testfail({range[0 .. $+1];});
+            //});
         });
         tests("Tail", {
             test(input.tail(3).equals([3, 4, 5]));

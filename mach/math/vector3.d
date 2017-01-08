@@ -3,8 +3,8 @@ module mach.math.vector3;
 private:
 
 import std.math : sin, cos, atan2, sqrt;
-import mach.traits : isNumeric, Unqual, isTemplateOf;
-import mach.error : enforcebounds;
+import mach.types : tuple;
+import mach.traits : isNumeric, isTemplateOf;
 
 public:
 
@@ -21,8 +21,14 @@ auto Vector(N)(N x, N y, N z) if(isNumeric!N){
 
 
 struct Vector3(T) if(isNumeric!T){
+    static enum Zero = Vector3!T(0);
     
-    Unqual!T x, y, z;
+    T x, y, z;
+    
+    @property auto astuple(){
+        return tuple(this.x, this.y, this.z);
+    }
+    alias astuple this;
     
     this(N)(in N x) if(isNumeric!N){
         this(x, x, x);
@@ -148,21 +154,6 @@ struct Vector3(T) if(isNumeric!T){
         );`);
     }
     
-    T opIndex(in size_t index) const in{
-        enforcebounds(index, 0, 2);
-    }body{
-        if(index == 0) return this.x;
-        else if(index == 1) return this.y;
-        else return this.z;
-    }
-    void opIndexAssign(N)(in N value, in size_t index) if(isNumeric!N) in{
-        enforcebounds(index, 0, 2);
-    }body{
-        if(index == 0) this.x = cast(T) value;
-        else if(index == 1) this.y = cast(T) value;
-        else this.z = cast(T) value;
-    }
-    
     bool opEquals(N)(Vector3!N vector) const{
         return(
             (this.x == vector.x) & 
@@ -177,7 +168,6 @@ struct Vector3(T) if(isNumeric!T){
     Vector3!N opCast(Type : Vector3!N, N)() if(!is(N == T)){
         return Type(this);
     }
-    
 }
 
 

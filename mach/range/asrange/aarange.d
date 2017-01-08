@@ -10,10 +10,6 @@ public:
 
 
 
-alias canMakeAssociativeArrayRange = isAssociativeArray;
-
-
-
 /// Template to retrieve corresponding element type for a key and value type.
 template AssociativeArrayRangeElement(K, V){
     alias AssociativeArrayRangeElement = KeyValuePair!(K, V);
@@ -29,7 +25,7 @@ template AssociativeArrayRangeElement(T) if(isAssociativeArray!T){
 
 
 /// Range based on an associative array.
-struct AssociativeArrayRange(Array) if(canMakeAssociativeArrayRange!Array){
+struct AssociativeArrayRange(Array) if(isAssociativeArray!Array){
     alias Key = ArrayKeyType!Array;
     alias Keys = ArrayRange!(Key[]);
     alias Element = AssociativeArrayRangeElement!Array;

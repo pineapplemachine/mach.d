@@ -3,8 +3,8 @@ module mach.math.vector2;
 private:
 
 import std.math : sin, cos, atan2, sqrt;
-import mach.traits : isNumeric, Unqual, isTemplateOf;
-import mach.error : enforcebounds;
+import mach.types : tuple;
+import mach.traits : isNumeric, isTemplateOf;
 
 public:
 
@@ -21,10 +21,14 @@ auto Vector(N)(N x, N y) if(isNumeric!N){
 
 
 struct Vector2(T) if(isNumeric!T){
-    
     static enum Zero = Vector2!T(0);
     
-    Unqual!T x, y;
+    T x, y;
+    
+    @property auto astuple(){
+        return tuple(this.x, this.y);
+    }
+    alias astuple this;
     
     this(N)(in N x) if(isNumeric!N){
         this(x, x);
@@ -178,18 +182,6 @@ struct Vector2(T) if(isNumeric!T){
             rhs ` ~ op ~ ` this.x,
             rhs ` ~ op ~ ` this.y
         );`);
-    }
-    
-    T opIndex(in size_t index) const in{
-        enforcebounds(index, 0, 1);
-    }body{
-        return (index == 0) ? this.x : this.y;
-    }
-    void opIndexAssign(N)(in N value, in size_t index) if(isNumeric!N) in{
-        enforcebounds(index, 0, 1);
-    }body{
-        if(index == 0) this.x = cast(T) value;
-        else this.y = cast(T) value;
     }
     
     bool opEquals(N)(Vector2!N vector) const{
