@@ -8,6 +8,40 @@ import mach.traits : isMutableRemoveFrontRange, isMutableRemoveBackRange;
 import mach.range.asrange : asrange, validAsRange, AsRangeElementType;
 import mach.range.meta : MetaRangeEmptyMixin;
 
+/++ Docs
+
+This module implements the
+(filter higher-order function)[https://en.wikipedia.org/wiki/Filter_(higher-order_function)]
+for iterable inputs.
+
+The `filter` function produces a range enumerating only those elements of an
+input iterable which satisfy its predicate.
+The predicate is passed as a template argument, and the input iterable can be
+anything that is valid as a range.
+
+The range returned by `filter` supports bidirectionality, saving, removal,
+and mutation when the input range supports them. Infiniteness is similarly
+propagated.
+The range does not provide `length` or `remaining` properties, as the only way
+to determine those values in advance is to traverse the outputted sequence.
+To acquire these properties, or to get a slice or element at an index, the
+`walklength`, `walkindex`, and `walkslice` functions in `mach.range.walk` may
+be used.
+
++/
+
+unittest{ /// Example
+    import mach.range.compare : equals;
+    auto range = [0, 1, 2, 3, 4].filter!(n => n % 2 == 0);
+    assert(range.equals([0, 2, 4]));
+}
+
+unittest{ /// Example
+    import mach.range.compare : equals;
+    auto range = "h e l l o".filter!(ch => ch != ' ');
+    assert(range.equals("hello"));
+}
+
 public:
 
 
@@ -61,7 +95,7 @@ struct FilterRange(alias pred, Range) if(canFilterRange!(Range, pred)){
     }
     /// Pop values from the source range until a value matching the
     /// predicate is found.
-    void consumeFront(){
+    private void consumeFront(){
         while(!this.source.empty && !pred(this.source.front)){
             this.source.popFront();
         }
@@ -79,7 +113,7 @@ struct FilterRange(alias pred, Range) if(canFilterRange!(Range, pred)){
         }
         /// Pop values from the source range until a value matching the
         /// predicate is found.
-        void consumeBack(){
+        private void consumeBack(){
             while(!this.source.empty && !pred(this.source.back)){
                 this.source.popBack();
             }
