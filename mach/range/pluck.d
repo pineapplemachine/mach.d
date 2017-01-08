@@ -2,56 +2,72 @@ module mach.range.pluck;
 
 private:
 
-import mach.range.asrange : validAsRange;
 import mach.traits : isRange, ElementType, hasProperty;
+import mach.range.asrange : validAsRange;
 import mach.range.map : map;
+
+/++ Docs
+
+This module implements `pluck`, which is a simple abstraction of the `map`
+function in `mach.range.map`.
+`pluck` can be called with a template argument indicating a property to be
+extracted from each element of an input iterable, or with runtime arguments
+used to index the elements of the input iterable.
+
++/
+
+unittest{ /// Example
+    import mach.range.compare : equals;
+    struct Test{int x; int y; int z;}
+    // Equivalent to `input.map!(e => e.x)`.
+    auto range = [Test(0, 1, 2), Test(2, 3, 4)].pluck!`x`;
+    assert(range.equals(0, 2));
+}
+
+unittest{ /// Example
+    import mach.range.compare : equals;
+    string[] array = ["abc", "xyz", "123"];
+    // Equivalent to `input.map!(e => e[0])`.
+    assert(array.pluck(0).equals("ax1"));
+}
 
 public:
 
 
 
-enum canPluckIndex(Iter, Index) = (
-    validAsRange!Iter && validPluckIndex!(Iter, Index)
-);
-enum canPluckIndexRange(Range, Index) = (
-    isRange!Range && validPluckIndex!(Range, Index)
+enum canPluckIndex(Iter, Idx) = (
+    validAsRange!Iter && validPluckIndex!(Iter, Idx)
 );
 
-template validPluckIndex(Iter, Index){
+template validPluckIndex(Iter, Idx...){
     enum bool validPluckIndex = is(typeof((inout int = 0){
         alias Element = ElementType!Iter;
         auto element = Element.init;
-        auto result = element[Index.init];
+        auto result = element[Idx.init];
     }));
 }
 
 enum canPluckProperty(Iter, string property) = (
     validAsRange!Iter && hasProperty!(ElementType!Iter, property)
 );
-enum canPluckPropertyRange(Range, string property) = (
-    isRange!Range && hasProperty!(ElementType!Range, property)
-);
 
 
 
 /// Return a range enumerating some property of the elements in another range.
 /// Really just a simple abstraction of map.
-auto pluck(Index, Iter)(Iter iter, Index index) if(canPluckIndex!(Iter, Index)){
+auto pluck(Iter, Idx...)(Iter iter, Idx index) if(
+    Idx.length && canPluckIndex!(Iter, Idx)
+){
     return map!(element => element[index])(iter);
 }
 
-private template MakePluckTransformation(alias property){
-    alias MakePluckTransformation = property;
-}
-private template MakePluckTransformation(string property){
-    mixin(`alias MakePluckTransformation = element => element.` ~ property ~ `;`);
-}
 /// ditto
-template pluck(properties...) if(properties.length){
-    import std.meta : staticMap;
-    auto pluck(Iter)(Iter iter){
-        return map!(staticMap!(MakePluckTransformation, properties))(iter);
-    }
+auto pluck(string property, Iter)(auto ref Iter iter) if(
+    canPluckProperty!(Iter, property)
+){
+    return iter.map!((e){
+        mixin(`return e.` ~ property ~ `;`);
+    });
 }
 
 
@@ -69,16 +85,16 @@ version(unittest){
 }
 unittest{
     tests("Pluck", {
-        int[][] input;
-        foreach(i; 0 .. 4) input ~= [0, i, i+i, i*i];
-        tests("Numeric index", {
+        tests("Array index", {
+            int[][] input;
+            foreach(i; 0 .. 4) input ~= [0, i, i+i, i*i];
             testeq(input.pluck(0).length, 4);
             test(input.pluck(0).equals([0, 0, 0, 0]));
             test(input.pluck(1).equals([0, 1, 2, 3]));
             test(input.pluck(2).equals([0, 2, 4, 6]));
             test(input.pluck(3).equals([0, 1, 4, 9]));
         });
-        tests("Associative array strings", {
+        tests("Associative array keys", {
             string[string][] data = [
                 ["a": "apple", "b": "bear"],
                 ["a": "attack", "b": "bumblebee"],
@@ -99,18 +115,6 @@ unittest{
             test(data.pluck!`x`.equals([0, 2, 4]));
             test(data.pluck!`y`.equals([2, 4, 6]));
             test(data.pluck!`z`.equals([2, 6, 10]));
-        });
-        tests("Transformation", {
-            // Note: This is a pointless use case. Please use map instead.
-            auto input = [0, 1, 2];
-            test(input.pluck!(e => e+1).equals([1, 2, 3]));
-        });
-        tests("Multiple properties", {
-            auto input = [[0, 1], [1, 2], [2, 3]];
-            auto range = input.pluck!(`length`, `sizeof`, (e) => (e[0] + e[1]));
-            testeq(range.front[0], input[0].length);
-            testeq(range.front[1], input[0].sizeof);
-            testeq(range.front[2], 1);
         });
     });
 }
