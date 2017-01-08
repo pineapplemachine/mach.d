@@ -8,6 +8,29 @@ import mach.range.asrange : asrange, validAsRange;
 import mach.range.meta : MetaRangeEmptyMixin;
 import mach.collect : DenseHashSet;
 
+/++ Docs
+
+This module implements a `distinct` function, which enumerates only the unique
+elements of an input iterable.
+
+Uniqueness is dictated by keys, which must be hashable.
+A transformation function for acquiring these keys can optionally be provided
+as a template argument; by default the elements are themselves used as the
+keys.
+
++/
+
+unittest{ /// Example
+    assert("hello world".distinct.equals("helo wrd"));
+}
+
+unittest{ /// Example
+    // Use each element itself as the uniqueness key.
+    assert([2, 1, 2, 11, 10, 12].distinct.equals([2, 1, 11, 10, 12]));
+    // Use (element % 10) as the uniqueness key.
+    assert([2, 1, 2, 11, 10, 12].distinct!(e => e % 10).equals([2, 1, 10]));
+}
+
 public:
 
 
