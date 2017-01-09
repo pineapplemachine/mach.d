@@ -32,6 +32,7 @@ import mach.range.contains : contains, containsiter, containselement;
 import mach.range.count : count, exactly, morethan, lessthan, atleast, atmost;
 import mach.range.distinct : distinct;
 import mach.range.each : each, eachreverse;
+import mach.range.elementcount : elementcount;
 import mach.range.ends : head, tail;
 import mach.range.enumerate : enumerate;
 import mach.range.fill : fill;
