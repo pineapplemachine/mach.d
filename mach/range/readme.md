@@ -1206,6 +1206,60 @@ assert(array == [1, 4, 10]);
 ```
 
 
+## mach.range.walk
+
+
+This module implements `walklength`, `walkindex`, and `walkslice` functions
+which acquire the number of elements in an iterable, the element at an index,
+and a slice of elements, respectively, by actually traversing the input.
+These functions are useful for determining these properties even for ranges
+which do not support them because no more efficient implementation than
+traversal would be available.
+
+When the input of `walkslice` is valid as a range, it will itself return a
+range to lazily enumerate the elements of the slice.
+When the input is not valid as a range, the slice will be accumulated in-memory
+in an array and returned.
+
+``` D
+import mach.range.recur : recur;
+import mach.range.compare : equals;
+auto range = 0.recur!(n => n + 1, n => n >= 10); // Enumerate numbers 0 through 10.
+assert(range.walklength == 10);
+assert(range.walkindex(4) == 4);
+assert(range.walkslice(2, 4).equals([2, 3]));
+```
+
+
+The `walkindex` and `walkslice` functions will produce errors if the passed
+indexes are out of bounds.
+(In release mode, some of these checks necessary to helpfully report errors are
+omitted and nastier errors may occur instead.)
+These errors can be circumvented by providing a fallback value to `walkindex`
+and `walkslice`, where if the indexes being acquired exceed the length of the
+input, the fallback is returned for the missing elements instead.
+
+``` D
+import mach.error.mustthrow : mustthrow;
+import mach.range.consume : consume;
+mustthrow!IndexOutOfBoundsError({
+    "hello".walkindex(100);
+});
+mustthrow!InvalidSliceBoundsError({
+    // The error is thrown upon the invalid index being encountered,
+    // not upon creation of the `walkslice` range.
+    "hello".walkslice(0, 100).consume;
+});
+```
+
+``` D
+// A fallback can be used to compensate for out-of-bounds indexes.
+import mach.range.compare : equals;
+assert("hi".walkindex(10, '_') == '_');
+assert("hello".walkslice(3, 8, '_').equals("lo___"));
+```
+
+
 ## mach.range.zip
 
 
