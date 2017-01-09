@@ -16,8 +16,42 @@ public:
 
 
 
-public import core.stdc.stdio : fclose, fread, fwrite, fflush, fseek, ftell, feof;
+version(CRuntime_Microsoft){
+    alias off_t = long;
+    extern(C){
+        int _fseeki64(FileHandle, long, int) @nogc nothrow;
+    }
+}else version(Windows){
+    alias off_t = int;
+}else version(Posix){
+    public import core.sys.posix.stdio : off_t;
+}else{
+    static assert(false, "Unsupported platform.");
+}
+
+
+
+public import core.stdc.stdio : fclose, fread, fwrite, fflush, ftell, feof;
 public import core.stdc.stdio : fileno, tmpfile, rewind;
+
+
+
+void fseek(FileHandle file, long offset, Seek origin = Seek.Set){
+    if(file is null) throw new FileSeekException();
+    version(CRuntime_Microsoft){
+        alias seek = _fseeki64;
+    }else version(Windows){
+        import core.std.stdio : fseek;
+        alias seek = fseek;
+    }else version(Posix){
+        import core.std.stdio : fseeko;
+        alias seek = fseeko;
+    }else{
+        static assert(false, "Unsupported platform.");
+    }
+    auto result = seek(file, cast(off_t) offset, origin);
+    if(result != 0) throw new FileSeekException(new ErrnoException);
+}
 
 
 
@@ -29,11 +63,28 @@ auto fopen(string path, in char[] mode = "rb"){
     }
     auto cpath = path.tempCString!char();
     auto cmode = mode.tempCString!char();
-    auto result = cfopen(cpath, cmode);
-    if(result is null){
+    auto filehandle = cfopen(cpath, cmode);
+    if(filehandle is null){
         throw new FileOpenException(path, new ErrnoException);
     }else{
-        return result;
+        version(CRuntime_Microsoft){
+            // MSVC libc append ('a') behavior is inconsistent with dmc.
+            // See also https://github.com/dlang/phobos/pull/3160
+            import core.sys.windows.stat : struct_stat, fstat;
+            bool append, update;
+            foreach(ch; mode){
+                append = append | (ch == 'a');
+                update = update | (ch == '+');
+            }
+            if(append && !update){
+                try{
+                    fseek(filehandle, 0, Seek.End);
+                }catch(FileSeekException e){
+                    throw new FileOpenException(path, e);
+                }
+            }
+        }
+        return filehandle;
     }
 }
 
@@ -179,6 +230,25 @@ bool isdir(string path){
 bool islink(string path){
     version(Windows) return Attributes(path).islink;
     else return Stat(path).mode.islink;
+}
+
+auto filesize(string path){
+    version(Posix){
+        try{
+            return Stat(path).size;
+        }catch(FileStatException e){
+            throw new FileSizeException(path, e);
+        }
+    }else{
+        try{
+            auto file = fopen(path, "rb");
+            scope(exit) fclose(file);
+            fseek(file, 0, Seek.End);
+            return ftell(file);
+        }catch(FileException e){
+            throw new FileSizeException(path, e);
+        }
+    }
 }
 
 
@@ -330,8 +400,9 @@ version(unittest){
     private:
     import std.path;
     import mach.test;
-    enum string TestPath = __FILE__.dirName ~ "/sys.txt";
-    enum string DelMePath = __FILE__.dirName ~ "/deleteme";
+    enum string CurrentPath = __FILE__.dirName;
+    enum string TestPath = CurrentPath ~ "/sys.txt";
+    enum string DelMePath = CurrentPath ~ "/deleteme";
 }
 unittest{
     tests("Exists", {
@@ -348,7 +419,17 @@ unittest{
         testf(file.feof);
         testeq(file.ftell, 85);
         file.fclose;
-        testfail({fsync(file);}); // Attempt to sync closed file
         testfail({fsync(FileHandle.init);}); // Attempt to sync nonexistent file
+        version(CRuntime_Microsoft){} else{
+            // Fails gracefully with dmc, crashes with MSVC
+            testfail({fsync(file);}); // Attempt to sync closed file
+        }
+    });
+    tests("Attributes", {
+        test(isfile(TestPath));
+        test(!isfile(CurrentPath));
+        test(isdir(CurrentPath));
+        test(!isdir(TestPath));
+        testeq(filesize(TestPath), 85);
     });
 }

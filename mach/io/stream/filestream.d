@@ -7,6 +7,7 @@ import mach.io.file.sys : FileHandle, Seek;
 import mach.io.file.sys : fopen, fclose, fread, fwrite, fflush, fsync, fseek, ftell, feof, tmpfile, rewind;
 import mach.io.file.stat : Stat;
 import mach.io.stream.exceptions;
+import mach.io.file.exceptions : FileSeekException;
 
 public:
 
@@ -57,7 +58,14 @@ struct FileStream{
     }
     
     @property size_t length() in{assert(this.active);} body{
-        return this.active ? cast(size_t) this.stat.size : 0;
+        try{
+            auto pos = this.position;
+            scope(exit) this.position = pos;
+            this.seek(0, Seek.End);
+            return this.position;
+        }catch(StreamException e){
+            throw new StreamException("Failed to get stream length.", e);
+        }
     }
     
     @property bool eof() in{assert(this.active);} body{
@@ -76,8 +84,11 @@ struct FileStream{
     void seek(in size_t offset, in Seek origin = Seek.Set) in{
         assert(this.active);
     }body{
-        auto result = fseek(this.target, offset, origin);
-        if(result != 0) throw new StreamSeekException(new ErrnoException);
+        try{
+            fseek(this.target, offset, origin);
+        }catch(FileSeekException e){
+            throw new StreamSeekException(e);
+        }
     }
     
     size_t skip(in size_t count) in{assert(this.active);} body{

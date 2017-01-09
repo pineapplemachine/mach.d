@@ -173,10 +173,14 @@ unittest{
             st.ctime;
             st.modifiedtime;
             st.links;
-            testeq(st.size, 85);
-            test(st.mode.isfile);
+            version(CRuntime_Microsoft){} else{
+                // MSVC libc doesn't correctly support these operations
+                testeq(st.size, 85);
+                test(st.mode.isfile);
+            }
         });
-        tests("Directory path", {
+        version(CRuntime_Microsoft){} else tests("Directory path", {
+            // MSVC libc doesn't correctly support mode
             auto st = Stat(".");
             test(st.mode.isdir);
         });

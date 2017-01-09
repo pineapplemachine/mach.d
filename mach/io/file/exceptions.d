@@ -17,7 +17,16 @@ class FileException: Exception{
 
 
 
+class FileSeekException: FileException{
+    this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super("Failed to seek file.", next, line, file);
+    }
+}
+
+
+
 alias FileStatException = FilePathExceptionTemplate!"Failed to stat file";
+alias FileSizeException = FilePathExceptionTemplate!"Failed to get file size";
 alias FileSyncException = FilePathExceptionTemplate!"Failed to sync file";
 alias FileOpenException = FilePathExceptionTemplate!"Failed to open file";
 alias FileRemoveException = FilePathExceptionTemplate!"Failed to remove file";

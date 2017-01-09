@@ -5,7 +5,7 @@ private:
 import core.stdc.math : fabs, fabsf;
 import mach.traits : isFloatingPoint, isImaginary;
 import mach.traits : isSignedIntegral, isUnsignedIntegral;
-import mach.math.floats : finjectsgn;
+import mach.math.floats : finjectsgn, fisnan;
 
 public:
 
@@ -21,6 +21,10 @@ T abs(T)(in T value) if(isSignedIntegral!T){
 }
 /// ditto
 T abs(T)(in T value) if(isFloatingPoint!T){
+    version(CRuntime_Microsoft){
+        // MSVC libc `fabs` doesn't convert -nan to +nan
+        if(value.fisnan) return value.finjectsgn(0);
+    }
     static if(is(T == float)){
         return fabsf(value);
     }else static if(is(T == double)){
@@ -44,7 +48,7 @@ T abs(T)(in T value) if(isImaginary!T){
 version(unittest){
     private:
     import mach.meta : Aliases;
-    import mach.math.floats : fextractsgn, fisnan;
+    import mach.math.floats : fextractsgn;
 }
 unittest{
     foreach(T; Aliases!(ubyte, ushort, uint, ulong)){
@@ -64,8 +68,10 @@ unittest{
         assert(abs(T(-1.125)) == 1.125);
         assert(abs(T.infinity) == T.infinity);
         assert(abs(-T.infinity) == T.infinity);
-        assert(abs(T.nan).fisnan && !abs(T.nan).fextractsgn);
-        assert(abs(-T.nan).fisnan && !abs(-T.nan).fextractsgn);
+        assert(abs(T.nan).fisnan);
+        assert(!abs(T.nan).fextractsgn);
+        assert(abs(-T.nan).fisnan);
+        assert(!abs(-T.nan).fextractsgn);
     }
     foreach(T; Aliases!(ifloat, idouble, ireal)){
         assert(abs(T(0i)) == 0i);
@@ -75,7 +81,9 @@ unittest{
         assert(abs(T(-1.125i)) == 1.125i);
         assert(abs(T.infinity) == T.infinity);
         assert(abs(-T.infinity) == T.infinity);
-        assert(abs(T.nan).im.fisnan && !abs(T.nan).im.fextractsgn);
-        assert(abs(-T.nan).im.fisnan && !abs(-T.nan).im.fextractsgn);
+        assert(abs(T.nan).im.fisnan);
+        assert(!abs(T.nan).im.fextractsgn);
+        assert(abs(-T.nan).im.fisnan);
+        assert(!abs(-T.nan).im.fextractsgn);
     }
 }
