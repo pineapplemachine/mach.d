@@ -37,22 +37,23 @@ public:
 
 
 /// Get the frontmost value of a range and then pop it.
-auto ref nextfront(Range)(auto ref Range range) if(isRange!Range) in{
+auto nextfront(Range)(auto ref Range range) if(isRange!Range) in{
     assert(!range.empty);
 }body{
     scope(exit) range.popFront();
     return range.front;
 }
 
+/// ditto
+alias next = nextfront;
+
 /// Get the backmost value of a range and then pop it.
-auto ref nextback(Range)(auto ref Range range) if(isBidirectionalRange!Range) in{
+auto nextback(Range)(auto ref Range range) if(isBidirectionalRange!Range) in{
     assert(!range.empty);
 }body{
     scope(exit) range.popBack();
     return range.back;
 }
-
-alias next = nextfront;
 
 
 
