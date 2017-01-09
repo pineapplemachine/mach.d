@@ -9,6 +9,43 @@ import mach.range.find : findalliter, findallelements;
 import mach.range.find : canFindAllIterable, canFindAllElements;
 import mach.range.pluck : pluck;
 
+/++ Docs
+
+The `split` returns a range enumerating portions of an input iterable as
+delimited by a separator, where the separator can either be an element,
+an element predicate, or a substring.
+It is a complement to the `join` function in `mach.range.join`.
+
+`split` is most commonly useful as a string manipulation function; note that
+when using it this way, because its output is a range, a function such as
+`asarray` in `mach.range.asarray` may be required so that the range's contents
+can be placed into an in-memory array.
+
++/
+
+unittest{ /// Example
+    import mach.range.compare : equals;
+    // Split on occurrences of an element.
+    assert("hello world".split(' ').equals(["hello", "world"]));
+    // Split on elements meeting a predicate.
+    assert("1.2,3.4".split!(ch => ch == '.' || ch == ',').equals(["1", "2", "3", "4"]));
+}
+
+unittest{ /// Example
+    // Split on occurrences of a substring.
+    import mach.range.compare : equals;
+    assert("1, 2, 3".split(", ").equals(["1", "2", "3"]));
+}
+
+unittest{ /// Example
+    // Split on occurrences of a substring, given a comparison function.
+    import mach.range.compare : equals;
+    import mach.text.ascii : tolower;
+    // Case-insensitive character comparison
+    alias compare = (a, b) => (a.tolower == b.tolower);
+    assert("123and456AND789".split!compare("and").equals(["123", "456", "789"]));
+}
+
 public:
 
 
