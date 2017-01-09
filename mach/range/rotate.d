@@ -49,11 +49,11 @@ performed.
 
 unittest{ /// Example
     int[] a = [0, 1, 2, 3];
-    rotate(a); // Does nothing
+    rotate(a); // Does nothing.
 }
 
 unittest{ /// Example
-    rotate(); // Valid, but also does nothing
+    rotate(); // Valid, but also does nothing.
 }
 
 public:

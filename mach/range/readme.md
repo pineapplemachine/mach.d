@@ -1192,11 +1192,11 @@ performed.
 
 ``` D
 int[] a = [0, 1, 2, 3];
-rotate(a); // Does nothing
+rotate(a); // Does nothing.
 ```
 
 ``` D
-rotate(); // Valid, but also does nothing
+rotate(); // Valid, but also does nothing.
 ```
 
 
