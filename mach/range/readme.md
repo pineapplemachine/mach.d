@@ -220,6 +220,34 @@ assert(range[3] == "!!");
 ```
 
 
+## mach.range.compareends
+
+
+The `headis` and `tailis` functions can be used to compare the leading or
+trailing elements of one iterable to another, respectively.
+
+Note that attempting to call either function with two infinite iterables will
+result in a compile error.
+
+``` D
+assert("hello world".headis("hello"));
+assert("hello world".tailis("world"));
+```
+
+``` D
+// An iterable always begins with an empty one.
+assert("greetings".headis(""));
+assert("salutations".tailis(""));
+```
+
+``` D
+// A finite iterable never begins or ends with an infinite one.
+import mach.range.rangeof : infrangeof;
+assert(!"yo".headis(infrangeof('k')));
+assert(!"hi".tailis(infrangeof('k')));
+```
+
+
 ## mach.range.consume
 
 
@@ -336,6 +364,37 @@ as `each`, except elements are evaluated in reverse order.
 string greetings = "";
 "sgniteerg".eachreverse!(e => greetings ~= e);
 assert(greetings == "greetings");
+```
+
+
+## mach.range.elementcount
+
+
+A notable difference between ranges and other iterables in mach is that while
+they both indicate the number of elements they contain with the `length`
+property, for a partially-consumed range that property no longer represents
+the number of elements that should be expected to be handled when, from that
+state, enumerating the range. To get the number of elements that enumerating
+a range in its present state would result in, the `remaining` property is used.
+
+The `elementcount` function is intended as a way to get the number of elements
+that iteration would turn up, e.g. via `foreach`, given the current state of
+the input. For ranges the function returns the `remaining` property and for
+other types it returns the `length` property.
+The function isn't valid for ranges that don't have a numeric `remaining`
+property or for other types that don't have a numeric `length`.
+
+``` D
+assert("hello".elementcount == 5);
+assert([0, 1, 2, 3].elementcount == 4);
+```
+
+``` D
+import mach.range.rangeof : rangeof;
+auto range = rangeof(0, 1, 2, 3);
+assert(range.elementcount == 4);
+range.popFront();
+assert(range.elementcount == 3); // Correct even for partially-consumed ranges.
 ```
 
 
