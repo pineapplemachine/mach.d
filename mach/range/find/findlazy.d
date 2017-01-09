@@ -227,6 +227,7 @@ version(unittest){
     import mach.test;
     import mach.range.compare : equals;
     import mach.range.pluck : pluck;
+    import mach.text.ascii : tolower;
     struct StringRange{
         string source; size_t index;
         @property auto length(){return this.source.length;}
@@ -298,6 +299,17 @@ version(unittest){
                 testeq(find.front.index, 3);
                 find.popFront();
                 test(find.empty);
+            });
+            tests("Explicit comparison predicate", {
+                alias lowercomp = (a, b) => (a.tolower == b.tolower);
+                auto range = "1and2AND3".findalliterlazy!lowercomp(transformsubject("and"));
+                testeq(range.front.index, 1);
+                test!equals(range.front.value, "and");
+                range.popFront();
+                testeq(range.front.index, 5);
+                test!equals(range.front.value, "AND");
+                range.popFront();
+                test(range.empty);
             });
         }
     }

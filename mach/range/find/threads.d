@@ -2,6 +2,7 @@ module mach.range.find.threads;
 
 private:
 
+import mach.traits : canSliceSame;
 import mach.range.find.result;
 
 public:
@@ -10,8 +11,6 @@ public:
 
 /// Common methods for find thread types.
 template FindThreadMixin(bool forward, Index){
-    import mach.traits : canSliceSame;
-    
     auto result(bool plural = true, Iter)(Iter iter, Index index){
         static if(forward){
             immutable Index low = this.foundindex;

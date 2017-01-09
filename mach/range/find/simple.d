@@ -34,12 +34,12 @@ auto findalliter(
 )(Iter iter, Subject subject) if(
     canFindAllIterable!(pred, Index, Iter, Subject)
 ){
-    static if(canFindAllLazy!(DefaultFindPredicate, Index, Iter, Subject)){
-        return findalliterlazy!(DefaultFindPredicate, Index, Iter, Subject)(
+    static if(canFindAllLazy!(pred, Index, Iter, Subject)){
+        return findalliterlazy!(pred, Index, Iter, Subject)(
             iter, subject
         );
     }else{
-        return findallitereager!(DefaultFindPredicate, Index, Iter, Subject)(
+        return findallitereager!(pred, Index, Iter, Subject)(
             iter, subject
         );
     }
