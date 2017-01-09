@@ -2,7 +2,41 @@ module mach.range.recur;
 
 private:
 
-import mach.traits : ReturnType;
+import mach.types : Rebindable;
+
+/++ Docs
+
+The `recur` function can be used to generate a range from repeatedly applying
+a function to its input, either infinitely or until the output satisfies a
+predicate. When such a predicate is provided, `recur` allows specifying whether
+that final, matching element should be included in the outputted range via
+a template argument. Alternately, the `recuri` function can be used when the
+matching element should be included in the output.
+
++/
+
+unittest{ /// Example
+    import mach.range.compareends : headis;
+    auto range = 0.recur!(n => n + 1); // Repeatedly increment, starting at 0.
+    assert(range.headis([0, 1, 2, 3, 4, 5]));
+}
+
+unittest{ /// Example
+    import mach.range.compare : equals;
+    // Repeat until 4.
+    auto exclusive = 0.recur!(n => n + 1, n => n >= 4);
+    assert(exclusive.equals([0, 1, 2, 3]));
+    // Repeat until and including 4.
+    auto inclusive = 0.recuri!(n => n + 1, n => n >= 4);
+    assert(inclusive.equals([0, 1, 2, 3, 4]));
+}
+
+unittest{
+    // Pass exclusivity as a template arugment.
+    import mach.range.compare : equals;
+    auto range = 0.recur!(n => n + 1, n => n >= 4, true);
+    assert(range.equals([0, 1, 2, 3, 4]));
+}
 
 public:
 
@@ -11,14 +45,6 @@ public:
 private enum bool DefaultRecurUntilInclusive = false;
 
 
-
-enum validRecurFunction(alias func) = (
-    validRecurFunction!(ReturnType!func, func)
-);
-
-enum validRecurFunction(alias func, alias until) = (
-    validRecurFunction!(ReturnType!func, func, until)
-);
 
 template validRecurFunction(Element, alias func){
     enum bool validRecurFunction = is(typeof((inout int = 0){
@@ -38,22 +64,8 @@ template validRecurFunction(Element, alias func, alias until){
 
 /// Creates a range by repeatedly calling some function with the output of the
 /// previous call as its arugment.
-auto recur(alias func)() if(validRecurFunction!(func)){
-    alias Element = ReturnType!func;
-    return RecurRange!(func, Element)(Element.init);
-}
-
-/// ditto
 auto recur(alias func, Element)(Element initial) if(validRecurFunction!(Element, func)){
     return RecurRange!(func, Element)(initial);
-}
-
-/// ditto
-auto recur(alias func, alias until, bool inclusive = DefaultRecurUntilInclusive)() if(
-    validRecurFunction!(func, until)
-){
-    alias Element = ReturnType!func;
-    return RecurUntilRange!(func, until, inclusive, Element)(Element.init);
 }
 
 /// ditto
@@ -63,10 +75,17 @@ auto recur(alias func, alias until, bool inclusive = DefaultRecurUntilInclusive,
     return RecurUntilRange!(func, until, inclusive, Element)(initial);
 }
 
+/// ditto
+auto recuri(alias func, alias until, Element)(
+    Element initial
+) if(validRecurFunction!(Element, func, until)){
+    return recur!(func, until, true, Element)(initial);
+}
+
 
 
 struct RecurRange(alias func, Element) if(validRecurFunction!(Element, func)){
-    Element value;
+    Rebindable!Element value;
     
     this(Element value){
         this.value = value;
@@ -74,10 +93,10 @@ struct RecurRange(alias func, Element) if(validRecurFunction!(Element, func)){
     
     enum bool empty = false;
     @property auto ref front() const{
-        return this.value;
+        return cast(Element) this.value;
     }
     void popFront(){
-        this.value = func(this.value);
+        this.value = func(cast(Element) this.value);
     }
     
     @property typeof(this) save(){
@@ -92,33 +111,37 @@ struct RecurUntilRange(
 ) if(
     validRecurFunction!(Element, func, until)
 ){
-    Element value;
-    bool empty;
+    Rebindable!Element value;
+    bool isempty;
     
     this(Element value){
         static if(inclusive) this(value, false);
         else this(value, until(value));
     }
-    this(Element value, bool empty){
+    this(Element value, bool isempty){
         this.value = value;
-        this.empty = empty;
+        this.isempty = isempty;
+    }
+    
+    @property bool empty() const{
+        return this.isempty;
     }
     
     @property auto ref front() const in{assert(!this.empty);} body{
-        return this.value;
+        return cast(Element) this.value;
     }
     void popFront() in{assert(!this.empty);}body{
         static if(inclusive){
-            this.empty = until(this.value);
-            if(!this.empty) this.value = func(this.value);
+            this.isempty = until(cast(Element) this.value);
+            if(!this.isempty) this.value = func(cast(Element) this.value);
         }else{
-            this.value = func(this.value);
-            this.empty = until(this.value);
+            this.value = func(cast(Element) this.value);
+            this.isempty = until(cast(Element) this.value);
         }
     }
     
     @property typeof(this) save(){
-        return typeof(this)(this.value, this.empty);
+        return typeof(this)(this.value, this.isempty);
     }
 }
 
@@ -133,7 +156,7 @@ version(unittest){
 unittest{
     tests("Recur", {
         alias increment = (int n) => (n + 1);
-        test(recur!increment.head(4).equals([0, 1, 2, 3]));
+        test(recur!increment(0).head(4).equals([0, 1, 2, 3]));
         test(recur!increment(10).head(4).equals([10, 11, 12, 13]));
         tests("Saving", {
             auto a = 0.recur!increment;
