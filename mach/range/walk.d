@@ -48,10 +48,10 @@ input, the fallback is returned for the missing elements instead.
 unittest{ /// Example
     import mach.error.mustthrow : mustthrow;
     import mach.range.consume : consume;
-    mustthrow!IndexOutOfBoundsError({
+    mustthrow({
         "hello".walkindex(100);
     });
-    mustthrow!InvalidSliceBoundsError({
+    mustthrow({
         // The error is thrown upon the invalid index being encountered,
         // not upon creation of the `walkslice` range.
         "hello".walkslice(0, 100).consume;
