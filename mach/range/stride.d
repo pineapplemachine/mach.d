@@ -3,9 +3,10 @@ module mach.range.stride;
 private:
 
 import mach.traits : isIntegral, isRange, isRandomAccessRange, isSlicingRange;
-import mach.traits : isBidirectionalRange, hasEmptyEnum, hasNumericLength;
+import mach.traits : isBidirectionalRange, hasEmptyEnum, hasNumericLength, hasNumericRemaining;
 import mach.range.asrange : asrange, validAsRange, validAsRandomAccessRange;
-import mach.range.meta : MetaRangeMixin;
+import mach.range.meta : MetaRangeEmptyMixin;
+import mach.math : divceil;
 
 public:
 
@@ -49,16 +50,12 @@ auto stride(Iter, Stride = DefaultStride)(
 
 
 struct RandomAccessStrideRange(Range, Stride = DefaultStride){
-    mixin MetaRangeMixin!(
-        Range, `source`, `Save`
-    );
+    mixin MetaRangeEmptyMixin!Range;
     
     Range source;
     Stride stride;
     Stride frontindex;
     Stride backindex;
-    
-    alias index = frontindex;
     
     this(Range source, Stride stride, Stride frontindex = Stride.init) in{
         assert(stride > 0);
@@ -76,30 +73,32 @@ struct RandomAccessStrideRange(Range, Stride = DefaultStride){
         this.backindex = backindex;
     }
     
-    @property auto ref front(){
+    @property auto front() in{assert(!this.empty);} body{
         return this[this.frontindex];
     }
-    void popFront(){
+    void popFront() in{assert(!this.empty);} body{
         this.frontindex++;
     }
     
-    @property auto ref back(){
+    @property auto back() in{assert(!this.empty);} body{
         return this[this.backindex - 1];
     }
-    void popBack(){
+    void popBack() in{assert(!this.empty);} body{
         this.backindex--;
     }
     
     @property bool empty() const{
         return this.frontindex >= this.backindex;
     }
+    @property auto remaining() const{
+        return this.backindex - this.frontindex;
+    }
     @property auto length(){
-        auto floorlen = source.length / stride;
-        return floorlen + (floorlen * stride < source.length);
+        return divceil(cast(size_t) source.length, stride);
     }
     alias opDollar = length;
     
-    auto ref opIndex(in size_t index) in{
+    auto opIndex(in size_t index) in{
         assert(index >= 0 && index < this.length);
     }body{
         return this.source[index * this.stride];
@@ -119,13 +118,11 @@ struct RandomAccessStrideRange(Range, Stride = DefaultStride){
 
 
 struct PoppingStrideRange(Range, Stride = DefaultStride){
-    mixin MetaRangeMixin!(
-        Range, `source`, `Empty Save`
-    );
-    
     enum bool isBidirectional = (
         isBidirectionalRange!Range && hasNumericLength!Range
     );
+    
+    mixin MetaRangeEmptyMixin!Range;
     
     Range source;
     Stride stridelength;
@@ -139,6 +136,9 @@ struct PoppingStrideRange(Range, Stride = DefaultStride){
             this.stridelength = stridelength;
             this.preparedback = preparedback;
         }
+        @property typeof(this) save(){
+            return typeof(this)(this.source, this.stridelength, this.preparedback);
+        }
     }else{
         this(Range source, Stride stridelength) in{
             assert(stridelength > 0);
@@ -146,9 +146,12 @@ struct PoppingStrideRange(Range, Stride = DefaultStride){
             this.source = source;
             this.stridelength = stridelength;
         }
+        @property typeof(this) save(){
+            return typeof(this)(this.source, this.stridelength);
+        }
     }
     
-    @property auto ref front(){
+    @property auto front(){
         return this.source.front;
     }
     void popFront(){
@@ -158,7 +161,7 @@ struct PoppingStrideRange(Range, Stride = DefaultStride){
     }
     
     static if(isBidirectional){
-        @property auto ref back(){
+        @property auto back(){
             if(!this.preparedback) this.prepareBack();
             return this.source.back;
         }
@@ -179,9 +182,13 @@ struct PoppingStrideRange(Range, Stride = DefaultStride){
     }
     
     static if(hasNumericLength!Range){
-        import mach.math : divceil;
         @property auto length(){
             return divceil(this.source.length, this.stridelength);
+        }
+    }
+    static if(hasNumericRemaining!Range){
+        @property auto remaining(){
+            return divceil(this.source.remaining, this.stridelength);
         }
     }
 }
