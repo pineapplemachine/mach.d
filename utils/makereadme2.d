@@ -15,6 +15,7 @@ public:
 
 immutable readmepaths = [
     "mach/meta",
+    "mach/range",
 ];
 
 void main(){
@@ -23,9 +24,7 @@ void main(){
         makereadme("../" ~ path);
     }
 }
-unittest{
-    //gain();
-}
+
 
 
 void makereadme(in string path){
