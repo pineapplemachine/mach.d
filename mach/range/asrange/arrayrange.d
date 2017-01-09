@@ -3,24 +3,20 @@ module mach.range.asrange.arrayrange;
 private:
 
 import mach.traits : ArrayElementType, isArray, isIntegral, canSliceSame;
-import mach.error : enforcebounds;
+import mach.error : IndexOutOfBoundsError, InvalidSliceBoundsError;
 
 public:
 
 
 
-enum canMakeArrayRange(T) = isArray!T;
-
-
-
-auto asarrayrange(Array)(Array array) if(canMakeArrayRange!Array){
+auto asarrayrange(Array)(Array array) if(isArray!Array){
     return ArrayRange!(Array)(array);
 }
 
 
 
 /// Range based on an array.
-struct ArrayRange(Array) if(canMakeArrayRange!(Array)){
+struct ArrayRange(Array) if(isArray!Array){
     alias Element = ArrayElementType!Array;
     
     enum bool mutable = is(typeof({this.array[0] = this.array[0];}));
@@ -78,13 +74,15 @@ struct ArrayRange(Array) if(canMakeArrayRange!(Array)){
     alias opDollar = length;
     
     auto ref opIndex(in size_t index) in{
-        enforcebounds(index, this);
+        static const error = new IndexOutOfBoundsError();
+        error.enforce(index, this);
     }body{
         return this.array[index + this.startindex];
     }
     
     typeof(this) opSlice(in size_t low, in size_t high) in{
-        assert(low >= 0 && high >= low && high <= this.length);
+        static const error = new InvalidSliceBoundsError();
+        error.enforce(low, high, this);
     }body{
         return typeof(this)(this.array, low + this.startindex, high + this.startindex);
     }
