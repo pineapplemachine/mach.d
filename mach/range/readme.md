@@ -1,4 +1,18 @@
-# mach.range.asarray
+# mach.range
+
+
+This package implements a variety of functions for performing operations
+upon iterables, typically either ranges or ones that are valid as ranges.
+The majority of functions that are possible to implement as lazy sequences
+do in fact return ranges.
+
+Please note that fully documenting this package is a work in progress.
+If a module isn't documented here, comments and unit tests in the module
+source should hopefully provide sufficient explanation of usage and
+functionality.
+
+
+## mach.range.asarray
 
 
 The `asarray` function can be applied to an iterable to produce a fully
@@ -66,7 +80,53 @@ assert(array[0].value == "world");
 ```
 
 
-# mach.range.asstaticarray
+## mach.range.asrange
+
+
+Many iterables, though they are not themselves ranges, should logically be
+valid as ranges. For example, though an array is not itself a range, a range
+can be created which enumerates its elements.
+
+The `asrange` method may be implemented for any type; for example, the
+collections in `mach.collect` typically have an `asrange` method.
+The purpose of this package is to provide default `asrange` implementations
+for primitive types: Specifically, arrays and associative arrays.
+`asrange` is additionally implemented for ranges, in this case the function
+simply returns its input.
+
+Functions in mach which require a range to operate upon accept any iterable
+valid as a range and internally call `asrange` with that iterable in order
+to acquire a range. It is strongly recommended that code utilizing or extending
+this library duplicate this pattern in its own functions operating upon ranges.
+
+``` D
+// Acquire a range from an array.
+auto range = [0, 1, 2, 3].asrange;
+assert(range.front == 0);
+assert(range.back == 3);
+```
+
+``` D
+// Acquire a range from an associative array.
+auto range = ["hello": "world"].asrange;
+assert(range.length == 1);
+assert(range.front.key == "hello");
+assert(range.front.value == "world");
+foreach(key, value; range){
+    // The ranges produced for associative arrays
+    // can be enumerated like associative arrays.
+}
+```
+
+``` D
+/// Acquire a range from a range.
+import mach.range.rangeof : rangeof;
+auto range = rangeof(0, 1, 2, 3);
+assert(range.asrange is range);
+```
+
+
+## mach.range.asstaticarray
 
 
 The `asstaticarray` function can be used to produce a static array from either
@@ -103,7 +163,40 @@ mustthrow!AsStaticArrayError({
 ```
 
 
-# mach.range.chunk
+## mach.range.chain
+
+
+The `chain` function serves two similar but differing purposes.
+It accepts a sequence of iterables as arguments, producing a range which
+enumerates the elements of the inputs in sequence.
+Or it accepts an iterable of iterables, producing a range which
+enumerates the elements of the input's own elements in sequence.
+
+``` D
+import mach.range.compare : equals;
+// Chain several iterables
+assert(chain("hello", " ", "world").equals("hello world"));
+// Chain an iterable of iterables
+assert(["hello", " ", "world"].chain.equals("hello world"));
+```
+
+
+Though the `chain` function should in almost all cases be able to discern
+intention, the package provides `chainiter` and `chainiters` functions when
+it becomes necessary to explicitly specify which form of chaining is desired.
+
+``` D
+import mach.range.compare : equals;
+assert(chainiters("hello", " ", "world").equals("hello world"));
+```
+
+``` D
+import mach.range.compare : equals;
+assert(chainiter(["hello", " ", "world"]).equals("hello world"));
+```
+
+
+## mach.range.chunk
 
 
 The `chunk` function returns a range for enumerating sequential chunks of an
@@ -127,7 +220,7 @@ assert(range[3] == "!!");
 ```
 
 
-# mach.range.consume
+## mach.range.consume
 
 
 The `consume` function consumes an input iterable.
@@ -162,7 +255,7 @@ assert(str == "sdrawrof");
 ```
 
 
-# mach.range.contains
+## mach.range.contains
 
 
 This module implements a `contains` function capable of searching an input
@@ -198,7 +291,7 @@ assert(!"Hello World".contains!compare("Nope"));
 ```
 
 
-# mach.range.distinct
+## mach.range.distinct
 
 
 This module implements a `distinct` function, which enumerates only the unique
@@ -221,7 +314,7 @@ assert([2, 1, 2, 11, 10, 12].distinct!(e => e % 10).equals([2, 1, 10]));
 ```
 
 
-# mach.range.each
+## mach.range.each
 
 
 The `each` function eagerly evaluates a function for every element in
@@ -246,7 +339,7 @@ assert(greetings == "greetings");
 ```
 
 
-# mach.range.ends
+## mach.range.ends
 
 
 This module implements `head` and `tail` functions, which produce ranges for
@@ -269,7 +362,7 @@ assert([0, 1, 2].head(10).equals([0, 1, 2]));
 ```
 
 
-# mach.range.enumerate
+## mach.range.enumerate
 
 
 This module implements an `enumerate` function, which returns a range whose
@@ -318,7 +411,7 @@ static assert(!is(typeof({
 ```
 
 
-# mach.range.filter
+## mach.range.filter
 
 
 This module implements the
@@ -352,7 +445,7 @@ assert(range.equals("hello"));
 ```
 
 
-# mach.range.first
+## mach.range.first
 
 
 This module implements `first` and `last` functions for finding the first or
@@ -404,7 +497,7 @@ mustthrow!NoFirstElementError({
 ```
 
 
-# mach.range.flatten
+## mach.range.flatten
 
 
 Where an iterable is an iterable of iterables, the `flatten` function
@@ -439,7 +532,7 @@ assert(array.flatten.equals([0, 1, 2, 3, 4, 5]));
 ```
 
 
-# mach.range.join
+## mach.range.join
 
 
 The `join` function accepts an iterable of iterables, then enumerates the
@@ -487,7 +580,7 @@ assert(["abc", "xyz"].join!(true, true)('.').equals(".abc.xyz."));
 ```
 
 
-# mach.range.logical
+## mach.range.logical
 
 
 This module provides `any`, `all`, and `none` functions which operate based on
@@ -517,7 +610,94 @@ assert([false, false, false].none);
 ```
 
 
-# mach.range.mutate
+## mach.range.map
+
+
+This package implements the
+(map higher-order function)[https://en.wikipedia.org/wiki/Map_(higher-order_function)]
+for input iterables.
+
+The `map` function creates a range for which each element is the result of a
+transformation applied to the corresponding elements of the input iterables,
+where the transformation function is passed as a template argument.
+
+`map` comes in both singular and plural varieties. Singular `map` represents
+the higher-order map function in its common form, where the transformation
+operates upon the elements of a single input iterable.
+
+``` D
+import mach.range.compare : equals;
+auto squares = [1, 2, 3, 4].map!(n => n * n);
+assert(squares.equals([1, 4, 9, 16]));
+```
+
+
+Plural `map` is an expansion upon that singular form, in that it accepts
+multiple input iterables which are enumerated simultaneously; their
+corresponding elements are passed collectively to a transformation function.
+
+The length of a plural `map` function is equal to the length of its shortest
+input. If all of the inputs are infinite, then so is the range produced
+by `map`.
+
+``` D
+import mach.range.compare : equals;
+auto intsa = [1, 2, 3, 4];
+auto intsb = [3, 5, 7, 9];
+// The transformation function must accept the same number of
+// elements as there are input iterables, in this case two.
+auto sums = map!((a, b) => a + b)(intsa, intsb);
+// Output is a sequences of sums of elements of the input.
+assert(sums.equals([4, 7, 10, 13]));
+```
+
+
+This plural `map` operation may be more commonly expressed as a combination of
+`zip` and singular `map` functions, for example:
+`auto sums = zip(intsa, intsb).map!(tup => tup[0] + tup[1]);`
+
+Notably, the `zip` function implemented in `mach.range.zip` is in fact a
+very simple abstraction of the plural `map` function.
+
+``` D
+import mach.types.tuple : tuple;
+// The `zip` function in `mach.range.zip` performs this same operation.
+auto zipped = map!tuple([0, 1, 2], [3, 4, 5]);
+assert(zipped.front == tuple(0, 3));
+```
+
+
+Neither singular nor plural `map` ranges allow mutation of their elements.
+
+The singular `map` function provides `length` and `remaining` properties when
+its input iterable does. The plural `map` function provides these properties
+in the case that all inputs either support the corresponding property, or are
+of known infinite length.
+
+The singular `map` function supports bidirectionality when its input does.
+The plural `map` function supports bidirectionality only when all inputs
+are finite, are bidirectional, and have a valid `remaining` property.
+
+Please note that bidirectionality for plural ranges requires a potentially
+nontrivial amount of overhead to account for the case where its inputs are
+of varying lengths.
+
+``` D
+import mach.meta.varreduce : varmax;
+auto intsa = [1, 2, 3, 4];
+auto intsb = [5, 0, 4, 0, 3, 0];
+auto intsc = [3, 2, 1, 1, 2];
+auto range = map!varmax(intsa, intsb, intsc);
+// Length is that of the shortest input.
+assert(range.length == intsa.length);
+// Greatest of elements [1, 5, 3]
+assert(range.front == 5);
+// Greatest of elements [4, 0, 1]
+assert(range.back == 4);
+```
+
+
+## mach.range.mutate
 
 
 The `mutate` function is similar to `map`, but the values produced by the
@@ -563,7 +743,7 @@ assert(array == [10, 6, 7, 16]);
 ```
 
 
-# mach.range.next
+## mach.range.next
 
 
 This module provides, very simply, methods for simultaneously retrieving the
@@ -591,7 +771,7 @@ assert(range.empty);
 ```
 
 
-# mach.range.ngrams
+## mach.range.ngrams
 
 
 The `ngrams` function can be used to generate n-grams given an input iterable.
@@ -630,7 +810,7 @@ assert(range[0] == [0, 1]);
 ```
 
 
-# mach.range.pad
+## mach.range.pad
 
 
 This module implements the `pad` function and its derivatives, which produce
@@ -673,7 +853,7 @@ assert("bro".pad('_', 2, '!', 3).equals("__bro!!!"));
 ```
 
 
-# mach.range.pluck
+## mach.range.pluck
 
 
 This module implements `pluck`, which is a simple abstraction of the `map`
@@ -698,7 +878,7 @@ assert(array.pluck(0).equals("ax1"));
 ```
 
 
-# mach.range.recur
+## mach.range.recur
 
 
 The `recur` function can be used to generate a range from repeatedly applying
@@ -725,7 +905,7 @@ assert(inclusive.equals([0, 1, 2, 3, 4]));
 ```
 
 
-# mach.range.reduce
+## mach.range.reduce
 
 
 This module implements the
@@ -777,7 +957,7 @@ mustthrow!ReduceEmptyError({
 ```
 
 
-# mach.range.repeat
+## mach.range.repeat
 
 
 The `repeat` function can be used to repeat an inputted iterable either
@@ -835,7 +1015,7 @@ mustthrow!InfiniteRepeatEmptyError({
 ```
 
 
-# mach.range.retro
+## mach.range.retro
 
 
 The `retro` function returns a range which enumerates the elements of its input
@@ -852,7 +1032,7 @@ assert("hello".retro.equals("olleh"));
 ```
 
 
-# mach.range.split
+## mach.range.split
 
 
 The `split` returns a range enumerating portions of an input iterable as
@@ -889,7 +1069,7 @@ assert("123and456AND789".split!compare("and").equals(["123", "456", "789"]));
 ```
 
 
-# mach.range.tap
+## mach.range.tap
 
 
 The `tap` function lazily applies a callback function to each element in an

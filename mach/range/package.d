@@ -2,7 +2,19 @@ module mach.range;
 
 private:
 
-import mach.range.readme;
+/++ Docs
+
+This package implements a variety of functions for performing operations
+upon iterables, typically either ranges or ones that are valid as ranges.
+The majority of functions that are possible to implement as lazy sequences
+do in fact return ranges.
+
+Please note that fully documenting this package is a work in progress.
+If a module isn't documented here, comments and unit tests in the module
+source should hopefully provide sufficient explanation of usage and
+functionality.
+
++/
 
 public:
 

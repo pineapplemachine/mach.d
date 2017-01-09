@@ -6,6 +6,7 @@ private:
 
 import mach.text.ascii;
 import mach.io;
+import mach.io.file.sys : isfile;
 import mach.range;
 import mach.text.utf;
 
@@ -30,17 +31,22 @@ void main(){
 void makereadme(in string path){
     dstring[][dstring] docs;
     ParseResult[] stats;
+    void handlepath(in string path){
+        dstring source = cast(dstring) File.readfrom(path).utf8decode.asarray;
+        auto result = parsemodule(path, source, docs);
+        if(result.modulename.length) stats ~= result;
+    }
     foreach(entry; path.listdir){
         if(
-            entry.isfile &&
-            entry.name.tailis(".d") &&
             !entry.name.headis("wip_") &&
             !entry.name.headis("old_") &&
             !entry.name.headis("reject_")
         ){
-            dstring source = cast(dstring) File.readfrom(entry.path).utf8decode.asarray;
-            auto result = parsemodule(entry.path, source, docs);
-            if(result.modulename.length) stats ~= result;
+            if(entry.isfile && entry.name.tailis(".d")){
+                handlepath(entry.path);
+            }else if(entry.isdir && isfile(entry.path ~ "/package.d")){
+                handlepath(entry.path ~ "/package.d");
+            }
         }
     }
     reportstats(stats);
