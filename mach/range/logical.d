@@ -4,6 +4,39 @@ private:
 
 import mach.traits : isFiniteIterable;
 
+/++ Docs
+
+This module provides `any`, `all`, and `none` functions which operate based on
+whether elements in an input iterable satisfy a predicate.
+`any` returns true when at least one element satisfies the predicate.
+`all` returns true when no element fails to satisfy the predicate.
+`none` returns true when no element satisfies the predicate.
+
++/
+
+unittest{ /// Example
+    // Any element is greater than 1?
+    assert([0, 1, 2, 3].any!(n => n > 1));
+    // All elements are greater than or equal to 10?
+    assert([10, 11, 12, 13].all!(n => n >= 10));
+    // No elements are evenly divisible by 7?
+    assert([5, 10, 15, 20].none!(n => n % 7 == 0));
+}
+
+/++ Docs
+
+The predicate can be passed to these functions as a template argument.
+When no predicate is passed, the default predicate evaluates truthiness
+or falsiness of the elements themselves.
+
++/
+
+unittest{ /// Example
+    assert([false, false, true].any);
+    assert([true, true, true].all);
+    assert([false, false, false].none);
+}
+
 public:
 
 
