@@ -92,7 +92,7 @@ unittest{
         });
         tests("Unknown length range", {
             // Range increments n until n >= 10
-            auto input = recur!((int n) => (n + 1), ((n) => (n >= 10)));
+            auto input = 0.recur!((int n) => (n + 1), ((n) => (n >= 10)));
             auto output = input.shuffleeager;
             testeq(output.length, 10);
             foreach(element; input){
