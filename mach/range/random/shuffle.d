@@ -77,7 +77,7 @@ auto shuffleeager(Iter, RNG)(Iter iter, RNG rng) if(canShuffle!(Iter, RNG)){
 version(unittest){
     private:
     import mach.test;
-    import mach.range.count : exactly;
+    import mach.range.count : count;
     import mach.range.recur : recur;
 }
 unittest{
@@ -87,7 +87,7 @@ unittest{
             auto output = input.shuffleeager;
             testeq(output.length, 10);
             foreach(element; input){
-                test(output.exactly(1, element));
+                test(output.count(element) == 1);
             }
         });
         tests("Unknown length range", {
@@ -96,7 +96,7 @@ unittest{
             auto output = input.shuffleeager;
             testeq(output.length, 10);
             foreach(element; input){
-                test(output.exactly(1, element));
+                test(output.count(element) == 1);
             }
         });
     });

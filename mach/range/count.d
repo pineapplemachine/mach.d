@@ -2,23 +2,75 @@ module mach.range.count;
 
 private:
 
-import mach.traits : isFiniteIterable;
+import mach.traits : isFiniteIterable, ElementType;
+
+/++ Docs
+
+The `count` function can be used to determine the number of elements in an
+iterable which satisfy a predicate function.
+Alternatively, it can be passed a value instead of a predicate and the function
+counts the number of elements in the input which are equal to that value.
+
++/
+
+unittest{ /// Example
+    // Count the number of even numbers.
+    assert([0, 1, 2, 3, 4].count!(n => n % 2 == 0) == 3);
+    // Count the number of occurrences of the character 'l'.
+    assert("hello".count('l') == 2);
+}
+
+/++ Docs
+
+Though the return value of `count` may be treated like a number, it in fact
+is not. The produced type supports `total`, `exactly`, `atleast`, `atmost`,
+`morethan`, and `lessthan` methods for performing optimized comparisons upon
+the number of elements. They are more efficient that acquiring the total count
+and then comparing because they are able to short-circuit when the condition
+has been met, or has ceased to be met.
+
+Due to a limitation of the language at the time of writing, the comparison
+operator overloads implemented by this type are not able to use the optimized
+methods. So while `input.count > n` may be supported, `input.count.morethan(n)`
+will perform more efficiently.
+Note that the equality `==` and inequality `!=` operators suffer no such
+disadvantage.
+
++/
+
+unittest{ /// Example
+    assert("greetings".count('e').atleast(2));
+    assert("how are you?".count('?').lessthan(5));
+    assert("I'm well thank you".count('k').atmost(1));
+    assert("ok".count('o').morethan(0));
+}
+
+unittest{ /// Example
+    // Comparison operators are supported, but are not efficiently implemented.
+    assert([0, 1, 2, 3, 4].count!(n => n > 0) > 2);
+    assert([5, 6, 7].count!(n => n == 5) <= 1);
+}
+
+/++ Docs
+
+When necessary, the actual number of matching elements may be accessed using
+the `total` property of a value returned by `count`.
+
++/
+
+unittest{
+    int n = "hello".count('l').total;
+    assert(n == 2);
+}
 
 public:
 
 
 
-alias DefaultCountPredicate = (x) => (x);
-
-/// Get whether count and related operations are meaningful for the given type.
-enum canCount(T) = isFiniteIterable!T;
-/// ditto
-template canCount(T, Element){
-    static if(canCount!T){
+template canCount(alias pred, Source){
+    static if(isFiniteIterable!Source){
         enum bool canCount = is(typeof({
-            foreach(item; T.init){
-                if(item == Element.init){}
-            }
+            if(pred(ElementType!Source.init)){}
         }));
     }else{
         enum bool canCount = false;
@@ -27,147 +79,102 @@ template canCount(T, Element){
 
 
 
-/// Eagerly get the number of elements in an iterable which match a predicate.
-auto count(alias pred = DefaultCountPredicate, Iter)(
-    auto ref Iter iter
-) if(canCount!Iter){
-    size_t count = 0;
-    foreach(item; iter){
-        if(pred(item)) count++;
-    }
-    return count;
+/// Count the number of elements satisfying a predicate.
+auto count(alias pred, Iter)(auto ref Iter iter) if(canCount!(pred, Iter)){
+    return CountResult!(pred, Iter)(iter);
 }
 
-/// Eagerly get the number of elements in an iterable which are equal to the
-/// given value.
-auto count(Iter, Element)(
-    auto ref Iter iter, auto ref Element element
-) if(canCount!(Iter, Element)){
-    return count!(e => e == element)(iter);
-}
-
-
-
-/// True when the number of elements in an iterable matching the predicate
-/// is exactly the number expected.
-bool exactly(alias pred = DefaultCountPredicate, Iter)(
-    auto ref Iter iter, in size_t target
-) if(canCount!Iter){
-    size_t count = 0;
-    foreach(item; iter){
-        if(pred(item)){
-            if(++count > target) return false;
-        }
-    }
-    return count == target;
-}
-
-/// True when the number of elements in an iterable equal to the given value
-/// is exactly the number expected.
-auto exactly(Iter, Element)(
-    auto ref Iter iter, in size_t target, auto ref Element element
-) if(canCount!(Iter, Element)){
-    return exactly!(e => e == element)(iter, target);
-}
-
-
-
-/// Common implementation backing morethan, lessthan, atleast, and atmost.
-private template CmpCountTemplate(
-    alias pred, alias compare, bool onmatch, bool onthru
+/// Count the number of elements equal to the provided value.
+auto count(Iter, Element)(auto ref Iter iter, auto ref Element element) if(
+    canCount!((e) => (e == element), Iter)
 ){
-    bool CmpCountTemplate(Iter)(
-        auto ref Iter iter, in size_t target
-    ) if(canCount!Iter){
+    return CountResult!((e) => (e == element), Iter)(iter);
+}
+
+
+
+struct CountResult(alias pred, Source) if(canCount!(pred, Source)){
+    Source source;
+    
+    alias total this;
+    
+    @property size_t total(){
         size_t count = 0;
-        if(compare(count, target)) return onmatch;
-        foreach(item; iter){
-            if(pred(item)){
-                if(compare(++count, target)) return onmatch;
+        foreach(element; source) count += cast(bool) pred(element);
+        return count;
+    }
+    
+    bool exactly(in size_t target){
+        size_t count = 0;
+        foreach(element; source){
+            if(pred(element)){
+                count++;
+                if(count > target) return false;
             }
         }
-        return onthru;
+        return true;
     }
-}
-/// ditto
-private template CmpCountTemplate(
-    alias compare, bool onmatch, bool onthru
-){
-    bool CmpCountTemplate(Iter, Element)(
-        auto ref Iter iter, in size_t target, auto ref Element element
-    ) if(canCount!(Iter, Element)){
-        return .CmpCountTemplate!(
-            e => e == element, compare, onmatch, onthru
-        )(iter, target);
+    
+    bool lessthan(in size_t target){
+        if(target == 0) return false;
+        size_t count = 0;
+        foreach(element; source){
+            if(pred(element)){
+                count++;
+                if(count >= target) return false;
+            }
+        }
+        return true;
     }
-}
-
-
-
-/// True when the number of elements in an iterable matching the predicate
-/// is more than the number expected.
-template morethan(alias pred){
-    alias morethan = CmpCountTemplate!(
-        pred, (count, target) => (count > target), true, false
-    );
-}
-/// True when the number of elements in an iterable equal to the given value
-/// is more than the number expected.
-template morethan(){
-    alias morethan = CmpCountTemplate!(
-        (count, target) => (count > target), true, false
-    );
-}
-
-
-
-/// True when the number of elements in an iterable matching the predicate
-/// is less than the number expected.
-template lessthan(alias pred){
-    alias lessthan = CmpCountTemplate!(
-        pred, (count, target) => (count >= target), false, true
-    );
-}
-/// True when the number of elements in an iterable equal to the given value
-/// is less than the number expected.
-template lessthan(){
-    alias lessthan = CmpCountTemplate!(
-        (count, target) => (count >= target), false, true
-    );
-}
-
-
-
-/// True when the number of elements in an iterable matching the predicate
-/// is at least the number expected.
-template atleast(alias pred){
-    alias atleast = CmpCountTemplate!(
-        pred, (count, target) => (count >= target), true, false
-    );
-}
-/// True when the number of elements in an iterable equal to the given value
-/// is at least the number expected.
-template atleast(){
-    alias atleast = CmpCountTemplate!(
-        (count, target) => (count >= target), true, false
-    );
-}
-
-
-
-/// True when the number of elements in an iterable matching the predicate
-/// is at most the number expected.
-template atmost(alias pred){
-    alias atmost = CmpCountTemplate!(
-        pred, (count, target) => (count > target), false, true
-    );
-}
-/// True when the number of elements in an iterable equal to the given value
-/// is at most the number expected.
-template atmost(){
-    alias atmost = CmpCountTemplate!(
-        (count, target) => (count > target), false, true
-    );
+    
+    bool morethan(in size_t target){
+        size_t count = 0;
+        foreach(element; source){
+            if(pred(element)){
+                count++;
+                if(count > target) return true;
+            }
+        }
+        return false;
+    }
+    
+    bool atleast(in size_t target){
+        if(target == 0) return true;
+        size_t count = 0;
+        foreach(element; source){
+            if(pred(element)){
+                count++;
+                if(count >= target) return true;
+            }
+        }
+        return false;
+    }
+    
+    bool atmost(in size_t target){
+        size_t count = 0;
+        foreach(element; source){
+            if(pred(element)){
+                count++;
+                if(count > target) return false;
+            }
+        }
+        return true;
+    }
+    
+    /// Support for equality and inequality operators.
+    bool opEquals(in size_t target){
+        return this.exactly(target);
+    }
+    
+    /// Note that this is less efficient than calling `lessthan`, `morethan`,
+    /// `atleast`, `atmost`, etc. because of limitations of D's operator
+    /// overloading.
+    int opCmp(in size_t target){
+        auto count = this.total();
+        if(count > target) return 1;
+        else if(count < target) return -1;
+        else return 0;
+    }
 }
 
 
@@ -177,94 +184,41 @@ version(unittest){
     import mach.test;
 }
 unittest{
-    alias even = (n) => (n % 2 == 0);
-    int[0] empty;
-    auto zeros = [0, 0, 0];
-    auto odds = [1, 3, 5];
-    auto evens = [4, 6, 8, 10];
-    auto mixed = [0, 1, 2, 3];
     tests("Count", {
-        testeq(empty.count!even, 0);
-        testeq(odds.count!even, 0);
-        testeq(evens.count!even, 4);
-        testeq(mixed.count!even, 2);
-        testeq(empty.count(0), 0);
-        testeq(odds.count(0), 0);
-        testeq(zeros.count(0), 3);
-    });
-    tests("Exactly", {
-        test(empty.exactly!even(0));
-        test(odds.exactly!even(0));
-        test(evens.exactly!even(4));
-        test(mixed.exactly!even(2));
-        test(empty.exactly(0, 0));
-        test(odds.exactly(0, 0));
-        test(zeros.exactly(3, 0));
-    });
-    tests("Count comparison", {
-        tests("More than", {
-            testf(empty.morethan!even(0));
-            testf(empty.morethan!even(1));
-            testf(odds.morethan!even(0));
-            test(evens.morethan!even(0));
-            test(evens.morethan!even(3));
-            testf(evens.morethan!even(4));
-            test(mixed.morethan!even(0));
-            test(mixed.morethan!even(1));
-            testf(mixed.morethan!even(2));
-            testf(empty.morethan(0, 0));
-            testf(odds.morethan(0, 0));
-            test(zeros.morethan(0, 0));
-            test(zeros.morethan(2, 0));
-            testf(zeros.morethan(3, 0));
+        tests("Predicate", {
+            auto result = [0, 1, 2, 3, 4].count!(n => n % 2 == 0);
+            testeq(result.total, 3);
+            test(result.exactly(3));
+            test(result == 3);
+            testf(result.exactly(0));
+            test(result != 0);
+            test(result.morethan(0));
+            test(result > 0);
+            test(result.lessthan(4));
+            test(result < 4);
+            test(result.atleast(3));
+            test(result >= 3);
+            test(result.atmost(3));
+            test(result <= 3);
         });
-        tests("Less than", {
-            testf(empty.lessthan!even(0));
-            test(empty.lessthan!even(1));
-            testf(odds.lessthan!even(0));
-            testf(evens.lessthan!even(0));
-            testf(evens.lessthan!even(4));
-            test(evens.lessthan!even(5));
-            testf(mixed.lessthan!even(0));
-            testf(mixed.lessthan!even(1));
-            test(mixed.lessthan!even(3));
-            testf(empty.lessthan(0, 0));
-            testf(odds.lessthan(0, 0));
-            testf(zeros.lessthan(0, 0));
-            testf(zeros.lessthan(2, 0));
-            test(zeros.lessthan(4, 0));
+        tests("Element", {
+            auto result = "hello".count('l');
+            testeq(result.total, 2);
+            test(result.exactly(2));
+            test(result == 2);
         });
-        tests("At least", {
-            test(empty.atleast!even(0));
-            testf(empty.atleast!even(1));
-            test(odds.atleast!even(0));
-            test(evens.atleast!even(0));
-            test(evens.atleast!even(3));
-            testf(evens.atleast!even(5));
-            test(mixed.atleast!even(0));
-            test(mixed.atleast!even(2));
-            testf(mixed.atleast!even(3));
-            test(empty.atleast(0, 0));
-            testf(empty.atleast(1, 0));
-            test(odds.atleast(0, 0));
-            test(zeros.atleast(0, 0));
-            testf(zeros.atleast(4, 0));
+        tests("Empty input", {
+            auto result = "".count!(e => true);
+            testeq(result.total, 0);
+            test(result.exactly(0));
+            test(result.atleast(0));
+            testf(result.lessthan(0));
+            test(result.atmost(0));
+            testf(result.morethan(0));
         });
-        tests("At most", {
-            test(empty.atmost!even(0));
-            test(empty.atmost!even(1));
-            test(odds.atmost!even(0));
-            testf(evens.atmost!even(0));
-            test(evens.atmost!even(4));
-            test(evens.atmost!even(5));
-            testf(mixed.atmost!even(0));
-            testf(mixed.atmost!even(1));
-            test(mixed.atmost!even(3));
-            test(empty.atmost(0, 0));
-            test(odds.atmost(0, 0));
-            testf(zeros.atmost(0, 0));
-            testf(zeros.atmost(2, 0));
-            test(zeros.atmost(4, 0));
+        tests("Alias this", {
+            void func(int x){}
+            func("hi".count('i'));
         });
     });
 }
