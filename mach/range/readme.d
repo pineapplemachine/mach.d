@@ -177,14 +177,14 @@ final element of the chunk range will be shorter than that given size.
 
 +/
 
-unittest{
-    auto range = "abc123xyz!!".chunk(3);
-    assert(range[0] == "abc");
-    assert(range[1] == "123");
-    assert(range[2] == "xyz");
-    assert(range[3] == "!!"); // Shorter because range isn't evenly divisble by 3.
-    assert(range.length == 4);
-}
+//unittest{
+//    auto range = "abc123xyz!!".chunk(3);
+//    assert(range[0] == "abc");
+//    assert(range[1] == "123");
+//    assert(range[2] == "xyz");
+//    assert(range[3] == "!!"); // Shorter because range isn't evenly divisble by 3.
+//    assert(range.length == 4);
+//}
 
 /++ md
 
