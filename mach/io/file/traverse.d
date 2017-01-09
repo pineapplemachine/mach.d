@@ -147,13 +147,15 @@ struct ListDirRange{
         /// http://pubs.opengroup.org/onlinepubs/009695399/functions/readdir_r.html
         static struct Entry{
             string listpath;
-            dirent* entry;
+            typeof(dirent.d_fileno) d_fileno;
+            typeof(dirent.d_type) d_type;
             string entryname;
             
             this(string listpath, dirent* entry){
                 this.listpath = listpath;
-                this.entry = entry;
                 // This memory is liable to be overwritten later, so dup it now.
+                this.d_fileno = entry.d_fileno;
+                this.d_type = entry.d_type;
                 static if(is(typeof({size_t x = entry.d_namlen;}))){
                     // Optimization available on most posix platforms
                     this.entryname = entry.d_name[0 .. entry.d_namlen].idup;
@@ -163,17 +165,17 @@ struct ListDirRange{
             }
             
             @property auto fileno() const{
-                return this.entry.d_fileno;
+                return this.d_fileno;
             }
             
             @property bool isfile() const{
-                return this.entry.d_type == DT_REG;
+                return this.d_type == DT_REG;
             }
             @property bool isdir() const{
-                return this.entry.d_type == DT_DIR;
+                return this.d_type == DT_DIR;
             }
             @property bool islink() const{
-                return this.entry.d_type == DT_LNK;
+                return this.d_type == DT_LNK;
             }
             
             @property string name() const{
@@ -287,7 +289,7 @@ struct TraverseDirRange(TraverseDirMode mode = TraverseDirMode.DepthFirst){
         static if(mode is Mode.DepthFirst){
             this.dirstack.length -= 1;
         }else{
-            this.dirstack.remove(this.dirstack.head);
+            this.dirstack.removefront;
         }
     }
     /// Get the current directory being listed.
@@ -330,8 +332,10 @@ struct TraverseDirRange(TraverseDirMode mode = TraverseDirMode.DepthFirst){
 
 
 version(unittest){
+    import std.path;
     import mach.test;
     import mach.range : filter, asarray;
+    enum string TestPath = __FILE__.dirName ~ "/traverse";
     struct Entry{
         string path;
         bool isdir = false;
@@ -340,14 +344,14 @@ version(unittest){
 unittest{
     tests("Directory listing", {
         auto expected = [
-            Entry("./traverse/dir", true),
-            Entry("./traverse/a.txt"),
-            Entry("./traverse/b.txt"),
-            Entry("./traverse/c"),
-            Entry("./traverse/readme.txt"),
-            Entry("./traverse/unicodeツ.txt"),
+            Entry(TestPath ~ "/dir", true),
+            Entry(TestPath ~ "/a.txt"),
+            Entry(TestPath ~ "/b.txt"),
+            Entry(TestPath ~ "/c"),
+            Entry(TestPath ~ "/readme.txt"),
+            Entry(TestPath ~ "/unicodeツ.txt"),
         ];
-        auto files = listdir("./traverse").asarray;
+        auto files = listdir(TestPath).asarray;
         testeq(files.length, expected.length);
         foreach(entry; expected){
             auto file = files.filter!(f => f.path == entry.path).asarray;
@@ -357,18 +361,18 @@ unittest{
     });
     tests("Directory traversal", {
         auto expected = [
-            Entry("./traverse/dir", true),
-            Entry("./traverse/a.txt"),
-            Entry("./traverse/b.txt"),
-            Entry("./traverse/c"),
-            Entry("./traverse/readme.txt"),
-            Entry("./traverse/unicodeツ.txt"),
-            Entry("./traverse/dir/d.txt"),
-            Entry("./traverse/dir/nesteddir", true),
-            Entry("./traverse/dir/nesteddir/deep.txt", true),
+            Entry(TestPath ~ "/dir", true),
+            Entry(TestPath ~ "/a.txt"),
+            Entry(TestPath ~ "/b.txt"),
+            Entry(TestPath ~ "/c"),
+            Entry(TestPath ~ "/readme.txt"),
+            Entry(TestPath ~ "/unicodeツ.txt"),
+            Entry(TestPath ~ "/dir/d.txt"),
+            Entry(TestPath ~ "/dir/nesteddir", true),
+            Entry(TestPath ~ "/dir/nesteddir/deep.txt", true),
         ];
         void TestTraverse(TraverseDirMode mode)(){
-            auto files = traversedir!mode("./traverse").asarray;
+            auto files = traversedir!mode(TestPath).asarray;
             testeq(files.length, expected.length);
             foreach(entry; expected){
                 auto file = files.filter!(f => f.path == entry.path).asarray;
