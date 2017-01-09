@@ -11,7 +11,7 @@ import mach.range.meta : MetaRangeEmptyMixin;
 /++ Docs
 
 This module implements the
-(filter higher-order function)[https://en.wikipedia.org/wiki/Filter_(higher-order_function)]
+[filter higher-order function](https://en.wikipedia.org/wiki/Filter_(higher-order_function))
 for iterable inputs.
 
 The `filter` function produces a range enumerating only those elements of an
