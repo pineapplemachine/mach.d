@@ -2,9 +2,11 @@ module mach.misc.refcounter;
 
 private:
 
-import std.algorithm : count;
+//
 
 public:
+
+
 
 /// Reference counter
 struct RefCounter(T){
@@ -58,12 +60,16 @@ struct RefCounter(T){
     
     /// Get the number of expired values, where references is zero.
     @property size_t expired() const{
-        return count!("a <= b")(this.counter.values, 0);
+        size_t sum = 0;
+        foreach(value; this.counter.values) sum += (value <= 0);
+        return sum;
     }
     
     /// Get the number of alive values, where references is nonzero.
     @property size_t alive() const{
-        return count!("a > b")(this.counter.values, 0);
+        size_t sum = 0;
+        foreach(value; this.counter.values) sum += (value > 0);
+        return sum;
     }
     
     /// Get the length of the backing array.
