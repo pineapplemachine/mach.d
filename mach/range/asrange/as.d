@@ -23,13 +23,21 @@ template validAsRange(T){
     }
 }
 
-template validAsRange(alias isType, T){
-    static if(isRange!T){
-        enum bool validAsRange = isType!T;
-    }else static if(validAsRange!T){
-        enum bool validAsRange = isType!(AsRangeType!T);
+template validAsRange(T...) if(T.length > 1){
+    alias Type = T[$-1];
+    alias predicates = T[0 .. $-1];
+    static if(predicates.length == 1){
+        static if(validAsRange!Type){
+            alias Predicate = predicates[0];
+            enum bool validAsRange = Predicate!(AsRangeType!Type);
+        }else{
+            enum bool validAsRange = false;
+        }
     }else{
-        enum bool validAsRange = false;
+        enum bool validAsRange = (
+            validAsRange!(predicates[0], Type) &&
+            validAsRange!(predicates[1 .. $], Type)
+        );
     }
 }
 
@@ -80,19 +88,19 @@ auto asrange(T)(auto ref T array) if(isAssociativeArray!T){
 version(unittest){
     private:
     import mach.types : KeyValuePair;
-    struct TestRange{
+    struct InfRange{
         enum bool empty = false;
         @property int front(){return 0;}
         void popFront(){}
     }
 }
 unittest{
-    static assert(is(AsRangeType!TestRange == TestRange));
+    static assert(is(AsRangeType!InfRange == InfRange));
     static assert(is(AsRangeType!(int[]) == ArrayRange!(int[])));
     static assert(is(AsRangeType!(int[int]) == AssociativeArrayRange!(int[int])));
 }
 unittest{
-    static assert(is(AsRangeElementType!TestRange == int));
+    static assert(is(AsRangeElementType!InfRange == int));
     static assert(is(AsRangeElementType!(int[]) == int));
     static assert(is(AsRangeElementType!(int[int]) == KeyValuePair!(int, int)));
 }
