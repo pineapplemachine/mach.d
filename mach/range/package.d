@@ -29,7 +29,7 @@ import mach.range.compare : compare, equals, iterequals, recursiveequals;
 import mach.range.compareends : headis, tailis;
 import mach.range.consume : consume, consumereverse;
 import mach.range.contains : contains, containsiter, containselement;
-import mach.range.count : count, exactly, morethan, lessthan, atleast, atmost;
+import mach.range.count : count;
 import mach.range.distinct : distinct;
 import mach.range.each : each, eachreverse;
 import mach.range.elementcount : elementcount;
