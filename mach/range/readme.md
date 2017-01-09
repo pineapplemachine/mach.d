@@ -1106,6 +1106,52 @@ assert("hello".retro.equals("olleh"));
 ```
 
 
+## mach.range.rotate
+
+
+The `rotate` function accepts any number of input iterables, where all of
+the iterables are valid as ranges which allow modification of their front
+element.
+Up to the length of its shortest input, `rotate` will eagerly rotate the
+positions of elements in the iterables such that —
+in the case of three inputs, for example —
+the elements of the first input are placed into the second,
+the elements of the second input are placed into the third,
+and the elements of the third input are placed into the first.
+
+``` D
+int[] a = [0, 1, 2];
+int[] b = [3, 4, 5];
+int[] c = [6, 7, 8];
+rotate(a, b, c);
+assert(a == [6, 7, 8]); // Previously the elements of c.
+assert(b == [0, 1, 2]); // Previously the elements of a.
+assert(c == [3, 4, 5]); // Previously the elements of b.
+```
+
+``` D
+// Rotation is performed only up to the length of the shortest input.
+int[] a = [0, 1, 2, 3];
+int[] b = [10, 11];
+rotate(a, b);
+assert(a == [10, 11, 2, 3]);
+assert(b == [0, 1]);
+```
+
+
+In the case of `rotate` receiving one or fewer inputs, no operation is actually
+performed.
+
+``` D
+int[] a = [0, 1, 2, 3];
+rotate(a); // Does nothing
+```
+
+``` D
+rotate(); // Valid, but also does nothing
+```
+
+
 ## mach.range.split
 
 
