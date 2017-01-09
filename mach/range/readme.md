@@ -736,7 +736,7 @@ assert([false, false, false].none);
 
 
 This package implements the
-(map higher-order function)[https://en.wikipedia.org/wiki/Map_(higher-order_function)]
+[map higher-order function](https://en.wikipedia.org/wiki/Map_(higher-order_function))
 for input iterables.
 
 The `map` function creates a range for which each element is the result of a
