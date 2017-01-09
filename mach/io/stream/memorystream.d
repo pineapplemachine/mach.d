@@ -3,9 +3,21 @@ module mach.io.stream.memorystream;
 private:
 
 import mach.sys.memory : memmove;
-import mach.error : enforcebounds;
+import mach.error : IndexOutOfBoundsError, InvalidSliceBoundsError;
 
 public:
+
+
+
+/// Error type thrown when attempting to perform an operation upon a
+/// `MemoryStream` when that stream is not active.
+/// These checks are omitted in release mode; in which case you should expect
+/// nasty segfaults instead.
+class MemoryStreamInactiveError: Error{
+    this(size_t line = __LINE__, string file = __FILE__){
+        super("Operation failed because the MemoryStream is not active.", file, line, null);
+    }
+}
 
 
 
@@ -39,47 +51,65 @@ struct MemoryStream(bool mutable){
     @property bool active() const{
         return this.ptr !is null;
     }
-    void close() in{assert(this.active);} body{
+    void assertactive() const{
+        static const error = new MemoryStreamInactiveError();
+        if(!this.active) throw error;
+    }
+    
+    void close() in{
+        this.assertactive();
+    }body{
         this.ptr = null;
         this.memlength = 0;
         this.pos = 0;
     }
     
     /// True when the stream's position has met or exceeded its length.
-    @property bool eof() const in{assert(this.active);} body{
+    @property bool eof() const in{
+        this.assertactive();
+    }body{
         return this.pos >= this.memlength;
     }
     
     /// The length of the stream in bytes.
-    @property auto length() const in{assert(this.active);} body{
+    @property auto length() const in{
+        this.assertactive();
+    }body{
         return this.memlength;
     }
     /// The number of bytes remaining to be read or written before EOF.
-    @property auto remaining() const in{assert(this.active);} body{
+    @property auto remaining() const in{
+        this.assertactive();
+    } body{
         return this.memlength - this.pos;
     }
     
     alias opDollar = length;
     
     /// Get the current position in the stream.
-    @property auto position() const in{assert(this.active);} body{
+    @property auto position() const in{
+        this.assertactive();
+    } body{
         return this.pos;
     }
     /// Set the current position in the stream.
     @property void position(in size_t pos) in{
-        assert(this.active);
-        enforcebounds(pos, this);
+        this.assertactive();
+        static const ooberror = new IndexOutOfBoundsError("Position out of bounds.");
+        ooberror.enforce(pos, 0, this.length);
     }body{
         this.pos = pos;
     }
     
     /// Reset the stream's position to its beginning.
-    void reset() in{assert(this.active);} body{
+    void reset() in{
+        this.assertactive();
+    }body{
         this.pos = 0;
     }
     
     size_t readbufferv(void* buffer, size_t size, size_t count) in{
-        assert(this.active);
+        this.assertactive();
     }body{
         immutable goal = count * size;
         immutable cap = goal <= this.remaining ? goal : this.remaining;
@@ -89,7 +119,7 @@ struct MemoryStream(bool mutable){
         return actual;
     }
     static if(mutable) size_t writebufferv(void* buffer, size_t size, size_t count) in{
-        assert(this.active);
+        this.assertactive();
     }body{
         immutable goal = count * size;
         immutable cap = goal <= this.remaining ? goal : this.remaining;
@@ -101,21 +131,25 @@ struct MemoryStream(bool mutable){
     
     /// Get a byte at an index.
     auto opIndex(in size_t index) in{
-        assert(this.active);
-        enforcebounds(index, this);
+        this.assertactive();
+        static const ooberror = new IndexOutOfBoundsError("Position out of bounds.");
+        ooberror.enforce(index, 0, this.length);
     }body{
         return this.ptr[index];
     }
     /// Set a byte at an index.
     static if(mutable) auto opIndexAssign(in ubyte value, in size_t index) in{
-        assert(this.active);
-        enforcebounds(index, this);
+        this.assertactive();
+        static const ooberror = new IndexOutOfBoundsError("Position out of bounds.");
+        ooberror.enforce(index, 0, this.length);
     }body{
         return this.ptr[index] = value;
     }
     /// Get as a slice the stream's bytes from a low until a high index.
     auto opSlice(in size_t low, in size_t high) in{
-        assert(low >= 0 && high >= low && high <= this.length);
+        this.assertactive();
+        static const error = new InvalidSliceBoundsError();
+        error.enforce(low, high, this);
     }body{
          return this.ptr[low .. high];
     }
