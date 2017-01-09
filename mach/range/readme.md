@@ -225,6 +225,11 @@ assert(range[3] == "!!");
 
 The `headis` and `tailis` functions can be used to compare the leading or
 trailing elements of one iterable to another, respectively.
+The first argument to either function is an iterable to be searched in,
+and the second argument is the subject to be searched for. In the case of
+`headis`, the leading elements of the first iterable must be equal to all the
+elements of the second. In the case of `tailis`, the trailing elements of
+the first iterable must be equal to all the elements of the second.
 
 Note that attempting to call either function with two infinite iterables will
 result in a compile error.
@@ -245,6 +250,16 @@ assert("salutations".tailis(""));
 import mach.range.rangeof : infrangeof;
 assert(!"yo".headis(infrangeof('k')));
 assert(!"hi".tailis(infrangeof('k')));
+```
+
+
+Both functions optionally accept a comparison function as a template argument.
+By default, the comparison between elements of the inputs is simple equality.
+
+``` D
+import mach.text.ascii : tolower;
+alias compare = (a, b) => (a.tolower == b.tolower);
+assert("Hello World".headis!compare("HELLO"));
 ```
 
 
