@@ -23,9 +23,9 @@ unittest{ /// Example
 /++ Docs
 
 Though the return value of `count` may be treated like a number, it in fact
-is not. The produced type supports `total`, `exactly`, `atleast`, `atmost`,
+is not. The produced type supports `exactly`, `atleast`, `atmost`,
 `morethan`, and `lessthan` methods for performing optimized comparisons upon
-the number of elements. They are more efficient that acquiring the total count
+the number of elements. They are more efficient than acquiring the total count
 and then comparing because they are able to short-circuit when the condition
 has been met, or has ceased to be met.
 
