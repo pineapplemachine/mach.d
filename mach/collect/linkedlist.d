@@ -30,8 +30,8 @@ auto asdoublylinkedlist(Values)(auto ref Values values) if(isIterable!Values){
     alias Node = DoublyLinkedListNode!T;
     alias NodePair = typeof(this);
     
-    Node* head;
-    Node* tail;
+    Node* headnode;
+    Node* tailnode;
     
     static NodePair make(Values)(auto ref Values values) if(isIterableOf!(Values, T)){
         Node* head = null;
@@ -68,32 +68,32 @@ auto asdoublylinkedlist(Values)(auto ref Values values) if(isIterable!Values){
     }
     
     /// Get the first node in the list.
-    @property Node* head(){
+    @property Node* headnode(){
         return this.root;
     }
     /// ditto
-    @property const(Node*) head() const{
+    @property const(Node*) headnode() const{
         return this.root;
     }
     
     /// Get the last node in the list.
-    @property Node* tail(){
+    @property Node* tailnode(){
         return this.root is null ? null : this.root.prev;
     }
     /// ditto
-    @property const(Node*) tail() const{
+    @property const(Node*) tailnode() const{
         return this.root is null ? null : this.root.prev;
     }
     
     /// Get the first value in the list.
-    @property auto front(){
-        assert(this.head !is null);
-        return this.head.value;
+    @property auto ref front(){
+        assert(this.headnode !is null);
+        return this.headnode.value;
     }
     /// Get the last value in the list.
-    @property auto back(){
-        assert(this.tail !is null);
-        return this.tail.value;
+    @property auto ref back(){
+        assert(this.tailnode !is null);
+        return this.tailnode.value;
     }
     
     /// True when the list contains no values.
@@ -117,12 +117,12 @@ auto asdoublylinkedlist(Values)(auto ref Values values) if(isIterable!Values){
     }
     /// Set the entire contents of the list to some nodes.
     NodePair setnodes(NodePair pair){
-        if(pair.head is null || pair.tail is null){
+        if(pair.headnode is null || pair.tailnode is null){
             this.root = null;
         }else{
-            pair.head.prev = pair.tail;
-            pair.tail.next = pair.head;
-            this.root = pair.head;
+            pair.headnode.prev = pair.tailnode;
+            pair.tailnode.next = pair.headnode;
+            this.root = pair.headnode;
         }
         return pair;
     }
@@ -199,6 +199,14 @@ auto asdoublylinkedlist(Values)(auto ref Values values) if(isIterable!Values){
         if(replacenode is this.root) this.root = replacewith;
     }
     
+    /// Remove the first value in the list.
+    void removefront() in{assert(!this.empty);} body{
+        this.remove(this.headnode);
+    }
+    /// Remove the last value in the list.
+    void removeback() in{assert(!this.empty);} body{
+        this.remove(this.tailnode);
+    }
     /// Remove a node in the list.
     void remove(Node* node) in{
         assert(node !is null, "Input must not be null.");
@@ -229,43 +237,43 @@ auto asdoublylinkedlist(Values)(auto ref Values values) if(isIterable!Values){
     /// Add a value to the back of the list.
     Node* append(T value){
         if(this.root is null) return this.setnode(new Node(value));
-        else return this.insertafter(this.tail, value);
+        else return this.insertafter(this.tailnode, value);
     }
     /// Add the values in an iterable to the back of the list.
     NodePair append(Values)(auto ref Values values) if(isIterableOf!(Values, T)){
         if(this.root is null) return this.setnodes(NodePair.make(values));
-        else return this.insertafter(this.tail, values);
+        else return this.insertafter(this.tailnode, values);
     }
     /// Add a node to the back of the list.
     void append(Node* node){
         if(this.root is null) this.setnode(node);
-        else this.insertafter(this.tail, node);
+        else this.insertafter(this.tailnode, node);
     }
     /// Add nodes to the back of the list.
     void append(Node* head, Node* tail){
         if(this.root is null) this.setnodes(NodePair(head, tail));
-        else this.insertafter(this.tail, head, tail);
+        else this.insertafter(this.tailnode, head, tail);
     }
     
     /// Add a value to the front of the list.
     Node* prepend(T value){
         if(this.root is null) return this.setnode(new Node(value));
-        else return this.insertbefore(this.head, value);
+        else return this.insertbefore(this.headnode, value);
     }
     /// Add the values in an iterable to the front of the list.
     NodePair prepend(Values)(auto ref Values values) if(isIterableOf!(Values, T)){
         if(this.root is null) return this.setnodes(NodePair.make(values));
-        else return this.insertbefore(this.head, values);
+        else return this.insertbefore(this.headnode, values);
     }
     /// Add a node to the front of the list.
     void prepend(Node* node){
         if(this.root is null) this.setnode(node);
-        else this.insertbefore(this.head, node);
+        else this.insertbefore(this.headnode, node);
     }
     /// Add nodes to the front of the list.
     void prepend(Node* head, Node* tail){
         if(this.root is null) this.setnodes(NodePair(head, tail));
-        else this.insertbefore(this.head, head, tail);
+        else this.insertbefore(this.headnode, head, tail);
     }
     
     /// Insert a value before a node in the list.
@@ -283,7 +291,7 @@ auto asdoublylinkedlist(Values)(auto ref Values values) if(isIterable!Values){
         assert(node !is null, "Reference node must not be null.");
     }body{
         NodePair pair = NodePair.make(values);
-        this.insertbefore(node, pair.head, pair.tail);
+        this.insertbefore(node, pair.headnode, pair.tailnode);
         return pair;
     }
     /// Insert a new node before a node in the list.
@@ -325,7 +333,7 @@ auto asdoublylinkedlist(Values)(auto ref Values values) if(isIterable!Values){
         assert(node !is null, "Reference node must not be null.");
     }body{
         NodePair pair = NodePair.make(values);
-        this.insertafter(node, pair.head, pair.tail);
+        this.insertafter(node, pair.headnode, pair.tailnode);
         return pair;
     }
     /// Insert a new node after a node in the list.
@@ -394,8 +402,8 @@ enum DoublyLinkedListRangeMutability{
         alias List = const(DoublyLinkedList!T);
     }
     
-    Node* head;
-    Node* tail;
+    Node* headnode;
+    Node* tailnode;
     bool isempty = false;
     static if(mutable) List* list;
     
@@ -404,8 +412,8 @@ enum DoublyLinkedListRangeMutability{
             this(head, tail, list, head is null || tail is null);
         }
         this(Node* head, Node* tail, List* list, bool isempty){
-            this.head = head;
-            this.tail = tail;
+            this.headnode = head;
+            this.tailnode = tail;
             this.list = list;
             this.isempty = isempty;
         }
@@ -413,7 +421,7 @@ enum DoublyLinkedListRangeMutability{
             if(list is null){
                 this(null, null, null, true);
             }else{
-                this(list.head, list.tail, list);
+                this(list.headnode, list.tailnode, list);
             }
         }
     }else{
@@ -421,15 +429,15 @@ enum DoublyLinkedListRangeMutability{
             this(head, tail, head is null || tail is null);
         }
         this(Node* head, Node* tail, bool isempty = false){
-            this.head = head;
-            this.tail = tail;
+            this.headnode = head;
+            this.tailnode = tail;
             this.isempty = isempty;
         }
         this(List* list){
             if(list is null){
                 this(null, null, true);
             }else{
-                this(list.head, list.tail);
+                this(list.headnode, list.tailnode);
             }
         }
     }
@@ -440,41 +448,41 @@ enum DoublyLinkedListRangeMutability{
     
     @property auto front() in{
         assert(!this.empty, "Range is empty.");
-        assert(this.head !is null, "Range is not valid.");
+        assert(this.headnode !is null, "Range is not valid.");
     }body{
-        static if(values) return this.head.value;
-        else return this.head;
+        static if(values) return this.headnode.value;
+        else return this.headnode;
     }
     void popFront() in{
         assert(!this.empty, "Range is empty.");
-        assert(this.head !is null, "Range is not valid.");
+        assert(this.headnode !is null, "Range is not valid.");
     }body{
-        this.isempty = this.head is this.tail;
-        this.head = this.head.next;
-        assert(this.head !is null, "Range is not valid.");
+        this.isempty = this.headnode is this.tailnode;
+        this.headnode = this.headnode.next;
+        assert(this.headnode !is null, "Range is not valid.");
     }
     
     @property auto back() in{
         assert(!this.empty, "Range is empty.");
-        assert(this.tail !is null, "Range is not valid.");
+        assert(this.tailnode !is null, "Range is not valid.");
     }body{
-        static if(values) return this.tail.value;
-        else return this.tail;
+        static if(values) return this.tailnode.value;
+        else return this.tailnode;
     }
     void popBack() in{
         assert(!this.empty, "Range is empty.");
-        assert(this.tail !is null, "Range is not valid.");
+        assert(this.tailnode !is null, "Range is not valid.");
     }body{
-        this.isempty = this.head is this.tail;
-        this.tail = this.tail.prev;
-        assert(this.tail !is null, "Range is not valid.");
+        this.isempty = this.headnode is this.tailnode;
+        this.tailnode = this.tailnode.prev;
+        assert(this.tailnode !is null, "Range is not valid.");
     }
     
     @property typeof(this) save(){
         static if(mutable){
-            return typeof(this)(this.head, this.tail,  this.list, this.isempty);
+            return typeof(this)(this.headnode, this.tailnode,  this.list, this.isempty);
         }else{
-            return typeof(this)(this.head, this.tail, this.isempty);
+            return typeof(this)(this.headnode, this.tailnode, this.isempty);
         }
     }
     
@@ -483,23 +491,23 @@ enum DoublyLinkedListRangeMutability{
         /// Progresses the front of the range to the next element as though
         /// popFront was called.
         void removeFront() in{
-            assert(this.head !is null, "Range is not valid.");
+            assert(this.headnode !is null, "Range is not valid.");
             assert(!this.empty, "Range is empty.");
         }body{
-            this.isempty = this.head is this.tail;
-            this.list.remove(this.head);
-            this.head = this.head.next;
+            this.isempty = this.headnode is this.tailnode;
+            this.list.remove(this.headnode);
+            this.headnode = this.headnode.next;
         }
         /// Remove the backmost element from the backing list.
         /// Progresses the back of the range to the next element as though
         /// popBack was called.
         void removeBack() in{
-            assert(this.tail !is null, "Range is not valid.");
+            assert(this.tailnode !is null, "Range is not valid.");
             assert(!this.empty, "Range is empty.");
         }body{
-            this.isempty = this.head is this.tail;
-            this.list.remove(this.tail);
-            this.tail = this.tail.prev;
+            this.isempty = this.headnode is this.tailnode;
+            this.list.remove(this.tailnode);
+            this.tailnode = this.tailnode.prev;
         }
         
         static if(mutability is DoublyLinkedListRangeMutability.Mutable){
@@ -512,12 +520,12 @@ enum DoublyLinkedListRangeMutability{
             @property void front(Node* node) in{
                 assert(this.list !is null, "List associated with range must not be null.");
                 assert(node !is null, "Input must not be null.");
-                assert(this.head !is null, "Range is not valid.");
+                assert(this.headnode !is null, "Range is not valid.");
                 assert(!this.empty, "Range is empty.");
             }body{
-                this.list.replace(this.head, node);
-                if(this.head is this.tail) this.tail = node;
-                this.head = node;
+                this.list.replace(this.headnode, node);
+                if(this.headnode is this.tailnode) this.tailnode = node;
+                this.headnode = node;
             }
             
             @property void back(T value) in{
@@ -529,12 +537,12 @@ enum DoublyLinkedListRangeMutability{
             @property void back(Node* node) in{
                 assert(this.list !is null, "List associated with range must not be null.");
                 assert(node !is null, "Input must not be null.");
-                assert(this.tail !is null, "Range is not valid.");
+                assert(this.tailnode !is null, "Range is not valid.");
                 assert(!this.empty, "Range is empty.");
             }body{
-                this.list.replace(this.tail, node);
-                if(this.head is this.tail) this.head = node;
-                this.tail = node;
+                this.list.replace(this.tailnode, node);
+                if(this.headnode is this.tailnode) this.headnode = node;
+                this.tailnode = node;
             }
         }
     }
@@ -603,20 +611,20 @@ unittest{
             list.insertbefore(five, [-1, -2]);
             list.insertafter(six, [-3, -4]);
             test!equals(list.ivalues, [0, 1, -1, -2, 5, 2, 6, -3, -4, 3, 4]);
-            list.insertbefore(list.head, 10);
+            list.insertbefore(list.headnode, 10);
             test!equals(list.ivalues, [10, 0, 1, -1, -2, 5, 2, 6, -3, -4, 3, 4]);
         });
         tests("Contains", {
             auto list = new List!int([0, 1, 2, 3]);
-            test(list.contains(list.head));
-            test(list.contains(list.head.next));
-            test(list.contains(list.tail));
+            test(list.contains(list.headnode));
+            test(list.contains(list.headnode.next));
+            test(list.contains(list.tailnode));
             testf(list.contains(new Node!int(0)));
-            testf(list.contains(new List!int([0, 1]).head));
+            testf(list.contains(new List!int([0, 1]).headnode));
             testf(list.contains(null));
             auto empty = new List!int();
-            testf(empty.contains(list.head));
-            testf(empty.contains(list.tail));
+            testf(empty.contains(list.headnode));
+            testf(empty.contains(list.tailnode));
             testf(empty.contains(null));
         });
         tests("Replace", {
@@ -645,15 +653,22 @@ unittest{
             test(list.empty);
             list.append([0, 1, 2]);
             test!equals(list.ivalues, [0, 1, 2]);
-            list.remove(list.head);
+            list.remove(list.headnode);
             test!equals(list.ivalues, [1, 2]);
             // Remove multiple
             auto region = list.append([3, 4, 5]);
             test!equals(list.ivalues, [1, 2, 3, 4, 5]);
-            list.remove(list.head, region.head);
+            list.remove(list.headnode, region.headnode);
             test!equals(list.ivalues, [4, 5]);
-            list.remove(list.head, list.tail);
+            list.remove(list.headnode, list.tailnode);
             test(list.empty);
+        });
+        tests("Remove front and back", {
+            auto list = new List!int([0, 1, 2]);
+            list.removefront();
+            test!equals(list.ivalues, [1, 2]);
+            list.removeback();
+            test!equals(list.ivalues, [1]);
         });
         tests("Clear", {
             auto list = new List!int([0, 1, 2]);
@@ -669,11 +684,11 @@ unittest{
             test!equals(list.ivalues, [0, 1, 2, 3]);
             list.prepend(-1);
             test!equals(list.ivalues, [-1, 0, 1, 2, 3]);
-            list.remove(list.tail);
+            list.remove(list.tailnode);
             test!equals(list.ivalues, [-1, 0, 1, 2]);
-            list.remove(list.head);
+            list.remove(list.headnode);
             test!equals(list.ivalues, [0, 1, 2]);
-            list.replace(list.head, -1);
+            list.replace(list.headnode, -1);
             test!equals(list.ivalues, [-1, 1, 2]);
             list.clear();
             test(list.empty);
@@ -721,8 +736,8 @@ unittest{
             }{
                 auto list = new List!int([0, 1, 2, 3]);
                 auto nodes = list.nodes;
-                test(list.contains(nodes.head));
-                test(list.contains(nodes.tail));
+                test(list.contains(nodes.headnode));
+                test(list.contains(nodes.tailnode));
                 test!equals(list.ivalues, [0, 1, 2, 3]);
                 nodes.removeFront();
                 testeq(nodes.front.value, 1);
@@ -749,7 +764,7 @@ unittest{
             testf(null in *list);
             *list ~= 0;
             test!equals(list.ivalues, [0]);
-            test(list.head in *list);
+            test(list.headnode in *list);
             *list ~= [1, 2];
             test!equals(list.ivalues, [0, 1, 2]);
         });

@@ -34,32 +34,30 @@ struct SortedList(T, alias compare = DefaultSortedListCompare) if(is(typeof({
     }
     
     /// Get the first node in the list.
-    @property Node* head(){
-        return this.list.head;
+    @property Node* headnode(){
+        return this.list.headnode;
     }
     /// ditto
-    @property const(Node*) head() const{
-        return this.list.head;
+    @property const(Node*) headnode() const{
+        return this.list.headnode;
     }
     
     /// Get the last node in the list.
-    @property Node* tail(){
-        return this.list.tail;
+    @property Node* tailnode(){
+        return this.list.tailnode;
     }
     /// ditto
-    @property const(Node*) tail() const{
-        return this.list.tail;
+    @property const(Node*) tailnode() const{
+        return this.list.tailnode;
     }
     
     /// Get the first value in the list.
-    @property auto front(){
-        assert(this.head !is null);
-        return this.head.value;
+    @property auto ref front(){
+        return this.list.front;
     }
     /// Get the last value in the list.
-    @property auto back(){
-        assert(this.tail !is null);
-        return this.tail.value;
+    @property auto ref back(){
+        return this.list.back;
     }
     
     /// Returns a range for iterating over the nodes in this list.
@@ -156,6 +154,14 @@ struct SortedList(T, alias compare = DefaultSortedListCompare) if(is(typeof({
         }
     }
     
+    /// Remove the first value in the list.
+    void removefront(){
+        this.list.removefront();
+    }
+    /// Remove the last value in the list.
+    void removeback(){
+        this.list.removeback();
+    }
     /// Remove a node from the list.
     void remove(Node* node){
         this.list.remove(node);
@@ -284,14 +290,22 @@ unittest{
             auto list = new SortedList!int();
             list.insert([0, 1, 2, 3, 4, 5]);
             test!equals(list.ivalues, [0, 1, 2, 3, 4, 5]);
-            list.remove(list.head);
+            list.remove(list.headnode);
             test!equals(list.ivalues, [1, 2, 3, 4, 5]);
-            list.remove(list.tail);
+            list.remove(list.tailnode);
             test!equals(list.ivalues, [1, 2, 3, 4]);
-            list.remove(list.head.next, list.tail.prev);
+            list.remove(list.headnode.next, list.tailnode.prev);
             test!equals(list.ivalues, [1, 4]);
-            list.remove(list.head, list.tail);
+            list.remove(list.headnode, list.tailnode);
             test(list.empty);
+        });
+        tests("Remove front and back", {
+            auto list = new SortedList!int();
+            list.insert([0, 1, 2]);
+            list.removefront();
+            test!equals(list.ivalues, [1, 2]);
+            list.removeback();
+            test!equals(list.ivalues, [1]);
         });
         tests("Range", {
             {
