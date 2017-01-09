@@ -29,7 +29,7 @@ version(Windows){
             return _fdToHandle(file.fileno);
         }else version(CRuntime_Microsoft){
             import core.stdc.stdio : _get_osfhandle;
-            return _get_osfhandle(file.fileno);
+            return cast(WinHandle) _get_osfhandle(file.fileno);
         }else{
             assert(false);
         }
