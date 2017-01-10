@@ -1300,6 +1300,30 @@ assert(array == [1, 4, 10]);
 ```
 
 
+## mach.range.top
+
+
+The `top` and `bottom` functions can be used to find a minimum or maximum
+element according to a comparison function. With the default comparison
+function, `top` can be used to find a minimum value in an iterable input
+and `bottom` used to find the maximum.
+
+Note that the `mach.range.sort` package provides functions for fully or
+partially sorting inputs, rather than simply acquiring a minimum or maximum.
+
+``` D
+assert([1, 2, 3].top == 1);
+assert([1, 2, 3].bottom == 3);
+```
+
+``` D
+auto strings = ["hello", "how", "are", "you?"];
+alias compare = (a, b) => (a.length < b.length);
+assert(strings.top!compare, "how"); // Get the first shortest string.
+assert(strings.bottom!compare, "hello"); // Get the longest string.
+```
+
+
 ## mach.range.walk
 
 
