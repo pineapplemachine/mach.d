@@ -121,6 +121,7 @@ version(unittest){
     private:
     import mach.test;
     import mach.range.compare : equals;
+    import mach.range.rangeof : rangeof;
     import mach.text.ascii : tolower;
 }
 unittest{
@@ -144,6 +145,10 @@ unittest{
             test!equals("Hello World".striphead!compare("HELLO "), "World");
             test!equals("Hello World".striphead!compare("Okay"), "Hello World");
         });
+        tests("Range input", {
+            test!equals(rangeof(0, 1, 2, 3).striphead([0, 1]), [2, 3]);
+            test!equals(rangeof(0, 1, 2, 3).striphead([4, 5]), [0, 1, 2, 3]);
+        });
     });
     tests("Skip tail", {
         tests("Empty inputs", {
@@ -164,6 +169,10 @@ unittest{
             alias compare = (a, b) => (a.tolower == b.tolower);
             test!equals("Hello World".striptail!compare(" WORLD"), "Hello");
             test!equals("Hello World".striptail!compare("Okay"), "Hello World");
+        });
+        tests("Range input", {
+            test!equals(rangeof(0, 1, 2, 3).striptail([2, 3]), [0, 1]);
+            test!equals(rangeof(0, 1, 2, 3).striptail([4, 5]), [0, 1, 2, 3]);
         });
     });
 }
