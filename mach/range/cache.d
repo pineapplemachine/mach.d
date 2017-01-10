@@ -2,193 +2,178 @@ module mach.range.cache;
 
 public:
 
-import mach.traits : ElementType, hasNumericLength, isSlicingRange;
-import mach.range.meta : MetaRangeMixin;
+import mach.types : Rebindable;
+import mach.traits : ElementType, isRange, isSlicingRange, isSavingRange;
+import mach.traits : isBidirectionalRange, isMutableRange, isMutableFrontRange;
+import mach.traits : isMutableBackRange, isMutableRandomRange;
+import mach.traits : isMutableRemoveFrontRange, isMutableRemoveBackRange;
+import mach.range.meta : MetaRangeEmptyMixin, MetaRangeLengthMixin;
 import mach.range.asrange : asrange, validAsRange;
+
+/++ Docs
+
+The `cache` function produces a range which enumerates the elements of its
+input, but in such a way that the `front` or `back` properties of the input
+range (or the range constructed from an input iterable) are called only once
+per element.
+
+This may be useful when the `front` or `back` methods of an input range are
+costly to compute, but can be expected to be accessed more than once.
+This benefit would also apply to transient ranges for which, contrary to the
+standard, accessing `front` or `back` also consumes that element.
+
++/
+
+unittest{ /// Example
+    import mach.error.mustthrow : mustthrow;
+    // A range which causes an error when `front` is accessed more than once.
+    struct Test{
+        enum bool empty = false;
+        int element = 0;
+        bool accessed = false;
+        @property auto front(){
+            assert(!this.accessed);
+            this.accessed = true;
+            return this.element;
+        }
+        void popFront(){
+            this.accessed = false;
+        }
+    }
+    // For example:
+    mustthrow({
+        Test test;
+        test.front;
+        test.front;
+    });
+    // But, using `cache`:
+    auto range = Test(0).cache;
+    assert(range.front == 0);
+    assert(range.front == 0); // Repeated access ok!
+}
 
 private:
 
 
 
-alias DefaultCacheIndex = size_t;
-
-
-
-/// Creates a range which accesses the front of the source iterable only once
-/// and will store the most recent values for retrieval, by default just one.
-/// This may be useful for ranges whose fronts are expensive to evaluate and so
-/// should not be evaluated multiple times, or for ranges that are transient in
-/// that evaluating the front of the range also consumes it.
-auto cache(Iter, Index = DefaultCacheIndex)(auto ref Iter iter, Index size = 1) in{
-    assert(size > 0);
-}body{
+/// Get a range which enumerates the values of the input, but stores the
+/// front and back (when available) once so that, on successive invokations of
+/// the properties, whatever logic is performed in the source range does not
+/// have to be repeated.
+auto cache(Iter)(auto ref Iter iter) if(validAsRange!Iter){
     auto range = iter.asrange;
-    return CacheRange!(typeof(range), Index)(range, size);
+    return CacheRange!(typeof(range))(range);
 }
 
 
 
-/// Used internally by the CacheRange type to store and access values taken from
-/// its source range.
-struct Cache(Element, Index = DefaultCacheIndex){
-    alias Array = Element[];
+/// Range for enumerating the values of an input, only referring to the
+/// source's front and back properties once per element.
+struct CacheRange(Range) if(isRange!Range){
+    enum bool isBidirectional = isBidirectionalRange!Range;
+    alias Element = ElementType!Range;
+    alias CachedElement = Rebindable!(Element);
     
-    Index count; /// Number of elements that have been added to the cache.
-    Array array; /// Backing array, contains elements known to the cache.
+    mixin MetaRangeEmptyMixin!Range;
+    mixin MetaRangeLengthMixin!Range;
     
-    /// Construct a cache of a given size.
-    this(Index size) in{
-        assert(size > 0);
-    }body{
-        this(0, new Element[size]);
-    }
-    this(Index count, Array array){
-        this.count = count;
-        this.array = array;
-    }
+    /// The source range being enumerated.
+    Range source;
+    /// The current front element of the range.
+    CachedElement cachedfront;
+    /// The current back element of the range.
+    static if(isBidirectional) CachedElement cachedback;
     
-    /// Maximum number of elements the cache can hold.
-    @property Index size() const{
-        return cast(Index) this.array.length;
-    }
-    /// Number of elements that are currently in the cache.
-    @property Index length() const{
-        return this.count < this.size ? this.count : this.size;
-    }
-    /// ditto
-    alias opDollar = length;
-    /// True when the cache has no values in it.
-    @property bool empty() const{
-        return this.count == 0;
-    }
-    
-    /// Empty the cache of values.
-    void clear(){
-        this.count = 0;
-    }
-    
-    /// Get a copy of the cache object.
-    @property typeof(this) dup(){
-        return typeof(this)(this.count, this.array[]);
-    }
-    
-    /// Add a new element to the cache. (And cycle out the oldest one, if the
-    /// cache size has been met.)
-    void add(Element element){
-        this.array[(this.count++) % this.array.length] = element;
-    }
-    /// Get an element, where 0 is the most recent and length-1 is the oldest.
-    auto get(in Index offset) in{
-        assert(offset >= 0 && offset < this.length);
-    }body{
-        return this.array[this.index(offset)];
-    }
-    /// ditto
-    auto opIndex(in Index offset){
-        return this.get(offset);
-    }
-    
-    /// Get the index of the latest value in the backing array.
-    @property Index latestindex() const in{assert(!this.empty);} body{
-        return (this.count - 1) % this.size;
-    }
-    /// Get the index of the oldest value in the backing array.
-    @property Index oldestindex() const in{assert(!this.empty);} body{
-        if(this.count > this.size){
-            return (this.latestindex + 1) % this.size;
-        }else{
-            return 0;
+    this(Range source){
+        this.source = source;
+        if(!this.source.empty){
+            this.cachedfront = this.source.front;
+            static if(isBidirectional) this.cachedback = this.source.back;
         }
     }
     
-    /// Transform an offset from most recent to an index in the backing array.
-    Index index(in Index offset) const in{
-        assert(offset >= 0 && offset < this.length);
-    }body{
-        auto current = this.latestindex;
-        if(offset <= current) return current - offset;
-        else return (current + this.size) - offset;
-    }
-    
-    /// Get the latest value in the cache.
-    @property auto latest() in{assert(!this.empty);} body{
-        return this.array[this.latestindex];
-    }
-    /// Get the oldest value in the cache.
-    @property auto oldest() in{assert(!this.empty);} body{
-        return this.array[this.oldestindex];
-    }
-    
-    /// Get the cache object as a range that can be iterated over.
-    /// Not the same as a CacheRange.
-    @property auto asrange(){
-        import mach.range.asrange : asindexrange;
-        return this.asindexrange!Index;
-    }
-}
-
-
-
-struct CacheRange(Range, Index = DefaultCacheIndex){
-    alias Cache = .Cache!(ElementType!Range, Index);
-    
-    mixin MetaRangeMixin!(
-        Range, `source`, `Empty Length Dollar`
-    );
-    
-    Range source;
-    Cache cache;
-    
-    this(Range source, Index size = 1){
-        this(source, Cache(size));
-        this.cacheFront();
-    }
-    this(Range source, Cache cache){
+    static if(!isBidirectional) this(
+        Range source, CachedElement cachedfront
+    ){
         this.source = source;
-        this.cache = cache;
+        this.cachedfront = cachedfront;
+    }
+    static if(isBidirectional) this(
+        Range source, CachedElement cachedfront, CachedElement cachedback
+    ){
+        this.source = source;
+        this.cachedfront = cachedfront;
+        this.cachedback = cachedback;
     }
     
     @property auto front() in{assert(!this.empty);} body{
-        return this.cache.latest;
+        return cast(Element) this.cachedfront;
     }
     void popFront() in{assert(!this.empty);} body{
         this.source.popFront();
-        if(!this.source.empty) this.cacheFront();
-    }
-    void cacheFront() in{assert(!this.empty);} body{
-        this.cache.add(this.source.front);
+        if(!this.source.empty) this.cachedfront = this.source.front;
     }
     
-    /// Get the most recent value in the cache. In the majority of cases, a call
-    /// to latest will behave the same as a call to front. But where front will
-    /// fail when the range is empty, this will only fail when the cache is
-    /// empty. Practically speaking, that should be never.
-    @property auto latest() in{assert(!this.cache.empty);} body{
-        return this.cache.latest;
-    }
-    /// Get the oldest value in the cache.
-    @property auto oldest() in{assert(!this.cache.empty);} body{
-        return this.cache.oldest;
-    }
-    /// Get a value from the cache, where 0 is the most recent and cache.length-1
-    /// is the oldest.
-    @property auto get(Index index) in{
-        assert(index >= 0 && index < this.cache.length);
-    }body{
-        return this.cache.get(index);
-    }
-    
-    static if(isSlicingRange!Range){
-        typeof(this) opSlice(size_t low, size_t high) in{
-            assert(low >= 0 && high >= low);
-            static if(hasNumericLength!(typeof(this))) assert(high < this.length);
-        }body{
-            return typeof(this)(this.source[low .. high], this.cache.size);
+    static if(isBidirectional){
+        @property auto back() in{assert(!this.empty);} body{
+            return cast(Element) this.cachedback;
+        }
+        void popBack() in{assert(!this.empty);} body{
+            this.source.popBack();
+            if(!this.source.empty) this.cachedback = this.source.back;
         }
     }
     
-    @property typeof(this) save(){
-        return typeof(this)(this.source, this.cache.dup);
+    /// Return the element at an index.
+    /// Does not cache the element returned by the source range.
+    auto opIndex(Args...)(Args args) if(is(typeof({
+        return this.source[args];
+    }))){
+        return this.source[args];
+    }
+    
+    static if(isSlicingRange!Range){
+        auto opSlice(in size_t low, in size_t high){
+            return typeof(this)(this.source[low .. high]);
+        }
+    }
+    
+    static if(isSavingRange!Range){
+        @property typeof(this) save(){
+            return typeof(this)(this.source, this.cachedfront, this.cachedback);
+        }
+    }
+    
+    enum bool mutable = isMutableRange!Range;
+    
+    static if(isMutableFrontRange!Range){
+        @property void front(Element value) in{assert(!this.empty);} body{
+            this.source.front = value;
+            this.cachedfront = value;
+        }
+    }
+    static if(isMutableBackRange!Range){
+        @property void back(Element value) in{assert(!this.empty);} body{
+            this.source.back = value;
+            this.cachedback = value;
+        }
+    }
+    static if(isMutableRandomRange!Range){
+        void opIndexAssign(Element value, in size_t index){
+            this.source[index] = value;
+        }
+    }
+    static if(isMutableRemoveFrontRange!Range){
+        void removeFront() in{assert(!this.empty);} body{
+            this.source.removeFront();
+            if(!this.source.empty) this.cachedfront = this.source.front;
+        }
+    }
+    static if(isMutableRemoveBackRange!Range){
+        void removeBack() in{assert(!this.empty);} body{
+            this.source.removeBack();
+            if(!this.source.empty) this.cachedback = this.source.back;
+        }
     }
 }
 
@@ -198,76 +183,144 @@ version(unittest){
     private:
     import mach.test;
     import mach.range.compare : equals;
-    /// Raise an AssertError upon attempting to access the front element more
-    /// than once before popping; this helps make sure cache only ever accesses
-    /// the front element once.
-    struct TrickyRange{
-        bool accessed = false;
-        enum bool empty = false;
-        void popFront(){this.accessed = false;}
-        @property auto ref front(){
-            assert(!this.accessed, "Cache accessed front element twice.");
-            this.accessed = true; return 0;
+    import mach.collect : DoublyLinkedList;
+    /// Raise an AssertError upon attempting to access the front or back element
+    /// more than once before popping.
+    /// This helps make sure `cache` only ever accesses the elements once.
+    auto tricky(T)(auto ref T iter){
+        auto range = iter.asrange;
+        return TrickyRange!(typeof(range))(range);
+    }
+    struct TrickyRange(Source){
+        Source source;
+        bool accessedfront = false;
+        bool accessedback = false;
+        @property auto length(){
+            return this.source.length;
+        }
+        @property auto remaining(){
+            return this.source.remaining;
+        }
+        @property bool empty(){
+            return this.source.empty;
+        }
+        @property auto front(){
+            assert(!this.accessedfront);
+            this.accessedfront = true;
+            return this.source.front;
+        }
+        void popFront(){
+            this.accessedfront = false;
+            this.source.popFront();
+        }
+        @property auto back(){
+            assert(!this.accessedback);
+            this.accessedback = true;
+            return this.source.back;
+        }
+        void popBack(){
+            this.accessedback = false;
+            this.source.popBack();
+        }
+        @property typeof(this) save(){
+            return typeof(this)(this.source.save);
         }
     }
 }
 unittest{
     tests("Cache", {
-        tests("Internal cache data", {
-            auto cache = Cache!int(3);
-            testeq(cache.length, 0);
-            testeq(cache.size, 3);
-            for(int i = 1; i <= cache.size; i++){
-                cache.add(i);
-                testeq(cache.length, i);
-                testeq(cache.latest, i);
-                testeq(cache.oldest, 1);
-            }
-            testeq(cache[0], 3);
-            testeq(cache[$-1], 1);
-            cache.add(4);
-            testeq(cache.count, 4);
-            testeq(cache.length, 3);
-            testeq(cache.latest, 4);
-            testeq(cache.oldest, 2);
+        tests("Iteration", {
+            auto range = [0, 1, 2, 3].tricky.cache;
+            foreach(element; range){}
         });
-        tests("Range", {
-            int[] input = [0, 1, 2, 3, 4];
-            tests("Single-length cache", {
-                auto range = input.cache(1);
-                auto index = 0;
-                testeq(range.length, input.length);
-                while(!range.empty){
-                    testeq(range.front, range.latest);
-                    testeq(range.front, range.oldest);
-                    testeq(range.front, input[index++]);
-                    range.popFront();
-                }
-                testeq(range.cache.length, 1);
-            });
-            tests("Longer cache", {
-                auto range = input.cache(3);
-                auto index = 0;
-                while(!range.empty){
-                    testeq(range.front, input[index]);
-                    testeq(range.oldest, input[index > 2 ? index - 2 : 0]);
-                    range.popFront();
-                    index++;
-                }
-            });
-            tests("Slicing", {
-                static assert(isSlicingRange!(typeof(input.cache())));
-                auto slice = input.cache[1 .. $-1];
-                test(slice.equals(input[1 .. $-1]));
-            });
-            tests("Only access front once", {
-                TrickyRange input;
-                auto range = input.cache;
-                testfail({input.front; input.front;});
-                range.front; range.front;
-                range.popFront();
-                range.front; range.front;
-            });
+        tests("Bidirectionality", {
+            auto range = [0, 1, 2, 3].tricky.cache;
+            testeq(range.length, 4);
+            testeq(range.remaining, 4);
+            testeq(range.front, 0);
+            testeq(range.front, 0);
+            testeq(range.back, 3);
+            testeq(range.back, 3);
+            range.popFront();
+            testeq(range.length, 4);
+            testeq(range.remaining, 3);
+            testeq(range.front, 1);
+            range.popBack();
+            testeq(range.remaining, 2);
+            testeq(range.back, 2);
+            range.popFront();
+            testeq(range.remaining, 1);
+            testeq(range.front, 2);
+            range.popBack();
+            testeq(range.remaining, 0);
+            test(range.empty);
+            testfail({range.front;});
+            testfail({range.popFront();});
+            testfail({range.back;});
+            testfail({range.popBack();});
+        });
+        tests("Saving", {
+            auto range = [0, 1, 2, 3].tricky.cache;
+            auto saved = range.save;
+            range.popFront();
+            testeq(range.front, 1);
+            testeq(range.front, 1);
+            testeq(saved.front, 0);
+            testeq(saved.front, 0);
+        });
+        tests("Random access", {
+            auto range = "hi".cache;
+            testeq(range[0], 'h');
+            testeq(range[1], 'i');
+            testfail({range[2];});
+        });
+        tests("Slicing", {
+            auto range = [0, 1, 2].cache;
+            test(range[0 .. 0].empty);
+            test(range[$ .. $].empty);
+            test!equals(range[0 .. 1], [0]);
+            test!equals(range[0 .. 2], [0, 1]);
+            test!equals(range[0 .. $], [0, 1, 2]);
+            test!equals(range[1 .. $], [1, 2]);
+            test!equals(range[2 .. $], [2]);
+            testfail({range[0 .. $+1];});
+        });
+        tests("Mutability", {
+            auto array = [0, 1, 2];
+            auto range = array.cache;
+            range.front = 10;
+            testeq(range.front, 10);
+            testeq(range.front, 10);
+            testeq(array, [10, 1, 2]);
+            range.back = 20;
+            testeq(range.back, 20);
+            testeq(range.back, 20);
+            testeq(array, [10, 1, 20]);
+            range[1] = 15;
+            testeq(range[1], 15);
+            testeq(array, [10, 15, 20]);
+        });
+        tests("Removal", {
+            auto list = new DoublyLinkedList!int([0, 1, 2]);
+            auto range = list.values.cache;
+            range.removeFront();
+            testeq(range.front, 1);
+            testeq(range.front, 1);
+            test!equals(list.ivalues, [1, 2]);
+            range.removeBack();
+            testeq(range.back, 1);
+            testeq(range.back, 1);
+            test!equals(list.ivalues, [1]);
+            range.removeFront();
+            test(range.empty);
+            test(list.empty);
+        });
+        tests("Immutable input", {
+            const(const(int)[]) array = [0, 1, 2, 3];
+            auto range = array.cache;
+            testeq(range.front, 0);
+            testeq(range.front, 0);
+            foreach(element; range){}
         });
     });
 }

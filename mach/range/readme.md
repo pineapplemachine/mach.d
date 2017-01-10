@@ -163,6 +163,48 @@ mustthrow!AsStaticArrayError({
 ```
 
 
+## mach.range.cache
+
+
+The `cache` function produces a range which enumerates the elements of its
+input, but in such a way that the `front` or `back` properties of the input
+range (or the range constructed from an input iterable) are called only once
+per element.
+
+This may be useful when the `front` or `back` methods of an input range are
+costly to compute, but can be expected to be accessed more than once.
+This benefit would also apply to transient ranges for which, contrary to the
+standard, accessing `front` or `back` also consumes that element.
+
+``` D
+import mach.error.mustthrow : mustthrow;
+// A range which causes an error when `front` is accessed more than once.
+struct Test{
+    enum bool empty = false;
+    int element = 0;
+    bool accessed = false;
+    @property auto front(){
+        assert(!this.accessed);
+        this.accessed = true;
+        return this.element;
+    }
+    void popFront(){
+        this.accessed = false;
+    }
+}
+// For example:
+mustthrow({
+    Test test;
+    test.front;
+    test.front;
+});
+// But, using `cache`:
+auto range = Test(0).cache;
+assert(range.front == 0);
+assert(range.front == 0); // Repeated access ok!
+```
+
+
 ## mach.range.chain
 
 
