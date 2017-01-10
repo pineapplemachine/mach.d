@@ -1,10 +1,10 @@
-module mach.text.parse.numeric.stringis;
+module mach.text.numeric.stringis;
 
 private:
 
 import mach.traits : isString;
 import mach.range : all, asrange;
-import mach.text.parse.numeric.settings;
+import mach.text.numeric.settings;
 
 public:
 

@@ -9,7 +9,7 @@ import mach.error : IndexOutOfBoundsError;
 
 import mach.text.utf : utf8encode;
 import mach.text.html : NamedChar;
-import mach.text.parse.numeric : writehex, writeoct;
+import mach.text.numeric : writehex, writeoct;
 
 import mach.text.escape.unescape : UnescapeRange;
 import mach.text.escape.exceptions;

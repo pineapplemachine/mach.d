@@ -28,7 +28,7 @@
 
 
 
-module mach.text.parse.numeric.burger;
+module mach.text.numeric.burger;
 
 private:
 
@@ -54,7 +54,7 @@ struct Bignum{
     
     /+
     string toString() const{
-        import mach.text.parse.numeric.integrals : writehex;
+        import mach.text.numeric.integrals : writehex;
         string str = "";
         for(int i = this.l; i >= 0; i--){
             str ~= writehex(this.d[i]);

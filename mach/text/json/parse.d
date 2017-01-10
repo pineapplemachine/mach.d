@@ -4,7 +4,7 @@ private:
 
 import mach.text.utf : utf8decode, UTFDecodeException;
 import mach.math.floats : fcomposedec;
-import mach.text.parse.numeric : WriteFloatSettings;
+import mach.text.numeric : WriteFloatSettings;
 import mach.text.escape : StringUnescapeException;
 import mach.text.json.escape;
 import mach.text.json.exceptions;

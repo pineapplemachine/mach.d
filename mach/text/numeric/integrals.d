@@ -1,4 +1,4 @@
-module mach.text.parse.numeric.integrals;
+module mach.text.numeric.integrals;
 
 private:
 
@@ -6,7 +6,7 @@ import std.math : abs;
 import mach.traits : Unqual, isNumeric, isIntegral, isSigned, Unsigned;
 import mach.traits : isString, hasNumericLength;
 import mach.math : divceil, clog, clog2, ispow2;
-import mach.text.parse.numeric.exceptions;
+import mach.text.numeric.exceptions;
 
 public:
 
@@ -218,7 +218,7 @@ template ParseBase(size_t base, alias zero = '0', alias one = '1') if(
         bool y = ('0' == one);
     }))
 ){
-    private import mach.text.parse.numeric.exceptions;
+    private import mach.text.numeric.exceptions;
     auto ParseBase(T = long, S)(auto ref S str) if(isString!S && isNumeric!T){
         return ParseBaseGeneric!(T, base, (ch){
             NumberParseException.enforceinvalid(ch == zero || ch == one);
@@ -258,7 +258,7 @@ template WriteBase(size_t base) if(base >= 2 && base <= 10){
 /// The parser is case-insensitive; e.g. 'a' and 'A' represent the same digit.
 template ParseBase(size_t base) if(base > 10 && base <= 36 && base != 32){
     private import mach.traits : Unqual, isNumeric, isString;
-    private import mach.text.parse.numeric.exceptions;
+    private import mach.text.numeric.exceptions;
     auto ParseBase(T = long, S)(auto ref S str) if(isString!S && isNumeric!T){
         return ParseBaseGeneric!(T, base, (ch){
             enum auto maxlowerch = 'a' + base - 10;
@@ -302,7 +302,7 @@ template WriteBase(size_t base, bool uppercase = true) if(
 /// https://en.wikipedia.org/wiki/Base32#RFC_4648_Base32_alphabet
 template ParseBase(size_t base) if(base == 32){
     private import mach.traits : Unqual, isNumeric, isString;
-    private import mach.text.parse.numeric.exceptions;
+    private import mach.text.numeric.exceptions;
     auto ParseBase(T = ulong, S)(auto ref S str) if(isString!S && isNumeric!T){
         return ParseBaseGeneric!(
             T, base, false, true, (ch){return ch == '=';}, (){}, (){}, (ch){

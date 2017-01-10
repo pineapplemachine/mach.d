@@ -11,7 +11,7 @@ import mach.traits : isEnumType, getenummember, enummembername, NoSuchEnumMember
 import mach.traits : hasAttribute;
 import mach.range : map, asarray;
 import mach.text.utf : utf8encode, utfdecode;
-import mach.text.parse.numeric : parseint, writeint, parsefloat, writefloat;
+import mach.text.numeric : parseint, writeint, parsefloat, writefloat;
 
 import mach.text.json.attributes;
 import mach.text.json.exceptions;

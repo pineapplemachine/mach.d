@@ -1,4 +1,4 @@
-module mach.text.parse.numeric.floats;
+module mach.text.numeric.floats;
 
 private:
 
@@ -7,9 +7,9 @@ import mach.math : fextractsgn;
 import mach.traits : isFloatingPoint;
 import mach.traits : validAsStringRange, IEEEFormatOf;
 import mach.range : asrange, asarray, finiterangeof;
-import mach.text.parse.numeric.exceptions;
-import mach.text.parse.numeric.integrals : writeint;
-import mach.text.parse.numeric.burger : dragon;
+import mach.text.numeric.exceptions;
+import mach.text.numeric.integrals : writeint;
+import mach.text.numeric.burger : dragon;
 
 public:
 

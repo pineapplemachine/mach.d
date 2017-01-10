@@ -1,4 +1,4 @@
-module mach.text.parse.numeric.parse;
+module mach.text.numeric.parse;
 
 private:
 
@@ -6,8 +6,8 @@ private:
 import mach.traits : Unqual, isNumeric, isFloatingPoint;
 import mach.traits : validAsStringRange;
 import mach.range : asrange;
-import mach.text.parse.numeric.exceptions;
-import mach.text.parse.numeric.settings;
+import mach.text.numeric.exceptions;
+import mach.text.numeric.settings;
 
 public:
 

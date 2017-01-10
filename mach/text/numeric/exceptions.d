@@ -1,4 +1,4 @@
-module mach.text.parse.numeric.exceptions;
+module mach.text.numeric.exceptions;
 
 private:
 

@@ -2,7 +2,7 @@ module mach.text.json.json;
 
 private:
 
-import mach.text.parse.numeric : WriteFloatSettings;
+import mach.text.numeric : WriteFloatSettings;
 import mach.text.json.exceptions;
 import mach.text.json.attributes;
 import mach.text.json.parse;

@@ -2,7 +2,7 @@ module mach.text.json.value;
 
 private:
 
-import mach.text.parse.numeric : writeint, writefloat, WriteFloatSettings;
+import mach.text.numeric : writeint, writefloat, WriteFloatSettings;
 import mach.traits : isNull, isBoolean, isNumeric, isIntegral, isFloatingPoint;
 import mach.traits : isCharacter, isString, isArray, isAssociativeArray;
 import mach.traits : ArrayElementType, ArrayKeyType, ArrayValueType;

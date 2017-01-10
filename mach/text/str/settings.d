@@ -3,7 +3,7 @@ module mach.text.str.settings;
 private:
 
 import mach.traits : Unqual, isRange;
-import mach.text.parse.numeric : WriteFloatSettings;
+import mach.text.numeric : WriteFloatSettings;
 
 public:
 

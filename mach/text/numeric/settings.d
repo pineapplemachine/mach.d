@@ -1,4 +1,4 @@
-module mach.text.parse.numeric.settings;
+module mach.text.numeric.settings;
 
 private:
 

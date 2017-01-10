@@ -4,8 +4,8 @@ private:
 
 import mach.text.utf : utf8encode, UTFEncodePoint;
 import mach.text.html : NamedChar;
-import mach.text.parse.numeric : parsehex, parseoct;
-import mach.text.parse.numeric : NumberParseException;
+import mach.text.numeric : parsehex, parseoct;
+import mach.text.numeric : NumberParseException;
 import mach.traits : isStringRange;
 import mach.range : next;
 

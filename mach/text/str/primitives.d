@@ -7,7 +7,7 @@ import mach.traits : isImaginary, isComplex, Unimaginary, isPointer;
 import mach.traits : isFiniteIterable, isString, isCharString;
 import mach.traits : isWString, isDString, Unqual, isArray, hasNumericLength;
 import mach.traits : isEnumType, enummembername, PointerType;
-import mach.text.parse.numeric : writeint, WriteBase, writefloat;
+import mach.text.numeric : writeint, WriteBase, writefloat;
 import mach.text.utf : utf8encode;
 import mach.text.str.settings;
 
