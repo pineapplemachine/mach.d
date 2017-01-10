@@ -68,6 +68,7 @@ import mach.range.sort;
 import mach.range.split : split;
 import mach.range.stride : stride;
 import mach.range.strip : strip, stripfront, stripback, stripboth;
+import mach.range.stripends : striphead, striptail;
 import mach.range.tap : tap;
 import mach.range.top : top, bottom;
 import mach.range.unique : unique;

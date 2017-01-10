@@ -1279,6 +1279,39 @@ assert("123and456AND789".split!compare("and").equals(["123", "456", "789"]));
 ```
 
 
+## mach.range.stripends
+
+
+The `striphead` and `striptail` functions can be used to get a range from
+an input which, if it begins or ends with a subject, enumerates only those
+elements following or preceding that subject.
+
+`striphead` accepts two inputs valid as a range. If the first input begins
+with the second, as determined by a given comparison function, then the
+range that `striphead` returns enumerates the elements following those of
+the subject. Otherwise, the range it returns enumerates the entire input.
+
+`striptail` also accepts two inputs valid as a range. If the first input ends
+with the second, as determined by a given comparison function, then the
+range that `striptail` returns enumerates the elements preceding those of
+the subject. Otherwise, the range it returns enumerates the entire input.
+
+``` D
+import mach.range.compare : equals;
+assert("hello".striphead("he").equals("llo"));
+assert("world".striptail("ld").equals("wor"));
+```
+
+``` D
+// When the input doesn't begin with the subject,
+// the returned range enumerates the entire input.
+import mach.range.compare : equals;
+assert("hello".striphead("xyz").equals("hello"));
+assert("hello".striphead("hey").equals("hello"));
+assert("world".striptail("xld").equals("world"));
+```
+
+
 ## mach.range.tap
 
 
