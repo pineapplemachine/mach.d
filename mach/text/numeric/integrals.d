@@ -8,6 +8,112 @@ import mach.traits : isString, hasNumericLength;
 import mach.math : divceil, clog, clog2, ispow2;
 import mach.text.numeric.exceptions;
 
+/++ Docs
+
+This module provides a plethora of functions for parsing integrals from strings
+and for writing them back again.
+The most basic and common use cases are represented by the `parseint` and
+`writeint` functions.
+
++/
+
+unittest{ /// Example
+    assert(1234.writeint == "1234");
+    assert("5678".parseint == 5678);
+}
+
+unittest{ /// Example
+    // Bad inputs provoke a `NumberParseException`.
+    import mach.error.mustthrow : mustthrow;
+    mustthrow!NumberParseException({
+        "Not really a number".parseint;
+    });
+}
+
+/++ Docs
+
+Parsing functions provided by this module, such as `parseint`, may receive an
+optional template parameter specifying the storage type.
+
++/
+
+unittest{ /// Example
+    import mach.error.mustthrow : mustthrow;
+    assert("100".parseint!ulong == 100);
+    mustthrow!NumberParseException({
+        "-100".parseint!ulong; // Can't store a negative number in a ulong!
+    });
+}
+
+/++ Docs
+
+The `parsehex` and `writehex` functions can be used to read and write
+hexadecimal strings.
+Note these functions pad the output depending on the size of the input integral
+type.
+
++/
+
+unittest{ /// Example
+    assert(ubyte(0xFF).writehex == "FF");
+    assert(ushort(0xFF).writehex == "00FF");
+    assert("80F0".parsehex == 0x80F0);
+}
+
+/++ Docs
+
+The functions in this module are capable of parsing and serializing numbers in
+bases from unary up to and including base 64.
+In addition to decimal and hexadecimal,
+octal is supported via `parseoct` and `writeoct`,
+padded binary via `parsebin` and `writebin`,
+RFC 4648 base 32 via `parseb32` and `writeb32`,
+and base 64 via `parseb64` and `writeb64`.
+
+These functions are all aliases to instantiations of the `ParseBase`,
+`WriteBase`, and `WriteBasePadded` templates.
+These templates can be freely used to produce functions for parsing and
+serializing bases 1 through 36 and base 64.
+The basis of the functionality for those templates are the `ParseBaseGeneric`,
+`WriteBaseGeneric`, and `WriteBasePaddedGeneric` functions, which may be used
+to parse and serialize essentially any base when provided with functions for
+determining the meaning of a given character.
+
++/
+
+unittest{ /// Example
+    assert(ubyte(127).writebin == "01111111");
+    assert("10110".parsebin == 22);
+}
+
+unittest{ /// Example
+    assert(10.writeoct == "12");
+    assert("12".parseoct == 10);
+}
+
+unittest{ /// Example
+    assert(24.WriteBase!3 == "220");
+    assert("220".ParseBase!3 == 24);
+}
+
+/++ Docs
+
+Note that `WriteBasePadded`, along with `writebin` and `writehex` which depend
+on it, is not able to write negative numbers. When passing a negative number
+to a padded serialization function, a `NumberWriteError` will result except
+for when compiling in release mode. (In release mode the check is omitted, and
+the function may produce nonsense data.)
+
++/
+
+unittest{ /// Example
+    import mach.error.mustthrow : mustthrow;
+    assert(byte(16).writehex == "10"); // Positive signed inputs ok.
+    mustthrow!NumberWriteError({
+        byte(-16).writehex; // Negative inputs not ok.
+    });
+}
+
 public:
 
 
@@ -43,6 +149,7 @@ auto ParseBaseGeneric(
         }
     }))
 ){
+    static const error = new NumberParseException();
     enum bool signed = isSigned!T && allowsign;
     Unqual!T value = 0;
     bool anydigits = false;
@@ -56,11 +163,13 @@ auto ParseBaseGeneric(
     foreach(ch; str){
         static if(signed){
             if(ispos(ch)){
-                NumberParseException.enforceinvalid(!anydigits && !foundsign);
+                // Sign must be the first character in the input.
+                error.enforce(!anydigits && !foundsign);
                 foundsign = true;
                 continue;
             }else if(isneg(ch)){
-                NumberParseException.enforceinvalid(!anydigits && !foundsign);
+                // Sign must be the first character in the input.
+                error.enforce(!anydigits && !foundsign);
                 foundsign = true; negative = true;
                 continue;
             }
@@ -71,13 +180,14 @@ auto ParseBaseGeneric(
                 value *= base;
                 continue;
             }else{
-                NumberParseException.enforcepadding(!pad);
+                // Padding characters must all appear at the end of the string.
+                error.enforce(!pad);
             }
         }
         value = cast(typeof(value))((value * base) + valueof(ch));
         anydigits = true;
     }
-    NumberParseException.enforcedigits(anydigits);
+    error.enforce(anydigits); // Input must contain digits.
     static if(signed){
         return cast(T)(negative ? -value : value);
     }else{
@@ -111,7 +221,9 @@ auto ParseBaseGeneric(
 /// returned string, of the same type as the negation and zero symbol inputs.
 /// You probably want it to return a char of some sort, but whatever floats
 /// your boat.
-auto WriteBaseGeneric(size_t base, alias neg, alias zero, alias digit, T)(T number) if(
+@safe pure nothrow auto WriteBaseGeneric(
+    size_t base, alias neg, alias zero, alias digit, T
+)(T number) if(
     isIntegral!T && is(typeof({
         auto ch = digit(0);
         typeof(ch) x = neg;
@@ -121,7 +233,8 @@ auto WriteBaseGeneric(size_t base, alias neg, alias zero, alias digit, T)(T numb
     alias Digit = typeof(zero);
     alias Digits = immutable(Digit)[];
     if(number == 0){
-        return cast(Digits)[zero];
+        string str = [zero];
+        return str;
     }else{
         Digits str;
         Unqual!T n = cast(Unqual!T) number;
@@ -150,7 +263,7 @@ auto WriteBaseGeneric(size_t base, alias neg, alias zero, alias digit, T)(T numb
 
 /// Same as the prior method by the same name, but provides default inputs for
 /// some template arguments.
-auto WriteBaseGeneric(size_t base, alias digit, T)(T number) if(
+@safe pure nothrow auto WriteBaseGeneric(size_t base, alias digit, T)(T number) if(
     isIntegral!T && is(typeof({auto ch = digit(0);}))
 ){
     return WriteBaseGeneric!(base, '-', '0', digit, T)(number);
@@ -198,7 +311,7 @@ template ParseBase(size_t base) if(base == 1){
 /// Write a number as a string in unary. Concatenates a number of symbols
 /// equivalent to the input number. By default the symbol is the character '1'.
 template WriteBase(size_t base, alias digit = '1') if(base == 1){
-    auto WriteBase(T)(T n) if(isIntegral!T){
+    @safe pure nothrow auto WriteBase(T)(T n) if(isIntegral!T){
         immutable(typeof(digit))[] str;
         static if(isSigned!T) auto len = abs(n);
         else alias len = n;
@@ -219,9 +332,10 @@ template ParseBase(size_t base, alias zero = '0', alias one = '1') if(
     }))
 ){
     private import mach.text.numeric.exceptions;
+    static const error = new NumberParseException();
     auto ParseBase(T = long, S)(auto ref S str) if(isString!S && isNumeric!T){
         return ParseBaseGeneric!(T, base, (ch){
-            NumberParseException.enforceinvalid(ch == zero || ch == one);
+            error.enforce(ch == zero || ch == one);
             return ch != zero;
         })(str);
     }
@@ -232,10 +346,11 @@ template ParseBase(size_t base, alias zero = '0', alias one = '1') if(
 /// Parse a string as a number in a base that requires only numeric characters,
 /// and that is not unary or binary.
 template ParseBase(size_t base) if(base >= 3 && base <= 10){
+    static const error = new NumberParseException();
     auto ParseBase(T = long, S)(auto ref S str) if(isString!S && isNumeric!T){
         return ParseBaseGeneric!(T, base, (ch){
             enum auto maxch = '0' + base;
-            NumberParseException.enforceinvalid(ch >= '0' && ch <= maxch);
+            error.enforce(ch >= '0' && ch <= maxch);
             return ch - '0';
         })(str);
     }
@@ -244,7 +359,7 @@ template ParseBase(size_t base) if(base >= 3 && base <= 10){
 /// Write a number as a string in a base that requires only numeric characters,
 /// and that is not unary.
 template WriteBase(size_t base) if(base >= 2 && base <= 10){
-    auto WriteBase(T)(T number) if(isIntegral!T){
+    @safe pure nothrow auto WriteBase(T)(T number) if(isIntegral!T){
         return WriteBaseGeneric!(base, (ch){
             return cast(char)('0' + ch);
         })(number);
@@ -259,6 +374,7 @@ template WriteBase(size_t base) if(base >= 2 && base <= 10){
 template ParseBase(size_t base) if(base > 10 && base <= 36 && base != 32){
     private import mach.traits : Unqual, isNumeric, isString;
     private import mach.text.numeric.exceptions;
+    static const error = new NumberParseException();
     auto ParseBase(T = long, S)(auto ref S str) if(isString!S && isNumeric!T){
         return ParseBaseGeneric!(T, base, (ch){
             enum auto maxlowerch = 'a' + base - 10;
@@ -266,9 +382,7 @@ template ParseBase(size_t base) if(base > 10 && base <= 36 && base != 32){
             if(ch >= '0' && ch <= '9') return ch - '0';
             else if(ch >= 'a' && ch <= maxlowerch) return ch - 'a' + 10;
             else if(ch >= 'A' && ch <= maxupperch) return ch - 'A' + 10;
-            else throw new NumberParseException(
-                NumberParseException.Reason.InvalidChar
-            );
+            else throw error;
         })(str);
     }
 }
@@ -280,7 +394,7 @@ template ParseBase(size_t base) if(base > 10 && base <= 36 && base != 32){
 template WriteBase(size_t base, bool uppercase = true) if(
     base > 10 && base <= 36 && base != 32
 ){
-    auto WriteBase(T)(T number) if(isIntegral!T){
+    @safe pure nothrow auto WriteBase(T)(T number) if(isIntegral!T){
         return WriteBaseGeneric!(base, (ch){
             if(ch < 10){
                 return cast(char)('0' + ch);
@@ -303,6 +417,7 @@ template WriteBase(size_t base, bool uppercase = true) if(
 template ParseBase(size_t base) if(base == 32){
     private import mach.traits : Unqual, isNumeric, isString;
     private import mach.text.numeric.exceptions;
+    static const error = new NumberParseException();
     auto ParseBase(T = ulong, S)(auto ref S str) if(isString!S && isNumeric!T){
         return ParseBaseGeneric!(
             T, base, false, true, (ch){return ch == '=';}, (){}, (){}, (ch){
@@ -310,9 +425,7 @@ template ParseBase(size_t base) if(base == 32){
                 else if(ch >= 'a' && ch <= 'z') return ch - 'a';
                 else if(ch >= 'A' && ch <= 'Z') return ch - 'A';
                 else if(ch == '=') return 0;
-                else throw new NumberParseException(
-                    NumberParseException.Reason.InvalidChar
-                );
+                else throw error;
             }
         )(str);
     }
@@ -324,8 +437,11 @@ template ParseBase(size_t base) if(base == 32){
 /// written in upper- or lower-case. The flag defaults to uppercase.
 /// https://en.wikipedia.org/wiki/Base32#RFC_4648_Base32_alphabet
 template WriteBase(size_t base, bool uppercase = true) if(base == 32){
-    auto WriteBase(T)(T number) if(isIntegral!T) in{
-        static if(isSigned!T) assert(number >= 0, "Cannot write negative number.");
+    @safe auto WriteBase(T)(T number) if(isIntegral!T) in{
+        static if(isSigned!T){
+            static const error = new NumberWriteError("Cannot write negative number.");
+            error.enforce(number >= 0);
+        }
     }body{
         return WriteBaseGeneric!(base, '-', uppercase ? 'A' : 'a', (ch){
             if(ch < 26){
@@ -346,7 +462,8 @@ template WriteBase(size_t base, bool uppercase = true) if(base == 32){
 /// appear at the end of the input string.
 /// https://en.wikipedia.org/wiki/Base64#Examples
 template ParseBase(size_t base) if(base == 64){
-    auto ParseBase(T = ulong, S)(auto ref S str) if(isString!S && isNumeric!T){
+    static const error = new NumberParseException();
+    @safe auto ParseBase(T = ulong, S)(auto ref S str) if(isString!S && isNumeric!T){
         return ParseBaseGeneric!(
             T, base, false, true, (ch){return ch == '=';}, (){}, (){}, (ch){
                 if(ch >= '0' && ch <= '9') return ch - '0' + 52;
@@ -355,9 +472,7 @@ template ParseBase(size_t base) if(base == 64){
                 else if(ch == '+') return 62;
                 else if(ch == '/') return 63;
                 else if(ch == '=') return 0;
-                else throw new NumberParseException(
-                    NumberParseException.Reason.InvalidChar
-                );
+                else throw error;
             }
         )(str);
     }
@@ -368,7 +483,10 @@ template ParseBase(size_t base) if(base == 64){
 /// https://en.wikipedia.org/wiki/Base64#Examples
 template WriteBase(size_t base) if(base == 64){
     auto WriteBase(T)(T number) if(isIntegral!T) in{
-        static if(isSigned!T) assert(number >= 0, "Cannot write negative number.");
+        static if(isSigned!T){
+            static const error = new NumberWriteError("Cannot write negative number.");
+            error.enforce(number >= 0);
+        }
     }body{
         return WriteBaseGeneric!(base, '-', 'A', (ch){
             if(ch < 26) return cast(char)('A' + ch);
@@ -385,10 +503,13 @@ template WriteBase(size_t base) if(base == 64){
 /// Write a number as a string in a given base, left-padded with zeroes.
 /// The amount of padding depends on the size of the input type.
 /// The input must be unsigned.
-auto WriteBasePaddedGeneric(size_t base, alias digit, T)(T number) if(
+@safe auto WriteBasePaddedGeneric(size_t base, alias digit, T)(T number) if(
     base > 1 && isIntegral!T && is(typeof({auto ch = digit(0);}))
 )in{
-    static if(isSigned!T) assert(number >= 0, "Cannot write negative number.");
+    static if(isSigned!T){
+        static const error = new NumberWriteError("Cannot write negative number.");
+        error.enforce(number >= 0);
+    }
 }body{
     alias Digit = typeof(digit(0));
     alias Digits = immutable(Digit)[];
@@ -428,7 +549,7 @@ auto WriteBasePaddedGeneric(size_t base, alias digit, T)(T number) if(
 /// Write a number as a string in a base that requires only numeric characters,
 /// and that is not unary.
 template WriteBasePadded(size_t base) if(base >= 2 && base <= 10){
-    auto WriteBasePadded(T)(T number) if(isIntegral!T){
+    @safe auto WriteBasePadded(T)(T number) if(isIntegral!T){
         return WriteBasePaddedGeneric!(base, (ch){
             return cast(char)('0' + ch);
         })(number);
@@ -441,7 +562,7 @@ template WriteBasePadded(size_t base) if(base >= 2 && base <= 10){
 template WriteBasePadded(size_t base, bool uppercase = true) if(
     base > 10 && base <= 36
 ){
-    auto WriteBasePadded(T)(T number) if(isIntegral!T){
+    @safe auto WriteBasePadded(T)(T number) if(isIntegral!T){
         return WriteBasePaddedGeneric!(base, (ch){
             if(ch < 10){
                 return cast(char)('0' + ch);
@@ -513,6 +634,12 @@ version(unittest){
         });
     }
     auto NumTest(T)(T num){
+        bool failpred(Throwable e){
+            return (
+                cast(NumberParseException) e !is null ||
+                cast(NumberWriteError) e !is null
+            );
+        }
         tests("Decimal", {
             BaseTest!(ParseBase!10, WriteBase!10, T)(num);
         });
@@ -521,7 +648,9 @@ version(unittest){
             if(num >= 0){
                 BaseTest!(ParseBase!16, WriteBasePadded!16, T)(num);
             }else{
-                testfail({BaseTest!(ParseBase!16, WriteBasePadded!16, T)(num);});
+                testfail(&failpred, {
+                    BaseTest!(ParseBase!16, WriteBasePadded!16, T)(num);
+                });
             }
         });
         tests("Octal", {
@@ -529,7 +658,9 @@ version(unittest){
             if(num >= 0){
                 BaseTest!(ParseBase!8, WriteBasePadded!8, T)(num);
             }else{
-                testfail({BaseTest!(ParseBase!8, WriteBasePadded!8, T)(num);});
+                testfail(&failpred, {
+                    BaseTest!(ParseBase!8, WriteBasePadded!8, T)(num);
+                });
             }
         });
         tests("Binary", {
@@ -537,7 +668,9 @@ version(unittest){
             if(num >= 0){
                 BaseTest!(ParseBase!2, WriteBasePadded!2, T)(num);
             }else{
-                testfail({BaseTest!(ParseBase!2, WriteBasePadded!2, T)(num);});
+                testfail(&failpred, {
+                    BaseTest!(ParseBase!2, WriteBasePadded!2, T)(num);
+                });
             }
         });
         tests("Ternary", {
@@ -545,21 +678,27 @@ version(unittest){
             if(num >= 0){
                 BaseTest!(ParseBase!3, WriteBasePadded!3, T)(num);
             }else{
-                testfail({BaseTest!(ParseBase!3, WriteBasePadded!3, T)(num);});
+                testfail(&failpred, {
+                    BaseTest!(ParseBase!3, WriteBasePadded!3, T)(num);
+                });
             }
         });
         tests("Base 32", {
             if(num >= 0){
                 BaseTest!(ParseBase!32, WriteBase!32, T)(num);
             }else{
-                testfail({BaseTest!(ParseBase!32, WriteBase!32, T)(num);});
+                testfail(&failpred, {
+                    BaseTest!(ParseBase!32, WriteBase!32, T)(num);
+                });
             }
         });
         tests("Base 64", {
             if(num >= 0){
                 BaseTest!(ParseBase!64, WriteBase!64, T)(num);
             }else{
-                testfail({BaseTest!(ParseBase!64, WriteBase!64, T)(num);});
+                testfail(&failpred, {
+                    BaseTest!(ParseBase!64, WriteBase!64, T)(num);
+                });
             }
         });
         tests("Unary", {

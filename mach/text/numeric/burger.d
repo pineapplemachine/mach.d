@@ -34,6 +34,26 @@ private:
 
 import mach.math.floats : fextractsgn, fextractexp, fextractsig;
 
+/++ Docs
+
+This module implements Burger's algorithm, described by the paper
+[Printing Floating-Point Numbers Quickly and Accurately](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.67.4438&rep=rep1&type=pdf).
+The original algorithm, written in C and permissively licensed, is © 1996
+Robert G. Burger.
+This D module was written by Sophie Kirschner, translated from the C written by
+Robert Burger, and is licensed according to the terms of the
+[mach library](https://github.com/pineapplemachine/mach.d),
+of which this module is a part.
+
+Here is the C code, written by Robert Burger, upon which this module is based:
+https://web.archive.org/web/20100324060707/http://www.cs.indiana.edu/~burger/fp/free.c
+
+Also thanks to the authors of this Python code, which proved invaluable in
+filling the gaps in my understanding of the algorithm:
+https://bugs.python.org/file8910/short_float_repr.diff
+
++/
+
 public:
 
 

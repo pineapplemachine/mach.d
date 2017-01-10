@@ -2,57 +2,44 @@ module mach.text.numeric.exceptions;
 
 private:
 
-//
+/++ Docs
+
+This module implements the `NumberParseException` and `NumberWriteError`
+exception types, which are thrown by some operations elsewhere in this package.
+
++/
 
 public:
 
 
 
 /// Exception raised when a number fails to parse.
+/// Number parse exceptions are considered to be recoverable;
+/// they can be expected to easily occur when parsing user-inputted strings.
 class NumberParseException: Exception{
-    static enum Reason{
-        EmptyString,
-        NoDigits,
-        InvalidChar,
-        MultDecimals,
-        MalformedExp,
-        MisplacedPadding,
+    this(string message, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super(message, file, line, next);
     }
-    
-    Reason reason;
-    
-    this(Reason reason, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
-        super("Failed to parse string as number: " ~ reasonname(reason), file, line, next);
-        this.reason = reason;
+    this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        this("Encountered an unexpected character or end-of-input during parsing.", next, line, file);
     }
-    
-    static string reasonname(in Reason reason){
-        final switch(reason){
-            case Reason.EmptyString: return "Empty string.";
-            case Reason.NoDigits: return "No digits in string.";
-            case Reason.InvalidChar: return "Encountered invalid character.";
-            case Reason.MultDecimals: return "Multiple decimal points.";
-            case Reason.MalformedExp: return "Malformed exponent.";
-            case Reason.MisplacedPadding: return "Misplaced padding character.";
-        }
+    auto enforce(T)(auto ref T cond) const{
+        if(!cond) throw this;
+        return cond;
     }
-    
-    static void enforce(T)(auto ref T cond, Reason reason){
-        if(!cond) throw new typeof(this)(reason);
+}
+
+/// Error raised when a number fails to be serialized.
+/// Number write exceptions are considered to not be recoverable.
+class NumberWriteError: Error{
+    this(string message, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super(message, file, line, next);
     }
-    static void enforceempty(T)(auto ref T cond){
-        typeof(this).enforce(cond, Reason.EmptyString);
+    this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        this("Failed to serialize number to string.", next, line, file);
     }
-    static void enforcedigits(T)(auto ref T cond){
-        typeof(this).enforce(cond, Reason.NoDigits);
-    }
-    static void enforceinvalid(T)(auto ref T cond){
-        typeof(this).enforce(cond, Reason.InvalidChar);
-    }
-    static void enforcedecimals(T)(auto ref T cond){
-        typeof(this).enforce(cond, Reason.MultDecimals);
-    }
-    static void enforcepadding(T)(auto ref T cond){
-        typeof(this).enforce(cond, Reason.MisplacedPadding);
+    auto enforce(T)(auto ref T cond) const{
+        if(!cond) throw this;
+        return cond;
     }
 }

@@ -17,6 +17,7 @@ public:
 immutable readmepaths = [
     "mach/meta",
     "mach/range",
+    "mach/text/numeric",
 ];
 
 void main(){
@@ -98,8 +99,8 @@ ParseResult parsemodule(in string path, in dstring content, ref dstring[][dstrin
             bool first = true;
             while(!lines.empty){
                 auto codeline = cast(dstring) lines.next.asarray;
-                braces += codeline.count('{');
-                braces -= codeline.count('}');
+                braces += codeline.count('{').total;
+                braces -= codeline.count('}').total;
                 if(braces == 0) break;
                 uint ws = codeline.until!(ch => ch != ' ').walklength;
                 if(first){
@@ -147,7 +148,7 @@ dstring makecontent(ref dstring[][dstring] docs){
     dstring content = ""d;
     dstring[] sections = docs.byKey().asarray;
     sections.mergesort!((a, b) => orderstrings(a, b) == -1);
-    uint mindots = sections.map!(s => s.count('.')).top;
+    uint mindots = sections.map!(s => s.count('.').total).top;
     foreach(section; sections){
         uint hashes = 1 + section.count('.') - mindots;
         dstring header = cast(dstring) finiterangeof(hashes, dchar('#')).asarray ~ " "d ~ section;
