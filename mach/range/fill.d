@@ -18,8 +18,7 @@ auto ref fill(Iter, Fill)(auto ref Iter iter, Fill fillwith) if(
 
 
 
-version(unittest){
-    private:
+private version(unittest){
     import mach.test;
 }
 unittest{

@@ -66,8 +66,7 @@ auto mergesort(alias compare = DefaultSortCompare, T)(auto ref T input) if(
 
 
 
-version(unittest){
-    private:
+private version(unittest){
     import mach.test;
 }
 unittest{

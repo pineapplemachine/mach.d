@@ -84,8 +84,7 @@ alias rstrip = stripback;
 
 
 
-version(unittest){
-    private:
+private version(unittest){
     import mach.test;
     import mach.traits;
 }
