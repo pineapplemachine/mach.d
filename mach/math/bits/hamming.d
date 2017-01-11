@@ -4,6 +4,20 @@ private:
 
 import mach.traits : isIntegral;
 
+/++ Docs
+
+The `hamming` function can be used to get the hamming weight of a primitive
+integral type, which is a count of the number of 1 bits representing its
+binary value.
+
++/
+
+unittest{ /// Example
+    assert(uint(0x101010).hamming == 3); // 3 bits
+    assert(uint(0x111111).hamming == 6); // 6 bits
+    assert(uint(0x000000).hamming == 0); // No bits
+}
+
 public:
 
 
@@ -55,16 +69,16 @@ version(unittest){
     private:
     import mach.test;
     void HammingTest(T)(){
-        testeq(hamming(cast(T) 0), 0);
-        testeq(hamming(cast(T) 1), 1);
-        testeq(hamming(cast(T) 2), 1);
-        testeq(hamming(cast(T) 3), 2);
-        testeq(hamming(cast(T) 7), 3);
-        testeq(hamming(cast(T) 8), 1);
-        testeq(hamming(cast(T) 127), 7);
+        testeq(hamming(T(0)), 0);
+        testeq(hamming(T(1)), 1);
+        testeq(hamming(T(2)), 1);
+        testeq(hamming(T(3)), 2);
+        testeq(hamming(T(7)), 3);
+        testeq(hamming(T(8)), 1);
+        testeq(hamming(T(127)), 7);
         static if(T.max >= 128){
-            testeq(hamming(cast(T) 128), 1);
-            testeq(hamming(cast(T) 255), 8);
+            testeq(hamming(T(128)), 1);
+            testeq(hamming(T(255)), 8);
         }
         static if(T.min == 0){
             testeq(uint.max.hamming, uint.sizeof << 3);

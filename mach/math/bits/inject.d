@@ -5,12 +5,92 @@ private:
 import mach.traits : PointerType, isPointer, isIntegral;
 import mach.math.bits.pow2 : pow2d;
 
+/++ Docs
+
+This module implements the `injectbit` and `injectbits` functions, which can be
+used to get the result of setting a bit or bits within a value.
+Note that neither function actually modifies its input, but returns a copy
+with the pertinent bits changed.
+
+The `injectbit` function accepts a value to inject the bit into, the value
+of the bit and, as either a runtime or template argument, the value to set
+the bit to.
+
++/
+
+unittest{ /// Example
+    // Bit offset known at compile time.
+    assert(0.injectbit!0(1) == 1);
+    assert(0.injectbit!1(1) == 2);
+    assert(0.injectbit!8(1) == 256);
+    // Bit offset known only at runtime.
+    assert(0.injectbit(0, 1) == 1);
+    assert(0.injectbit(1, 1) == 2);
+    assert(0.injectbit(8, 1) == 256);
+}
+
+/++ Docs
+
+The `injectbits` function performs similarly, but instead of specifying a single
+offset, an offset and length in bits is specified. And instead of specifying a
+boolean to set the single bit to, an unsigned integral value is given which
+contains the desired pattern of bits.
+
++/
+
+unittest{ /// Example
+    // Bit offset known at compile time.
+    assert(0.injectbits!(0, 4)(0xF) == 0xF);
+    assert(0.injectbits!(4, 4)(0xF) == 0xF0);
+    assert(0.injectbits!(16, 8)(0xFF) == 0xFF0000);
+    // Bit offset known only at runtime.
+    assert(0.injectbits(0, 4, 0xF) == 0xF);
+    assert(0.injectbits(4, 4, 0xF) == 0xF0);
+    assert(0.injectbits(16, 8, 0xFF) == 0xFF0000);
+}
+
+/++ Docs
+
+For both `injectbit` and `injectbits`,
+when it is known at compile time that the value being injected into is in a
+state where all the bits being set are currently initialized to 0, the
+`assumezero` flag may be set in order to perform the operation more efficiently.
+
++/
+
+unittest{ /// Example
+    // Assume the bits being set are currently 0.
+    assert(0.injectbit!(0, true)(1) == 1);
+    assert(0.injectbits!(0, 4, true)(0x7) == 0x7);
+    // Now don't assume it.
+    assert(1.injectbit!(0, false)(1) == 1);
+    assert(uint(0xF).injectbits!(0, 4, false)(0x7) == 0x7);
+}
+
+/++ Docs
+
+Note that behavior of `injectbits` is undefined when the input has bits set
+outside of the length of bits that is being injected.
+When compiling in debug mode asserts will fail when junk bits are present,
+but outside debug mode the function will simply behave incorrectly.
+
++/
+
+unittest{ /// Example
+    import mach.error.mustthrow : mustthrow;
+    debug mustthrow({
+        // Because the value 0xFF has bits set outside its four low bits,
+        // which are the ones being injected, this is an illegal operation.
+        0.injectbits!(0, 4)(0xFF);
+    });
+}
+
 public:
 
 
 
 // TODO: Test on a big endian platform
-// Everything may well break
+// Everything may well break horribly
 
 
 
@@ -43,6 +123,10 @@ auto injectbits(uint offset, uint length, bool assumezero = false, T, B)(
 ) if(
     isIntegral!B && (offset + length) < (T.sizeof * 8)
 ){
+    debug{
+        // Check for junk bits, which will break the implementation.
+        assert((bits & ~pow2d!length) == 0);
+    }
     enum byteoffset = offset / 8;
     enum bitoffset = offset % 8;
     T target = value;
@@ -100,6 +184,10 @@ auto injectbits(bool assumezero = false, T, B)(
 ) in{
     assert(offset + length <= T.sizeof * 8, "Bit offset exceeds size of parameter.");
 }body{
+    debug{
+        // Check for junk bits, which will break the implementation.
+        assert((bits & ~pow2d!B(length)) == 0);
+    }
     immutable byteoffset = offset / 8;
     immutable bitoffset = offset % 8;
     T target = value;
@@ -234,9 +322,19 @@ unittest{
         tests("Plural", {
             tests("Compile time", {
                 PluralTests!pluralcttest();
+                debug tests("Junk bits", {
+                    testfail({
+                        0.injectbits!(0, 1)(2);
+                    });
+                });
             });
             tests("Runtime", {
                 PluralTests!pluralrttest();
+                debug tests("Junk bits", {
+                    testfail({
+                        0.injectbits(0, 1, 2);
+                    });
+                });
             });
         });
     });
