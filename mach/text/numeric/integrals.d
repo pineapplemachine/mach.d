@@ -2,10 +2,9 @@ module mach.text.numeric.integrals;
 
 private:
 
-import std.math : abs;
 import mach.traits : Unqual, isNumeric, isIntegral, isSigned, Unsigned;
 import mach.traits : isString, hasNumericLength;
-import mach.math : divceil, clog, clog2, ispow2;
+import mach.math : uabs, divceil, clog, clog2, ispow2;
 import mach.text.numeric.exceptions;
 
 /++ Docs
@@ -313,8 +312,7 @@ template ParseBase(size_t base) if(base == 1){
 template WriteBase(size_t base, alias digit = '1') if(base == 1){
     @safe pure nothrow auto WriteBase(T)(T n) if(isIntegral!T){
         immutable(typeof(digit))[] str;
-        static if(isSigned!T) auto len = abs(n);
-        else alias len = n;
+        auto len = uabs(n);
         str.reserve(cast(size_t) len);
         foreach(i; 0 .. len) str ~= digit;
         static if(isSigned!T) return n < 0 ? '-' ~ str : str;

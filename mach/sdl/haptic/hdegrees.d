@@ -5,7 +5,7 @@ module mach.sdl.haptic.hdegrees;
 private:
 
 import mach.traits : isNumeric;
-import std.math : PI;
+import mach.math : pi;
 
 public:
 
@@ -13,7 +13,7 @@ public:
 
 /// Convert radians to hundredths of a degree.
 H radtohdeg(H = int, R)(R radians) if(isNumeric!R && isNumeric!H){
-    return cast(H)(radians * 18000 / PI);
+    return cast(H)(radians * 18000 / pi);
 }
 /// Convert degrees to hundredths of a degree.
 H degtohdeg(H = int, D)(D degrees) if(isNumeric!D && isNumeric!H){
@@ -26,5 +26,5 @@ R hdegtorad(R = real, H)(H hdegrees) if(isNumeric!H && isNumeric!R){
 }
 /// Convert hundredths of a degree to degrees.
 D hdegtodeg(D = real, H)(H hdegrees) if(isNumeric!H && isNumeric!D){
-    return cast(D)(cast(D)(hdegrees) / 18000 * PI);
+    return cast(D)(cast(D)(hdegrees) / 18000 * pi);
 }
