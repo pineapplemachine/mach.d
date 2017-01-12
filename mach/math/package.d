@@ -8,6 +8,7 @@ import mach.math.box;
 import mach.math.clamp;
 import mach.math.cube;
 import mach.math.floats;
+import mach.math.intcmp;
 import mach.math.log;
 import mach.math.log2;
 import mach.math.matrix4;
