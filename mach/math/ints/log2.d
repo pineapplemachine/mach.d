@@ -1,4 +1,4 @@
-module mach.math.log2;
+module mach.math.ints.log2;
 
 private:
 
@@ -36,25 +36,17 @@ auto flog2(N)(N number) if(isIntegral!N) in{
 
 
 
-version(unittest){
-    private:
-    import mach.test;
-}
 unittest{
-    tests("Log2", {
-        tests("Floor", {
-            testeq(flog2(1), 0);
-            testeq(flog2(2), 1);
-            testeq(flog2(4), 2);
-            testeq(flog2(8), 3);
-            testeq(flog2(9), 3);
-        });
-        tests("Ceil", {
-            testeq(clog2(1), 0);
-            testeq(clog2(2), 1);
-            testeq(clog2(4), 2);
-            testeq(clog2(8), 3);
-            testeq(clog2(9), 4);
-        });
-    });
+    // flog2
+    assert(flog2(1) == 0);
+    assert(flog2(2) == 1);
+    assert(flog2(4) == 2);
+    assert(flog2(8) == 3);
+    assert(flog2(9) == 3);
+    // clog2
+    assert(clog2(1) == 0);
+    assert(clog2(2) == 1);
+    assert(clog2(4) == 2);
+    assert(clog2(8) == 3);
+    assert(clog2(9) == 4);
 }

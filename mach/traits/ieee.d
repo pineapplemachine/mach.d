@@ -10,6 +10,8 @@ public:
 
 /// Contains information describing an IEEE format.
 struct IEEEFormat{
+    pure @safe @nogc nothrow:
+    
     /// Offset in bits of the sign bit.
     uint sgnoffset;
     /// Offset in bits of the exponent.

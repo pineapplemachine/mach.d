@@ -31,7 +31,7 @@ public:
 
 /// Conventional floor floating point operation.
 /// Get the greatest integer less than or equal to the input.
-T ffloor(T)(in T value) if(isFloatingPoint!T){
+@trusted pure nothrow @nogc T ffloor(T)(in T value) if(isFloatingPoint!T){
     if(value.fisnan || value.fisinf || value.fiszero){
         return value;
     }else{
@@ -65,7 +65,7 @@ T ffloor(T)(in T value) if(isFloatingPoint!T){
 
 /// Conventional ceil floating point operation.
 /// Get the least integer greater than or equal to the input.
-T fceil(T)(in T value) if(isFloatingPoint!T){
+@trusted pure nothrow @nogc T fceil(T)(in T value) if(isFloatingPoint!T){
     if(value.fisnan || value.fisinf || value.fiszero){
         return value;
     }else{

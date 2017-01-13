@@ -12,7 +12,7 @@ public:
 
 /// Get whether a floating point value represents an infinite value.
 /// Also evaluates true for pseudo-infinity.
-auto fisinf(T)(T value) if(isFloatingPoint!T){
+@trusted pure nothrow @nogc auto fisinf(T)(T value) if(isFloatingPoint!T){
     enum Format = IEEEFormatOf!T;
     static if(Format is IEEEFormat.Extended){
         return(
@@ -29,19 +29,19 @@ auto fisinf(T)(T value) if(isFloatingPoint!T){
 
 /// Get whether a floating point value represents positive infinity.
 /// Also evaluates true for positive pseudo-infinity.
-auto fisposinf(T)(T value) if(isFloatingPoint!T){
+@safe pure nothrow @nogc auto fisposinf(T)(T value) if(isFloatingPoint!T){
     return value.fisinf && value > 0;
 }
 
 /// Get whether a floating point value represents negative infinity.
 /// Also evaluates true for negative pseudo-infinity.
-auto fisneginf(T)(T value) if(isFloatingPoint!T){
+@safe pure nothrow @nogc auto fisneginf(T)(T value) if(isFloatingPoint!T){
     return value.fisinf && value < 0;
 }
 
 /// Get whether a floating point value represents NaN
 /// Also evaluates true for pseudo not a number.
-auto fisnan(T)(T value) if(isFloatingPoint!T){
+@trusted pure nothrow @nogc auto fisnan(T)(T value) if(isFloatingPoint!T){
     enum Format = IEEEFormatOf!T;
     static if(Format is IEEEFormat.Extended){
         return(
@@ -58,7 +58,7 @@ auto fisnan(T)(T value) if(isFloatingPoint!T){
 
 /// Get whether a floating point value represents a subnormal number.
 /// Also evaluates true for pseudo-subnormals.
-auto fissubnormal(T)(T value) if(isFloatingPoint!T){
+@trusted pure nothrow @nogc auto fissubnormal(T)(T value) if(isFloatingPoint!T){
     enum Format = IEEEFormatOf!T;
     static if(Format is IEEEFormat.Extended){
         return(
@@ -77,7 +77,7 @@ auto fissubnormal(T)(T value) if(isFloatingPoint!T){
 
 /// Get whether a floating point value represents a unnormal number.
 /// Only meaningful for x86 extended precision prior to the 80387 processor.
-auto fisunnormal(T)(T value) if(isFloatingPoint!T){
+@trusted pure nothrow @nogc auto fisunnormal(T)(T value) if(isFloatingPoint!T){
     enum Format = IEEEFormatOf!T;
     static if(Format is IEEEFormat.Extended){
         immutable exp = value.fextractexp;
@@ -93,7 +93,7 @@ auto fisunnormal(T)(T value) if(isFloatingPoint!T){
 /// Get whether a floating point value represents a normal number.
 /// A normal number is any that is not NaN, not infinite, not subnormal,
 /// and not unnormal.
-auto fisnormal(T)(T value) if(isFloatingPoint!T){
+@trusted pure nothrow @nogc auto fisnormal(T)(T value) if(isFloatingPoint!T){
     enum Format = IEEEFormatOf!T;
     immutable exp = value.fextractexp;
     static if(Format is IEEEFormat.Extended){
@@ -110,7 +110,7 @@ auto fisnormal(T)(T value) if(isFloatingPoint!T){
 }
 
 /// Get whether a floating point value represents zero.
-auto fiszero(T)(T value) if(isFloatingPoint!T){
+@trusted pure nothrow @nogc auto fiszero(T)(T value) if(isFloatingPoint!T){
     return value.fextractexp == 0 && value.fextractsig == 0;
 }
 

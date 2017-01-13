@@ -15,6 +15,7 @@ public:
 
 import mach.math.floats.extract;
 import mach.math.floats.inject;
+import mach.math.floats.log;
 import mach.math.floats.neighbors;
 import mach.math.floats.properties;
 import mach.math.floats.round;

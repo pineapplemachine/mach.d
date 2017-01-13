@@ -1,4 +1,4 @@
-module mach.math.intproduct;
+module mach.math.ints.intproduct;
 
 private:
 

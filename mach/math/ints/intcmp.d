@@ -1,4 +1,4 @@
-module mach.math.intcmp;
+module mach.math.ints.intcmp;
 
 private:
 

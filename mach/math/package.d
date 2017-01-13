@@ -1,5 +1,11 @@
 module mach.math;
 
+/++ Docs
+
+This package provides functions for performing operations upon numeric types.
+
++/
+
 public:
 
 import mach.math.abs;
@@ -9,12 +15,10 @@ import mach.math.clamp;
 import mach.math.constants;
 import mach.math.cube;
 import mach.math.floats;
-import mach.math.intcmp;
-import mach.math.intproduct;
-import mach.math.log;
-import mach.math.log2;
+import mach.math.ints;
 import mach.math.matrix4;
 import mach.math.mean;
+import mach.math.median;
 import mach.math.normalize;
 import mach.math.round;
 import mach.math.vector2;

@@ -67,51 +67,10 @@ This package provides functions for the manipulation of floating point
 primitives.
 
 
-## mach.math.intcmp
+## mach.math.ints
 
 
-This module provides functions for comparing integer primitives where one
-type may be signed and another unsigned.
-(When this is a case, `a > b` fails because of unsigned coercion.)
-
-The function `intgt` returns true when `a > b`, `intgte` when `a >= b`,
-`intlt` when `a < b`, and `intlte` when `a <= b`.
-
-``` D
-// This happens because the `int` is coerced to a `uint` before comparing.
-assert(int(-1) > uint(0));
-```
-
-``` D
-// These functions do not suffer from the same limitation.
-assert(intgt(uint(0), int(-1)));
-assert(intgte(uint(0), int(-1)));
-assert(intlt(int(-1), uint(0)));
-assert(intlte(int(-1), uint(0)));
-```
-
-
-## mach.math.intproduct
-
-
-The `intproduct` function can be used to multiply two unsigned integer values
-without loss due to overflow, and without the use of a larger integer type
-for storing the final or any intermediate value.
-
-``` D
-auto product = intproduct(2, uint.max);
-assert(product.low == (2 * uint.max));
-assert(product.high == 1);
-```
-
-
-For convenience, when there is a larger integer type that can accommodate both
-the high and low bits recorded in the type returned by `intproduct`,
-the value of that returned type may be directly compared to that value.
-
-``` D
-assert(intproduct(uint.max, uint.max) == (cast(ulong) uint.max * cast(ulong) uint.max));
-```
+This package provides functions for performing operations upon integral types.
 
 
 ## mach.math.mean
