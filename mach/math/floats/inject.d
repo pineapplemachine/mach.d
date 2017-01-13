@@ -103,6 +103,14 @@ auto finjectexp(bool assumezero = false, T)(in T value, in uint exp) if(
     return value.injectbits!(offset, size, assumezero)(exp);
 }
 
+/// Get a float same as the input, but with the given biased exponent.
+auto finjectsexp(bool assumezero = false, T)(in T value, in int exp) if(
+    isFloatingPoint!T
+){
+    enum Format = IEEEFormatOf!T;
+    return finjectexp(value, cast(uint)(exp + Format.expbias));
+}
+
 /// Get a float the same as the input, but with the given significand bits.
 auto finjectsig(bool assumezero = false, T, Sig)(in T value, in Sig sig) if(
     isFloatingPoint!T && isIntegral!Sig
@@ -128,7 +136,7 @@ version(unittest){
     private:
     import mach.test;
     import mach.meta : Aliases;
-    import mach.math.floats.extract : fextractexp, fextractsig;
+    import mach.math.floats.extract : fextractexp, fextractsexp, fextractsig;
 }
 unittest{
     tests("Float inject", {
@@ -177,6 +185,13 @@ unittest{
                         }
                     }
                 });
+            }
+        });
+        tests("Inject biased exponent", {
+            foreach(T; Aliases!(float, double, real)){
+                testeq(T(1.0).finjectsexp(0).fextractsexp, 0);
+                testeq(T(1.0).finjectsexp(100).fextractsexp, 100);
+                testeq(T(1.0).finjectsexp(-100).fextractsexp, -100);
             }
         });
     });
