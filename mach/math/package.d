@@ -10,6 +10,7 @@ import mach.math.constants;
 import mach.math.cube;
 import mach.math.floats;
 import mach.math.intcmp;
+import mach.math.intproduct;
 import mach.math.log;
 import mach.math.log2;
 import mach.math.matrix4;

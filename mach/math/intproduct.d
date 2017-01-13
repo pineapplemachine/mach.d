@@ -1,0 +1,119 @@
+module mach.math.intproduct;
+
+private:
+
+import mach.traits : isUnsignedIntegral;
+import mach.math.bits : pow2d;
+
+/++ Docs
+
+The `intproduct` function can be used to multiply two unsigned integer values
+without loss due to overflow, and without the use of a larger integer type
+for storing the final or any intermediate value.
+
++/
+
+unittest{ /// Example
+    auto product = intproduct(2, uint.max);
+    assert(product.low == (2 * uint.max));
+    assert(product.high == 1);
+}
+
+/++ Docs
+
+For convenience, when there is a larger integer type that can accommodate both
+the high and low bits recorded in the type returned by `intproduct`,
+the value of that returned type may be directly compared to that value.
+
++/
+
+unittest{ /// Example
+    assert(intproduct(uint.max, uint.max) == (cast(ulong) uint.max * cast(ulong) uint.max));
+}
+
+public:
+
+
+
+/// Type returned by `intproduct`.
+struct IntProduct(T) if(isUnsignedIntegral!T){
+    enum isBigger(X) = isUnsignedIntegral!X && X.sizeof >= T.sizeof * 2;
+    
+    T high; // High bits of product.
+    T low; // Low bits of product.
+    
+    auto opCast(To: T)() const{
+        return this.low;
+    }
+    auto opCast(To)() const if(isBigger!To){
+        return (cast(To) this.low) | (((cast(To) this.high) << T.sizeof * 8));
+    }
+    
+    bool opEquals(in T value) const{
+        return this.low == value && this.high == 0;
+    }
+    bool opEquals(X)(in X value) const if(isBigger!X){
+        return (
+            cast(X) this.low == (value & pow2d!(T.sizeof  * 8)) &&
+            cast(X) this.high == (value >> (T.sizeof * 8))
+        );
+    }
+    
+    int opCmp(in T value) const{
+        if(this.high > 0 || this.low > value) return 1;
+        else if(this.low < value) return -1;
+        else return 0;
+    }
+    int opCmp(X)(in X value) const if(isBigger!X){
+        immutable highcmp = (cast(X) this.high) << T.sizeof * 8;
+        immutable highval = value & (~(cast(X) pow2d!(T.sizeof * 8)));
+        if(highcmp > highval){
+            return 1;
+        }else if(highcmp < highval){
+            return -1;
+        }else{
+            immutable lowval = cast(T) value;
+            if(low > lowval) return 1;
+            else if(low < lowval) return -1;
+            else return 0;
+        }
+    }
+}
+
+
+
+/// Get the product of two integers, capturing overflow in another value.
+/// Credit http://stackoverflow.com/a/1815371/3478907
+auto intproduct(T)(in T a, in T b) if(isUnsignedIntegral!T){
+    static auto lowhalf(in T value){
+        return value & pow2d!(T.sizeof * 4);
+    }
+    static auto highhalf(in T value){
+        return value >> (T.sizeof * 4);
+    }
+    
+    immutable p0 = lowhalf(a) * lowhalf(b);
+    immutable s0 = lowhalf(p0);
+    immutable p1 = highhalf(a) * lowhalf(b) + highhalf(p0);
+    immutable s1 = lowhalf(p1);
+    immutable s2 = highhalf(p1);
+    immutable p2 = s1 + lowhalf(a) * highhalf(b);
+    immutable s3 = lowhalf(p2);
+    immutable p3 = s2 + highhalf(a) * highhalf(b) + highhalf(p2);
+    
+    return IntProduct!T(p3, s0 | (s3 << (T.sizeof * 4)));
+}
+
+
+
+unittest{
+    immutable uint[] numbers = [
+        0, 1, 2, 3, 4, 5, 10, 100, 255, 256,
+        25 + (1 << 20), int.max, uint.max
+    ];
+    foreach(x; numbers){
+        foreach(y; numbers){
+            assert(intproduct(x, y) == cast(ulong) x * cast(ulong) y);
+        }
+    }
+}
