@@ -562,7 +562,7 @@ DragonResult dragon(in double v){
             d = cast(int)((R.d[sl + 1] << (64 - slr)) | (R.d[sl] >> slr));
             R.d[sl] &= (Bigit(1) << slr) - 1;
             R.l = sl;
-            while(R.d[R.l] == 0) R.l--;
+            while(R.l > 0 && R.d[R.l] == 0) R.l--;
         }
     }else{ // We need to do quotient-remainder
         d = qr(R, S, S2, S3, S4, S5, S6, S7, S8, S9);
