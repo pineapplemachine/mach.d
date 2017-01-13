@@ -2,7 +2,7 @@ module mach.math.mean;
 
 private:
 
-import mach.traits : isNumeric, isIterable, ElementType, Unqual;
+import mach.traits : isNumeric, isIntegral, isIterable, ElementType, Unqual;
 
 /++ Docs
 
@@ -28,6 +28,17 @@ unittest{ /// Example
     mustthrow!MeanEmptyInputError({
         new int[0].mean; // Can't calculate mean for an empty input!
     });
+}
+
+/++ Docs
+
+`mean` can also be called with two numeric inputs, and will determine their
+average without errors related to overflow or truncation of integers.
+
++/
+
+unittest{ /// Example
+    assert(mean(int.max, int.max - 10) == int.max - 5);
 }
 
 public:
@@ -95,9 +106,22 @@ auto mean(T)(auto ref T values) if(canGetMean!T){
 
 
 
+/// Calculates the arithmetic mean of two numeric inputs.
+/// Will not overflow or produce incorrect results for integer inputs.
+T mean(T)(in T a, in T b) if(isNumeric!T){
+    static if(isIntegral!T){
+        return a / 2 + b / 2 + (a & b & 1);
+    }else{
+        return a / 2 + b / 2;
+    }
+}
+
+
+
 private version(unittest){
     import mach.error.mustthrow : mustthrow;
 }
+
 unittest{
     mustthrow!MeanEmptyInputError({
         new int[0].mean;
@@ -120,4 +144,12 @@ unittest{
     assert(IntRange(101).mean == 50);
     assert(IntRange(1001).mean == 500);
     assert(IntRange(100001).mean == 50000);
+}
+
+unittest{
+    assert(mean(0, 0) == 0);
+    assert(mean(0, 1) == 0);
+    assert(mean(0, 2) == 1);
+    assert(mean(-1.0, 1.0) == 0.0);
+    assert(mean(int.max, int.max - 10) == int.max - 5);
 }
