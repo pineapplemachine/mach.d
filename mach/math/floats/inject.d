@@ -31,18 +31,17 @@ auto fcomposedec(T, Mant)(
     enum Format = IEEEFormatOf!T;
     static if(Format.expsize == 8){
         static immutable T[] pow10 = [
-            10, 100, 1.0e4, 1.0e8, 1.0e16, 1.0e32, 1.0e64
+            10.0, 100.0, 1.0e4, 1.0e8, 1.0e16, 1.0e32, 1.0e64
         ];
     }else static if(Format.expsize == 11){
         static immutable T[] pow10 = [
-            10, 100, 1.0e4, 1.0e8, 1.0e16, 1.0e32, 1.0e64, 1.0e128, 1.0e256
+            10.0, 100.0, 1.0e4, 1.0e8, 1.0e16, 1.0e32, 1.0e64, 1.0e128, 1.0e256
         ];
-    // TODO: Work around compiler bug that prevents this from working
-    //}else static if(Format.expsize == 15){
-    //    static immutable T[] pow10 = [
-    //        10, 100, 1.0e4, 1.0e8, 1.0e16, 1.0e32, 1.0e64, 1.0e128, 1.0e256,
-    //        1.0e512, 1.0e1024, 1.0e2048, 1.0e4096, 1.0e8192
-    //    ];
+    }else static if(Format.expsize == 15){
+        static immutable T[] pow10 = [
+            10.0L, 100.0L, 1.0e4L, 1.0e8L, 1.0e16L, 1.0e32L, 1.0e64L, 1.0e128L,
+            1.0e256L, 1.0e512L, 1.0e1024L, 1.0e2048L, 1.0e4096L, 1.0e8192L
+        ];
     }else{
         static assert(false, "Unsupported floating point type.");
     }
