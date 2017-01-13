@@ -14,6 +14,7 @@ import mach.math.intproduct;
 import mach.math.log;
 import mach.math.log2;
 import mach.math.matrix4;
+import mach.math.mean;
 import mach.math.normalize;
 import mach.math.round;
 import mach.math.vector2;
