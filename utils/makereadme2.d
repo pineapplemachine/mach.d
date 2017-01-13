@@ -15,6 +15,7 @@ public:
 
 
 immutable readmepaths = [
+    "mach/math",
     "mach/math/bits",
     "mach/meta",
     "mach/range",

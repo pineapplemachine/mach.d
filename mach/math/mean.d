@@ -2,7 +2,7 @@ module mach.math.mean;
 
 private:
 
-import mach.traits : isNumeric, isIntegral, isIterable, ElementType, Unqual;
+import mach.traits : isNumeric, isIntegral, isFiniteIterable, ElementType, Unqual;
 
 /++ Docs
 
@@ -26,7 +26,7 @@ the input iterable was empty. In release mode, this error reporting is omitted.
 unittest{ /// Example
     import mach.error.mustthrow : mustthrow;
     mustthrow!MeanEmptyInputError({
-        new int[0].mean; // Can't calculate mean for an empty input!
+        new int[0].mean; // Can't calculate mean with an empty input!
     });
 }
 
@@ -54,10 +54,9 @@ class MeanEmptyInputError: Error{
 
 
 
-/// Determine whether it is possible to get the average of an iterable of
-/// values.
+/// Determine whether it is possible to get the mean given an iterable of values.
 template canGetMean(T){
-    static if(isIterable!T){
+    static if(isFiniteIterable!T){
         enum bool canGetMean = isNumeric!(ElementType!T);
     }else{
         enum bool canGetMean = false;
