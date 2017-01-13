@@ -2,6 +2,7 @@ module mach.range.sort.insertionsort;
 
 private:
 
+import mach.types : Rebindable;
 import mach.traits : ElementType, hasNumericLength, isFiniteIterable;
 import mach.range.sort.common;
 
@@ -132,7 +133,7 @@ auto binaryinsertionsort(alias compare = DefaultSortCompare, T)(auto ref T input
 auto copyinsertionsort(alias compare = DefaultSortCompare, T)(auto ref T input) if(
     canCopyInsertionSort!(compare, T)
 ){
-    ElementType!T[] array;
+    Rebindable!(ElementType!T)[] array;
     static if(hasNumericLength!T){
         array.reserve(input.length);
     }
