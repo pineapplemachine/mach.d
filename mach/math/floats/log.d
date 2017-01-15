@@ -6,9 +6,16 @@ import mach.traits : IEEEFormatOf, isFloatingPoint;
 import mach.math.bits : injectbit, extractbit, pow2;
 import mach.math.ints.intproduct : intproduct;
 import mach.math.constants : e;
-import mach.math.floats.properties : fisnan, fisinf, fiszero;
+import mach.math.floats.properties : fisnan, fisinf, fisposinf, fiszero;
 import mach.math.floats.extract;
 import mach.math.floats.inject;
+
+version(DigitalMars){
+    import core.math : yl2x;
+    enum InlineLog = true;
+}else{
+    enum InlineLog = false;
+}
 
 /++ Docs
 
@@ -30,17 +37,6 @@ unittest{ /// Example
 
 /++ Docs
 
-`log` reports the logarithm of negative numbers as though the input was
-positive; i.e. it returns the logarithm of the absolute value of the input.
-
-+/
-
-unittest{ /// Example
-    assert(log!2(-4.0) == 2);
-}
-
-/++ Docs
-
 Additionally, the `flog2` and `clog2` functions can be used to quickly
 determine `floor(log!2(n))` and `ceil(log!2(n))`, respectively.
 These functions assume a nonzero noninfinite non-nan input.
@@ -58,10 +54,16 @@ public:
 
 
 /// Log base 2 of e.
-enum real LogE = 1.442695040888963407359924681001892137426645954152985934135L;
+enum real Log2_e = 1.442695040888963407359924681001892137426645954152985934135L;
 
 /// Log base 2 of 10.
-enum real Log10 = 3.321928094887362347870319429489390175864831393024580612054L;
+enum real Log2_10 = 3.321928094887362347870319429489390175864831393024580612054L;
+
+/// Log base 10 of 2.
+enum real Log10_2 = 0.301029995663981195213738894724493026768189881462108541310L;
+
+/// Natural log of 2.
+enum real Ln_2 = 0.693147180559945309417232121458176568075500134360255254120L;
 
 
 
@@ -81,52 +83,90 @@ enum real Log10 = 3.321928094887362347870319429489390175864831393024580612054L;
 }
 
 /// Returns the logarithm of the absolute value of an input.
-/// Based loosely on Clay. S. Turner's algorithm.
-/// http://www.claysturner.com/dsp/BinaryLogarithm.pdf
-@trusted pure nothrow @nogc T log(double base, T)(in T value) if(
+/// Leverages x87 opcodes if available, otherwise falls back to an
+/// implementation based loosely on Clay. S. Turner's algorithm.
+@safe pure nothrow @nogc auto log(real base, T)(in T value) if(
     isFloatingPoint!T && base > 0
 ){
     static if(base == 1){
-        // Special case: log1 of anything is infinity,
-        // except for log1(1) which is undefined.
-        if(abs(value) == 1) return T.nan;
-        else return T.infinity;
+        return log1impl(value);
+    }else static if(InlineLog){
+        return log87impl!base(value);
     }else{
-        if(value.fisnan){
-            return value;
-        }else if(value.fisinf){
-            return T.infinity;
-        }else if(value.fiszero){
-            return -T.infinity;
-        }else{
-            static if(base == 2){
-                enum Format = IEEEFormatOf!T;
-                T low = value.fextractsexp; // Log is at least (low) and less than (low + 1).
-                enum sigbits = Format.sigsize + (!Format.intpart);
-                ulong sig = cast(ulong) value.fextractnsig << (64 - sigbits);
-                ulong flog = 0;
-                static if(Format.intpart) flog |= pow2!(Format.sigsize - 1);
-                immutable imax = Format.sigsize - Format.intpart;
-                for(int i = imax - 1; i >= 0; i--){
-                    immutable sq = intproduct(sig, sig); // Square the significand
-                    if(sq.high & pow2!63){ // If new significand >= 2:
-                        // Capture new bits of significand (divided by 2)
-                        sig = sq.high;
-                        // Add 1/2, 1/4, 1/8, ... to the log
-                        flog |= pow2!ulong(i);
-                    }else{
-                        // Capture new bits of significand
-                        sig = (sq.high << 1) | (sq.low >> 63);
-                    }
+        return lognativeimpl!base(value);
+    }
+}
+
+/// Implementation for the special case of calculating log base 1 of an input.
+/// Always returns nan.
+private @safe pure nothrow @nogc auto log1impl(T)(in T value) if(isFloatingPoint!T){
+    return T.nan;
+}
+
+/// Implementation of log function using `yl2x`.
+static if(InlineLog) private @safe pure nothrow @nogc auto log87impl(real base, T)(
+    in T value
+) if(isFloatingPoint!T && base > 0){
+    static if(base == 2){
+        return yl2x(value, 1);
+    }else static if(base == e){
+        return yl2x(value, Ln_2);
+    }else static if(base == 10){
+        return yl2x(value, Log10_2);
+    }else{
+        static if(base < 1){
+            // Without these checks, signs get reversed because
+            // the second argument to `yl2x` is negative.
+            if(value == 0) return -T.infinity;
+            else if(value.fisposinf) return T.infinity;
+        }
+        return yl2x(value, 1 / yl2x(base, 1));
+    }
+}
+
+/// Implementation of log function using native D code
+/// based loosely on Clay. S. Turner's algorithm.
+/// Takes on average something like 75x longer to evaluate than `log87impl`,
+/// and is very slightly less accurate, but it gets the job done.
+private @trusted pure nothrow @nogc T lognativeimpl(real base, T)(in T value) if(
+    isFloatingPoint!T && base > 0
+){
+    if(value.fisnan){
+        return value;
+    }else if(value < 0){
+        return T.nan;
+    }else if(value.fisinf){
+        return T.infinity;
+    }else if(value.fiszero){
+        return -T.infinity;
+    }else{
+        static if(base == 2){
+            enum Format = IEEEFormatOf!T;
+            T low = value.fextractsexp; // Log is at least (low) and less than (low + 1).
+            enum sigbits = Format.sigsize + (!Format.intpart);
+            ulong sig = cast(ulong) value.fextractnsig << (64 - sigbits);
+            ulong flog = 0;
+            static if(Format.intpart) flog |= pow2!(Format.sigsize - 1);
+            immutable imax = Format.sigsize - Format.intpart;
+            for(int i = imax - 1; i >= 0; i--){
+                immutable sq = intproduct(sig, sig); // Square the significand
+                if(sq.high & pow2!63){ // If new significand >= 2:
+                    // Capture new bits of significand (divided by 2)
+                    sig = sq.high;
+                    // Add 1/2, 1/4, 1/8, ... to the log
+                    flog |= pow2!ulong(i);
+                }else{
+                    // Capture new bits of significand
+                    sig = (sq.high << 1) | (sq.low >> 63);
                 }
-                return low + fcompose!T(false, Format.expbias, flog) - 1;
-            }else static if(base == e){
-                return log!2(value) / LogE;
-            }else static if(base == 10){
-                return log!2(value) / Log10;
-            }else{
-                return log!2(value) / log!2(base);
             }
+            return low + fcompose!T(false, Format.expbias, flog) - 1;
+        }else static if(base == e){
+            return lognativeimpl!2(value) / Log2_e;
+        }else static if(base == 10){
+            return lognativeimpl!2(value) / Log2_10;
+        }else{
+            return lognativeimpl!2(value) / lognativeimpl!2(base);
         }
     }
 }
@@ -136,9 +176,11 @@ enum real Log10 = 3.321928094887362347870319429489390175864831393024580612054L;
 private version(unittest){
     import mach.meta : Aliases;
     import mach.math.abs : abs;
-    import mach.math.constants : pi;
+    import mach.math.constants : pi;    
 }
+
 unittest{
+    // Test log base 2 accuracy
     foreach(T; Aliases!(float, double, real)){
         enum Format = IEEEFormatOf!T;
         // Essentially limits error to the two least significant bits of the
@@ -154,16 +196,34 @@ unittest{
             3, 4, 5, 6, 6.5, 7, 8, 10, 11, 16, 20, 25, 81, 128, 255, 256,
             100, 1000, 9000.1, 123.456, 111.222, 1.234567, e, pi
         ];
-        foreach(value; values){
-            immutable l = cast(T) log!2(value);
+        void TestValue(alias logfunc)(in T value){
+            immutable l = cast(T) logfunc!2(value);
             immutable v = 2 ^^ l;
             immutable delta = abs(v - value);
             immutable error = delta == 0 ? 0 : delta / value;
             assert(error <= maxerror);
         }
+        foreach(value; values){
+            static if(InlineLog) TestValue!log87impl(value);
+            TestValue!lognativeimpl(value);
+            TestValue!log(value);
+        }
     }
 }
+
 unittest{
+    // Test log base 1
+    foreach(T; Aliases!(float, double, real)){
+        assert(log!1(T(-1.0)).fisnan);
+        assert(log!1(T(0.0)).fisnan);
+        assert(log!1(T(1.0)).fisnan);
+        assert(log!1(T(-0.5)).fisnan);
+        assert(log!1(T(0.5)).fisnan);
+    }
+}
+
+unittest{
+    // Test accuracy for other bases
     void assertnear(in double a, in double b){
         assert(abs(a - b) < 0.1e-13);
     }
@@ -175,5 +235,17 @@ unittest{
         assertnear((15.0 ^^ n).log!15, n);
         assertnear((21.0 ^^ n).log!21, n);
         assertnear((100.0 ^^ n).log!100, n);
+    }
+}
+
+unittest{
+    // Test special cases for bases other than 1
+    foreach(T; Aliases!(float, double, real)){
+        foreach(base; Aliases!(0.25, 0.5, 1.25, 1.5, 2, e, 5, 10, 200)){
+            assert(log87impl!base(T(-1.0)).fisnan);
+            assert(log87impl!base(-T.infinity).fisnan);
+            assert(log87impl!base(T(0.0)) == -T.infinity);
+            assert(log87impl!base(T.infinity) == T.infinity);
+        }
     }
 }
