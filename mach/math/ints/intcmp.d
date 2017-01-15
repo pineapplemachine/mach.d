@@ -8,10 +8,10 @@ import mach.traits : isIntegral, isSignedIntegral, isUnsignedIntegral;
 
 This module provides functions for comparing integer primitives where one
 type may be signed and another unsigned.
-(When this is a case, `a > b` fails because of unsigned coercion.)
+(When this is the case, comparison may fail because of unsigned coercion.)
 
 The function `intgt` returns true when `a > b`, `intgte` when `a >= b`,
-`intlt` when `a < b`, and `intlte` when `a <= b`.
+`intlt` when `a < b`, `intlte` when `a <= b`, and `inteq` when `a == b`.
 
 +/
 
@@ -76,6 +76,17 @@ bool intlte(A, B)(in A a, in B b) if(isIntegral!A && isIntegral!B){
     return a <= b;
 }
 
+/// True when the first input is equal to the second.
+/// Intended for when signed and unsigned integral types may be mixed.
+bool inteq(A, B)(in A a, in B b) if(isIntegral!A && isIntegral!B){
+    static if(isSignedIntegral!A && isUnsignedIntegral!B){
+        if(a < 0) return false;
+    }else static if(isUnsignedIntegral!A && isSignedIntegral!B){
+        if(b < 0) return false;
+    }
+    return a == b;
+}
+
 
 
 unittest{
@@ -114,4 +125,10 @@ unittest{
     assert(intlte(int(-2), int(-1)));
     assert(intlte(uint(0), uint(1)));
     assert(intlte(int(0), uint(0)));
+}
+
+unittest{
+    assert(inteq(uint(0), int(0)));
+    assert(inteq(uint(1), int(1)));
+    assert(!inteq(uint(-1), int(1)));
 }

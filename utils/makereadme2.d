@@ -17,18 +17,21 @@ public:
 immutable readmepaths = [
     "mach/math",
     "mach/math/bits",
+    "mach/math/ints",
     "mach/meta",
     "mach/range",
     "mach/text/numeric",
 ];
 
-void main(){
+void gain(){
     foreach(path; readmepaths){
         stdio.writeln("Making readme for path: ", path);
         makereadme("../" ~ path);
     }
 }
-
+unittest{
+    gain();
+}
 
 
 void makereadme(in string path){
