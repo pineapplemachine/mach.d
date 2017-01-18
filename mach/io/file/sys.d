@@ -44,7 +44,7 @@ void fseek(FileHandle file, long offset, Seek origin = Seek.Set){
         import core.std.stdio : fseek;
         alias seek = fseek;
     }else version(Posix){
-        import core.std.stdio : fseeko;
+        import core.sys.posix.stdio : fseeko;
         alias seek = fseeko;
     }else{
         static assert(false, "Unsupported platform.");
