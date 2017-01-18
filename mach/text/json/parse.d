@@ -417,11 +417,11 @@ private static auto parsenumber(
     ulong mantissa; // Stores the most significant digits of the mantissa.
     uint mantdigits; // Number of digits in the mantissa; can be less than the number in the string.
     uint decimal; // Number of digits preceding the decimal point.
-    bool mantnegative; // Whether the mantissa is negative
+    bool mantnegative; // Whether the mantissa is negative.
     bool mantoverflow; // Whether the mantissa overflowed.
     
     uint exponent; // Exponent
-    bool expnegative; // Whether the exponent is negative
+    bool expnegative; // Whether the exponent is negative.
     bool expoverflow; // Whether the exponent overflowed.
     
     auto addmantdigit(char ch){
@@ -438,11 +438,8 @@ private static auto parsenumber(
     auto addexpdigit(char ch){
         if(!expoverflow){
             immutable t = (exponent * 10) + (ch - '0');
-            if(t < exponent){
-                expoverflow = true;
-            }else{
-                exponent = t;
-            }
+            if(t < exponent) expoverflow = true;
+            else exponent = t;
         }
     }
     
@@ -479,7 +476,7 @@ private static auto parsenumber(
                     state = State.Exponent;
                     goto case;
                 case State.Exponent:
-                    exponent = (exponent * 10) + (ch - '0');
+                    addexpdigit(ch);
                     break;
             }
         }else if(ch == '.'){
