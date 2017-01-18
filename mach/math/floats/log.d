@@ -126,7 +126,7 @@ static if(InlineLog) private @safe pure nothrow @nogc auto log87impl(real base, 
 
 /// Implementation of log function using native D code
 /// based loosely on Clay. S. Turner's algorithm.
-/// Takes on average something like 75x longer to evaluate than `log87impl`,
+/// Takes substantially longer to evaluate than `log87impl`,
 /// and is very slightly less accurate, but it gets the job done.
 private @trusted pure nothrow @nogc T lognativeimpl(real base, T)(in T value) if(
     isFloatingPoint!T && base > 0
@@ -183,13 +183,10 @@ unittest{
     // Test log base 2 accuracy
     foreach(T; Aliases!(float, double, real)){
         enum Format = IEEEFormatOf!T;
-        // Essentially limits error to the two least significant bits of the
-        // significand. Except for with reals, in which case limit to the
-        // three least significant bits.
         // Error is measured as the scaled difference between `n` and `2 ^ log2(n)`.
         // Phobos' `log2` passes with this margin of error, just barely.
         immutable maxerror = T(1).finjectsexp(
-            -(Format.sigsize - Format.intpart - 1 - is(T == real))
+            -(Format.sigsize - Format.intpart - 2 - is(T == real))
         );
         immutable T[] values = [
             0.01, 0.025, 0.1, 0.125, 0.2, 0.25, 1.0, 1.1, 1.2, 1.3333333,
