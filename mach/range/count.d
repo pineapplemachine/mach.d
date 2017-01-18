@@ -59,8 +59,7 @@ the `total` property of a value returned by `count`.
 +/
 
 unittest{
-    int n = "hello".count('l').total;
-    assert(n == 2);
+    assert("hello".count('l').total == 2);
 }
 
 public:
@@ -182,6 +181,7 @@ struct CountResult(alias pred, Source) if(canCount!(pred, Source)){
 version(unittest){
     private:
     import mach.test;
+    import mach.traits : isIntegral;
 }
 unittest{
     tests("Count", {
@@ -215,10 +215,6 @@ unittest{
             testf(result.lessthan(0));
             test(result.atmost(0));
             testf(result.morethan(0));
-        });
-        tests("Alias this", {
-            void func(int x){}
-            func("hi".count('i'));
         });
     });
 }
