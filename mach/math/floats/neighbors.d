@@ -2,8 +2,8 @@ module mach.math.floats.neighbors;
 
 private:
 
-import mach.traits : isFloatingPoint, IEEEFormat, IEEEFormatOf;
-import mach.math.bits.pow2 : pow2d;
+import mach.traits : isFloatingPoint, IEEEFormatOf;
+import mach.math.bits.pow2 : pow2, pow2d;
 import mach.math.floats.extract : fextractsgn, fextractexp, fextractsig;
 import mach.math.floats.inject : finjectsig, finjectsgn, fcompose, fcopysgn;
 import mach.math.floats.properties : fisinf, fisnan;
@@ -38,7 +38,11 @@ auto fmagsuccessor(T)(in T value) if(isFloatingPoint!T){
         if(sig < pow2d!sigsize){
             return value.finjectsig(sig + 1);
         }else if(exp < Format.expmax - 1){
-            return fcompose!T(sgn, exp + 1, 0);
+            static if(Format.intpart){
+                return fcompose!T(sgn, exp + 1, pow2!(sigsize - 1));
+            }else{
+                return fcompose!T(sgn, exp + 1, 0);
+            }
         }else{
             return fcopysgn(value, T.infinity);
         }
@@ -70,10 +74,18 @@ auto fmagpredecessor(T)(in T value) if(isFloatingPoint!T){
         auto sgn = value.fextractsgn;
         auto exp = value.fextractexp;
         auto sig = value.fextractsig;
-        if(sig > 0){
-            return value.finjectsig(sig - 1);
+        static if(Format.intpart){
+            if(sig > pow2!(sigsize - 1) || exp == 0){
+                return value.finjectsig(sig - 1);
+            }else{
+                return fcompose!T(sgn, exp - 1, pow2d!sigsize);
+            }
         }else{
-            return fcompose!T(sgn, exp - 1, pow2d!sigsize);
+            if(sig > 0){
+                return value.finjectsig(sig - 1);
+            }else{
+                return fcompose!T(sgn, exp - 1, pow2d!sigsize);
+            }
         }
     }
 }
