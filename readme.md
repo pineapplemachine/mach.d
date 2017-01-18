@@ -16,6 +16,13 @@ The majority of this package depends only on D's standard library, Phobos. Event
 
 The `mach.sdl` package requires some additional dependencies. See the [package readme](https://github.com/pineapplemachine/mach.d/blob/master/mach/sdl/readme.md) for details.
 
+## Examples
+
+``` D
+import mach.io : stdio;
+stdio.writeln("Hello world!");
+```
+
 ## Differences from Phobos
 
 Major departures from Phobos' school of thought include:
@@ -51,7 +58,7 @@ assert(arrayfilter.equals(rangefilter));
 Other types can become similarly valid as ranges by giving them an `asrange` method. With this other collections can become valid as ranges, too, such as the doubly-linked list type defined in `mach.collect`.
 
 ``` D
-auto list = new LinkedList!int(0, 1, 2, 3);
+auto list = new LinkedList!int([0, 1, 2, 3]);
 assert(list.filter!(n => n % 2).equals([1, 3]));
 ```
 

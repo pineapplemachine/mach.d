@@ -39,6 +39,17 @@ See the [package readme](https://github.com/pineapplemachine/mach.d/blob/master/
 
 /++ md
 
+## Examples
+
++/
+
+unittest{
+    import mach.io : stdio;
+    stdio.writeln("Hello world!");
+}
+
+/++ md
+
 ## Differences from Phobos
 
 Major departures from Phobos' school of thought include:
@@ -97,7 +108,7 @@ such as the doubly-linked list type defined in `mach.collect`.
 +/
 
 unittest{
-    auto list = new LinkedList!int(0, 1, 2, 3);
+    auto list = new LinkedList!int([0, 1, 2, 3]);
     assert(list.filter!(n => n % 2).equals([1, 3]));
 }
 
