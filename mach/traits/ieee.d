@@ -34,13 +34,21 @@ struct IEEEFormat{
         return (1 << this.expsize) - 1;
     }
     
-    /// The minimum normal or subnormal exponent.
-    @property sexpmin() const{
+    /// The minimum normal or subnormal exponent as a signed integer.
+    @property int sexpmin() const{
         return -(cast(int) this.expbias);
     }
-    /// The maximum normal exponent.
-    @property sexpmax() const{
-        return this.expmax - this.expbias - 1;
+    /// The minimum normal exponent as a signed integer.
+    @property int nsexpmin() const{
+        return this.sexpmin + 1;
+    }
+    /// The maximum exponent as a signed integer, including infinity and NaN.
+    @property int sexpmax() const{
+        return cast(int) this.expmax - this.expbias - 1;
+    }
+    /// The maximum normal exponent as a signed integer.
+    @property int nsexpmax() const{
+        return this.sexpmax - 1;
     }
     
     /// Subnormal numbers are represented by `2 ^ -x`
