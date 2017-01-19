@@ -82,6 +82,8 @@ enum real Ln_2 = 0.693147180559945309417232121458176568075500134360255254120L;
     return value.fextractsexp + (value.fextractsig != 0);
 }
 
+
+
 /// Returns the logarithm of the absolute value of an input.
 /// Leverages x87 opcodes if available, otherwise falls back to an
 /// implementation based loosely on Clay. S. Turner's algorithm.
@@ -89,18 +91,12 @@ enum real Ln_2 = 0.693147180559945309417232121458176568075500134360255254120L;
     isFloatingPoint!T && base > 0
 ){
     static if(base == 1){
-        return log1impl(value);
+        return T.nan; // Log base 1 of anything is undefined.
     }else static if(InlineLog){
         return log87impl!base(value);
     }else{
         return lognativeimpl!base(value);
     }
-}
-
-/// Implementation for the special case of calculating log base 1 of an input.
-/// Always returns nan.
-private @safe pure nothrow @nogc auto log1impl(T)(in T value) if(isFloatingPoint!T){
-    return T.nan;
 }
 
 /// Implementation of log function using `yl2x`.
@@ -142,25 +138,43 @@ private @trusted pure nothrow @nogc T lognativeimpl(real base, T)(in T value) if
     }else{
         static if(base == 2){
             enum Format = IEEEFormatOf!T;
-            T low = value.fextractsexp; // Log is at least (low) and less than (low + 1).
+            // Get unbiased exponent.
+            immutable unbiasedexp = value.fextractexp;
+            // Get normalized significand.
             enum sigbits = Format.sigsize + (!Format.intpart);
             ulong sig = cast(ulong) value.fextractnsig << (64 - sigbits);
+            
+            // Log is at least (low) and less than (low + 1).
+            int low = void;
+            if(unbiasedexp > 0){ // Normal
+                low = unbiasedexp - Format.expbias;
+            }else{ // Subnormal (non-zero, by virtue of conditional a few checks up)
+                low = Format.nsexpmin;
+                while(!(sig & pow2!63)){
+                    sig <<= 1;
+                    low--;
+                }
+            }
+            
+            /// Get log of value >= 2^0 and < 2^1.
             ulong flog = 0;
             static if(Format.intpart) flog |= pow2!(Format.sigsize - 1);
             immutable imax = Format.sigsize - Format.intpart;
             for(int i = imax - 1; i >= 0; i--){
                 immutable sq = intproduct(sig, sig); // Square the significand
                 if(sq.high & pow2!63){ // If new significand >= 2:
-                    // Capture new bits of significand (divided by 2)
+                    // Capture new bits of significand (divided by 2).
                     sig = sq.high;
-                    // Add 1/2, 1/4, 1/8, ... to the log
+                    // Add 1/2, 1/4, 1/8, ... to the log.
                     flog |= pow2!ulong(i);
                 }else{
-                    // Capture new bits of significand
+                    // Capture new bits of significand.
                     sig = (sq.high << 1) | (sq.low >> 63);
                 }
             }
-            return low + fcompose!T(false, Format.expbias, flog) - 1;
+            
+            // All done
+            return (low - 1) + fcompose!T(false, Format.expbias, flog);
         }else static if(base == e){
             return lognativeimpl!2(value) / Log2_e;
         }else static if(base == 10){
@@ -179,12 +193,10 @@ private version(unittest){
     import mach.math.constants : pi;    
 }
 
-unittest{
-    // Test log base 2 accuracy
+unittest{ /// Log base 2 accuracy
     foreach(T; Aliases!(float, double, real)){
         enum Format = IEEEFormatOf!T;
         // Error is measured as the scaled difference between `n` and `2 ^ log2(n)`.
-        // Phobos' `log2` passes with this margin of error, just barely.
         immutable maxerror = T(1).finjectsexp(
             -(Format.sigsize - Format.intpart - 2 - is(T == real))
         );
@@ -208,8 +220,7 @@ unittest{
     }
 }
 
-unittest{
-    // Test log base 1
+unittest{ /// Log base 1
     foreach(T; Aliases!(float, double, real)){
         assert(log!1(T(-1.0)).fisnan);
         assert(log!1(T(0.0)).fisnan);
@@ -219,8 +230,7 @@ unittest{
     }
 }
 
-unittest{
-    // Test accuracy for other bases
+unittest{ /// Accuracy for other bases
     void assertnear(in double a, in double b){
         assert(abs(a - b) < 0.1e-13);
     }
@@ -235,14 +245,37 @@ unittest{
     }
 }
 
-unittest{
-    // Test special cases for bases other than 1
+unittest{ /// Special cases for bases other than 1
     foreach(T; Aliases!(float, double, real)){
         foreach(base; Aliases!(0.25, 0.5, 1.25, 1.5, 2, e, 5, 10, 200)){
+            assert(lognativeimpl!base(T(-1.0)).fisnan);
+            assert(lognativeimpl!base(-T.infinity).fisnan);
+            assert(lognativeimpl!base(T(0.0)) == -T.infinity);
+            assert(lognativeimpl!base(T.infinity) == T.infinity);
             assert(log87impl!base(T(-1.0)).fisnan);
             assert(log87impl!base(-T.infinity).fisnan);
             assert(log87impl!base(T(0.0)) == -T.infinity);
             assert(log87impl!base(T.infinity) == T.infinity);
         }
     }
+}
+
+unittest{ /// Subnormals
+    // Floats
+    void testfloat(int exp){
+        assert(lognativeimpl!2(float(2) ^^ exp) == exp);
+        assert(log87impl!2(float(2) ^^ exp) == exp);
+    }
+    testfloat(-126); // Smallest normal
+    testfloat(-127); // Largest power of 2 subnormal
+    testfloat(-130);
+    testfloat(-149); // Smallest subnormal
+    //// Doubles
+    assert(lognativeimpl!2(double(2) ^^ -1030) == -1030);
+    assert(log87impl!2(double(2) ^^ -1030) == -1030);
+    // Reals
+    // TODO: Why does `real(2) ^^ -16388` result in -infinity?
+    import mach.math.floats.inject : fcomposeexp;
+    assert(lognativeimpl!2(fcomposeexp!real(-16388)) == -16388);
+    assert(log87impl!2(fcomposeexp!real(-16388)) == -16388);
 }
