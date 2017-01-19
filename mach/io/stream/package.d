@@ -1,5 +1,14 @@
 module mach.io.stream;
 
+private:
+
+/++ Docs
+
+This package implements various stream types for reading or writing data,
+and provides tools for operating upon those streams.
+
++/
+
 public:
 
 import mach.io.stream.asarray;
