@@ -2,27 +2,27 @@
 
 ### mach.collect
 
-Collections and similar data structures.
+Here is where collections and similar data structures can be found.
 
 ### mach.error
 
-Make common exception- and error-related operations easier.
+This package provides tools for common error-handling and reporting tasks.
 
 ### mach.io
 
-Input and output and streams.
+Provides ways to speak and listen to the world outside the program's own memory.
 
 ### mach.math
 
-A variety of mathematical functionality.
+Implements a variety of mathematical functionalities.
 
 ### mach.meta
 
-Templates to be used for various compile-time computations. Like `std.meta` but cooler.
+Provides templates to be used for various compile-time computations.
 
 ### mach.misc
 
-Modules that don't nicely fit anywhere else.
+This package is for modules that don't nicely fit anywhere else.
 
 ### mach.range
 
@@ -30,12 +30,24 @@ All sorts of ranges, higher-order functions, and related algorithms for dealing 
 
 ### mach.sdl
 
-Wraps SDL2 and OpenGL, providing a cleaner way to develop games and other graphical applications. Super unstable and WIP.
+Wraps SDL2 and OpenGL, providing a cleaner way to develop games and other graphical applications. WIP.
+
+### mach.sys
+
+Provides functionality for low-level memory management.
+
+### mach.test
+
+Tools intended to make unit tests easier to read, write, and maintain.
 
 ### mach.text
 
-Deal with text, strings, and the manipulation thereof.
+Deals with text, strings, and the creation, parsing, and manipulation thereof.
 
 ### mach.traits
 
-More templates, mainly those intended to check the behavior of types. Like `std.traits` but cooler.
+Lots of templates, mainly those intended to check the behavior of types.
+
+### mach.types
+
+Implements highly-generic types such as key, value pairs and tuples.
