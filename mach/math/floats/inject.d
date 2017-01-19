@@ -72,15 +72,29 @@ auto fcomposedec(T, Mant)(
 
 /// Get a float equal to `1 * 2 ^ x`.
 /// The inputted exponent should be signed and biased, not a raw value.
+/// If the exponent is too high to represent, returns infinity.
+/// If the exponent is too low to represent, returns 0.
 auto fcomposeexp(T)(in int exp) if(isFloatingPoint!T){
     enum Format = IEEEFormatOf!T;
-    static if(Format.intpart){
-        enum intoffset = Format.intpartoffset;
-        immutable T a = T(0).injectbit!(intoffset, true)(1);
-    }else{
-        immutable T a = T(0);
+    immutable int unbiasedexp = exp + cast(int) Format.expbias;
+    if(unbiasedexp >= cast(int) Format.expmax){ // Infinity
+        return T.infinity;
+    }else if(unbiasedexp > 0){ // Normal
+        static if(Format.intpart){
+            enum intoffset = Format.intpartoffset;
+            immutable T a = T(0).injectbit!(intoffset, true)(1);
+        }else{
+            immutable T a = T(0);
+        }
+        return a.finjectexp!true(cast(uint) unbiasedexp);
+    }else{ // Subnormal or zero
+        immutable offset = Format.sigsize - Format.intpart + unbiasedexp - 1;
+        if(offset < Format.sigsize){
+            return T(0).injectbit!true(offset, true); // Subnormal
+        }else{
+            return T(0); // Zero
+        }
     }
-    return a.finjectexp!true(cast(uint)(exp + Format.expbias));
 }
 
 
@@ -132,67 +146,95 @@ auto fcopysgn(Src, Dst)(in Src src, in Dst dst) if(
 
 
 
-version(unittest){
-    private:
-    import mach.test;
+private version(unittest){
     import mach.meta : Aliases;
     import mach.math.floats.extract : fextractexp, fextractsexp, fextractsig;
 }
-unittest{
-    tests("Float inject", {
-        tests("Compose full", {
-            struct Float{bool sgn; uint exp; ulong sig;}
-            foreach(T; Aliases!(float, double, real)){
-                tests(T.stringof, {
-                    foreach(f; [
-                        Float(0, 0, 0),
-                        Float(1, 0, 0),
-                        Float(0, 1, 0),
-                        Float(1, 1, 0),
-                        Float(0, 0, 1),
-                        Float(1, 0, 1),
-                        Float(0, 120, 32000),
-                        Float(1, 120, 32000),
-                        Float(0, 127, 0),
-                        Float(1, 127, 0),
-                        Float(0, 127, 8388607),
-                        Float(1, 127, 8388607),
-                    ]){
-                        auto composed = fcompose!T(f.sgn, f.exp, f.sig);
-                        testeq(composed.fextractsgn, f.sgn);
-                        testeq(composed.fextractexp, f.exp);
-                        testeq(composed.fextractsig, f.sig);
-                    }
-                });
+
+unittest{ /// Compose raw
+    struct Float{bool sgn; uint exp; ulong sig;}
+    foreach(T; Aliases!(float, double, real)){
+        foreach(f; [
+            Float(0, 0, 0),
+            Float(1, 0, 0),
+            Float(0, 1, 0),
+            Float(1, 1, 0),
+            Float(0, 0, 1),
+            Float(1, 0, 1),
+            Float(0, 120, 32000),
+            Float(1, 120, 32000),
+            Float(0, 127, 0),
+            Float(1, 127, 0),
+            Float(0, 127, 8388607),
+            Float(1, 127, 8388607),
+        ]){
+            auto composed = fcompose!T(f.sgn, f.exp, f.sig);
+            assert(composed.fextractsgn == f.sgn);
+            assert(composed.fextractexp == f.exp);
+            assert(composed.fextractsig == f.sig);
+        }
+    }
+}
+
+unittest{ /// Compose decimal
+    // Float
+    assert(fcomposedec!float(false, 128u, 0) == 128);
+    assert(fcomposedec!float(false, 128u, 2) == 12800);
+    assert(fcomposedec!float(false, 125u, -2) == 1.25);
+    // Double
+    assert(fcomposedec!double(false, 128u, 0) == 128);
+    assert(fcomposedec!double(false, 128u, 2) == 12800);
+    assert(fcomposedec!double(false, 128u, -2) == 1.28);
+    assert(fcomposedec!double(false, 125u, -20) == 1.25e-18);
+    // Real
+    assert(fcomposedec!real(false, 128u, 0) == 128);
+    assert(fcomposedec!real(false, 128u, 2) == 12800);
+    assert(fcomposedec!real(false, 128u, -2) == 1.28);
+    assert(fcomposedec!real(false, 125u, -20) == 1.25e-18);
+}
+
+unittest{ /// Compose exp
+    // Normals
+    foreach(T; Aliases!(float, double, real)){
+        enum Format = IEEEFormatOf!T;
+        foreach(e; [
+            0, 1, -1, 100, -100, 126, -127, 128, -128,
+            -500, 500, 1000, -1000, 1022, -1023
+        ]){
+            if(e >= Format.nsexpmin && e <= Format.nsexpmax){
+                assert(fcomposeexp!T(e) == T(2) ^^ e);
             }
-        });
-        tests("Compose decimal", {
-            testeq(fcomposedec!double(false, 128u, 0), 128);
-            testeq(fcomposedec!double(false, 128u, 2), 12800);
-            testeq(fcomposedec!double(false, 128u, -2), 1.28);
-            testeq(fcomposedec!double(false, 128u, -20), 1.28e-18);
-        });
-        tests("Compose exp", {
-            foreach(T; Aliases!(float, double, real)){
-                enum Format = IEEEFormatOf!T;
-                tests(T.stringof, {
-                    foreach(e; [
-                        0, 1, -1, 100, -100, 126, -127, 128, -128,
-                        -500, 500, 1000, -1000, 1022, -1023
-                    ]){
-                        if(e >= Format.sexpmin && e <= Format.sexpmax){
-                            testeq(fcomposeexp!T(e), T(2) ^^ e);
-                        }
-                    }
-                });
-            }
-        });
-        tests("Inject biased exponent", {
-            foreach(T; Aliases!(float, double, real)){
-                testeq(T(1.0).finjectsexp(0).fextractsexp, 0);
-                testeq(T(1.0).finjectsexp(100).fextractsexp, 100);
-                testeq(T(1.0).finjectsexp(-100).fextractsexp, -100);
-            }
-        });
-    });
+        }
+    }
+    // Underflow/subnormals
+    {
+        // Floats
+        assert(fcomposeexp!float(-126) == float(2) ^^ -126); // Smallest normal
+        assert(fcomposeexp!float(-127) == float(2) ^^ -127); // Largest power of 2 subnormal
+        assert(fcomposeexp!float(-130) == float(2) ^^ -130);
+        assert(fcomposeexp!float(-149) == float(2) ^^ -149); // Smallest subnormal
+        assert(fcomposeexp!float(-150) == 0.0); // Not representable
+        // Doubles
+        assert(fcomposeexp!double(-1030) == double(2) ^^ -1030);
+        assert(fcomposeexp!double(-1090) == 0.0);
+        // Reals
+        // TODO: Why does `real(2) ^^ -16388` result in -infinity?
+        import mach.math.floats.log;
+        assert(fcomposeexp!real(-16388).log!2 == -16388);
+        assert(fcomposeexp!real(-20000) == 0.0);
+    }
+    // Overflow/infinities
+    {
+        assert(fcomposeexp!float(127) == float(2) ^^ 127); // Largest power of 2
+        assert(fcomposeexp!float(128) == float.infinity); // Too large
+        assert(fcomposeexp!float(900) == float.infinity); // Ditto
+    }
+}
+
+unittest{ /// Inject biased exponent
+    foreach(T; Aliases!(float, double, real)){
+        assert(T(1.0).finjectsexp(0).fextractsexp == 0);
+        assert(T(1.0).finjectsexp(100).fextractsexp == 100);
+        assert(T(1.0).finjectsexp(-100).fextractsexp == -100);
+    }
 }
