@@ -48,13 +48,10 @@ auto fcomposedec(T, Mant)(
     
     T fraction = cast(T) mantissa;
     int exp = exponent < 0 ? -exponent : exponent;
-    // Keep exponent within sane limits. TODO: Why is the `/2` necessary??
-    if(exp < Format.sexpmin / 2) exp = Format.sexpmin / 2;
-    if(exp > Format.sexpmax / 2) exp = Format.sexpmax / 2;
     size_t d = 0;
     T fexp = 1.0;
     
-    while(exp != 0){
+    while(exp != 0 && d < pow10.length){
         if(exp & 1) fexp *= pow10[d];
         exp >>= 1;
         d += 1;
