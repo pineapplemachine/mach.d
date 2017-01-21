@@ -73,7 +73,7 @@ struct Color(T = float) if(isNumeric!T){
             static if(is(As == T)){
                 return this.` ~ name ~ `;
             }else static if(isFloatingPoint!T && isIntegral!As){
-                return round!As(this.` ~ name ~ ` * this.ToByte);
+                return cast(As) round(this.` ~ name ~ ` * this.ToByte);
             }else static if(isIntegral!T && isFloatingPoint!As){
                 return (cast(As) this.` ~ name ~ `) / this.Max;
             }else{
@@ -88,7 +88,7 @@ struct Color(T = float) if(isNumeric!T){
             }else static if(isFloatingPoint!T && isIntegral!As){
                 this.` ~ name ~ ` = value / cast(T) this.ToByte;
             }else static if(isIntegral!T && isFloatingPoint!As){
-                this.` ~ name ~ ` = round!T(value * this.Max);
+                this.` ~ name ~ ` = cast(T) round(value * this.Max);
             }else{
                 this.` ~ name ~ ` = cast(T) value;
             }
