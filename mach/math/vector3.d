@@ -4,7 +4,7 @@ private:
 
 import std.math : sin, cos, atan2, sqrt;
 import mach.types : tuple;
-import mach.traits : isNumeric, isTemplateOf;
+import mach.traits : isNumeric, isTemplateOf, Unqual;
 
 public:
 
@@ -15,7 +15,7 @@ enum isVector3(T) = isTemplateOf!(T, Vector3);
 
 
 auto Vector(N)(N x, N y, N z) if(isNumeric!N){
-    return Vector3!N(x, y, z);
+    return Vector3!(Unqual!N)(x, y, z);
 }
 
 
