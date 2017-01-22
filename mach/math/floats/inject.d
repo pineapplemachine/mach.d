@@ -25,43 +25,54 @@ auto fcompose(T, Sig)(in bool sgn, in uint exp, in Sig sig) if(
 /// sign: The sign of the mantissa, true implies negative.
 /// mantissa: The mantissa expressed as an unsigned integral.
 /// exponent: The signed base-10 exponent of the value.
-auto fcomposedec(T, Mant)(
+T fcomposedec(T, Mant)(
     in bool sign, in Mant mantissa, in int exponent
 ) if(isFloatingPoint!T && isUnsignedIntegral!Mant){
     enum Format = IEEEFormatOf!T;
     static if(Format.expsize == 8){
-        static immutable T[] pow10 = [
-            10.0, 100.0, 1.0e4, 1.0e8, 1.0e16, 1.0e32, 1.0e64
+        alias FType = double; // Intermediate type for performing calculations.
+        static immutable FType[] pow10 = [ // Powers of 10
+            10.0, 100.0, 1e4, 1e8, 1e16, 1e32, 1e64
+        ];
+        static immutable FType[] ipow10 = [ // Reciprocal powers of 10
+            0.1, 0.01, 1e-4, 1e-8, 1.0e-16, 1e-32, 1e-64
         ];
     }else static if(Format.expsize == 11){
-        static immutable T[] pow10 = [
-            10.0, 100.0, 1.0e4, 1.0e8, 1.0e16, 1.0e32, 1.0e64, 1.0e128, 1.0e256
+        alias FType = real; // Intermediate type for performing calculations.
+        static immutable FType[] pow10 = [ // Powers of 10
+            10.0, 100.0, 1e4, 1e8, 1e16, 1e32, 1e64, 1e128, 1e256
+        ];
+        static immutable FType[] ipow10 = [ // Reciprocal powers of 10
+            0.1, 0.01, 1e-4, 1e-8, 1e-16, 1e-32, 1e-64, 1e-128, 1e-256
         ];
     }else static if(Format.expsize == 15){
-        static immutable T[] pow10 = [
-            10.0L, 100.0L, 1.0e4L, 1.0e8L, 1.0e16L, 1.0e32L, 1.0e64L, 1.0e128L,
-            1.0e256L, 1.0e512L, 1.0e1024L, 1.0e2048L, 1.0e4096L, 1.0e8192L
+        alias FType = T;
+        static immutable FType[] pow10 = [ // Powers of 10
+            10.0L, 100.0L, 1e4L, 1e8L, 1e16L, 1e32L, 1e64L, 1e128L,
+            1e256L, 1e512L, 1e1024L, 1e2048L, 1e4096L
+        ];
+        static immutable FType[] ipow10 = [ // Reciprocal powers of 10
+            0.1L, 0.01L, 1e-4L, 1e-8L, 1e-16L, 1e-32L, 1e-64L, 1e-128L,
+            1e-256L, 1e-512L, 1e-1024L, 1e-2048L, 1e-4096L
         ];
     }else{
         static assert(false, "Unsupported floating point type.");
     }
     
-    T fraction = cast(T) mantissa;
     auto exp = uabs(exponent);
     size_t d = 0;
-    T fexp = 1.0;
+    FType value = cast(FType) mantissa;
     
-    while(exp != 0 && d < pow10.length){
-        if(exp & 1) fexp *= pow10[d];
+    immutable p10 = exponent >= 0 ? pow10 : ipow10;
+    while(exp != 0 && d < p10.length){
+        if(exp & 1) value *= p10[d];
         exp >>= 1;
         d += 1;
     }
-    if(exponent >= 0){
-        T result = fraction * fexp;
-        return sign ? -result : result;
+    if(exp != 0){
+        return exponent > 0 ? T.infinity : T(0.0);
     }else{
-        T result = fraction / fexp;
-        return sign ? -result : result;
+        return cast(T)(sign ? -value : value);
     }
 }
 
@@ -145,7 +156,9 @@ auto fcopysgn(Src, Dst)(in Src src, in Dst dst) if(
 
 private version(unittest){
     import mach.meta : Aliases;
+    import mach.math.floats.compare : fidentical;
     import mach.math.floats.extract : fextractexp, fextractsexp, fextractsig;
+    import mach.math.floats.properties : fisposinf;
 }
 
 unittest{ /// Compose raw
@@ -175,19 +188,33 @@ unittest{ /// Compose raw
 
 unittest{ /// Compose decimal
     // Float
-    assert(fcomposedec!float(false, 128u, 0) == 128);
-    assert(fcomposedec!float(false, 128u, 2) == 12800);
-    assert(fcomposedec!float(false, 125u, -2) == 1.25);
+    assert(fidentical(fcomposedec!float(false, 128u, 0), float(128)));
+    assert(fidentical(fcomposedec!float(false, 128u, 2), float(12800)));
+    assert(fidentical(fcomposedec!float(false, 125u, -2), float(1.25)));
     // Double
-    assert(fcomposedec!double(false, 128u, 0) == 128);
-    assert(fcomposedec!double(false, 128u, 2) == 12800);
-    assert(fcomposedec!double(false, 128u, -2) == 1.28);
-    assert(fcomposedec!double(false, 125u, -20) == 1.25e-18);
+    assert(fidentical(fcomposedec!double(false, 128u, 0), double(128)));
+    assert(fidentical(fcomposedec!double(false, 128u, 2), double(12800)));
+    assert(fidentical(fcomposedec!double(false, 128u, -2), double(1.28)));
+    assert(fidentical(fcomposedec!double(false, 125u, -20), double(1.25e-18)));
+    assert(fidentical(fcomposedec!double(false, 5u, -4), double(0.0005)));
     // Real
-    assert(fcomposedec!real(false, 128u, 0) == 128);
-    assert(fcomposedec!real(false, 128u, 2) == 12800);
-    assert(fcomposedec!real(false, 128u, -2) == 1.28);
-    assert(fcomposedec!real(false, 125u, -20) == 1.25e-18);
+    assert(fidentical(fcomposedec!real(false, 128u, 0), real(128)));
+    assert(fidentical(fcomposedec!real(false, 128u, 2), real(12800)));
+    assert(fidentical(fcomposedec!real(false, 128u, -2), real(1.28)));
+    assert(fidentical(fcomposedec!real(false, 125u, -20), real(1.25e-18)));
+    assert(fidentical(fcomposedec!real(false, 5u, -4), real(0.0005)));
+    // Large values producing +inf
+    assert(fidentical(fcomposedec!float(false, 1u, 38), float(1e38))); // Highest representable power of 10
+    assert(fcomposedec!float(false, 1u, 39).fisposinf); // Too high
+    assert(fidentical(fcomposedec!double(false, 1u, 308), double(1e308))); // Highest
+    assert(fcomposedec!double(false, 1u, 309).fisposinf); // Too high
+    // fcomposedec output is more accurate than the literal in this case
+    //assert(fidentical(fcomposedec!real(false, 1u, 4932), real(1e4932L))); // Highest
+    assert(fcomposedec!real(false, 1u, 4933).fisposinf); // Too high
+    // Small values producing 0
+    assert(fcomposedec!float(false, 1u, -128) == float(0));
+    assert(fcomposedec!double(false, 1u, -2000) == double(0));
+    assert(fcomposedec!real(false, 1u, -17000) == real(0));
 }
 
 unittest{ /// Compose exp
