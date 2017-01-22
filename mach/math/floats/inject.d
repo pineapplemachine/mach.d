@@ -4,6 +4,7 @@ private:
 
 import mach.traits : isFloatingPoint, isIntegral, isUnsignedIntegral;
 import mach.traits : IEEEFormat, IEEEFormatOf;
+import mach.math.abs : uabs;
 import mach.math.bits.inject : injectbit, injectbits;
 import mach.math.floats.extract : fextractsgn;
 
@@ -21,7 +22,6 @@ auto fcompose(T, Sig)(in bool sgn, in uint exp, in Sig sig) if(
 
 
 /// Compose a floating point number from decimal components.
-/// Not guaranteed to work for especially large or small exponents.
 /// sign: The sign of the mantissa, true implies negative.
 /// mantissa: The mantissa expressed as an unsigned integral.
 /// exponent: The signed base-10 exponent of the value.
@@ -47,7 +47,7 @@ auto fcomposedec(T, Mant)(
     }
     
     T fraction = cast(T) mantissa;
-    int exp = exponent < 0 ? -exponent : exponent;
+    auto exp = uabs(exponent);
     size_t d = 0;
     T fexp = 1.0;
     
