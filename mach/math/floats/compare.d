@@ -29,32 +29,36 @@ public:
     // would just pass the values and the number of bits to check equality for.
     enum Format = IEEEFormatOf!T;
     static if(Format.size == 32){ // Float
-        immutable aint = *(cast(uint*) &a);
-        immutable bint = *(cast(uint*) &b);
-        return aint == bint;
+        const aint = cast(uint*) &a;
+        const bint = cast(uint*) &b;
+        return *aint == *bint;
     }else static if(Format.size == 64){ // Double
-        immutable aint = *(cast(ulong*) &a);
-        immutable bint = *(cast(ulong*) &b);
-        return aint == bint;
+        const aint = cast(ulong*) &a;
+        const bint = cast(ulong*) &b;
+        return *aint == *bint;
     }else static if(Format.size == 128 && is(ucent)){ // Something dang big
-        immutable aint = *(cast(ucent*) &a);
-        immutable bint = *(cast(ucent*) &b);
-        return aint == bint;
-    }else{ // Probably real
+        const aint = cast(ucent*) &a;
+        const bint = cast(ucent*) &b;
+        return *aint == *bint;
+    }else static if(Format.size == 80){ // Real
+        const alow = cast(ulong*) &a;
+        const blow = cast(ulong*) &b;
+        const ahigh = cast(ushort*) &a;
+        const bhigh = cast(ushort*) &b;
+        return *alow == *blow && ahigh[4] == bhigh[4];
+    }else{ // Something else
         enum words = Format.size / 64;
         enum remainder = Format.size % 64;
+        const awords = cast(ulong*) &a;
+        const bwords = cast(ulong*) &b;
         static if(words > 0){
             for(uint i = 0; i < words; i++){
-                immutable aword = *(cast(ulong*) &a + i);
-                immutable bword = *(cast(ulong*) &b + i);
-                if(aword != bword) return false;
+                if(awords[i] != bwords[i]) return false;
             }
         }
         static if(remainder > 0){
             enum mask = pow2d!(remainder + 1);
-            immutable arem = *(cast(ulong*) &a + words) & mask;
-            immutable brem = *(cast(ulong*) &b + words) & mask;
-            return arem == brem;
+            return (awords[words] & mask) == (bwords[words] & mask);
         }else{
             return true;
         }
