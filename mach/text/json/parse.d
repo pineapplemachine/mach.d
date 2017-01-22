@@ -87,15 +87,15 @@ private static auto parsevalue(
     in size_t initialline,
     in size_t depth
 ){
-    if(depth > MaxParseDepth){
-        throw new JsonParseDepthException();
-    }
+    static const depthexception = new JsonParseDepthException();
+    if(depth > MaxParseDepth) throw depthexception;
     
     size_t pos = initialpos;
     size_t line = initialline;
     
     consumews(str, pos, line);
-    if(pos >= str.length) throw new JsonParseEOFException();
+    static const eofexception = new JsonParseEOFException();
+    if(pos >= str.length) throw eofexception;
     immutable char initialch = str[pos];
     
     auto begins(in string word){
@@ -400,6 +400,10 @@ private static auto parsenumber(
     in size_t initialpos,
     in size_t initialline
 ){
+    // Note: Implemented separately from mach.text.numeric.floats.parsefloat
+    // because of significantly different behavior and more stringent
+    // requirements regarding the format of the input.
+    
     if(!(str[initialpos] == '-' || (str[initialpos] >= '0' && str[initialpos] <= '9'))){
         throw new JsonParseUnexpectedException(
             "numeric literal", initialline, initialpos

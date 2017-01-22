@@ -31,6 +31,50 @@ This module implements the `NumberParseException` and `NumberWriteError`
 exception types, which are thrown by some operations elsewhere in this package.
 
 
+## mach.text.numeric.floats
+
+
+This module implements the `writefloat` and `parsefloat` functions, which can
+be used to serialize and deserialize floating point values as human-readable
+strings in decimal notation.
+
+The `writefloat` function optionally accepts a `WriteFloatSettings` object
+as a template parameter, which defines aspects of behavior such as what to
+output when the value is infinity or NaN, how to handle very large and
+small inputs, and whether to always output a trailing `.0` even for integer
+values.
+
+The `parsefloat` function throws a `NumberParseException` when the input was
+malformed.
+
+``` D
+assert(writefloat(0) == "0");
+assert(writefloat(123.456) == "123.456");
+assert(writefloat(double.infinity) == "inf");
+```
+
+``` D
+enum WriteFloatSettings settings = {
+    PosInfLiteral: "positive infinity",
+    NegInfLiteral: "negative infinity"
+};
+assert(writefloat!settings(double.infinity) == "positive infinity");
+assert(writefloat!settings(-double.infinity) == "negative infinity");
+```
+
+``` D
+assert("1234.5".parsefloat!double == double(1234.5));
+assert("678e9".parsefloat!double == double(678e9));
+```
+
+``` D
+import mach.error.mustthrow : mustthrow;
+mustthrow!NumberParseException({
+    "malformed input".parsefloat!double;
+});
+```
+
+
 ## mach.text.numeric.integrals
 
 

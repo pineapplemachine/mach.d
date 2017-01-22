@@ -3,13 +3,57 @@ module mach.text.numeric.floats;
 private:
 
 import mach.math : fisnan, fisinf, fiszero;
-import mach.math : fextractsgn;
+import mach.math : fextractsgn, fcomposedec;
 import mach.traits : isFloatingPoint;
 import mach.traits : validAsStringRange, IEEEFormatOf;
 import mach.range : asrange, asarray, finiterangeof;
 import mach.text.numeric.exceptions;
 import mach.text.numeric.integrals : writeint;
 import mach.text.numeric.burger : dragon;
+
+/++ Docs
+
+This module implements the `writefloat` and `parsefloat` functions, which can
+be used to serialize and deserialize floating point values as human-readable
+strings in decimal notation.
+
+The `writefloat` function optionally accepts a `WriteFloatSettings` object
+as a template parameter, which defines aspects of behavior such as what to
+output when the value is infinity or NaN, how to handle very large and
+small inputs, and whether to always output a trailing `.0` even for integer
+values.
+
+The `parsefloat` function throws a `NumberParseException` when the input was
+malformed.
+
++/
+
+unittest{ /// Example
+    assert(writefloat(0) == "0");
+    assert(writefloat(123.456) == "123.456");
+    assert(writefloat(double.infinity) == "inf");
+}
+
+unittest{ /// Example
+    enum WriteFloatSettings settings = {
+        PosInfLiteral: "positive infinity",
+        NegInfLiteral: "negative infinity"
+    };
+    assert(writefloat!settings(double.infinity) == "positive infinity");
+    assert(writefloat!settings(-double.infinity) == "negative infinity");
+}
+
+unittest{ /// Example
+    assert("1234.5".parsefloat!double == double(1234.5));
+    assert("678e9".parsefloat!double == double(678e9));
+}
+
+unittest{ /// Example
+    import mach.error.mustthrow : mustthrow;
+    mustthrow!NumberParseException({
+        "malformed input".parsefloat!double;
+    });
+}
 
 public:
 
@@ -79,7 +123,7 @@ string writefloat(
             return zero();
         }
     }else{
-        auto result = dragon(cast(double) value);
+        immutable result = dragon(cast(double) value);
         if(result.sign){
             return '-' ~ writeunsignedfloat!settings(result.digits, result.k);
         }else{
@@ -115,7 +159,7 @@ private string writeunsignedfloat(WriteFloatSettings settings)(
         }
     }
     string placedec(){
-        if(k+1 < digits.length){
+        if(k + 1 < digits.length){
             return digits[0 .. k+1] ~ '.' ~ digits[k+1 .. $];
         }else{
             static if(settings.trailingfraction){
@@ -146,15 +190,160 @@ private string writeunsignedfloat(WriteFloatSettings settings)(
 
 
 
+private static enum ParseFloatState{
+    IntegralInitial,
+    IntegralSigned,
+    Integral,
+    FractionInitial,
+    Fraction,
+    ExponentInitial,
+    ExponentSigned,
+    Exponent,
+}
+
 /// Parse a string representing a floating point number.
 /// Throws a NumberParseException upon failure.
-/// Liable to give incorrect results in the case of inordinately large
-/// integral, fraction, or exponent values.
+/// When the mantissa of the input exceeds the accuracy storable by the
+/// given floating point type, the least significant digits are ignored.
+/// When the exponent is too large or small to store, the largest/smallest
+/// possible exponent is used instead.
 auto parsefloat(T = double, S)(auto ref S str) if(
     isFloatingPoint!T && validAsStringRange!S
 ){
+    static const error = new NumberParseException();
+    
+    alias State = ParseFloatState;
+    State state = State.IntegralInitial;
+    
+    // The most significant digits of the mantissa.
+    ulong mantissa;
+    // Number of digits in the mantissa; can be less than the number in the string.
+    uint mantdigits;
+    // Number of digits preceding the decimal point.
+    uint decimal;
+    // Whether the mantissa is negative.
+    bool mantnegative;
+    // Whether the mantissa has overflowed.
+    bool mantoverflow;
+    
+    /// Base 10 exponent.
+    uint exponent;
+    // Whether the exponent is negative.
+    bool expnegative;
+    // Whether the exponent has overflowed.
+    bool expoverflow;
+    
     auto range = str.asrange;
-    // TODO
+    alias Char = typeof({return range.front;}());
+    
+    void addmantdigit(in Char ch){
+        if(!mantoverflow){
+            immutable t = (mantissa * 10) + (ch - '0');
+            if(t < mantissa){
+                mantoverflow = true;
+            }else{
+                mantissa = t;
+                mantdigits++;
+            }
+        }
+    }
+    auto addexpdigit(char ch){
+        if(!expoverflow){
+            immutable t = (exponent * 10) + (ch - '0');
+            if(t < exponent) expoverflow = true;
+            else exponent = t;
+        }
+    }
+    
+    while(!range.empty){
+        immutable Char ch = range.front;
+        if(ch >= '0' && ch <= '9'){
+            final switch(state){
+                case State.IntegralInitial:
+                    goto case;
+                case State.IntegralSigned:
+                    state = State.Integral;
+                    goto case;
+                case State.Integral:
+                    addmantdigit(ch);
+                    decimal++;
+                    break;
+                case State.FractionInitial:
+                    state = State.Fraction;
+                    goto case;
+                case State.Fraction:
+                    addmantdigit(ch);
+                    break;
+                case State.ExponentInitial:
+                    goto case;
+                case State.ExponentSigned:
+                    state = State.Exponent;
+                    goto case;
+                case State.Exponent:
+                    addexpdigit(ch);
+                    break;
+            }
+        }else if(ch == '.'){
+            if(
+                state is State.IntegralInitial ||
+                state is State.IntegralSigned ||
+                state is State.Integral
+            ){
+                state = State.FractionInitial;
+            }else{
+                throw error;
+            }
+        }else if(ch == '-'){
+            if(state is State.IntegralInitial){
+                mantnegative = true;
+                state = State.IntegralSigned;
+            }else if(state is State.ExponentInitial){
+                expnegative = true;
+                state = State.ExponentSigned;
+            }else{
+                throw error;
+            }
+        }else if(ch == '+'){
+            if(state is State.IntegralInitial){
+                state = State.IntegralSigned;
+            }else if(state is State.ExponentInitial){
+                state = State.ExponentSigned;
+            }else{
+                throw error;
+            }
+        }else if(ch == 'e' || ch == 'E'){
+            if(
+                state is State.Integral ||
+                state is State.FractionInitial ||
+                state is State.Fraction
+            ){
+                state = State.ExponentInitial;
+            }else{
+                throw error;
+            }
+        }else{
+            throw error;
+        }
+        range.popFront();
+    }
+    
+    if(
+        mantdigits == 0 ||
+        state is State.IntegralSigned ||
+        state is State.ExponentInitial ||
+        state is State.ExponentSigned
+    ){
+        throw error; // Unexpected EOF
+    }else if(mantissa == 0){
+        return mantnegative ? -T(0) : T(0);
+    }else{
+        immutable sexp = (
+            (expnegative ? -(cast(int) exponent) : cast(int) exponent) +
+            cast(int)(decimal - mantdigits)
+        );
+        //stdio.writeln("mantissa: ", mantissa, " exp: ", sexp);
+        return fcomposedec!T(mantnegative, mantissa, sexp);
+    }
 }
 
 
@@ -163,6 +352,11 @@ version(unittest){
     private:
     import mach.test;
     import mach.meta : Aliases;
+    import mach.math.floats.compare : fidentical;
+    import mach.error.mustthrow : mustthrow;
+}
+
+unittest{ // TODO: rewrite without using mach.test
     void commontests(WriteFloatSettings settings)(){
         testeq(writefloat!settings(double.infinity), settings.PosInfLiteral);
         testeq(writefloat!settings(-double.infinity), settings.NegInfLiteral);
@@ -175,8 +369,6 @@ version(unittest){
         mixin(`double nvalue = -` ~ literal ~ `;`);
         testeq(nvalue.writefloat!settings, '-' ~ literal);
     }
-}
-unittest{
     tests("Write float", {
         enum string double_min = "2.2250738585072014e-305";
         enum string double_max = "1.7976931348623157e308";
@@ -256,4 +448,75 @@ unittest{
             }
         }
     });
+}
+
+unittest{ /// Parse float
+    alias numbers = Aliases!(
+        "0.0", "0.0000", "000.0000000000000000000000000",
+        "0.25", "0.025", "0.0005", "0.00000000000000005",
+        "1", "1.0", "10", "10.0", "11", "11.1", "11.11", "1111.111111111111111",
+        "2", "20", "200", "20000001", "123456", "123.456", "789.123456",
+        "1e0", "1e1", "1e2", "1e3", "1e4", "1e5", "1e100", "1e200", "1e2000",
+        "1e+0", "1e+1", "1e+2", "1e+3", "1e+4", "1e+5", "1e+100", "1e+200", "1e+2000",
+        "1e-0", "1e-1", "1e-2", "1e-3", "1e-4", "1e-5", "1e-100", "1e-200", "1e-2000",
+        "2e2", "123e4", "123456e7", "1.12313241e12", "1.1e-100", "111.111111111111e-100",
+        "1e01", "01e01", ".01", ".0002"
+    );
+    foreach(numberstr; numbers){
+        // Reals not included here because compiler and implementation output
+        // occassionally differ, and which output is more accurate varies.
+        foreach(T; Aliases!(double, float)){
+            mixin(`T a = ` ~ numberstr ~ `L;`);
+            mixin(`T b = -` ~ numberstr ~ `L;`);
+            immutable parseda = parsefloat!T(numberstr);
+            immutable parsedb = parsefloat!T(`+` ~ numberstr);
+            immutable parsedc = parsefloat!T(`-` ~ numberstr);
+            assert(fidentical(parseda, a));
+            assert(fidentical(parsedb, a));
+            assert(fidentical(parsedc, b));
+        }
+    }
+}
+
+unittest{ /// Parse floats with no digits after decimal
+    assert(fidentical(parsefloat!double("15."), double(15)));
+    assert(fidentical(parsefloat!double("-15."), double(-15)));
+    assert(fidentical(parsefloat!double("15.e10"), double(15e10)));
+    assert(fidentical(parsefloat!double("15.e-10"), double(15e-10)));
+    assert(fidentical(parsefloat!double("15.E10"), double(15E10)));
+    assert(fidentical(parsefloat!double("15.E-10"), double(15E-10)));
+}
+
+unittest{ /// Malformed parsefloat inputs
+    void bad(string str){
+        mustthrow!NumberParseException({
+            parsefloat!float(str);
+            parsefloat!double(str);
+            parsefloat!real(str);
+        });
+    }
+    bad("");
+    bad(".");
+    bad(" ");
+    bad("e");
+    bad("E");
+    bad("x");
+    bad("xx");
+    bad(".x");
+    bad("x.");
+    bad("x.x");
+    bad("x0");
+    bad("0x");
+    bad("0-");
+    bad("0+");
+    bad("0-0");
+    bad("0+0");
+    bad("123e");
+    bad("123E");
+    bad("123e5.");
+    bad("123E5.");
+    bad("123ex");
+    bad("123Ex");
+    bad("123e0x");
+    bad("123E0x");
 }
