@@ -6,6 +6,23 @@ Perhaps most notably, `extractbit` and `extractbits`, and `injectbit` and
 `injectbits`, which can be used to read and write specific bits in a value.
 
 
+## mach.math.bits.compare
+
+
+The `bitsidentical` function can be used to compare the low bits of two
+arbtirary values to determine whether their contents are identical.
+The number of low bits to compare must be passed as a template argument.
+When two inputs of the same type are passed, the number of bits is optional
+and defaults to the total number of bits in that type.
+
+``` D
+// Compare all the bits
+assert(bitsidentical(0xabcdef, 0xabcdef));
+// Compare low bits
+assert(bitsidentical!16(ushort(0x1234), uint(0xffff1234)));
+```
+
+
 ## mach.math.bits.extract
 
 

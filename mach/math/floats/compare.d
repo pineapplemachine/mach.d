@@ -3,7 +3,7 @@ module mach.math.floats.compare;
 private:
 
 import mach.traits : isFloatingPoint, IEEEFormatOf;
-import mach.math.bits : pow2d;
+import mach.math.bits : pow2d, bitsidentical;
 
 /++ Docs
 
@@ -22,47 +22,10 @@ public:
 
 
 
-/// Returns true when a and b are exactly the same value.
-@trusted bool fidentical(T)(in T a, in T b) if(isFloatingPoint!T){
-    // TODO: This is pretty generic stuff actually
-    // Sometime the logic should live in a mach.math.bits function and this
-    // would just pass the values and the number of bits to check equality for.
-    enum Format = IEEEFormatOf!T;
-    static if(Format.size == 32){ // Float
-        const aint = cast(uint*) &a;
-        const bint = cast(uint*) &b;
-        return *aint == *bint;
-    }else static if(Format.size == 64){ // Double
-        const aint = cast(ulong*) &a;
-        const bint = cast(ulong*) &b;
-        return *aint == *bint;
-    }else static if(Format.size == 128 && is(ucent)){ // Something dang big
-        const aint = cast(ucent*) &a;
-        const bint = cast(ucent*) &b;
-        return *aint == *bint;
-    }else static if(Format.size == 80){ // Real
-        const alow = cast(ulong*) &a;
-        const blow = cast(ulong*) &b;
-        const ahigh = cast(ushort*) &a;
-        const bhigh = cast(ushort*) &b;
-        return *alow == *blow && ahigh[4] == bhigh[4];
-    }else{ // Something else
-        enum words = Format.size / 64;
-        enum remainder = Format.size % 64;
-        const awords = cast(ulong*) &a;
-        const bwords = cast(ulong*) &b;
-        static if(words > 0){
-            for(uint i = 0; i < words; i++){
-                if(awords[i] != bwords[i]) return false;
-            }
-        }
-        static if(remainder > 0){
-            enum mask = pow2d!(remainder + 1);
-            return (awords[words] & mask) == (bwords[words] & mask);
-        }else{
-            return true;
-        }
-    }
+/// Returns true when the inputs have exactly the same binary representation.
+@safe bool fidentical(T)(in T a, in T b) if(isFloatingPoint!T){
+    enum uint size = IEEEFormatOf!T.size;
+    return bitsidentical!size(a, b);
 }
 
 
