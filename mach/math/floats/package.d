@@ -14,6 +14,7 @@ primitives.
 public:
 
 import mach.math.floats.extract;
+import mach.math.floats.compare;
 import mach.math.floats.inject;
 import mach.math.floats.log;
 import mach.math.floats.neighbors;

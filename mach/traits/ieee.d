@@ -63,6 +63,11 @@ struct IEEEFormat{
         return this.sigoffset + this.sigsize - 1;
     }
     
+    /// The total number of meaningful bits making up the value.
+    @property uint size() const{
+        return this.expsize + this.sigsize + 1;
+    }
+    
     /// https://en.wikipedia.org/wiki/Half-precision_floating-point_format
     static immutable IEEEFormat Half = {
         sgnoffset: 15,
