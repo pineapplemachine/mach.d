@@ -70,7 +70,8 @@ T fcomposedec(T, Mant)(
         d += 1;
     }
     if(exp != 0){
-        return exponent > 0 ? T.infinity : T(0.0);
+        immutable x = exponent > 0 ? T.infinity : T(0.0);
+        return sign ? -x : x;
     }else{
         return cast(T)(sign ? -value : value);
     }
