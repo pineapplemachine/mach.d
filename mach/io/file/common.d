@@ -21,15 +21,21 @@ version(Windows){
 
 
 version(Windows){
-    import core.sys.windows.windows : HANDLE;
+    private import core.sys.windows.windows : HANDLE;
+    private import core.sys.windows.winbase : INVALID_HANDLE_VALUE;
+    
     alias WinHandle = HANDLE;
+    alias WinHandleInvalid = INVALID_HANDLE_VALUE;
+    
     WinHandle winhandle(FileHandle file){
+        immutable no = file.fileno;
+        if(no < 0) return WinHandleInvalid;
         version(CRuntime_DigitalMars){
             import core.stdc.stdio : _fdToHandle;
-            return _fdToHandle(file.fileno);
+            return _fdToHandle(no);
         }else version(CRuntime_Microsoft){
             import core.stdc.stdio : _get_osfhandle;
-            return cast(WinHandle) _get_osfhandle(file.fileno);
+            return cast(WinHandle) _get_osfhandle(no);
         }else{
             assert(false);
         }
