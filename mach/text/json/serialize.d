@@ -191,7 +191,8 @@ auto jsondeserializetype(T)(in JsonValue value){
                 }
             }
         }
-        throw new JsonDeserializationTypeException();
+        static const error = new JsonDeserializationTypeException();
+        throw error;
     }
 }
 
@@ -211,7 +212,8 @@ auto jsondeserializeenum(T)(in JsonValue value){
             throw new JsonDeserializationValueException("enum member", e);
         }
     }else{
-        throw new JsonDeserializationTypeException("enum member");
+        static const error = new JsonDeserializationTypeException("enum member");
+        throw error;
     }
 }
 
@@ -231,7 +233,8 @@ auto jsondeserializeboolean(T = bool)(in JsonValue value) if(isBoolean!T){
     }else if(value.type is JsonValue.Type.Integer){
         return cast(T)(value.store.integerval != 0);
     }else{
-        throw new JsonDeserializationTypeException("boolean");
+        static const error = new JsonDeserializationTypeException("boolean");
+        throw error;
     }
 }
 
@@ -248,17 +251,22 @@ auto jsondeserializenumber(T)(in JsonValue value) if(isIntegral!T || isFloatingP
         return cast(T) value.store.integerval;
     }else if(value.type is JsonValue.Type.Float){
         return cast(T) value.store.floatval;
-    // TODO: Actually implement parsefloat
-    //}else if(value.type is JsonValue.Type.String){
-    //    static if(isIntegral!T) return value.store.stringval.parseint!T;
-    //    else return cast(T)(value.store.stringval.parsefloat);
+    }else if(value.type is JsonValue.Type.String){
+        try{
+            immutable result = parsenumber(value.store.stringval, 0, 1);
+            if(result.integral) return cast(T) result.integerval;
+            else return cast(T) result.floatval;
+        }catch(JsonParseException e){
+            throw new JsonDeserializationTypeException("number", e);
+        }
     }
     static if(isFloatingPoint!T){
         if(value.type is JsonValue.Type.Null){
             return T.nan;
         }
     }
-    throw new JsonDeserializationTypeException("number");
+    static const error = new JsonDeserializationTypeException("number");
+    throw error;
 }
 
 
@@ -279,16 +287,17 @@ auto jsonserializecharacter(T)(T value) if(isCharacter!T){
 
 /// Get a string literal from a json object.
 auto jsondeserializecharacter(T)(in JsonValue value) if(isCharacter!T){
+    static const error = new JsonDeserializationTypeException("character");
     if(value.type is JsonValue.Type.String){
         static if(is(T : char)){
             if(value.store.stringval.length != 1){
-                throw new JsonDeserializationValueException("character");
+                throw error;
             }
             return cast(T) value.store.stringval[0];
         }else static if(is(T : dchar)){
             auto dstr = value.store.stringval.utfdecode.asarray;
             if(dstr.length != 1){
-                throw new JsonDeserializationValueException("character");
+                throw error;
             }
             return cast(T) dstr[0];
         }else{
@@ -300,7 +309,7 @@ auto jsondeserializecharacter(T)(in JsonValue value) if(isCharacter!T){
     }else if(value.type is JsonValue.Type.Integer){
         return cast(T) value.store.integerval;
     }else{
-        throw new JsonDeserializationTypeException("character");
+        throw error;
     }
 }
 
@@ -334,7 +343,8 @@ auto jsondeserializestring(T)(in JsonValue value) if(isString!T){
             );
         }
     }else{
-        throw new JsonDeserializationTypeException("string");
+        static const error = new JsonDeserializationTypeException("string");
+        throw error;
     }
 }
 
@@ -358,22 +368,22 @@ auto jsondeserializearrayof(T)(in JsonValue value){
             return cast(T[]) value.store.stringval.utfdecode.asarray;
         }
     }
-    throw new JsonDeserializationTypeException("array");
+    static const error = new JsonDeserializationTypeException("array");
+    throw error;
 }
 
 /// ditto
 auto jsondeserializestaticarrayof(T, size_t size)(in JsonValue value){
+    static const error = new JsonDeserializationTypeException("static array");
     if(value.type is JsonValue.Type.Array){
-        if(value.length != size){
-            throw new JsonDeserializationValueException("static array");
-        }
+        if(value.length != size) throw error;
         T[size] result;
         for(size_t i = 0; i < size; i++){
             result[i] = value.store.arrayval[i].jsondeserialize!T;
         }
         return result;
     }
-    throw new JsonDeserializationTypeException("static array");
+    throw error;
 }
 
 
