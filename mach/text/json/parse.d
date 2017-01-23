@@ -31,7 +31,7 @@ public:
 
 
 
-private enum MaxParseDepth = 256; // Try to prevent call stack overflow crashes
+enum MaxParseDepth = 256; // Try to prevent call stack overflow crashes
 
 
 
@@ -42,7 +42,7 @@ private enum MaxParseDepth = 256; // Try to prevent call stack overflow crashes
 /// By default, the literals "NaN", "Infinite", and "-Infinite" are respected.
 /// Otherwise, numeric literals must strictly adhere to how the standard defines
 /// them or else they will be rejected.
-static auto parsejson(
+auto parsejson(
     WriteFloatSettings floatsettings = JsonValue.EncodeFloatSettingsDefault
 )(in string str){
     // Parse the string.
@@ -62,7 +62,7 @@ static auto parsejson(
 
 /// Utility used by parser functions to forward position in a string until a
 /// non-whitespace character is encountered.
-private static void consumews(in string str, ref size_t pos, ref size_t line){
+void consumews(in string str, ref size_t pos, ref size_t line){
     while(pos < str.length && str[pos].iswhite){
         line += str[pos] == '\n';
         pos++;
@@ -72,14 +72,14 @@ private static void consumews(in string str, ref size_t pos, ref size_t line){
 
 
 /// Type returned by `parsevalue` method.
-private static struct ParseValueResult{
+struct ParseValueResult{
     JsonValue value;
     size_t endpos;
     size_t endline;
 }
 
 /// Parse a json value of indeterminate type.
-private static auto parsevalue(
+auto parsevalue(
     WriteFloatSettings floatsettings
 )(
     in string str,
@@ -172,14 +172,14 @@ private static auto parsevalue(
 
 
 /// Type returned by `parsestring` method.
-private static struct ParseStringResult{
+struct ParseStringResult{
     string literal;
     size_t endpos;
     size_t endline;
 }
 
 /// Parse a json string literal.
-private static auto parsestring(
+auto parsestring(
     in string str, 
     in size_t initialpos,
     in size_t initialline
@@ -225,14 +225,14 @@ private static auto parsestring(
 
 
 /// Type returned by `parsearray` method.
-private static struct ParseArrayResult{
+struct ParseArrayResult{
     JsonValue[] array;
     size_t endpos;
     size_t endline;
 }
 
 /// Parse a json array.
-private static auto parsearray(
+auto parsearray(
     WriteFloatSettings floatsettings
 )(
     in string str, 
@@ -271,14 +271,14 @@ private static auto parsearray(
 
 
 /// Type returned by `parseobject` method.
-private static struct ParseObjectResult{
+struct ParseObjectResult{
     JsonValue[string] object;
     size_t endpos;
     size_t endline;
 }
 
 /// Parse a json object.
-private static auto parseobject(
+auto parseobject(
     WriteFloatSettings floatsettings
 )(
     in string str,
@@ -336,7 +336,7 @@ private static auto parseobject(
 
 
 /// Type returned by `parsenumber` method.
-private static struct ParseNumberResult{
+struct ParseNumberResult{
     /// Whether this is an integral or floating point value
     bool integral;
     /// Whether the number or some component of it was too large and thereby
@@ -364,7 +364,7 @@ private static struct ParseNumberResult{
 
 /// The number parser has many possible states, and here all of them are
 /// enumerated.
-private static enum ParseNumberState{
+static enum ParseNumberState{
     /// Initial parsing state.
     /// Implies: Expecting the sign or first digit of the integral part.
     IntegralInitial,
@@ -395,7 +395,7 @@ private static enum ParseNumberState{
 }
 
 /// Parse a json numeric literal. Returns a double.
-private static auto parsenumber(
+auto parsenumber(
     in string str, 
     in size_t initialpos,
     in size_t initialline
