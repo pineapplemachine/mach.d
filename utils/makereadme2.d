@@ -106,7 +106,7 @@ ParseResult parsemodule(in string path, in dstring content, ref dstring[][dstrin
                 braces += codeline.count('{').total;
                 braces -= codeline.count('}').total;
                 if(braces == 0) break;
-                uint ws = codeline.until!(ch => ch != ' ').walklength;
+                uint ws = cast(uint) codeline.until!(ch => ch != ' ').walklength;
                 if(first){
                     commonws = ws;
                     first = false;
@@ -152,9 +152,9 @@ dstring makecontent(ref dstring[][dstring] docs){
     dstring content = ""d;
     dstring[] sections = docs.byKey().asarray;
     sections.mergesort!((a, b) => orderstrings(a, b) == -1);
-    uint mindots = sections.map!(s => s.count('.').total).top;
+    uint mindots = cast(uint) sections.map!(s => s.count('.').total).top;
     foreach(section; sections){
-        uint hashes = 1 + section.count('.') - mindots;
+        uint hashes = cast(uint)(1 + section.count('.') - mindots);
         dstring header = cast(dstring) finiterangeof(hashes, dchar('#')).asarray ~ " "d ~ section;
         content ~= header ~ "\n\n"d;
         foreach(line; docs[section]){
