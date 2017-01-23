@@ -5,7 +5,6 @@ private:
 import std.datetime : SysTime; // TODO: Ewww, this.st module. I should write my own
 import mach.error : ErrnoException;
 import mach.io.file.common;
-import mach.io.file.exceptions;
 
 version(Windows){
     private import core.sys.windows.stat;
@@ -34,23 +33,23 @@ struct Stat{
         typeof(cstatstruct.st_mode) mode;
         
         /// Whether the stat describes a regular file.
-        @property auto isfile(){
+        @property auto isfile() const{
             return (this.mode & S_IFMT) == S_IFREG;
         }
         /// Whether the stat describes a directory.
-        @property auto isdir(){
+        @property auto isdir() const{
             return (this.mode & S_IFMT) == S_IFDIR;
         }
         /// Whether the stat describes a character device.
-        @property auto ischar(){
+        @property auto ischar() const{
             return (this.mode & S_IFMT) == S_IFDIR;
         }
         /// Whether the stat describes a block device.
-        @property auto isblock(){
+        @property auto isblock() const{
             return (this.mode & S_IFMT) == S_IFDIR;
         }
         /// Whether the stat describes a named pipe.
-        @property auto isfifo(){
+        @property auto isfifo() const{
             version(Windows){
                 // Not 100% sure this is correct but docs are proving scarce
                 return (this.mode & S_IFMT) == S_IFNAM;
@@ -60,7 +59,7 @@ struct Stat{
         }
         /// Whether the stat describes a symbolic link.
         /// Only meaningful for some Posix platforms.
-        @property auto islink(){
+        @property auto islink() const{
             static if(is(typeof({S_IFLNK;}))){
                 return (this.mode & S_IFMT) == S_IFLNK;
             }else{
@@ -69,7 +68,7 @@ struct Stat{
         }
         /// Whether the stat describes a symbolic link.
         /// Only meaningful for some Posix platforms.
-        @property auto issocket(){
+        @property auto issocket() const{
             static if(is(typeof({S_ISSOCK;}))){
                 return (this.mode & S_IFMT) == S_ISSOCK;
             }else{
@@ -79,47 +78,47 @@ struct Stat{
     }
     
     cstatstruct st;
+    bool valid = false;
     
     this(string path){
         cstatstruct st = void;
         version(Windows) auto result = stat(cast(char*) path.ptr, &st);
         else auto result = stat(path.ptr, &st);
-        if(result != 0) throw new FileStatException(path, new ErrnoException);
-        this(st);
+        this(st, result == 0);
     }
     this(FileHandle file){
         import core.stdc.stdio : fileno;
         cstatstruct st = void;
         auto result = fstat(file.fileno, &st);
-        if(result != 0) throw new FileStatException(new ErrnoException);
-        this(st);
+        this(st, result == 0);
     }
-    this(cstatstruct st){
+    this(cstatstruct st, bool valid = true){
         this.st = st;
+        this.valid = valid;
     }
     
     /// Get the permissions on the file.
-    @property auto permissions(){
+    @property auto permissions() const{
         return this.st.st_mode;
     }
     /// Get the inode.
-    @property auto inode(){
+    @property auto inode() const{
         return this.st.st_ino;
     }
     /// Get the device that the file resides on.
-    @property auto device(){
+    @property auto device() const{
         return this.st.st_dev;
     }
     /// Get the user ID.
-    @property auto userid(){
+    @property auto userid() const{
         return this.st.st_uid;
     }
     /// Get the group ID.
-    @property auto groupid(){
+    @property auto groupid() const{
         return this.st.st_gid;
     }
     /// Get the most recent time that the file was accessed.
-    @property auto accessedtime(){
+    @property auto accessedtime() const{
         return SysTime.fromUnixTime(this.st.st_atime);
     }
     
@@ -127,7 +126,7 @@ struct Stat{
     /// On Unix, represents time of the most recent metadata change.
     /// On Windows, represents file creation time.
     /// Not valid on FAT-formatted drives.
-    @property auto ctime(){
+    @property auto ctime() const{
         return SysTime.fromUnixTime(this.st.st_ctime);
     }
     
@@ -135,19 +134,19 @@ struct Stat{
     else version(Posix) alias changetime = ctime;
     
     /// Get the most recent time that the file's contents were modified.
-    @property auto modifiedtime(){
+    @property auto modifiedtime() const{
         return SysTime.fromUnixTime(this.st.st_mtime);
     }
     /// Get the number of links to the file.
-    @property auto links(){
+    @property auto links() const{
         return this.st.st_nlink;
     }
     /// Get the size of the file.
-    @property auto size(){
+    @property auto size() const{
         return this.st.st_size;
     }
     
-    @property auto mode(){
+    @property auto mode() const{
         return Mode(this.st.st_mode);
     }
 }
@@ -185,7 +184,7 @@ unittest{
             test(st.mode.isdir);
         });
         tests("Nonexistent path", {
-            testfail({Stat("not a real file path");});
+            testf(Stat("not a real file path").valid);
         });
     });
 }

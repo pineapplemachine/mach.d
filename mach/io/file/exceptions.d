@@ -42,7 +42,7 @@ alias FileRemoveDirException = FilePathExceptionTemplate!"Failed to remove direc
 
 class FileGetCurrentDirException: FileException{
     this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
-        super(text("Failed to get current directory."), next, line, file);
+        super("Failed to get current directory.", next, line, file);
     }
 }
 

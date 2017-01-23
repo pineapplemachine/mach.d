@@ -36,6 +36,12 @@ public import core.stdc.stdio : fileno, tmpfile, rewind;
 
 
 
+bool fhandlevalid(FileHandle file){
+    return file !is null && file.fileno >= 0;
+}
+
+
+
 void fseek(FileHandle file, long offset, Seek origin = Seek.Set){
     if(file is null) throw new FileSeekException();
     version(CRuntime_Microsoft){
@@ -98,9 +104,8 @@ enum Seek: int{
 
 
 
-void fsync(FileHandle file) @trusted in{
-    assert(file, "Can't sync unopened file.");
-}body{
+void fsync(FileHandle file) @trusted{
+    if(!file.fhandlevalid) throw new FileSyncException();
     version(Windows){
         import core.sys.windows.winbase : FlushFileBuffers;
         auto result = FlushFileBuffers(file.winhandle);
@@ -203,6 +208,7 @@ void rmfile(string path){
 
 
 
+/// Get whether the given path refers to any existing file.
 bool exists(string path){
     version(Windows){
         // https://blogs.msdn.microsoft.com/oldnewthing/20071023-00/?p=24713/
@@ -217,28 +223,47 @@ bool exists(string path){
 
 
 
+/// Returns true when the path exists and refers to a file.
 bool isfile(string path){
-    version(Windows) return Attributes(path).isfile;
-    else return Stat(path).mode.isfile;
+    version(Windows){
+        immutable attr = Attributes(path);
+        return attr.valid && attr.isfile;
+    }else{
+        immutable stat = Stat(path);
+        return stat.valid && stat.mode.isfile;
+    }
 }
 
+/// Returns true when the path exists and refers to a directory.
 bool isdir(string path){
-    version(Windows) return Attributes(path).isdir;
-    else return Stat(path).mode.isdir;
+    version(Windows){
+        immutable attr = Attributes(path);
+        return attr.valid && attr.isdir;
+    }else{
+        immutable stat = Stat(path);
+        return stat.valid && stat.mode.isdir;
+    }
 }
 
+/// Returns true when the path exists and refers to a symbolic link.
 bool islink(string path){
-    version(Windows) return Attributes(path).islink;
-    else return Stat(path).mode.islink;
+    version(Windows){
+        immutable attr = Attributes(path);
+        return attr.valid && attr.islink;
+    }else{
+        immutable stat = Stat(path);
+        return stat.valid && stat.mode.islink;
+    }
 }
 
+/// Get the size of a file in bytes.
+/// Throws a `FileSizeException` when the operation fails, probably because
+/// the given path did not exist.
 auto filesize(string path){
     version(Posix){
-        try{
-            return Stat(path).size;
-        }catch(FileStatException e){
-            throw new FileSizeException(path, e);
-        }
+        immutable stat = Stat(path);
+        if(stat.valid) return stat.size;
+        else throw new FileSizeException(path, new ErrnoException);
     }else{
         try{
             auto file = fopen(path, "rb");
@@ -396,40 +421,65 @@ string currentdir(){
 
 
 
-version(unittest){
-    private:
+private version(unittest){
     import std.path;
     import mach.test;
+    import mach.error.mustthrow : mustthrow;
     enum string CurrentPath = __FILE__.dirName;
     enum string TestPath = CurrentPath ~ "/sys.txt";
-    enum string DelMePath = CurrentPath ~ "/deleteme";
+    enum string FakePath1 = CurrentPath ~ "/nope_not_a_real_file";
+    enum string FakePath2 = CurrentPath ~ "/nope_not_a_real_file.txt";
 }
-unittest{
-    tests("Exists", {
-        test(exists("."));
-        test(exists(TestPath));
-        test(!exists("not a real path"));
-        test(!exists(DelMePath));
+
+unittest{ /// Exists
+    assert(exists("."));
+    assert(exists(TestPath));
+    assert(!exists(""));
+    assert(!exists(FakePath1));
+    assert(!exists(FakePath2));
+}
+
+unittest{ /// Handle is valid
+    assert(!fhandlevalid(null));
+    auto file = fopen(TestPath, "ab");
+    assert(fhandlevalid(file));
+    file.fclose;
+    assert(!fhandlevalid(file));
+}
+
+unittest{ /// Sync
+    auto file = fopen(TestPath, "ab");
+    assert(!file.feof);
+    assert(file.ftell == 85);
+    fsync(file);
+    assert(!file.feof);
+    assert(file.ftell == 85);
+    file.fclose;
+    mustthrow!FileSyncException({
+        fsync(file); // Attempt to sync closed file
     });
-    tests("Sync", {
-        auto file = fopen(TestPath, "ab");
-        testf(file.feof);
-        testeq(file.ftell, 85);
-        fsync(file);
-        testf(file.feof);
-        testeq(file.ftell, 85);
-        file.fclose;
-        testfail({fsync(FileHandle.init);}); // Attempt to sync nonexistent file
-        version(CRuntime_Microsoft){} else{
-            // Fails gracefully with dmc, crashes with MSVC
-            testfail({fsync(file);}); // Attempt to sync closed file
-        }
+    mustthrow!FileSyncException({
+        fsync(null); // Attempt to sync invalid file
     });
-    tests("Attributes", {
-        test(isfile(TestPath));
-        test(!isfile(CurrentPath));
-        test(isdir(CurrentPath));
-        test(!isdir(TestPath));
-        testeq(filesize(TestPath), 85);
+}
+
+unittest{ /// File size
+    assert(filesize(TestPath) == 85);
+    mustthrow!FileSizeException({
+        filesize(FakePath1);
     });
+    mustthrow!FileSizeException({
+        filesize(FakePath2);
+    });
+}
+
+unittest{ /// Attributes
+    assert(isfile(TestPath));
+    assert(!isfile(CurrentPath));
+    assert(isdir(CurrentPath));
+    assert(!isdir(TestPath));
+    assert(!isfile(FakePath1));
+    assert(!isdir(FakePath1));
+    assert(!isfile(FakePath2));
+    assert(!isdir(FakePath2));
 }
