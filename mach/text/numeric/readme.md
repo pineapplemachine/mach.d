@@ -24,6 +24,46 @@ filling the gaps in my understanding of the algorithm:
 https://bugs.python.org/file8910/short_float_repr.diff
 
 
+## mach.text.numeric.combined
+
+
+This module implements the `parsenumber` and `writenumber` methods, which are
+generic interfaces to the `parseint`, `parsefloat`, `writeint`, and `writefloat`
+methods.
+These methods accept either integers or floats as input, but do not offer the
+same specialized configuration options as if the wrapped methods were called
+directly.
+
+Note that while the `parsefloat` method operates strictly upon numeric literals,
+the `parsenumber` method, when parsing a floating point type, will recognize
+the literals defined in the default `WriteFloatSettings` and return the special
+values accordingly.
+
+``` D
+assert("100".parsenumber!int == 100);
+assert("256".parsenumber!ushort == 256);
+assert("1234.56".parsenumber!double == double(1234.56));
+assert("1e20".parsenumber!double == double(1e20));
+```
+
+``` D
+import mach.math.floats.properties : fisposinf, fisnan;
+assert("infinity".parsenumber!double.fisposinf);
+assert("nan".parsenumber!double.fisnan);
+```
+
+
+The `parsenumber` method, like `parseint` and `parsefloat`, throws a
+`NumberParseException` when the input was malformed.
+
+``` D
+import mach.error.mustthrow : mustthrow;
+mustthrow!NumberParseException({
+    "some malformed input".parsenumber!int;
+});
+```
+
+
 ## mach.text.numeric.exceptions
 
 
@@ -46,11 +86,13 @@ values.
 
 The `parsefloat` function throws a `NumberParseException` when the input was
 malformed.
+Note that the `parsefloat` function does not accept string literals intended
+to represent NaN or infinity; it parses only numeric literals.
 
 ``` D
 assert(writefloat(0) == "0");
 assert(writefloat(123.456) == "123.456");
-assert(writefloat(double.infinity) == "inf");
+assert(writefloat(double.infinity) == "infinity");
 ```
 
 ``` D

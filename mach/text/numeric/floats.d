@@ -25,13 +25,15 @@ values.
 
 The `parsefloat` function throws a `NumberParseException` when the input was
 malformed.
+Note that the `parsefloat` function does not accept string literals intended
+to represent NaN or infinity; it parses only numeric literals.
 
 +/
 
 unittest{ /// Example
     assert(writefloat(0) == "0");
     assert(writefloat(123.456) == "123.456");
-    assert(writefloat(double.infinity) == "inf");
+    assert(writefloat(double.infinity) == "infinity");
 }
 
 unittest{ /// Example
@@ -84,9 +86,9 @@ struct WriteFloatSettings{
     /// What to output when the input is negative NaN.
     string NegNaNLiteral = "-nan";
     /// What to output when the input is positive infinity.
-    string PosInfLiteral = "inf";
+    string PosInfLiteral = "infinity";
     /// What to output when the input is negative infinity.
-    string NegInfLiteral = "-inf";
+    string NegInfLiteral = "-infinity";
     /// Whether to write a trailing ".0" when the value would otherwise be
     /// represented by an integral.
     bool trailingfraction = false;
@@ -448,6 +450,14 @@ unittest{ // TODO: rewrite without using mach.test
             }
         }
     });
+}
+
+unittest{ /// Write float special cases
+    enum Settings = WriteFloatSettings.Default;
+    assert((double.infinity).writefloat == Settings.PosInfLiteral);
+    assert((-double.infinity).writefloat == Settings.NegInfLiteral);
+    assert((double.nan).writefloat == Settings.PosNaNLiteral);
+    assert((-double.nan).writefloat == Settings.NegNaNLiteral);
 }
 
 unittest{ /// Parse float
