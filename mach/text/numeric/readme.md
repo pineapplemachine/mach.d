@@ -3,6 +3,20 @@
 
 This package provides functions for parsing and serializing numbers.
 
+Of note are the `parsenumber` and `writenumber` functions, which are
+generic implementations handling integer and floating point primitives of
+any type.
+
+``` D
+assert("100".parsenumber!int == 100);
+assert("1234.5".parsenumber!double == double(1234.5));
+```
+
+``` D
+assert(int(200).writenumber == "200");
+assert(double(456.789).writenumber == "456.789");
+```
+
 
 ## mach.text.numeric.burger
 
@@ -42,7 +56,7 @@ values accordingly.
 ``` D
 assert("100".parsenumber!int == 100);
 assert("256".parsenumber!ushort == 256);
-assert("1234.56".parsenumber!double == double(1234.56));
+assert("1234.5".parsenumber!double == double(1234.5));
 assert("1e20".parsenumber!double == double(1e20));
 ```
 
