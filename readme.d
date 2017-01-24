@@ -35,18 +35,22 @@ Eventually I intend to cut ties with it completely.
 The `mach.sdl` package requires some additional dependencies.
 See the [package readme](https://github.com/pineapplemachine/mach.d/blob/master/mach/sdl/readme.md) for details.
 
-+/
+## Usage
 
-/++ md
+The `mach` folder should be placed where you are loading dependencies from.
+In the case of *dmd* or *rdmd*, this is a directory passed using the `-I`
+argument.
+In the case of *dub*, this is a path added to a project using `dub add-path`.
 
-## Examples
+Beware compiling mach with the `-unittest` flag when linking on Windows with
+Optlink; [a bug with Optlink](https://issues.dlang.org/show_bug.cgi?id=17077)
+causes the compilation to fail with a linker error.
+To compile on Windows with unit tests, the `-m32mscoff` switch must be passed
+to dmd/rdmd, and a version of Visual Studio including the linker must be
+available on the system.
 
-+/
-
-unittest{
-    import mach.io : stdio;
-    stdio.writeln("Hello world!");
-}
+See the [examples directory](https://github.com/pineapplemachine/mach.d/tree/master/examples)
+for some examples of how to use mach's functionality.
 
 /++ md
 
