@@ -2,7 +2,7 @@ module mach.math.ints.intproduct;
 
 private:
 
-import mach.traits : isUnsignedIntegral;
+import mach.traits : isIntegral, isUnsignedIntegral;
 import mach.math.bits : pow2d;
 
 /++ Docs
@@ -29,6 +29,22 @@ the value of that returned type may be directly compared to that value.
 
 unittest{ /// Example
     assert(intproduct(uint.max, uint.max) == (cast(ulong) uint.max * cast(ulong) uint.max));
+}
+
+/++ Docs
+
+The `intproductoverflow` function can be used to get the product of two integers
+and whether the operation caused overflow, without computing the carried value.
+It returns a type with an integer `value` attribute storing the result of
+multiplication and a boolean `overflow` attribute indicating whether the
+operation resulted in integer overflow.
+
++/
+
+unittest{ /// Example
+    auto result = intproductoverflow(2, int.max);
+    assert(result.value == 2 * int.max);
+    assert(result.overflow);
 }
 
 public:
@@ -106,7 +122,44 @@ auto intproduct(T)(in T a, in T b) if(isUnsignedIntegral!T){
 
 
 
-unittest{
+/// Type returned by `intproductoverflow` and `intsumoverflow`.
+struct IntOperationOverflow(T) if(isIntegral!T){
+    T value;
+    bool overflow;
+}
+    
+/// Get the product of two integers, and whether overflow resulted.
+auto intproductoverflow(T)(in T a, in T b) if(isIntegral!T){
+    immutable value = cast(T)(a * b);
+    immutable overflow = a != 0 && value / a != b;
+    return IntOperationOverflow!T(value, overflow);
+}
+
+/// Get the sum of two integers and whether overflow occurred.
+/// TODO: With this here maybe the package should be renamed
+auto intsumoverflow(T)(in T a, in T b) if(isIntegral!T){
+    immutable value = cast(T)(a + b);
+    immutable overflow = value < a;
+    return IntOperationOverflow!T(value, overflow);
+}
+
+/// Get the sum of two integers and a carried bit and whether overflow occurred.
+auto intsumoverflow(T)(in T a, in T b, in bool carry) if(isIntegral!T){
+    immutable value = cast(T)(a + b + carry);
+    immutable overflow = value < a || (carry && value == a);
+    return IntOperationOverflow!T(value, overflow);
+}
+
+/// Get the result of `a * b + c` and whether overflow occurred.
+auto intfmaoverflow(T)(in T a, in T b, in T c){
+    immutable value = a * b + c;
+    immutable overflow = a != 0 && ((value < c) || ((value - c) / a != b));
+    return IntOperationOverflow!T(value, overflow);
+}
+
+
+
+unittest{ /// intproduct
     immutable uint[] numbers = [
         0, 1, 2, 3, 4, 5, 10, 100, 255, 256,
         25 + (1 << 20), int.max, uint.max
@@ -116,4 +169,79 @@ unittest{
             assert(intproduct(x, y) == cast(ulong) x * cast(ulong) y);
         }
     }
+}
+
+unittest{ /// intproductoverflow
+    auto yes = intproductoverflow(uint.max, uint(20));
+    assert(yes.value == uint.max * uint(20));
+    assert(yes.overflow);
+    auto no = intproductoverflow(123, 456);
+    assert(no.value == 123 * 456);
+    assert(!no.overflow);
+}
+
+unittest{ /// intsumoverflow without carry
+    auto yes = intsumoverflow(uint.max, uint(10));
+    assert(yes.value == uint.max + uint(10));
+    assert(yes.overflow);
+    auto no = intsumoverflow(10, 20);
+    assert(no.value == 10 + 20);
+    assert(!no.overflow);
+}
+
+unittest{ /// intsumoverflow with carry
+    {
+        // Carry 0
+        auto yes = intsumoverflow(uint.max, uint(10), false);
+        assert(yes.value == uint.max + uint(10));
+        assert(yes.overflow);
+        auto no = intsumoverflow(10, 20, false);
+        assert(no.value == 10 + 20);
+        assert(!no.overflow);
+    }{
+        // Carry 1
+        auto yes = intsumoverflow(uint.max, uint(10), true);
+        assert(yes.value == uint.max + uint(11));
+        assert(yes.overflow);
+        auto no = intsumoverflow(10, 20, true);
+        assert(no.value == 10 + 20 + 1);
+        assert(!no.overflow);
+    }{
+        // Carry 1 (and carry causes overflow)
+        auto yes = intsumoverflow(uint.max, 0, true);
+        assert(yes.value == uint.max + uint(1));
+        assert(yes.overflow);
+    }
+}
+
+unittest{ /// intfmaoverflow
+    // Not overflowing
+    auto a = intfmaoverflow(0, 0, 0);
+    assert(a.value == 0);
+    assert(!a.overflow);
+    auto b = intfmaoverflow(1, 0, 0);
+    assert(b.value == 0);
+    assert(!b.overflow);
+    auto c = intfmaoverflow(0, 0, 1);
+    assert(c.value == 1);
+    assert(!c.overflow);
+    auto d = intfmaoverflow(5, 6, 7);
+    assert(d.value == 5 * 6 + 7);
+    assert(!d.overflow);
+    auto e = intfmaoverflow(0, 0, int.max);
+    assert(e.value == int.max);
+    assert(!e.overflow);
+    auto f = intfmaoverflow(1, int.max, 0);
+    assert(f.value == int.max);
+    assert(!f.overflow);
+    // Overflowing
+    auto g = intfmaoverflow(1, int.max, 1);
+    assert(g.value == int.max + 1);
+    assert(g.overflow);
+    auto h = intfmaoverflow(1, 1, int.max);
+    assert(h.value == 1 + int.max);
+    assert(h.overflow);
+    auto i = intfmaoverflow(int.max, int.max, int.max);
+    assert(i.value == int.max * int.max + int.max);
+    assert(i.overflow);
 }

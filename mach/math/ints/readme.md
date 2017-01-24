@@ -51,3 +51,16 @@ assert(intproduct(uint.max, uint.max) == (cast(ulong) uint.max * cast(ulong) uin
 ```
 
 
+The `intproductoverflow` function can be used to get the product of two integers
+and whether the operation caused overflow, without computing the carried value.
+It returns a type with an integer `value` attribute storing the result of
+multiplication and a boolean `overflow` attribute indicating whether the
+operation resulted in integer overflow.
+
+``` D
+auto result = intproductoverflow(2, int.max);
+assert(result.value == 2 * int.max);
+assert(result.overflow);
+```
+
+
