@@ -18,7 +18,7 @@ The `mach.sdl` package requires some additional dependencies. See the [package r
 
 ## Usage
 
-The `mach` folder should be placed where you are loading dependencies from. In the case of *dmd* or *rdmd*, this is a directory passed using the `-I` argument. In the case of *dub*, this is a path added to a project using `dub add-path`.
+The `mach` folder should be placed where you are loading dependencies from. In the case of **dmd** or **rdmd**, this is a directory passed using the `-I` argument. In the case of **dub**, this is a path added to a project using `dub add-path`.
 
 Beware compiling mach with the `-unittest` flag when linking on Windows with Optlink; [a bug with Optlink](https://issues.dlang.org/show_bug.cgi?id=17077) causes the compilation to fail with a linker error. To compile on Windows with unit tests, the `-m32mscoff` switch must be passed to dmd/rdmd, and a version of Visual Studio including the linker must be available on the system.
 

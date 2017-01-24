@@ -38,9 +38,9 @@ See the [package readme](https://github.com/pineapplemachine/mach.d/blob/master/
 ## Usage
 
 The `mach` folder should be placed where you are loading dependencies from.
-In the case of *dmd* or *rdmd*, this is a directory passed using the `-I`
+In the case of **dmd** or **rdmd**, this is a directory passed using the `-I`
 argument.
-In the case of *dub*, this is a path added to a project using `dub add-path`.
+In the case of **dub**, this is a path added to a project using `dub add-path`.
 
 Beware compiling mach with the `-unittest` flag when linking on Windows with
 Optlink; [a bug with Optlink](https://issues.dlang.org/show_bug.cgi?id=17077)
