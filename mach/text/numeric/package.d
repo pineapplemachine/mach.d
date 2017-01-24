@@ -27,4 +27,5 @@ public:
 import mach.text.numeric.combined;
 import mach.text.numeric.exceptions;
 import mach.text.numeric.floats;
+import mach.text.numeric.hexfloats;
 import mach.text.numeric.integrals;

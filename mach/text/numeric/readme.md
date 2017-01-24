@@ -131,6 +131,36 @@ mustthrow!NumberParseException({
 ```
 
 
+## mach.text.numeric.hexfloats
+
+
+The `writehexfloat` and `parsehexfloat` functions can be used to write and
+parse floats in a hexadecimal format.
+For a description of this format, see the
+[D language documentation](https://dlang.org/spec/lex.html#floatliteral)
+and the [C99 standard](http://c0x.coding-guidelines.com/6.4.4.2.html).
+
+The `parsehexfloat` function accepts an optional template parameter indicating
+the floating point type to parse, i.e. `float`, `double`, or `real`.
+If no such parameter is provided, then the function returns a double by default.
+
+``` D
+assert(writehexfloat(0x1.23abcp10) == "0x1.23abcp10");
+assert(parsehexfloat!double("0x1.23abcp10") == double(0x1.23abcp10));
+```
+
+
+`parsehexfloat` throws a `ParseNumberException` when it receives a malformed
+input string.
+
+``` D
+import mach.error.mustthrow : mustthrow;
+mustthrow!NumberParseException({
+    "malformed input".parsehexfloat;
+});
+```
+
+
 ## mach.text.numeric.integrals
 
 
