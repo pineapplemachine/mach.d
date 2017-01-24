@@ -2,10 +2,10 @@ module mach.text.numeric.floats;
 
 private:
 
-import mach.math : fisnan, fisinf, fiszero;
-import mach.math : fextractsgn, fcomposedec;
-import mach.traits : isFloatingPoint;
-import mach.traits : validAsStringRange, IEEEFormatOf;
+import mach.math.floats : fisnan, fisinf, fiszero;
+import mach.math.floats : fextractsgn, fcomposedec;
+import mach.math.ints : intfmaoverflow;
+import mach.traits : IEEEFormatOf, isFloatingPoint, isString, ElementType;
 import mach.range : asrange, asarray, finiterangeof;
 import mach.text.numeric.exceptions;
 import mach.text.numeric.integrals : writeint;
@@ -209,56 +209,58 @@ private static enum ParseFloatState{
 /// given floating point type, the least significant digits are ignored.
 /// When the exponent is too large or small to store, the largest/smallest
 /// possible exponent is used instead.
-auto parsefloat(T = double, S)(auto ref S str) if(
-    isFloatingPoint!T && validAsStringRange!S
+T parsefloat(T = double, S)(auto ref S str) if(
+    isFloatingPoint!T && isString!S
 ){
     static const error = new NumberParseException();
     
+    alias Mantissa = ulong;
+    alias Exponent = uint;
+    alias Char = ElementType!S;
     alias State = ParseFloatState;
     State state = State.IntegralInitial;
     
     // The most significant digits of the mantissa.
-    ulong mantissa;
+    Mantissa mantissa = 0;
     // Number of digits in the mantissa; can be less than the number in the string.
-    uint mantdigits;
+    uint mantdigits = 0;
     // Number of digits preceding the decimal point.
-    uint decimal;
+    uint decimal = 0;
     // Whether the mantissa is negative.
-    bool mantnegative;
+    bool mantnegative = false;
     // Whether the mantissa has overflowed.
-    bool mantoverflow;
+    bool mantoverflow = false;
     
     /// Base 10 exponent.
-    uint exponent;
+    Exponent exponent = 0;
     // Whether the exponent is negative.
-    bool expnegative;
+    bool expnegative = false;
     // Whether the exponent has overflowed.
-    bool expoverflow;
-    
-    auto range = str.asrange;
-    alias Char = typeof({return range.front;}());
+    bool expoverflow = false;
     
     void addmantdigit(in Char ch){
         if(!mantoverflow){
-            immutable t = (mantissa * 10) + (ch - '0');
-            if(t < mantissa){
+            immutable result = intfmaoverflow(mantissa, 10, ch - '0');
+            if(result.overflow){
                 mantoverflow = true;
             }else{
-                mantissa = t;
+                mantissa = result.value;
                 mantdigits++;
             }
         }
     }
-    auto addexpdigit(char ch){
+    auto addexpdigit(in Char ch){
         if(!expoverflow){
-            immutable t = (exponent * 10) + (ch - '0');
-            if(t < exponent) expoverflow = true;
-            else exponent = t;
+            immutable result = intfmaoverflow(exponent, 10, ch - '0');
+            if(result.overflow){
+                expoverflow = true;
+            }else{
+                exponent = result.value;
+            }
         }
     }
     
-    while(!range.empty){
-        immutable Char ch = range.front;
+    foreach(ch; str){
         if(ch >= '0' && ch <= '9'){
             final switch(state){
                 case State.IntegralInitial:
@@ -326,7 +328,6 @@ auto parsefloat(T = double, S)(auto ref S str) if(
         }else{
             throw error;
         }
-        range.popFront();
     }
     
     if(
@@ -343,7 +344,6 @@ auto parsefloat(T = double, S)(auto ref S str) if(
             (expnegative ? -(cast(int) exponent) : cast(int) exponent) +
             cast(int)(decimal - mantdigits)
         );
-        //stdio.writeln("mantissa: ", mantissa, " exp: ", sexp);
         return fcomposedec!T(mantnegative, mantissa, sexp);
     }
 }
@@ -497,11 +497,15 @@ unittest{ /// Parse floats with no digits after decimal
     assert(fidentical(parsefloat!double("15.E-10"), double(15E-10)));
 }
 
-unittest{ /// Malformed parsefloat inputs
+unittest{ /// Malformed parse inputs
     void bad(string str){
         mustthrow!NumberParseException({
             parsefloat!float(str);
+        });
+        mustthrow!NumberParseException({
             parsefloat!double(str);
+        });
+        mustthrow!NumberParseException({
             parsefloat!real(str);
         });
     }
@@ -523,6 +527,8 @@ unittest{ /// Malformed parsefloat inputs
     bad("0+0");
     bad("123e");
     bad("123E");
+    bad("123e+");
+    bad("123e-");
     bad("123e5.");
     bad("123E5.");
     bad("123ex");

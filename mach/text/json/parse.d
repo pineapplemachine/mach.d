@@ -4,6 +4,7 @@ private:
 
 import mach.text.utf : utf8decode, UTFDecodeException;
 import mach.math.floats : fcomposedec;
+import mach.math.ints : intfmaoverflow;
 import mach.text.numeric : WriteFloatSettings;
 import mach.text.escape : StringUnescapeException;
 import mach.text.json.escape;
@@ -428,22 +429,25 @@ auto parsenumber(
     bool expnegative; // Whether the exponent is negative.
     bool expoverflow; // Whether the exponent overflowed.
     
-    auto addmantdigit(char ch){
+    auto addmantdigit(in char ch){
         if(!mantoverflow){
-            immutable t = (mantissa * 10) + (ch - '0');
-            if(t < mantissa){
+            immutable result = intfmaoverflow(mantissa, 10, ch - '0');
+            if(result.overflow){
                 mantoverflow = true;
             }else{
-                mantissa = t;
+                mantissa = result.value;
                 mantdigits++;
             }
         }
     }
-    auto addexpdigit(char ch){
+    auto addexpdigit(in char ch){
         if(!expoverflow){
-            immutable t = (exponent * 10) + (ch - '0');
-            if(t < exponent) expoverflow = true;
-            else exponent = t;
+            immutable result = intfmaoverflow(exponent, 10, ch - '0');
+            if(result.overflow){
+                expoverflow = true;
+            }else{
+                exponent = result.value;
+            }
         }
     }
     
