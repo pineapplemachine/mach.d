@@ -47,7 +47,7 @@ void fseek(FileHandle file, long offset, Seek origin = Seek.Set){
     version(CRuntime_Microsoft){
         alias seek = _fseeki64;
     }else version(Windows){
-        import core.std.stdio : fseek;
+        import core.stdc.stdio : fseek;
         alias seek = fseek;
     }else version(Posix){
         import core.sys.posix.stdio : fseeko;
@@ -224,6 +224,7 @@ bool exists(string path){
 
 
 /// Returns true when the path exists and refers to a file.
+/// TODO: Why is this rarely returning false negatives for certain files on OSX?
 bool isfile(string path){
     version(Windows){
         immutable attr = Attributes(path);
