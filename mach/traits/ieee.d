@@ -54,7 +54,7 @@ struct IEEEFormat{
     /// Subnormal numbers are represented by `2 ^ -x`
     /// where `x` is the value of this property.
     @property uint expsubnormal() const{
-        return 1 - this.expbias;
+        return this.expbias - 1;
     }
     
     /// When `intpart` is true, returns the bit offset of the
