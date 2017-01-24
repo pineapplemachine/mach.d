@@ -53,6 +53,23 @@ Perhaps most notably, `extractbit` and `extractbits`, and `injectbit` and
 `injectbits`, which can be used to read and write specific bits in a value.
 
 
+## mach.math.clamp
+
+
+The `clamp` function can be used to ensure a value is within some bounds.
+
+The function accepts three arguments.
+When the first argument is less than the second, the second argument is returned.
+When the first argument is greater than the third, the third is returned.
+Otherwise, the first argument is returned.
+
+``` D
+assert(200.clamp(150, 250) == 200);
+assert(100.clamp(150, 250) == 150);
+assert(300.clamp(150, 250) == 250);
+```
+
+
 ## mach.math.constants
 
 
