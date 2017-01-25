@@ -62,8 +62,7 @@ string str(
 
 
 
-version(unittest){
-    private:
+private version(unittest){
     alias Verbose = StrSettings.Verbose;
     enum Enum{Yes, No}
     struct TestStruct{string hi;}

@@ -252,7 +252,7 @@ unittest{
     assert(""w.stringtostring == "");
     assert("x"w.stringtostring == "x");
     assert("hello"w.stringtostring == "hello");
-    //assert("!אツ😃"w.stringtostring == "!אツ😃"); // TODO: UTF-16 decoding
+    assert("!אツ😃"w.stringtostring == "!אツ😃");
     assert(""d.stringtostring == "");
     assert("x"d.stringtostring == "x");
     assert("hello"d.stringtostring == "hello");
