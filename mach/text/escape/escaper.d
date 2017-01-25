@@ -369,7 +369,7 @@ struct Escaper{
     /// unicode character, like "\x00\x00\x00"
     static string ptescape(in dchar pt, in char esc){
         char[] chars;
-        foreach(ch; pt.utf8encode) chars ~= xescape(ch, esc);
+        foreach(ch; pt.utf8encode.chars) chars ~= xescape(ch, esc);
         return cast(string) chars;
     }
     /// Given a code point or sequence of code points valid as an HTML5 named

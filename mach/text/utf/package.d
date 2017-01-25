@@ -1,28 +1,34 @@
 module mach.text.utf;
 
+private:
+
+/++ Docs
+
+This package implements encoding and decoding of UTF-8, UTF-16, and UTF-32
+strings.
+
+Of particular note are `utfencode`, which acquires a UTF-8 string from an
+arbitrary UTF-encoded string input, and `utfdecode`, which acquires a decoded
+UTF-32 string from an arbitrary UTF-encoded string input.
+Additionally, the `utf16encode` function can be used to encode a UTF-16
+string.
+
+When encoding a UTF-8 or UTF-16 string fails, a `UTFEncodeException` is thrown.
+When decoding a UTF-8 or UTF-16 string fails, a `UTFDecodeException` is thrown.
+
++/
+
+unittest{ /// Example
+    import mach.range.compare : equals;
+    // UTF-32 => UTF-8
+    assert("hello! ツ"d.utfencode.equals("hello! ツ"));
+    // UTF-8 => UTF-32
+    assert("hello! ツ".utfdecode.equals("hello! ツ"d));
+}
+
 public:
 
-import mach.text.utf.common;
-import mach.text.utf.decode;
+import mach.text.utf.combined;
+import mach.text.utf.exceptions;
 import mach.text.utf.encode;
-
-
-
-alias utfencode = utf8encode;
-alias utfdecode = utf8decode;
-
-
-
-version(unittest){
-    private:
-    import mach.test;
-    import mach.range.compare : equals;
-}
-unittest{
-    tests("UTF encoding & decoding", {
-        auto encoded = "!\xD7\x90\xE3\x83\x84\xF0\x9F\x98\x83";
-        test(encoded.utfdecode.utf8encode.equals(encoded));
-        auto decoded = "!אツ😃"d;
-        test(decoded.utfencode.utf8decode.equals(decoded));
-    });
-}
+import mach.text.utf.encodings;

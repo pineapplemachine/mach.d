@@ -2,7 +2,7 @@ module mach.text.escape.unescape;
 
 private:
 
-import mach.text.utf : utf8encode, UTFEncodePoint;
+import mach.text.utf : utf8encode, UTF8EncodePoint;
 import mach.text.html : NamedChar;
 import mach.text.numeric : parsehex, parseoct;
 import mach.text.numeric : NumberParseException;
@@ -19,7 +19,7 @@ public:
 /// Iterates over some basis iterable of characters, presenting a UTF8-encoded
 /// string of its contents after being unescaped, e.g. `\x23` becomes `#`.
 struct UnescapeRange(Range) if(isStringRange!Range){
-    alias CodePoint = UTFEncodePoint!char;
+    alias CodePoint = UTF8EncodePoint;
     alias CodePoints = CodePoint[];
     
     Range source;
