@@ -48,6 +48,11 @@ unittest{
 }
 
 unittest{
+    static assert(isPointer!(const(int*)));
+    static assert(isPointer!(const(void*)));
+}
+
+unittest{
     static assert(isPointer!(isBoolean, bool*));
     static assert(isPointer!(isIntegral, int*));
     static assert(isPointer!(isIntegral, long*));
