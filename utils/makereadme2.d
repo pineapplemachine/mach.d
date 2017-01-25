@@ -6,7 +6,7 @@ private:
 
 import mach.text.ascii;
 import mach.io;
-import mach.io.file.sys : isfile;
+import mach.io.file.sys;
 import mach.range;
 import mach.text.utf;
 
@@ -21,6 +21,7 @@ immutable readmepaths = [
     "mach/math/ints",
     "mach/meta",
     "mach/range",
+    "mach/text",
     "mach/text/numeric",
     "mach/text/utf",
     "mach/text/utf/utf8",
@@ -52,7 +53,7 @@ void makereadme(in string path){
         ){
             if(entry.isfile && entry.name.tailis(".d")){
                 handlepath(entry.path);
-            }else if(entry.isdir && isfile(entry.path ~ "/package.d")){
+            }else if(entry.isdir && exists(entry.path ~ "/package.d")){
                 handlepath(entry.path ~ "/package.d");
             }
         }

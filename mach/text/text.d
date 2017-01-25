@@ -4,6 +4,18 @@ private:
 
 import mach.text.str : str, StrSettings;
 
+/++ Docs
+
+This module implements the `text` function, which converts all of its arguments
+to strings using `str` in `mach.text.str` and concatenates them.
+
++/
+
+unittest{ /// Example
+    assert(text("hello", ' ', "world") == "hello world");
+    assert(text("I would walk ", 1000, " miles") == "I would walk 1000 miles");
+}
+
 public:
 
 
@@ -18,8 +30,7 @@ auto text(StrSettings settings = StrSettings.Default, Args...)(Args args){
 
 
 
-version(unittest){
-    private:
+private version(unittest){
     import mach.test;
 }
 unittest{

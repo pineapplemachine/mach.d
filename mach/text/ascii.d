@@ -5,6 +5,36 @@ private:
 import mach.traits : isCharacter, validAsStringRange;
 import mach.range : map, asrange, asarray;
 
+/++ Docs
+
+This module implements various functions for operating upon ASCII-encoded
+strings and characters.
+
++/
+
+unittest{ /// Example
+    // Eagerly convert an ASCII character or string to upper case.
+    assert('x'.toupper == 'X');
+    assert("Hello".toupper == "HELLO");
+    // Eagerly convert an ASCII character or string to lower case.
+    assert('X'.tolower == 'x');
+    assert("Hello".tolower == "hello");
+}
+
+unittest{ /// Example
+    assert('A'.isascii); // Is a valid ASCII character
+    assert('a'.isalpha); // Is a–z or A–Z.
+    assert('X'.isupper); // Is A–Z.
+    assert('x'.islower); // Is a–z.
+    assert('e'.isvowel); // Is a, e, i, o, u, or y (case-insensitive)
+    assert('0'.isdigit); // Is 0–9.
+    assert('F'.ishexdigit); // Is 0–9, a–f, or A–F.
+    assert(';'.ispunctuation); // Is punctuation (excluding whitespace)
+    assert(' '.iswhitespace); // Is whitespace
+    assert('\0'.iscontrol); // Is a control character
+    assert('!'.isprintable); // Is a printable (non-control) character
+}
+
 public:
 
 
