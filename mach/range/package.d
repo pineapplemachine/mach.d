@@ -19,7 +19,7 @@ functionality.
 public:
 
 import mach.range.asarray : asarray;
-import mach.range.asrange : asrange, asindexrange;
+import mach.range.asrange : asrange, asindexrange, aspointerrange;
 import mach.range.associate : associate, aagroup, aadistribution;
 import mach.range.asstaticarray : asstaticarray;
 import mach.range.cache : cache;
