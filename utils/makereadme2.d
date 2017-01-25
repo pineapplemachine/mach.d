@@ -22,6 +22,7 @@ immutable readmepaths = [
     "mach/meta",
     "mach/range",
     "mach/text",
+    "mach/text/english",
     "mach/text/numeric",
     "mach/text/utf",
     "mach/text/utf/utf8",
@@ -41,7 +42,9 @@ void makereadme(in string path){
     dstring[][dstring] docs;
     ParseResult[] stats;
     void handlepath(in string path){
-        dstring source = cast(dstring) File.readfrom(path).utf8decode.asarray;
+        auto file = File.readfrom(path);
+        dstring source = cast(dstring) file.utf8decode.asarray;
+        file.close();
         auto result = parsemodule(path, source, docs);
         if(result.modulename.length) stats ~= result;
     }

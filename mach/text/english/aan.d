@@ -27,7 +27,7 @@ auto aan(bool allcaps = false)(string word){
         }else if(word[0] == 'h' || word[0] == 'H'){
             an = word[1].isvowel;
         }
-        return (an ? "an " : "a ") ~ word;
+        return an ? "an" : "a";
     }
 }
 
@@ -39,10 +39,10 @@ version(unittest){
 }
 unittest{
     tests("A and an", {
-        testeq("test".aan, "a test");
-        testeq("boat".aan, "a boat");
-        testeq("egg".aan, "an egg");
-        testeq("apple".aan, "an apple");
-        testeq("history".aan, "an history");
+        testeq("test".aan, "a");
+        testeq("boat".aan, "a");
+        testeq("egg".aan, "an");
+        testeq("apple".aan, "an");
+        testeq("history".aan, "an");
     });
 }

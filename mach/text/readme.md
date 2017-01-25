@@ -28,6 +28,23 @@ assert('!'.isprintable); // Is a printable (non-control) character
 ```
 
 
+# mach.text.english
+
+
+This package provides functions for performing common operations with
+English words.
+
+``` D
+// Get the name of a number in English
+assert(100.englishnumber == "one hundred");
+// Get the plural form of a singular English word
+assert("hello".plural == "hellos");
+// Get whether a noun would be preceded by "a" or "an"
+assert("world".aan == "a");
+assert("island".aan == "an");
+```
+
+
 # mach.text.numeric
 
 
