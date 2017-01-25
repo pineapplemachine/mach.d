@@ -8,8 +8,18 @@ public:
 
 
 
-enum Endian{
-    BigEndian, LittleEndian
+version(BigEndian){
+    enum Endian{
+        BigEndian,
+        LittleEndian,
+        Platform = BigEndian
+    }
+}else{
+    enum Endian{
+        BigEndian,
+        LittleEndian,
+        Platform = LittleEndian
+    }
 }
 
 
