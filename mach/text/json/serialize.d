@@ -3,7 +3,7 @@ module mach.text.json.serialize;
 private:
 
 import mach.meta : Aliases;
-import mach.traits : isIntegral, isFloatingPoint, isCharacter, isString;
+import mach.traits : isNumeric, isIntegral, isFloatingPoint, isCharacter, isString;
 import mach.traits : isBoolean, isArray, isStaticArray, isAssociativeArray;
 import mach.traits : ArrayElementType, ArrayKeyType, ArrayValueType;
 import mach.traits : isClass, isPointer, Unqual, isCharString, isDString;
@@ -11,10 +11,11 @@ import mach.traits : isEnumType, getenummember, enummembername, NoSuchEnumMember
 import mach.traits : hasAttribute;
 import mach.range : map, asarray;
 import mach.text.utf : utf8encode, utfdecode;
-import mach.text.numeric : parseint, writeint, parsefloat, writefloat;
+import mach.text.numeric : parseint, writeint, parsefloat, writefloat, NumberParseException;
 
 import mach.text.json.attributes;
 import mach.text.json.exceptions;
+import mach.text.json.literals;
 import mach.text.json.parse;
 import mach.text.json.value;
 
@@ -404,10 +405,12 @@ auto jsonserializearray(size_t maxdepth = DefaultMaxDepth, K, V)(
         alias tokey = k => cast(string)[k];
     }else static if(is(UK == dchar)){
         alias tokey = k => k.utf8encode.toString();
+    }else static if(is(UK == bool)){
+        alias tokey = k => k ? "true" : "false";
     }else static if(isIntegral!K){
         alias tokey = k => k.writeint;
     }else static if(isFloatingPoint!K){
-        alias tokey = k => k.writefloat;
+        alias tokey = k => k.writefloat!(JsonValue.EncodeFloatSettingsExtended);
     }else static if(isEnumType!K){
         alias tokey = k => k.enummembername;
     }else{
@@ -425,7 +428,8 @@ auto jsonserializearray(size_t maxdepth = DefaultMaxDepth, K, V)(
 /// Get an associative array of a particular type from a json object.
 auto jsondeserializearrayof(K, V)(in JsonValue value){
     if(value.type !is JsonValue.Type.Object){
-        throw new JsonDeserializationTypeException("associative array");
+        static const typeerror = new JsonDeserializationTypeException("associative array");
+        throw typeerror;
     }
     alias UK = Unqual!K;
     static if(is(UK == string)){
@@ -434,20 +438,48 @@ auto jsondeserializearrayof(K, V)(in JsonValue value){
         alias tokey = k => k.utfdecode.asarray;
     }else static if(is(UK == char)){
         alias tokey = (k){
-            if(k.length != 1) throw new JsonDeserializationValueException("character");
+            static const error = new JsonDeserializationValueException("character");
+            if(k.length != 1) throw error;
             return k[0];
         };
     }else static if(is(UK == dchar)){
         alias tokey = (k){
             auto str = k.utfdecode.asarray;
-            if(str.length != 1) throw new JsonDeserializationValueException("character");
+            static const error = new JsonDeserializationValueException("character");
+            if(str.length != 1) throw error;
             return str[0];
         };
+    }else static if(is(UK == bool)){
+        alias tokey = (k){
+            static const error = new JsonDeserializationValueException("boolean");
+            if(k == "true") return true;
+            else if(k == "false") return false;
+            else throw error;
+        };
     }else static if(isIntegral!K){
-        alias tokey = k => k.parseint!K;
-    // TODO: make parsefloat work
-    //}else static if(isFloatingPoint!K){
-    //    alias tokey = k => k.parsefloat;
+        alias tokey = (k){
+            try{
+                return k.parseint!K;
+            }catch(NumberParseException e){
+                throw new JsonDeserializationValueException("integer", e);
+            }
+        };
+    }else static if(isFloatingPoint!K){
+        alias tokey = (k){
+            if(k == NaNLiteral){
+                return K.nan;
+            }else if(k == PosInfLiteral){
+                return K.infinity;
+            }else if(k == NegInfLiteral){
+                return -K.infinity;
+            }else{
+                try{
+                    return k.parsefloat!K;
+                }catch(NumberParseException e){
+                    throw new JsonDeserializationValueException("float", e);
+                }
+            }
+        };
     }else static if(isEnumType!K){
         alias tokey = (k){
             try{
@@ -612,22 +644,46 @@ unittest{
             tests("Associative arrays", {
                 // TODO: More thoroughly test different key types
                 tests("String keys", {
-                    string[string] emptyaa;
+                    alias Array = string[string];
+                    Array emptyaa;
                     foreach(array; [emptyaa, ["a": "apple"], ["x": "x", "y": "y", "z": "z"]]){
                         auto s = array.jsonserialize;
                         testis(s.type, JsonValue.Type.Object);
                         testeq(s.length, array.length);
-                        string[string] d = s.jsondeserialize!(string[string]);
+                        Array d = s.jsondeserialize!Array;
+                        testeq(d, array);
+                    }
+                });
+                tests("Boolean keys", {
+                    alias Array = int[bool];
+                    Array emptyaa;
+                    foreach(array; [emptyaa, [false: 0], [true: 1, false: 2]]){
+                        auto s = array.jsonserialize;
+                        testis(s.type, JsonValue.Type.Object);
+                        testeq(s.length, array.length);
+                        Array d = s.jsondeserialize!Array;
                         testeq(d, array);
                     }
                 });
                 tests("Integer keys", {
-                    int[int] emptyaa;
+                    alias Array = int[int];
+                    Array emptyaa;
                     foreach(array; [emptyaa, [0:0], [0:1, 2:3, 4:5]]){
                         auto s = array.jsonserialize;
                         testis(s.type, JsonValue.Type.Object);
                         testeq(s.length, array.length);
-                        int[int] d = s.jsondeserialize!(int[int]);
+                        Array d = s.jsondeserialize!Array;
+                        testeq(d, array);
+                    }
+                });
+                tests("Float keys", {
+                    alias Array = string[double];
+                    Array emptyaa;
+                    foreach(array; [emptyaa, [0.0: "x"], [1.5: "y", 200: "z"]]){
+                        auto s = array.jsonserialize;
+                        testis(s.type, JsonValue.Type.Object);
+                        testeq(s.length, array.length);
+                        Array d = s.jsondeserialize!Array;
                         testeq(d, array);
                     }
                 });

@@ -2,6 +2,7 @@ module mach.text.json.parse;
 
 private:
 
+import mach.traits : isNumeric;
 import mach.text.utf : utf8decode, UTFDecodeException;
 import mach.math.floats : fcomposedec;
 import mach.math.ints : intfmaoverflow;
@@ -360,6 +361,11 @@ struct ParseNumberResult{
         this.integral = false;
         this.floatval = floatval;
         this.endpos = endpos;
+    }
+    
+    T opCast(T)() const if(isNumeric!T){
+        if(this.integral) return cast(T) this.integerval;
+        else return cast(T) this.floatval;
     }
 }
 
