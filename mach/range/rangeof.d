@@ -65,6 +65,12 @@ auto finiterangeof(T)(size_t length, T value){
     return FiniteSingularRangeOf!T(length, value);
 }
 
+/// Get an empty range with elements of the given type.
+auto emptyrangeof(T)(){
+    EmptyRangeOf!T range;
+    return range;
+}
+
 
 
 /// Element used by EmptyRangeOf type if no other type is provided.
