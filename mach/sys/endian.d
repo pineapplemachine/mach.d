@@ -38,8 +38,7 @@ T endianswap(T)(in T value) pure nothrow @nogc @trusted{
 
 
 
-version(unittest){
-    private:
+private version(unittest){
     import mach.test;
 }
 unittest{

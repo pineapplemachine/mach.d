@@ -659,6 +659,49 @@ mustthrow!AsStaticArrayError({
 ```
 
 
+## mach.range.bytecontent
+
+
+The `bytecontent` function can be used to produce a range which enumerates
+the bytes comprising the elements of some input iterable.
+The function accepts an optional template argument of the type `Endian` —
+implemented in `mach.sys.endian` — to indicate byte order of the produced
+range.
+If the byte order template argument isn't provided, then a little-endian
+range is produced by default.
+
+The range produced by `bytecontent` has elements of type `ubyte`.
+It is bidirectional when the input is bidirectional and has a `remaining`
+property.
+It supports `length` and `remaining` when the input supports them, as well
+as random access, slicing, and saving.
+
+If the input to `bytecontent` is an iterable with elements that are already
+ubytes, it will return its input as a range.
+If the input is an iterable with elements that are not ubytes, but are the
+same size as ubytes, it will return a range which maps the input's elements
+to values casted to `ubyte`.
+
+``` D
+import mach.range.compare : equals;
+ushort[] shorts = [0x1234, 0x5678];
+auto range = shorts.bytecontent!(Endian.LittleEndian);
+assert(range.equals([0x34, 0x12, 0x78, 0x56]));
+```
+
+
+The module also provides `bytecontentle` and `bytecontentbe` functions
+for convenience which are equivalent to `bytecontent!(Endian.LittleEndian)`
+and `bytecontent!(Endian.BigEndian)`, respectively.
+
+``` D
+import mach.range.compare : equals;
+ushort[] shorts = [0xabcd, 0x0123];
+assert(shorts.bytecontentbe.equals([0xab, 0xcd, 0x01, 0x23])); // Big endian
+assert(shorts.bytecontentle.equals([0xcd, 0xab, 0x23, 0x01])); // Little endian
+```
+
+
 ## mach.range.cache
 
 
