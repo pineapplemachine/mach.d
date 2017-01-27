@@ -27,7 +27,7 @@ It supports `length` and `remaining` when the input supports them, as well
 as random access, slicing, and saving.
 
 If the input to `bytecontent` is an iterable with elements that are already
-ubytes, it will return its input as a range.
+ubytes, it will simply return its input.
 If the input is an iterable with elements that are not ubytes, but are the
 same size as ubytes, it will return a range which maps the input's elements
 to values casted to `ubyte`.
@@ -70,8 +70,7 @@ import mach.sys.endian : Endian;
 auto bytecontent(Endian endian = Endian.LittleEndian, T)(auto ref T iter) if(validAsRange!T){
     alias Element = ElementType!T;
     static if(is(Unqual!Element == ubyte)){
-        // Behavior turns out funny if you can't rely on this function returning a range
-        return iter.asrange;
+        return iter;
     }else static if(Element.sizeof == ubyte.sizeof){
         return iter.map!(e => cast(ubyte) e);
     }else{
@@ -331,12 +330,23 @@ unittest{
             test(range.empty);
         });
         tests("Saving", {
-            ubyte[] array = [0, 1, 2, 3];
+            ushort[] array = [0x0123, 0x4567];
             auto range = array.bytecontent;
             auto saved = range.save;
             range.popFront();
-            testeq(range.front, 1);
-            testeq(saved.front, 0);
+            testeq(range.front, 0x01);
+            testeq(saved.front, 0x23);
+        });
+        tests("Byte input", {
+            ubyte[] array = [1, 2, 3];
+            test!equals(array.bytecontentbe, array);
+            test!equals(array.bytecontentle, array);
+        });
+        tests("Byte-like input", {
+            char[] array = ['a', 'b', 'c'];
+            test!equals(array.bytecontentbe, array);
+            test!equals(array.bytecontentle, array);
+            static assert(is(typeof(array.bytecontent.front) == ubyte));
         });
     });
 }

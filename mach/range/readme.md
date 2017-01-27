@@ -677,7 +677,7 @@ It supports `length` and `remaining` when the input supports them, as well
 as random access, slicing, and saving.
 
 If the input to `bytecontent` is an iterable with elements that are already
-ubytes, it will return its input as a range.
+ubytes, it will simply return its input.
 If the input is an iterable with elements that are not ubytes, but are the
 same size as ubytes, it will return a range which maps the input's elements
 to values casted to `ubyte`.
