@@ -3,7 +3,7 @@ module mach.types.rebindable;
 private:
 
 import mach.traits : Unqual;
-import mach.sys.memory : malloc, free, memcpy;
+import mach.sys.memory : malloc, memfree, memcopy;
 
 public:
 
@@ -57,20 +57,20 @@ struct RebindableType(T){
     this(T value) @trusted @nogc{
         this.boundvalue = malloc!T;
         version(unittest) alive++;
-        memcpy(this.boundvalue, &value, T.sizeof);
+        memcopy(this.boundvalue, &value, T.sizeof);
     }
     
     this(this) @trusted @nogc{
         if(this.boundvalue !is null){
             T* newptr = malloc!T;
             version(unittest) alive++;
-            memcpy(newptr, this.boundvalue, T.sizeof);
+            memcopy(newptr, this.boundvalue, T.sizeof);
             this.boundvalue = newptr;
         }
     }
     ~this() @trusted @nogc{
         if(this.boundvalue !is null){
-            free(this.boundvalue);
+            memfree(this.boundvalue);
             version(unittest) alive--;
         }
     }
@@ -97,7 +97,7 @@ struct RebindableType(T){
             this.boundvalue = malloc!T;
             version(unittest) alive++;
         }
-        memcpy(this.boundvalue, &value, T.sizeof);
+        memcopy(this.boundvalue, &value, T.sizeof);
     }
     
     auto ref opUnary(string op)() if(is(typeof({
