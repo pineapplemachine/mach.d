@@ -143,6 +143,79 @@ mustthrow!MedianEmptyInputError({
 ```
 
 
+## mach.math.numrange
+
+
+The `NumberRange` type represents some range of numbers spanning an inclusive
+lower bound and an exclusive higher bound.
+The `numrange` function can be used for convenience to acquire a `NumberRange`
+from arguments without having to explicitly specify their type.
+
+``` D
+auto range = numrange(0, 10);
+assert(range.low == 0);
+assert(range.high == 10);
+```
+
+
+Ranges are not required to be normalized, and may have their low bound be
+greater than their high bound.
+In cases like this, the `lower` and `higher` methods can be used to reliably
+acquire the actually lower and higher bounds.
+
+``` D
+auto range = numrange(10, 0);
+assert(range.low == 10);
+assert(range.high == 0);
+assert(range.lower == 0);
+assert(range.higher == 10);
+assert(range.alignment is range.Alignment.Inverted);
+```
+
+
+The `NumberRange` type implements a `length` method to get the positive
+difference between its low and high bounds and a `delta` method to get a signed
+difference of `high - low`.
+Its `overlaps` method can be used to determine whether one range overlaps
+another and `contains` used to determine whether one range entirely contains
+another.
+`contains` also accepts a number, and determines whether that number is within
+the range's bounds.
+
+The `contains` method is alternatively accessible via the `in` operator.
+
+``` D
+auto range = numrange(10, 15);
+assert(range.delta == 5);
+assert(range.length == 5);
+assert(range.overlaps(numrange(0, 20)));
+assert(numrange(11, 12) in range);
+assert(13 in range);
+assert(200 !in range);
+```
+
+
+A range (as in, an iterable type) can be acquired from a `NumberRange` via
+its `asrange` method.
+Ranges constructed from integral types allow `asrange` to be called without
+arguments, and the produced range enumerates the integers in the `NumberRange`.
+In all cases a step may be provided, and for non-integral types is not optional,
+determining what the difference between enumerated values should be.
+The first value of a range produced via `asrange` will always be the lower bound
+of the `NumberRange` and the last value will always be less than the higher
+bound.
+
+Note that a range produced from a `NumberRange` will always progress from
+lesser to greater numbers, regardless of whether the `NumberRange` was normal
+or inverted.
+
+``` D
+import mach.range.compare : equals;
+assert(numrange(0, 8).asrange.equals([0, 1, 2, 3, 4, 5, 6, 7])); // Implicit step
+assert(numrange(0, 8).asrange(3).equals([0, 3, 6])); // Explicit step
+```
+
+
 ## mach.math.round
 
 

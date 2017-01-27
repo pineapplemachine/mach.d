@@ -20,6 +20,7 @@ import mach.math.matrix4;
 import mach.math.mean;
 import mach.math.median;
 import mach.math.normalize;
+import mach.math.numrange;
 import mach.math.round;
 import mach.math.sign;
 import mach.math.vector2;
