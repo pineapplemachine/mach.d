@@ -5,7 +5,6 @@ private:
 import derelict.opengl3.gl;
 
 import mach.traits : isNumeric;
-import mach.misc.refcounter : RefCounter;
 import mach.math.vector2 : Vector2;
 import mach.math.box : Box;
 import mach.sdl.error : GLError;
@@ -16,8 +15,6 @@ import mach.sdl.graphics.surface : Surface;
 import mach.sdl.graphics.pixelformat : SDLPixelFormat = PixelFormat;
 import mach.sdl.graphics.vertex : Vertex, Vertexes, Vertexesf;
 
-import mach.io.log;
-
 public:
 
 import mach.sdl.glenum : TextureWrap, TextureFilter;
@@ -26,13 +23,7 @@ import mach.sdl.glenum : TextureMinFilter, TextureMagFilter;
 
 
 struct Texture{
-    
     alias Name = uint;
-    
-    /// Texture name reference counting
-    static RefCounter!Name refcounter; // TODO: Verify functionality
-    static size_t expirednames;
-    static size_t maxexpirednames = 16;
     
     Name name;
     uint width;
@@ -50,33 +41,36 @@ struct Texture{
         }
     `;
     
+    /// Necessary to keep ownership of texture names sane.
+    @disable this(this);
+    
+    /// Load a texture from a path.
     this(in string path, in bool mipmap = false){
         Surface surface = Surface(path);
         scope(exit) surface.free();
         this(surface, mipmap);
     }
+    
+    /// Create a texture from a surface.
     this(Surface surface, in bool mipmap = false){
-        log(surface.pixelformat.format);
         auto converted = surface.convert(SDLPixelFormat.Format.RGBA8888); // TODO: only convert when necessary
         scope(exit) converted.free();
         this(converted.pixels, converted.width, converted.height, mipmap, PixelsFormat.RGBA);
     }
+    
+    /// Create a texture given width, height, and raw pixel data.
+    /// (You probably won't be calling this one directly.)
     this(bool atomic = true, bool expire = true)(
         in void* pixels, int width, int height,
         in bool mipmap = false, PixelsFormat format = PixelsFormat.RGBA
     )in{
-        assert((width > 0) & (height > 0), "Invalid texture size.");
+        assert(width > 0 && height > 0, "Invalid texture size.");
     }body{
-        static if(expire){
-            if(expirednames > maxexpirednames) this.freeexpired();
-        }
-        
         this.width = width;
         this.height = height;
         this.format = format;
         
         glGenTextures(1, &this.name);
-        refcounter.increment(this.name);
         
         mixin(AtomicMethodMixin); // Binds the texture
         
@@ -90,30 +84,32 @@ struct Texture{
         if(mipmap) this.mipmap!false();
     }
     
+    /// Free the texture when it's no longer needed.
     ~this(){
-        if(this.name != 0) this.free();
+        this.free();
     }
     
-    this(this){
-        if(this.name != 0) refcounter.increment(this.name);
-    }
-    
+    /// Immediately free the texture data, if it hasn't already been freed.
     void free(){
         if(this.name != 0){
-            if(refcounter.decrement(this.name) == 0) expirednames++;
-            this.name = 0;
+            this.freenames(this.name);
         }
     }
-    
-    /// Freeing a texture only decrements a reference counter without actually
-    /// deallocating any memory. Once a significant number of textures names
-    /// have become expired, they are deallocated all at once by calling this.
-    static void freeexpired(){
-        refcounter.clean((in Name[] names){
-            // Silently ignores invalid names
-            glDeleteTextures(cast(int) names.length, names.ptr);
-        });
-        
+    /// Free many textures at once.
+    /// Resets the `name` attribute of the inputted textures to 0 to indicate
+    /// that they have been freed.
+    static void freemany(Texture*[] textures...){
+        Name[] names;
+        names.reserve(textures.length);
+        foreach(Texture* tex; textures){
+            names ~= tex.name;
+            tex.name = 0;
+        }
+        typeof(this).freenames(names);
+    }
+    /// Free some textures by name.
+    static void freenames(in Name[] names...){
+        if(names.length > 0) glDeleteTextures(cast(int) names.length, names.ptr);
     }
     
     /// Bind this texture; subsequent OpenGL calls will apply to this texture name.
@@ -167,6 +163,7 @@ struct Texture{
         glTexParameteri(TextureTarget.Texture2D, GL_GENERATE_MIPMAP, true);
     }
     
+    /// Get the size of the texture as a vector.
     @property Vector2!int size() const{
         return Vector2!int(this.width, this.height);
     }
