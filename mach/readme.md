@@ -20,10 +20,6 @@ Implements a variety of mathematical functionalities.
 
 Provides templates to be used for various compile-time computations.
 
-### mach.misc
-
-This package is for modules that don't nicely fit anywhere else.
-
 ### mach.range
 
 All sorts of ranges, higher-order functions, and related algorithms for dealing with data elegantly.
