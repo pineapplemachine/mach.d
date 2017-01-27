@@ -2,7 +2,9 @@ module mach.text.utf.combined;
 
 private:
 
-import mach.traits : isStringLike, ElementType;
+import mach.traits : isCharacter, isStringLike, ElementType;
+import mach.range.bytecontent : bytecontentbe, bytecontentle;
+import mach.text.utf.encodings;
 import mach.text.utf.utf8;
 import mach.text.utf.utf16;
 
@@ -13,21 +15,34 @@ or UTF-32 strings from arbitrary UTF-encoded inputs.
 `utf8encode` can be used to acquire a UTF-8 string, `utf16encode` a UTF-16
 string, and `utf32encode` a UTF-32 string.
 
-The `utfencode` alias can be used to acquire UTF-8 strings and the `utfdecode`
-alias can be used to acquire UTF-32 strings.
-
 +/
 
 unittest{ /// Example
     import mach.range.compare : equals;
-    // UTF-8 => UTF-8
-    assert("hello! ツ".utf8encode.equals("hello! ツ"));
-    // UTF-8 => UTF-16
-    assert("hello! ツ".utf16encode.equals("hello! ツ"w));
-    // UTF-8 => UTF-32
-    assert("hello! ツ".utfdecode.equals("hello! ツ"d));
-    // UTF-16 => UTF-32
-    assert("hello! ツ"w.utfdecode.equals("hello! ツ"d));
+    assert("hello! ツ".utf8encode.equals("hello! ツ")); // UTF-8 => UTF-8
+    assert("hello! ツ".utf16encode.equals("hello! ツ"w)); // UTF-8 => UTF-16
+    assert("hello! ツ".utf32encode.equals("hello! ツ"d)); // UTF-8 => UTF-32
+}
+
+/++ Docs
+
+The `utfdecode` function can be used to acquire a UTF-32 string from some
+UTF-encoded input.
+
+The `utfencode` function can be called without template arguments to encode
+a UTF-8 string, it can be called with a character type as a template argument
+to specify the encoding type (UTF-8 for `char`, UTF-16 for `wchar`, and
+UTF-32 for `dchar`), or it can be called with a member of the `UTFEncoding`
+enum as a template argument to specify the output encoding type.
+
++/
+
+unittest{
+    import mach.range.compare : equals;
+    assert("!!".utfdecode.equals("!!"d)); // UTF-8 => UTF-32
+    assert("!!"d.utfencode.equals("!!")); // UTF-32 => UTF-8
+    assert("!!".utfencode!wchar.equals("!!"w)); // UTF-8 => UTF-16
+    assert("!!"w.utfencode!(UTFEncoding.UTF32).equals("!!"d)); // UTF-16 => UTF-32
 }
 
 /++ Docs
@@ -42,7 +57,7 @@ To get an in-memory array from the output, a function such as `asarray` from
 
 unittest{ /// Example
     import mach.range.asarray : asarray;
-    dstring utf32 = "hello! ツ".utfdecode.asarray!(immutable dchar); // Decode UTF-8
+    dstring utf32 = "hello! ツ".utf8decode.asarray!(immutable dchar);
     assert(utf32 == "hello! ツ"d);
 }
 
@@ -55,11 +70,43 @@ import mach.text.utf.utf16 : UTF16EncodePoint, utf16decode;
 
 
 
-/// Get a string as encoded UTF-8.
-alias utfencode = utf8encode;
-
 /// Get a UTF-8, UTF-16, or UTF-32 string as decoded UTF-32.
 alias utfdecode = utf32encode;
+
+
+
+/// Get a UTF-8 encoded string from the input.
+auto utfencode(S)(auto ref S str) if(isStringLike!S){
+    return utf8encode(str);
+}
+
+/// When the first template argument is `char`, get a UTF-8 string.
+/// When the first template argument is `wchar`, get a UTF-16 string.
+/// When the first template argument is `dchar`, get a UTF-32 string.
+auto utfencode(Char, S)(auto ref S str) if(isStringLike!S && isCharacter!Char){
+    return utfencode!(UTFEncodingForChar!Char)(str);
+}
+
+/// Acquire a string of the specified encoding type.
+auto utfencode(UTFEncoding encoding, S)(auto ref S str) if(
+    isStringLike!S
+){
+    static if(encoding is UTFEncoding.UTF8){
+        return utf8encode(str);
+    }else static if(encoding is UTFEncoding.UTF16){
+        return utf16encode(str);
+    }else static if(encoding is UTFEncoding.UTF16BE){
+        return utf16encode(str).bytecontentbe;
+    }else static if(encoding is UTFEncoding.UTF16LE){
+        return utf16encode(str).bytecontentle;
+    }else static if(encoding is UTFEncoding.UTF32){
+        return utf32encode(str);
+    }else static if(encoding is UTFEncoding.UTF32BE){
+        return utf32encode(str).bytecontentbe;
+    }else static if(encoding is UTFEncoding.UTF32LE){
+        return utf32encode(str).bytecontentle;
+    }
+}
 
 
 
@@ -69,14 +116,14 @@ auto utf8encode(in dchar ch){
 }
 
 /// Given an input UTF-8, UTF-16, or UTF-32 string, get a UTF-8 string.
-auto utf8encode(T)(auto ref T iter) if(isStringLike!T){
-    enum size = ElementType!T.sizeof;
+auto utf8encode(S)(auto ref S str) if(isStringLike!S){
+    enum size = ElementType!S.sizeof;
     static if(size == 1){
-        return iter; // Already UTF-8 encoded
+        return str; // Already UTF-8 encoded
     }else static if(size == 2){
-        return iter.utf16decode.utf8encodestring; // UTF-16 encoded
+        return str.utf16decode.utf8encodestring; // UTF-16 encoded
     }else static if(size == 4){
-        return iter.utf8encodestring; /// UTF-32 encoded
+        return str.utf8encodestring; /// UTF-32 encoded
     }else{
         static assert(false, "Unrecognized string character type.");
     }
@@ -90,14 +137,14 @@ auto utf16encode(in dchar ch){
 }
 
 /// Given an input UTF-8, UTF-16, or UTF-32 string, get a UTF-16 string.
-auto utf16encode(T)(auto ref T iter) if(isStringLike!T){
-    enum size = ElementType!T.sizeof;
+auto utf16encode(S)(auto ref S str) if(isStringLike!S){
+    enum size = ElementType!S.sizeof;
     static if(size == 1){
-        return iter.utf8decode.utf16encodestring; // UTF-8 encoded
+        return str.utf8decode.utf16encodestring; // UTF-8 encoded
     }else static if(size == 2){
-        return iter; // Already UTF-16 encoded
+        return str; // Already UTF-16 encoded
     }else static if(size == 4){
-        return iter.utf16encodestring; /// UTF-32 encoded
+        return str.utf16encodestring; /// UTF-32 encoded
     }else{
         static assert(false, "Unrecognized string character type.");
     }
@@ -106,14 +153,14 @@ auto utf16encode(T)(auto ref T iter) if(isStringLike!T){
 
 
 /// Given an input UTF-8, UTF-16, or UTF-32 string, get a UTF-32 string.
-auto utf32encode(T)(auto ref T iter) if(isStringLike!T){
-    enum size = ElementType!T.sizeof;
+auto utf32encode(S)(auto ref S str) if(isStringLike!S){
+    enum size = ElementType!S.sizeof;
     static if(size == 1){
-        return iter.utf8decode; // UTF-8 encoded
+        return str.utf8decode; // UTF-8 encoded
     }else static if(size == 2){
-        return iter.utf16decode; // UTF-16 encoded
+        return str.utf16decode; // UTF-16 encoded
     }else static if(size == 4){
-        return iter; /// Already UTF-32 encoded
+        return str; /// Already UTF-32 encoded
     }else{
         static assert(false, "Unrecognized string character type.");
     }
@@ -149,4 +196,22 @@ unittest{ /// Encode UTF-32
     assert("!אツ😃".utfdecode.equals("!אツ😃"d));
     assert("!אツ😃"w.utfdecode.equals("!אツ😃"d));
     assert("!אツ😃"d.utfdecode.equals("!אツ😃"d));
+}
+
+unittest{ /// Encode UTF-16 BE & LE
+    assert("😃".utfencode!(UTFEncoding.UTF16BE).equals([0xd8, 0x3d, 0xde, 0x03]));
+    assert("😃".utfencode!(UTFEncoding.UTF16LE).equals([0x3d, 0xd8, 0x03, 0xde]));
+    assert("😃"w.utfencode!(UTFEncoding.UTF16BE).equals([0xd8, 0x3d, 0xde, 0x03]));
+    assert("😃"w.utfencode!(UTFEncoding.UTF16LE).equals([0x3d, 0xd8, 0x03, 0xde]));
+    assert("😃"d.utfencode!(UTFEncoding.UTF32BE).equals([0x00, 0x01, 0xf6, 0x03]));
+    assert("😃"d.utfencode!(UTFEncoding.UTF32LE).equals([0x03, 0xf6, 0x01, 0x00]));
+}
+
+unittest{ /// Encode UTF-32 BE & LE
+    assert("😃".utfencode!(UTFEncoding.UTF32BE).equals([0x00, 0x01, 0xf6, 0x03]));
+    assert("😃".utfencode!(UTFEncoding.UTF32LE).equals([0x03, 0xf6, 0x01, 0x00]));
+    assert("😃"w.utfencode!(UTFEncoding.UTF16BE).equals([0xd8, 0x3d, 0xde, 0x03]));
+    assert("😃"w.utfencode!(UTFEncoding.UTF16LE).equals([0x3d, 0xd8, 0x03, 0xde]));
+    assert("😃"d.utfencode!(UTFEncoding.UTF32BE).equals([0x00, 0x01, 0xf6, 0x03]));
+    assert("😃"d.utfencode!(UTFEncoding.UTF32LE).equals([0x03, 0xf6, 0x01, 0x00]));
 }

@@ -30,20 +30,22 @@ or UTF-32 strings from arbitrary UTF-encoded inputs.
 `utf8encode` can be used to acquire a UTF-8 string, `utf16encode` a UTF-16
 string, and `utf32encode` a UTF-32 string.
 
-The `utfencode` alias can be used to acquire UTF-8 strings and the `utfdecode`
-alias can be used to acquire UTF-32 strings.
-
 ``` D
 import mach.range.compare : equals;
-// UTF-8 => UTF-8
-assert("hello! ツ".utf8encode.equals("hello! ツ"));
-// UTF-8 => UTF-16
-assert("hello! ツ".utf16encode.equals("hello! ツ"w));
-// UTF-8 => UTF-32
-assert("hello! ツ".utfdecode.equals("hello! ツ"d));
-// UTF-16 => UTF-32
-assert("hello! ツ"w.utfdecode.equals("hello! ツ"d));
+assert("hello! ツ".utf8encode.equals("hello! ツ")); // UTF-8 => UTF-8
+assert("hello! ツ".utf16encode.equals("hello! ツ"w)); // UTF-8 => UTF-16
+assert("hello! ツ".utf32encode.equals("hello! ツ"d)); // UTF-8 => UTF-32
 ```
+
+
+The `utfdecode` function can be used to acquire a UTF-32 string from some
+UTF-encoded input.
+
+The `utfencode` function can be called without template arguments to encode
+a UTF-8 string, it can be called with a character type as a template argument
+to specify the encoding type (UTF-8 for `char`, UTF-16 for `wchar`, and
+UTF-32 for `dchar`), or it can be called with a member of the `UTFEncoding`
+enum as a template argument to specify the output encoding type.
 
 
 Note that if the input was not already encoded with the desired encoding type
@@ -54,7 +56,7 @@ To get an in-memory array from the output, a function such as `asarray` from
 
 ``` D
 import mach.range.asarray : asarray;
-dstring utf32 = "hello! ツ".utfdecode.asarray!(immutable dchar); // Decode UTF-8
+dstring utf32 = "hello! ツ".utf8decode.asarray!(immutable dchar);
 assert(utf32 == "hello! ツ"d);
 ```
 
