@@ -178,3 +178,17 @@ assert(round(-200.75) == -201);
 ```
 
 
+## mach.math.sign
+
+
+The `signof` function can be used to acquire the sign of a numeric input as
+a member of the `Sign` enum, whose members are `Sign.Positive`, `Sign.Negative`,
+and `Sign.Zero`.
+
+``` D
+assert(signof(1) is Sign.Positive);
+assert(signof(-1) is Sign.Negative);
+assert(signof(0) is Sign.Zero);
+```
+
+

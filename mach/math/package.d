@@ -21,5 +21,6 @@ import mach.math.mean;
 import mach.math.median;
 import mach.math.normalize;
 import mach.math.round;
+import mach.math.sign;
 import mach.math.vector2;
 import mach.math.vector3;
