@@ -72,7 +72,7 @@ auto bytecontent(Endian endian = Endian.LittleEndian, T)(auto ref T iter) if(val
     static if(is(Unqual!Element == ubyte)){
         return iter;
     }else static if(Element.sizeof == ubyte.sizeof){
-        return iter.map!(e => cast(ubyte) e);
+        return iter.map!(e => cast(immutable(ubyte)) e);
     }else{
         auto range = iter.asrange;
         return ByteContentRange!(endian, typeof(range))(range);
@@ -346,7 +346,8 @@ unittest{
             char[] array = ['a', 'b', 'c'];
             test!equals(array.bytecontentbe, array);
             test!equals(array.bytecontentle, array);
-            static assert(is(typeof(array.bytecontent.front) == ubyte));
+            ubyte front = array.bytecontent.front;
+            testeq(front, 'a');
         });
     });
 }
