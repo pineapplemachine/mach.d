@@ -22,6 +22,7 @@ import mach.traits.op;
 import mach.traits.parameters;
 import mach.traits.pointer;
 import mach.traits.primitives;
+import mach.traits.primitivesizes;
 import mach.traits.property;
 import mach.traits.qualifiers;
 import mach.traits.range;
