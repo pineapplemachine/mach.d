@@ -28,6 +28,21 @@ assert(intlte(int(-1), uint(0)));
 ```
 
 
+## mach.math.ints.intdiff
+
+
+The `intdiff` function returns the positive difference of two integers as an
+unsigned integer.
+For unsigned inputs this is a trivial operation but for signed inputs some
+extra logic is required to get the difference between values without causing
+integer overflow. (Hence the existence of this function.)
+
+``` D
+assert(intdiff(int.min, int.max) == uint.max);
+assert(intdiff(ulong.min, ulong.max) == ulong.max);
+```
+
+
 ## mach.math.ints.intproduct
 
 
