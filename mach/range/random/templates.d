@@ -16,60 +16,109 @@ enum isRNG(T) = (
 
 template RNGMixin(T){
     import mach.traits : isIntegral, isFloatingPoint, isNumeric, isUnsigned;
-    import mach.traits : isEnumType, getEnumLength, getenummember;
+    import mach.traits : isEnumType, getEnumLength, getenummember, Unsigned;
+    import mach.traits : SmallerType;
+    import mach.math : abs, intdiff, pow2d, round;
     
     static enum bool rng = true;
     
     // This arithmetic is hard if T is signed so please don't make T signed
     static if(isNumeric!T && isUnsigned!T){
-        /// Get the front of an RNG as a floating point number. Should be unbiased.
-        /// The range is inclusive.
-        As random(As)(in As low, in As high) if(isFloatingPoint!As){
-            return this.random!As(high - low) + low;
+        /// Get a random number of a given integral type.
+        As random(As)() if(isIntegral!As){
+            static if(As.sizeof <= T.sizeof){
+                scope(exit) this.popFront();
+                return cast(As) this.front;
+            }else{
+                alias Smaller = SmallerType!As;
+                static assert(As.sizeof == Smaller.sizeof * 2); // Verify assumption
+                enum shift = (As.sizeof - Smaller.sizeof) * 8;
+                return cast(As)(
+                    this.random!Smaller | (cast(As) this.random!Smaller << shift)
+                );
+            }
         }
         
-        /// ditto
-        As random(As)(in As high) if(isFloatingPoint!As){
+        /// Get a given number of random bits stored in the lower bits of
+        /// an unsigned integer.
+        auto randombits(uint bits)(){
+            static if(bits <= 32){
+                return this.random!uint & pow2d!bits;
+            }else static if(bits <= 64){
+                return this.random!ulong & pow2d!bits;
+            }else static if(bits <= 128 && is(ucent)){
+                return this.random!ucent & pow2d!bits;
+            }else{
+                static assert(false, "Too many bits to fit into a primitive.");
+            }
+        }
+        
+        /// Get a random boolean.
+        /// When the output of the PRNG algorithm is uniform, so is the choice
+        /// of true or false.
+        @property As random(As: bool)(){
+            scope(exit) this.popFront();
+            return (this.front & 1) != 0;
+        }
+        /// Get a random boolean, with a probability from 0 to 1 of outputting true.
+        /// If the input is <= 0, the function always returns false.
+        /// If the input is >= 1, the function always returns true.
+        @property As random(As: bool)(in double ptrue){
+            return this.random!double <= ptrue;
+        }
+        
+        /// Get a random float in the range [0, 1).
+        @property As random(As)() if(isFloatingPoint!As){
+            return this.random!ulong / (cast(double) ulong.max + 1);
+        }
+        /// Get a random float in the range [0, high).
+        @property As random(As)(in As high) if(isFloatingPoint!As){
             return this.random!As * high;
         }
-        
-        /// ditto
-        @property As random(As)() if(isFloatingPoint!As){
-            scope(exit) this.popFront();
-            return (cast(As) this.front) / (cast(As) T.max);
+        /// Get a random float in the range [low, high).
+        @property As random(As)(in As low, in As high) if(isFloatingPoint!As){
+            return this.random!As * (high - low) + low;
         }
         
-        /// Get the front of a RNG as an integer. Not guaranteed to be unbiased,
-        /// but in all but the most uncommon use cases it will be close enough
-        /// that it really doesn't matter.
-        As random(As)(in As low, in As high) if(
-            isIntegral!As && As.sizeof <= T.sizeof
-        ) in{
-            assert(high - low <= T.max);
-        }body{
-            scope(exit) this.popFront();
-            return cast(As)(low + this.front % (high - low));
+        /// Get a random integer in the range [0, high].
+        /// Favors uniformity over efficiency.
+        As random(As)(in As high) if(isIntegral!As){
+            return cast(As)(this.random!double * (cast(double) high + 1));
+        }
+        /// Get a random integer in the range [low, high].
+        /// Favors uniformity over efficiency.
+        As random(As)(in As low, in As high) if(isIntegral!As){
+            return cast(As)(this.random!double * (cast(double) high - low + 1) + cast(double) low);
         }
         
-        /// ditto
-        As random(As)(As high) if(
-            isIntegral!As && As.sizeof <= T.sizeof
-        ){
-            scope(exit) this.popFront();
-            return cast(As) (this.front % high);
+        /// Get a random integer in the range [0, high].
+        /// Favors efficiency over uniformity of output.
+        As fastrandom(As)(in As high) if(isIntegral!As){
+            static if(isUnsigned!As){
+                if(high == As.max) return this.random!As;
+                else return this.random!As % (high + 1);
+            }else{
+                immutable rand = this.random!As;
+                if(high == As.max){
+                    return rand == As.min ? 0 : abs(rand);
+                }else{
+                    return rand == As.min ? 0 : abs(rand) % (high + 1);
+                }
+            }
+        }
+        /// Get a random integer in the range [low, high].
+        /// Favors efficiency over uniformity of output.
+        As fastrandom(As)(in As low, in As high) if(isIntegral!As){
+            if(high == As.max && low == As.min) return this.random!As;
+            static if(isUnsigned!As){
+                return low + (this.random!As % (high - low + 1));
+            }else{
+                alias UAs = Unsigned!As;
+                return cast(As)(low + random!UAs(0, intdiff(high, low)));
+            }
         }
         
-        /// ditto
-        @property As random(As)() if(
-            isIntegral!As && As.sizeof <= T.sizeof
-        ){
-            scope(exit) this.popFront();
-            return cast(As) this.front; // Assumes overflow wraps around
-        }
-        
-        /// Get the front of an RNG as a member of an enum.
-        /// Not guaranteed to be unbiased, but should be close enough for almost
-        /// any use case.
+        /// Get a random member of an enum.
         As random(As)() if(isEnumType!As){
             scope(exit) this.popFront();
             return getenummember!As(this.random!size_t(getEnumLength!As));
@@ -97,12 +146,12 @@ unittest{
     static assert(!isRNG!(int[]));
     foreach(RNG; Aliases!(lcong, mersenne, xorshift)){
         auto rng = RNG();
-        Enum e = rng.random!Enum; // Enum
+        Enum e = rng.random!Enum;
         foreach(test; 0 .. 20){
             foreach(low; [1, 0, -1, -2, -3, -4]){
                 foreach(high; [2, 3, 4, 5, 6, 7, 8, 9]){
                     auto i = rng.random!int(low, high); // Signed int
-                    assert(i >= low && i < high);
+                    assert(i >= low && i <= high);
                     auto f = rng.random!double(low, high); // Float
                     assert(f >= low && f <= high);
                 }

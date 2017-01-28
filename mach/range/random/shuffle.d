@@ -57,7 +57,7 @@ auto shuffleeager(Iter, RNG)(Iter iter, RNG rng) if(canShuffle!(Iter, RNG)){
     }
     size_t i = 0;
     foreach(element; iter){
-        size_t j = rng.random!size_t(i + 1);
+        size_t j = rng.random!size_t(i);
         rng.popFront();
         if(j == i){
             static if(KnownLength) array[i] = element;
