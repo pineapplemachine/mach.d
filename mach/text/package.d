@@ -3,6 +3,7 @@ module mach.text;
 public:
 
 import mach.text.ascii;
+import mach.text.cstring;
 import mach.text.english;
 import mach.text.escape;
 import mach.text.html;
