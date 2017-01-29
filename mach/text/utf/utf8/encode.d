@@ -41,6 +41,7 @@ struct UTF8EncodePoint{
     }
     
     this(in dchar ch){
+        static const error = new UTFEncodeException();
         if(ch <= 0x7f){
             this.length = 1;
             this.data[0] = cast(char) ch;
@@ -49,6 +50,7 @@ struct UTF8EncodePoint{
             this.data[0] = cast(char)(0xc0 | (ch >> 6));
             this.data[1] = cast(char)(0x80 | (ch & 0x3f));
         }else if(ch <= 0xffff){
+            if(ch >= 0xd800 && ch <= 0xdfff) throw error;
             this.length = 3;
             this.data[0] = cast(char)(0xe0 | (ch >> 12));
             this.data[1] = cast(char)(0x80 | ((ch >> 6) & 0x3f));
@@ -60,7 +62,6 @@ struct UTF8EncodePoint{
             this.data[2] = cast(char)(0x80 | ((ch >> 6) & 0x3f));
             this.data[3] = cast(char)(0x80 | (ch & 0x3f));
         }else{
-            static const error = new UTFEncodeException();
             throw error;
         }
     }

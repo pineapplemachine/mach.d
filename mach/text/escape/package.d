@@ -8,8 +8,7 @@ import mach.text.escape.unescape;
 
 
 
-version(unittest){
-    private:
+private version(unittest){
     import mach.test;
     import mach.range : consume, equals, any;
     void CommonTests(in Escaper esc){
@@ -165,6 +164,7 @@ version(unittest){
         });
     }
 }
+
 unittest{
     tests("Escaper", {
         tests("Only \\x", {
@@ -204,5 +204,12 @@ unittest{
             CommonTests(dumb);
             testfail({dumb.escape("\x00");});
         });
+    });
+}
+
+unittest{
+    tests("Unescape UTF-16 surrogate pair", {
+        test!equals(Escaper.D.unescape(`\ud83d\ude03`), "😃");
+        testfail({Escaper.D.unescape(`\ud83d`);});
     });
 }

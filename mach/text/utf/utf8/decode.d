@@ -117,6 +117,7 @@ struct UTF8DecodeRange(Range) if(canUTF8DecodeRange!Range){
                     ((ch0 & 0x0f) << 12) | (ch1 << 6) | ch2
                 );
                 if(this.point < 0x0800) throw inverror;
+                if(this.point >= 0xd800 && this.point <= 0xdfff) throw inverror;
             }else if((ch0 & 0xf8) == 0xf0){
                 immutable ch1 = continuation();
                 immutable ch2 = continuation();

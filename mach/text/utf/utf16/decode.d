@@ -41,6 +41,16 @@ auto utf16decode(Iter)(auto ref Iter iter) if(canUTF16Decode!Iter){
 
 
 
+/// Given the two wchar members of a surrogate pair, get the encoded dchar.
+/// May throw a `UTFDecodeInvalidException` when the input is invalid.
+static dchar getutf16surrogate(in wchar first, in wchar second){
+    static const error = new UTFDecodeInvalidException("UTF-16");
+    if(second < 0xdc00 || second > 0xdfff) throw error;
+    return 0x10000 | ((first & 0x3ff) << 10) | (second & 0x3ff);
+}
+
+
+
 /// Iterates over unicode code points as indicated by the UTF-16 encoded
 /// contents of a range with wchar or ushort elements.
 struct UTF16DecodeRange(Range) if(canUTF16DecodeRange!Range){
@@ -99,11 +109,9 @@ struct UTF16DecodeRange(Range) if(canUTF16DecodeRange!Range){
                 this.point = ch0;
             }else if(ch0 <= 0xdbff){ // Surrogate pair
                 if(this.source.empty) throw eoferror;
-                immutable wchar ch1 = this.source.front;
-                if(ch1 < 0xdc00 || ch1 > 0xdfff) throw inverror;
+                this.point = getutf16surrogate(ch0, this.source.front);
                 this.source.popFront();
                 this.highindex++;
-                this.point = 0x10000 | ((ch0 & 0x3ff) << 10) | (ch1 & 0x3ff);
             }else{ // Invalid sequence
                 throw inverror;
             }

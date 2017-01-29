@@ -168,6 +168,14 @@ auto utf32encode(S)(auto ref S str) if(isStringLike!S){
 
 
 
+/// Determine whether the input is a valid unicode code point.
+/// TODO: Put this in mach.text.unicode
+bool unicodevalid(in dchar ch){
+    return ch <= 0x10ffff && (ch < 0xd800 || ch > 0xdfff);
+}
+
+
+
 private version(unittest){
     import mach.range.compare : equals;
 }

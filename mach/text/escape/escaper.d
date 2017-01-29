@@ -149,6 +149,7 @@ struct Escaper{
     /// For them, use `utf8escape` instead.
     /// Throws a CharEscapeException upon failure.
     string escape(in dchar ch) const{
+        static const error = new CharEscapeException();
         if(ch == this.escapechar){
             return [this.escapechar, this.escapechar];
         }else{
@@ -172,7 +173,7 @@ struct Escaper{
                 }else if(this.unprintable){
                     return [cast(char) ch];
                 }else{
-                    throw new CharEscapeException(ch);
+                    throw error;
                 }
             // Multiple-byte code point
             }else{
@@ -189,7 +190,7 @@ struct Escaper{
                 }else if(this.unprintable){
                     return cast(string) ch.utf8encode.chars;
                 }else{
-                    throw new CharEscapeException(ch);
+                    throw error;
                 }
             }
         }
@@ -224,7 +225,8 @@ struct Escaper{
                 }else if(this.unprintable){
                     return [cast(char) ch];
                 }else{
-                    throw new CharEscapeException(ch);
+                    static const error = new CharEscapeException();
+                    throw error;
                 }
             }
         }
