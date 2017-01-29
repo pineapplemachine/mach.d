@@ -121,7 +121,7 @@ template RNGMixin(T){
         /// Get a random member of an enum.
         As random(As)() if(isEnumType!As){
             scope(exit) this.popFront();
-            return getenummember!As(this.random!size_t(getEnumLength!As));
+            return getenummember!As(this.random!size_t(getEnumLength!As - 1));
         }
     }
 }
