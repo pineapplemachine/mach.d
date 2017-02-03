@@ -159,10 +159,10 @@ string NormalizedHapticPropertyMixin(string property, string attribute)(){
             this.effectdata.` ~ attribute ~ ` = value;
         }
         @property real ` ~ property ~ `() const{
-            return this.` ~ property ~ `raw.normalize;
+            return this.` ~ property ~ `raw.normalizescalar;
         }
         @property void ` ~ property ~ `(real value){
-            this.` ~ property ~ `raw = value.denormalize!(
+            this.` ~ property ~ `raw = value.denormalizescalar!(
                 typeof(this.` ~ property ~ `raw())
             );
         }

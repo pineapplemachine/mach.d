@@ -6,7 +6,7 @@ import derelict.sdl2.sdl;
 
 import std.string : fromStringz;
 import mach.traits : isSigned, isIntegral, isNumeric;
-import mach.math : normalize, denormalize;
+import mach.math : normalizescalar, denormalizescalar;
 import mach.sdl.error : SDLError;
 import mach.sdl.input.common : EventState;
 
@@ -92,11 +92,11 @@ struct Joystick{
     /// Joystick and controller axis positions are represented by signed shorts.
     /// This function can be used to normalize these values to a floating point
     /// from -1.0 to 1.0.
-    static real normalizeaxis(short value) pure @safe @nogc nothrow{
-        return normalize!real(value);
+    static double normalizeaxis(short value) pure @safe @nogc nothrow{
+        return normalizescalar!double(value);
     }
-    static short denormalizeaxis(real value) pure @safe @nogc nothrow{
-        return denormalize!short(value);
+    static short denormalizeaxis(double value) pure @safe @nogc nothrow{
+        return denormalizescalar!short(value);
     }
     
     /// Get the number of attached joystick devices.

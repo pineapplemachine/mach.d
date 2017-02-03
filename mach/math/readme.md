@@ -144,6 +144,24 @@ mustthrow!MedianEmptyInputError({
 ```
 
 
+## mach.math.normalizescalar
+
+
+The `normalizescalar` function can be used to convert an integer to a float
+in the range [-1, 1] (when signed) or [0, 1] (when unsigned).
+The `denormalizescalar` goes in the opposite direction and converts a float
+in the range [-1, 1] (for signed types) or [0, 1] (for unsigned) to an integral.
+For signed integers, -1.0 corresponds to `T.min`, 0.0 to `T(0)`, and +1.0 to `T.max`.
+For unsigned integers, 0.0 corresponds to `T(0)` and +1.0 to `T.max`.
+
+``` D
+assert(normalizescalar(int.max) == 1.0);
+assert(normalizescalar(int.min) == -1.0);
+assert(denormalizescalar!int(1.0) == int.max);
+assert(denormalizescalar!int(-1.0) == int.min);
+```
+
+
 ## mach.math.numrange
 
 

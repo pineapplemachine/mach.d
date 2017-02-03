@@ -3,7 +3,7 @@ module mach.sdl.haptic.effect;
 private:
 
 import derelict.sdl2.sdl;
-import mach.math : normalize, denormalize;
+import mach.math : normalizescalar, denormalizescalar;
 import mach.sdl.haptic.effecttype;
 import mach.sdl.haptic.mixins;
 import mach.sdl.haptic.direction;
@@ -53,13 +53,13 @@ struct HapticConstantEffect{
     }
     /// Get the strength of the effect as a floating point number
     /// from -1.0 to 1.0.
-    @property real level() const{
-        return this.levelraw.normalize;
+    @property double level() const{
+        return this.levelraw.normalizescalar;
     }
     /// Set the strength of the effect as a floating point number
     /// from -1.0 to 1.0.
-    @property void level(real level){
-        this.levelraw = level.denormalize!short;
+    @property void level(double level){
+        this.levelraw = level.denormalizescalar!short;
     }
 }
 
