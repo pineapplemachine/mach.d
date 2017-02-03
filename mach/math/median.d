@@ -23,6 +23,7 @@ unittest{ /// Example
 }
 
 unittest{ /// Example
+    import mach.error.mustthrow : mustthrow;
     mustthrow!MedianEmptyInputError({
         new int[0].median; // Can't calculate median with an empty input!
     });

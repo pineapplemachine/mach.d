@@ -137,6 +137,7 @@ assert([5, 2, 4, 1].median == 3);
 ```
 
 ``` D
+import mach.error.mustthrow : mustthrow;
 mustthrow!MedianEmptyInputError({
     new int[0].median; // Can't calculate median with an empty input!
 });
