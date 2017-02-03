@@ -283,8 +283,8 @@ struct NumberRangeRange(T) if(isNumeric!T){
         error.enforce(low, high, this);
     }body{
         return typeof(this)(Source(
-            this.source.lower + this.step * low,
-            this.source.lower + this.step * high
+            cast(T)(this.source.lower + this.step * low),
+            cast(T)(this.source.lower + this.step * high)
         ), this.step);
     }
     
