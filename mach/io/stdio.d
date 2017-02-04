@@ -76,11 +76,11 @@ struct stdio{
     
     /// Write some text to stderr.
     static void error(Args...)(Args args){
-        stderr.write(text(args));
+        static if(Args.length) stderr.write(text(args));
     }
     /// Write some text to stderr, terminated by a newline.
     static void errorln(Args...)(Args args){
-        stderr.write(text(args), '\n');
+        stderr.write(text(args, '\n'));
     }
     /// Flush stderr.
     static void flusherr(){
