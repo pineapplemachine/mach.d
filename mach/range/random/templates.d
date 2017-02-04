@@ -16,8 +16,8 @@ enum isRNG(T) = (
 
 template RNGMixin(T){
     import mach.traits : isIntegral, isFloatingPoint, isNumeric, isUnsigned;
-    import mach.traits : isEnumType, getEnumLength, getenummember, Unsigned;
-    import mach.traits : SmallerType;
+    import mach.traits : isCharacter, isEnumType, getEnumLength, getenummember;
+    import mach.traits : Unsigned, SmallerType;
     import mach.math : abs, intdiff, pow2d, round;
     
     static enum bool rng = true;
@@ -25,7 +25,7 @@ template RNGMixin(T){
     // This arithmetic is hard if T is signed so please don't make T signed
     static if(isNumeric!T && isUnsigned!T){
         /// Get a random number of a given integral type.
-        As random(As)() if(isIntegral!As){
+        As random(As)() if(isIntegral!As || isCharacter!As){
             static if(As.sizeof <= T.sizeof){
                 scope(exit) this.popFront();
                 return cast(As) this.front;
@@ -82,18 +82,18 @@ template RNGMixin(T){
         
         /// Get a random integer in the range [0, high].
         /// Favors uniformity over efficiency.
-        As random(As)(in As high) if(isIntegral!As){
+        As random(As)(in As high) if(isIntegral!As || isCharacter!As){
             return cast(As)(this.random!double * (cast(double) high + 1));
         }
         /// Get a random integer in the range [low, high].
         /// Favors uniformity over efficiency.
-        As random(As)(in As low, in As high) if(isIntegral!As){
+        As random(As)(in As low, in As high) if(isIntegral!As || isCharacter!As){
             return cast(As)(this.random!double * (cast(double) high - low + 1) + cast(double) low);
         }
         
         /// Get a random integer in the range [0, high].
         /// Favors efficiency over uniformity of output.
-        As fastrandom(As)(in As high) if(isIntegral!As){
+        As fastrandom(As)(in As high) if(isIntegral!As || isCharacter!As){
             static if(isUnsigned!As){
                 if(high == As.max) return this.random!As;
                 else return this.random!As % (high + 1);
@@ -108,7 +108,7 @@ template RNGMixin(T){
         }
         /// Get a random integer in the range [low, high].
         /// Favors efficiency over uniformity of output.
-        As fastrandom(As)(in As low, in As high) if(isIntegral!As){
+        As fastrandom(As)(in As low, in As high) if(isIntegral!As || isCharacter!As){
             if(high == As.max && low == As.min) return this.random!As;
             static if(isUnsigned!As){
                 return low + (this.random!As % (high - low + 1));
