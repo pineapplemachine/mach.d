@@ -46,16 +46,16 @@ static if(is(ucent)){
 alias IntegralTypes = Aliases!(SignedIntegralTypes, UnsignedIntegralTypes);
 
 /// An alias sequence of all floating point types.
-alias FloatTypes = Aliases!(float, double, real);
+alias FloatingPointTypes = Aliases!(float, double, real);
 
 /// An alias sequence of all signed numeric types.
-alias SignedTypes = Aliases!(SignedIntegralTypes, FloatTypes);
+alias SignedTypes = Aliases!(SignedIntegralTypes, FloatingPointTypes);
 
 /// An alias sequence of all unsigned numeric types.
 alias UnsignedTypes = UnsignedIntegralTypes;
 
 /// An alias sequence of all numeric types.
-alias NumericTypes = Aliases!(IntegralTypes, FloatTypes);
+alias NumericTypes = Aliases!(IntegralTypes, FloatingPointTypes);
 
 /// An alias sequence of all imaginary number types.
 alias ImaginaryTypes = Aliases!(ifloat, idouble, ireal);

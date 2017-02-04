@@ -181,7 +181,7 @@ string enumtostring(StrSettings settings = StrSettings.Default, T)(
 
 version(unittest){
     private:
-    import mach.traits : FloatTypes, IntegralTypes, isSigned;
+    import mach.traits : FloatingPointTypes, IntegralTypes, isSigned;
     import mach.meta : Aliases;
     alias Verbose = StrSettings.Verbose;
 }
@@ -203,7 +203,7 @@ unittest{
     assert(long(0).integertostring!Verbose == "long(0)");
 }
 unittest{
-    foreach(T; Aliases!(FloatTypes)){
+    foreach(T; Aliases!(FloatingPointTypes)){
         assert(T(0).floattostring == "0");
         assert(T(1.5).floattostring == "1.5");
         assert(T(5.25).floattostring == "5.25");
