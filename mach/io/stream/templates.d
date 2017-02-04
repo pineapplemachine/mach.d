@@ -2,7 +2,38 @@ module mach.io.stream.templates;
 
 private:
 
-//
+/++ Docs
+
+This module provides templates which can be used to determine whether a type is
+a stream and, if so, what operations it supports.
+
+`isStream` is true when either `isInputStream` or `isOutputStream` is true,
+or both.
+
+`isInputStream` is true when the type implements at least `eof` and `readbufferv`.
+It indicates whether a type represents a stream which can be read from.
+
+`isOutputStream` is true when the type implements at least `eof` and `writebufferb`.
+It indicates whether a type represents a stream which can be written to.
+
+`isIOStream` is true when the type is both an input and an output stream,
+implying it at least implements `eof`, `readbufferv`, and `writebufferv`.
+
+`isSeekStream` and `isTellStream` templates determine whether a type is a stream
+where position can be set and accessed, respectively, via the type's `position`
+property.
+
+`isClosingStream` determines whether `close` is a valid operation for a stream
+type. Closing streams should always be closed when they're no longer in use.
+
+`isInfiniteInputStream` and `isFiniteInputStream` can be used to determine
+whether a type is an input stream and whether it has a finite or an infinite
+amount of data available to be read.
+Finiteness is determined by whether the type has an `eof` property known at
+compile-time to be `false`, in the same way that a range type where
+`enum empty = false;` indicates an infinite range.
+
++/
 
 public:
 

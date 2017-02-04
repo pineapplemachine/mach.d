@@ -40,7 +40,7 @@ struct MemoryStream(bool mutable){
     size_t pos = 0;
     
     this(T)(T[] array, size_t pos = 0){
-        this(array.ptr, array.length * T.sizeof, pos);
+        this(array.ptr, array.length, pos);
     }
     this(T)(T* ptr, size_t memlength, size_t pos = 0){
         this.ptr = cast(ubyte*) ptr;
@@ -108,6 +108,7 @@ struct MemoryStream(bool mutable){
         this.pos = 0;
     }
     
+    // TODO: Endianness?
     size_t readbufferv(void* buffer, size_t size, size_t count) in{
         this.assertactive();
     }body{

@@ -2,7 +2,23 @@ module mach.io.stream.exceptions;
 
 private:
 
-//
+/++ Docs
+
+This module implements various exception classes that may be thrown when a
+stream operation fails.
+All of these exceptions inherit from the base `StreamException` class.
+
+A full list of implemented exception classes:
+`StreamException`,
+`StreamReadException`,
+`StreamWriteException`,
+`StreamSeekException`,
+`StreamTellException`,
+`StreamSkipException`,
+`StreamFlushException`,
+`StreamCloseException`.
+
++/
 
 public:
 

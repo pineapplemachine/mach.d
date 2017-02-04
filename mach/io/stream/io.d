@@ -6,6 +6,36 @@ import mach.traits : isIterable;
 import mach.io.stream.exceptions;
 import mach.io.stream.templates;
 
+/++ Docs
+
+Stream types support read and write operations via their `readbufferv` and
+`writebufferv` methods.
+This module implements a number of abstractions that allow reading from and
+writing to a stream in more abstract ways, using the `read` and `write`
+functions.
+
++/
+
+unittest{ /// Example
+    import mach.io.stream.memorystream : asstream;
+    // Acquire a stream based on an array
+    int[] array = [0, 1, 2, 3, 4, 5, 6];
+    auto stream = array.asstream;
+    // Read a single value at a time
+    assert(stream.read!int == 0);
+    assert(stream.read!int == 1);
+    // Read multiple values into an array
+    assert(stream.read!int(2) == [2, 3]);
+    // Write a single value at a time
+    stream.write!int(100);
+    assert(array == [0, 1, 2, 3, 100, 5, 6]);
+    // Write multiple values at once
+    stream.write!(int[])([200, 300]);
+    assert(array == [0, 1, 2, 3, 100, 200, 300]);
+    // No more data in the stream!
+    assert(stream.eof);
+}
+
 public:
 
 
@@ -29,7 +59,7 @@ size_t readbuffer(T, Stream)(auto ref Stream stream, T[] buffer) if(
 /// Read a single value of an arbitrary type from an input stream.
 /// Not an especially meaningful operation for anything other than primitives
 /// and structs.
-auto ref read(T, Stream)(auto ref Stream stream) if(isInputStream!Stream){
+auto read(T, Stream)(auto ref Stream stream) if(isInputStream!Stream){
     T value = void;
     auto result = stream.readbuffer!T(&value, 1);
     if(result != T.sizeof) throw new StreamReadException();
@@ -39,7 +69,7 @@ auto ref read(T, Stream)(auto ref Stream stream) if(isInputStream!Stream){
 /// Read the given number of values of an arbitrary type from an input stream.
 /// Not an especially meaningful operation for anything other than primitives
 /// and structs.
-auto ref read(T, Stream)(auto ref Stream stream, in size_t count) if(isInputStream!Stream){
+auto read(T, Stream)(auto ref Stream stream, in size_t count) if(isInputStream!Stream){
     T[] values;
     values.reserve(count);
     foreach(size_t i; 0 .. count) values ~= stream.read!T;
