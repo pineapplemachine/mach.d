@@ -27,6 +27,11 @@ auto xorshift(T = ulong)() if(canXorshift!T){
 }
 
 /// ditto
+auto xorshift(T = ulong)(T seed) if(canXorshift!T){
+    return XorshiftRange!T(seed);
+}
+
+/// ditto
 auto xorshift(T = ulong)(T[4] seeds) if(canXorshift!T){
     return XorshiftRange!T(seeds);
 }
@@ -54,6 +59,15 @@ struct XorshiftRange(T) if(canXorshift!T){
     
     this(typeof(this) range){
         this.seed!false(range.front, range.x, range.y, range.z);
+    }
+    /// For convenience, a construcor to allow initialization with a single
+    /// integral seed.
+    this(T seed){
+        this.seed(
+            seed, cast(T)(seed + T.max),
+            cast(T)(seed + seed),
+            cast(T)(T.max * T.max + seed)
+        );
     }
     this(T[4] seeds){
         this.seed(seeds);
