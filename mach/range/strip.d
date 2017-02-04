@@ -6,7 +6,7 @@ import mach.traits : isRange, isBidirectionalRange, ElementType;
 import mach.traits : isMutableRange, isMutableFrontRange, isMutableBackRange;
 import mach.traits : isSlicingRange, isRandomAccessRange, hasNumericLength;
 import mach.range.asrange : asrange, validAsRange, validAsBidirectionalRange;
-import mach.range.meta : MetaRangeMixin;
+import mach.range.meta : MetaRangeEmptyMixin;
 
 public:
 
@@ -115,9 +115,7 @@ auto MakeStripRange(bool front, bool back, alias pred, Range)(auto ref Range sou
 struct StripRange(alias pred, Range) if(canStripRange!(Range, pred)){
     alias isBidirectional = isBidirectionalRange!Range;
     
-    mixin MetaRangeMixin!(
-        Range, `source`, `Empty Save`
-    );
+    mixin MetaRangeEmptyMixin!Range;
     
     Range source;
     /// Number of elements stripped from the front of the source range
@@ -180,6 +178,8 @@ struct StripRange(alias pred, Range) if(canStripRange!(Range, pred)){
         alias opDollar = length;
     }
     
+    // TODO: Remaining
+    
     static if(isRandomAccessRange!Range){
         auto opIndex(size_t index) in{
             assert(index >= 0);
@@ -200,6 +200,14 @@ struct StripRange(alias pred, Range) if(canStripRange!(Range, pred)){
         }
     }
     
+    @property typeof(this) save(){
+        static if(isBidirectional){
+            return typeof(this)(this.source.save, this.strippedfront, this.strippedback);
+        }else{
+            return typeof(this)(this.source.save, this.strippedfront);
+        }
+    }
+    
     static if(isMutableRange!Range){
         enum bool mutable = true;
         static if(isMutableFrontRange!Range){
@@ -215,8 +223,6 @@ struct StripRange(alias pred, Range) if(canStripRange!(Range, pred)){
     }else{
         enum bool mutable = false;
     }
-    
-    // TODO: Slice
 }
 
 

@@ -5,9 +5,9 @@ private:
 import derelict.sdl2.sdl;
 import derelict.opengl3.gl;
 
-import std.string : toStringz, fromStringz;
 import mach.traits : isNumeric;
 import mach.range : filter, asarray;
+import mach.text.cstring : tocstring, fromcstring;
 import mach.sdl.error : SDLError, GLError;
 import mach.sdl.init : GLSettings;
 import mach.sdl.glenum : PixelsFormat, PixelsType, ColorBufferMode;
@@ -121,7 +121,7 @@ class Window{
     ){
         // Actually create the window
         this.window = SDL_CreateWindow(
-            toStringz(title),
+            title.tocstring,
             view.x, view.y, view.width, view.height,
             style | SDL_WINDOW_OPENGL
         );
@@ -253,12 +253,12 @@ class Window{
     }
     
     @property string title(){
-        return cast(string) fromStringz(SDL_GetWindowTitle(this.window)).dup;
+        return SDL_GetWindowTitle(this.window).fromcstring;
     }
     @property void title(string title){
-        // TODO: Make sure the string returned by toStringz doesn't get eaten
+        // TODO: Make sure the string returned by tocstring doesn't get eaten
         // by the GC and cause an error
-        SDL_SetWindowTitle(this.window, toStringz(title));
+        SDL_SetWindowTitle(this.window, title.tocstring);
     }
     
     @property void icon(Surface icon){

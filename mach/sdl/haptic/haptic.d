@@ -4,7 +4,7 @@ private:
 
 import derelict.sdl2.sdl;
 
-import std.string : fromStringz;
+import mach.string.cstring : fromcstring;
 import mach.sdl.error : SDLError;
 import mach.sdl.input.joystick;
 import mach.sdl.input.controller;
@@ -78,7 +78,7 @@ struct Haptic{
     string devicename(DeviceIndex index){
         auto result = SDL_HapticName(index);
         if(result is null) throw new SDLError("Failed to get haptic device name.");
-        return cast(string) fromStringz(result);
+        return result.fromcstring;
     }
     /// ditto
     @property string name(){

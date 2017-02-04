@@ -4,8 +4,8 @@ private:
 
 import derelict.sdl2.types;
 import derelict.sdl2.functions : SDL_free;
+import mach.text.cstring : fromcstring;
 import mach.sdl.input.event.mixins;
-import std.string : fromStringz;
 
 public:
 
@@ -22,7 +22,7 @@ struct DropFileEvent{
     }
     /// Get the path to the file dropped.
     @property string path() const{
-        return cast(string) fromStringz(this.eventdata.file);
+        return this.eventdata.file.fromcstring;
     }
     /// TODO: What's the best way to allocate and assign a file path?
 }

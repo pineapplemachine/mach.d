@@ -3,7 +3,7 @@ module mach.sdl.input.keycode;
 private:
 
 import derelict.sdl2.sdl;
-import std.string : fromStringz;
+import mach.text.cstring : fromcstring;
 
 public:
 
@@ -29,30 +29,20 @@ ScanCode scancode(in KeyCode keycode){
 /// are not always unique per code, and some codes have no names. (In which case
 /// the function will return an empty string.)
 string name(in KeyCode code){
-    return code.transientname.dup;
+    return SDL_GetKeyName(cast(SDL_Keycode) code).fromcstring;
 }
 /// Get the name of a scancode. Names sometimes differ between platforms, names
 /// are not always unique per code, and some codes have no names. (In which case
 /// the function will return an empty string.)
 string name(in ScanCode code){
-    return code.transientname.dup;
-}
-
-/// Get the name of a keycode.
-/// Remains valid at least until the next call to SDL_GetKeyName.
-string transientname(in KeyCode code){
-    return cast(string) fromStringz(SDL_GetKeyName(cast(SDL_Keycode) code));
-}
-/// Get the name of a scancode.
-/// Remains valid at least until the next call to SDL_GetScancodeName.
-string transientname(in ScanCode code){
-    return cast(string) fromStringz(SDL_GetScancodeName(cast(SDL_Scancode) code));
+    return SDL_GetScancodeName(cast(SDL_Scancode) code).fromcstring;
 }
 
 
 
-// I am conspicuously neglecting to include wrappers for SDL_GetScancodeFromName
-// and SDL_GetKeyFromName because I think you'd have to be an idiot to use them.
+// Please note that I am conspicuously neglecting to include wrappers for
+// SDL_GetScancodeFromName and SDL_GetKeyFromName because I think you'd have
+// to be an idiot to use them.
 
 
 

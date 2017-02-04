@@ -2,9 +2,10 @@ module mach.io.file.traverse;
 
 private:
 
-import std.internal.cstring : tempCString;
 import mach.error : errno, ErrnoException, SysErrorException;
-import mach.text : text;
+import mach.text.cstring : tocstring, fromcstring;
+import mach.text.utf : utf8encode;
+import mach.range.asarray : asarray;
 import mach.io.file.attributes : Attributes;
 import mach.io.file.common;
 import mach.io.file.exceptions;
@@ -17,7 +18,7 @@ public:
 class FileListDirException: FileException{
     string path;
     this(string path, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
-        super(text("Failure listing files in directory \"", path, "\"."), next, line, file);
+        super("Failure listing files in directory \"" ~ path ~ "\".", next, line, file);
         this.path = path;
     }
 }
@@ -89,9 +90,7 @@ struct ListDirRange{
             }
             
             @property string name() const{
-                import mach.range : until, asarray;
-                import mach.text.utf : utfencode;
-                return cast(string) this.finddata.cFileName.until!false(0).utfencode.asarray;
+                return this.finddata.cFileName.ptr.fromcstring.utf8encode.asarray!(immutable char);
             }
             @property string path() const{
                 return this.listpath ~ "/" ~ this.name;
@@ -111,7 +110,7 @@ struct ListDirRange{
         
         this(string path){
             this.path = path;
-            this.handle = FindFirstFileW((path ~ "\\*.*").tempCString!FSChar(), &this.finddata);
+            this.handle = FindFirstFileW((path ~ "\\*.*").tocstring!wchar, &this.finddata);
             if(this.handle == INVALID_HANDLE_VALUE){
                 throw new FileListDirException(path, new SysErrorException);
             }
@@ -139,7 +138,6 @@ struct ListDirRange{
         }
     }else{
         import core.sys.posix.dirent;
-        import std.string : fromStringz;
         
         DIR* handle;
         dirent* current;
@@ -160,7 +158,7 @@ struct ListDirRange{
                     // Optimization available on most posix platforms
                     this.entryname = entry.d_name[0 .. entry.d_namlen].idup;
                 }else{
-                    this.entryname = fromStringz(entry.d_name);
+                    this.entryname = entry.d_name.fromcstring;
                 }
             }
             
@@ -191,7 +189,7 @@ struct ListDirRange{
         
         this(string path){
             this.path = path;
-            this.handle = opendir(path.tempCString);
+            this.handle = opendir(path.tocstring!char);
             if(this.handle is null){
                 throw new FileListDirException(path, new ErrnoException);
             }else{
@@ -210,7 +208,7 @@ struct ListDirRange{
         }
         private void nextFront() in{assert(this.handle !is null);} body{
             // According to readdir docs, setting errno and checking after the
-            // readdir call is the only way to reliably distinguish between eof
+            // readdir call is the only way to reliably distinguish between EOF
             // and an an error having occurred, when readdir returns null.
             errno = 0;
             this.current = readdir(this.handle);

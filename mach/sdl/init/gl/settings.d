@@ -4,7 +4,7 @@ private:
 
 import derelict.sdl2.sdl;
 
-import std.string : fromStringz;
+import mach.text.cstring : fromcstring;
 import mach.sdl.error : GLError;
 import mach.sdl.init.gl.versions;
 
@@ -60,7 +60,7 @@ struct GLSettings {
     
     static void apply(int attribute, int value){
         if(SDL_GL_SetAttribute(attribute, value) != 0){
-            throw new GLAttributeError(cast(string) fromStringz(SDL_GetError()));
+            throw new GLAttributeError(SDL_GetError().fromcstring);
         }
     }
     void apply() const{

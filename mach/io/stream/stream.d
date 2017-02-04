@@ -28,20 +28,6 @@ enum bool isIOStream(T) = isInputStream!T && isOutputStream!T;
 
 
 
-/// Convenience mixin for stream interfaces.
-static string StreamSupportMixin(string[] supported...){
-    import std.string : join;
-    import std.algorithm : map, canFind;
-    static immutable string[] SUPPORT_OPTIONS = [
-        "haseof", "haslength", "hasposition", "canseek", "canreset"
-    ];
-    return join(
-        map!((support) => ("static enum bool " ~ support ~ " = " ~ (
-            supported.canFind(support) ? "true" : "false"
-        ) ~ ";"))(SUPPORT_OPTIONS)
-    );
-}
-
 /// A common streaming interface for interacting with different forms of storage.
 interface Stream{
     /// Is eof a meaningful operation for this stream?

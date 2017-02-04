@@ -4,9 +4,9 @@ private:
 
 import derelict.sdl2.sdl;
 
-import std.string : fromStringz;
 import mach.traits : isSigned, isIntegral, isNumeric;
 import mach.math : normalizescalar, denormalizescalar;
+import mach.text.cstring : fromcstring;
 import mach.sdl.error : SDLError;
 import mach.sdl.input.common : EventState;
 
@@ -123,13 +123,13 @@ struct Joystick{
     static string name(DeviceIndex index){
         auto name = SDL_JoystickNameForIndex(index);
         if(name is null) throw new SDLError("Failed to get joystick name.");
-        return cast(string) fromStringz(name).dup;
+        return name.fromcstring;
     }
     /// Get the name of an opened joystick.
     string name(){
         auto name = SDL_JoystickName(this.joy);
         if(name is null) throw new SDLError("Failed to get joystick name.");
-        return cast(string) fromStringz(name).dup;
+        return name.fromcstring;
     }
     
     /// Get the GUID of a joystick given its device index.

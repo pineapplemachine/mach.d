@@ -7,7 +7,7 @@ import derelict.sdl2.types;
 
 import core.stdc.config : c_long;
 
-import std.string : fromStringz, toStringz;
+import mach.string.cstring : tocstring, fromcstring;
 import mach.math : Vector2;
 import mach.sdl.graphics.color;
 import mach.sdl.graphics.surface;
@@ -44,7 +44,7 @@ struct Font{
         this.font = font;
     }
     this(string path, int size, c_long index = 0){
-        this.font = TTF_OpenFontIndex(toStringz(path), size, index);
+        this.font = TTF_OpenFontIndex(path.tocstring, size, index);
         if(this.font is null) throw new SDLError("Failed to load font from path \"" ~ path ~ "\".");
     }
     
@@ -135,12 +135,12 @@ struct Font{
     /// Get the font face family name if available, or null if not.
     /// https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_35.html
     @property string familyname() in{assert(this.font !is null);} body{
-        return cast(string) fromStringz(TTF_FontFaceFamilyName(this.font));
+        return TTF_FontFaceFamilyName(this.font).fromcstring;
     }
     /// Get the font face style name if available, or null if not.
     /// https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_36.html
     @property string stylename() in{assert(this.font !is null);} body{
-        return cast(string) fromStringz(TTF_FontFaceStyleName(this.font));
+        return TTF_FontFaceStyleName(this.font).fromcstring;
     }
     
     /// https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_37.html
@@ -162,10 +162,10 @@ struct Font{
 
     /// Get the width of some UTF8 text if it were to be rendered.
     /// https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_40.html
-    auto textwidth(string text) in{assert(this.font !is null);} body{
+    auto textwidth(in string text) in{assert(this.font !is null);} body{
         if(text !is null){
             int width;
-            auto result = TTF_SizeUTF8(this.font, toStringz(text), &width, null);
+            auto result = TTF_SizeUTF8(this.font, text.tocstring, &width, null);
             if(result != 0) throw new SDLError("Failed to get text width.");
             return width;
         }else{
@@ -175,10 +175,10 @@ struct Font{
     /// Get the size of some UTF8 text if it were to be rendered.
     /// Height will always be the same as the font object's height property.
     /// https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_40.html
-    auto textsize(string text) in{assert(this.font !is null);} body{
+    auto textsize(in string text) in{assert(this.font !is null);} body{
         if(text !is null){
             Vector2!int size;
-            auto result = TTF_SizeUTF8(this.font, toStringz(text), &size.x, &size.y);
+            auto result = TTF_SizeUTF8(this.font, text.tocstring, &size.x, &size.y);
             if(result != 0) throw new SDLError("Failed to get text size.");
             return size;
         }else{
@@ -189,12 +189,12 @@ struct Font{
     /// Returns a surface with the given text cheaply drawn onto it.
     /// The background of the surface will be transparent.
     /// https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_44.html
-    auto rendertextsolid(C)(C foreground, string text) if(isColor!C) in{
+    auto rendertextsolid(C)(C foreground, in string text) if(isColor!C) in{
         assert(this.font !is null);
         assert(text !is null, "Can't render null string.");
     }body{
         auto surface = TTF_RenderUTF8_Solid(
-            this.font, toStringz(text), cast(SDL_Color) foreground
+            this.font, text.tocstring, cast(SDL_Color) foreground
         );
         if(surface is null) throw new SDLError("Failed to render text.");
         return Surface(surface);
@@ -202,14 +202,14 @@ struct Font{
     /// Returns a surface with the given text drawn onto it.
     /// The background will be of the given color.
     /// https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_48.html
-    auto rendertextshaded(C0, C1)(C0 foreground, C1 background, string text) if(
+    auto rendertextshaded(C0, C1)(C0 foreground, C1 background, in string text) if(
         isColor!C0 && isColor!C1
     )in{
         assert(this.font !is null);
         assert(text !is null, "Can't render null string.");
     }body{
         auto surface = TTF_RenderUTF8_Shaded(
-            this.font, toStringz(text), cast(SDL_Color) foreground
+            this.font, text.tocstring, cast(SDL_Color) foreground
         );
         if(surface is null) throw new SDLError("Failed to render text.");
         return Surface(surface);
@@ -217,12 +217,12 @@ struct Font{
     /// Returns a surface with the given text expensively drawn onto it.
     /// The background of the surface will be transparent.
     /// https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_52.html
-    auto rendertextblended(C)(C foreground, string text) if(isColor!C) in{
+    auto rendertextblended(C)(C foreground, in string text) if(isColor!C) in{
         assert(this.font !is null);
         assert(text !is null, "Can't render null string.");
     }body{
         auto surface = TTF_RenderUTF8_Blended(
-            this.font, toStringz(text), cast(SDL_Color) foreground
+            this.font, text.tocstring, cast(SDL_Color) foreground
         );
         if(surface is null) throw new SDLError("Failed to render text.");
         return Surface(surface);

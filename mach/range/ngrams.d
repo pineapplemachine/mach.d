@@ -8,7 +8,7 @@ import mach.traits : isSlicingRange, isSavingRange;
 import mach.range.asrange : asrange, validAsRange;
 import mach.range.asstaticarray : asstaticarray;
 import mach.range.rangeof : EmptyRangeOf;
-import mach.range.meta : MetaRangeMixin;
+import mach.range.meta : MetaRangeEmptyMixin;
 
 /++ Docs
 
@@ -83,7 +83,7 @@ struct NgramRange(Range, size_t size) if(size > 0 && canNgramRange!Range){
     alias Element = ElementType!Range;
     alias History = Element[];
     
-    mixin MetaRangeMixin!(Range, `source`, `Empty`);
+    mixin MetaRangeEmptyMixin!Range;
     
     Range source;
     History history;

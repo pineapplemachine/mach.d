@@ -5,12 +5,11 @@ private:
 import derelict.sdl2.sdl;
 import derelict.sdl2.image;
 
-import std.string : toStringz;
-
-import mach.sdl.error : SDLError;
-import mach.sdl.init.sdl : SDL;
+import mach.text.cstring : tocstring;
 import mach.math.box : Box;
 import mach.math.vector2 : Vector2;
+import mach.sdl.error : SDLError;
+import mach.sdl.init.sdl : SDL;
 import mach.sdl.graphics.color : Color;
 import mach.sdl.graphics.pixelformat : PixelFormat;
 import mach.sdl.graphics.mask : Mask;
@@ -40,7 +39,7 @@ private auto loadsurface(in string path){
     if(!SDL.loaded.image) throw new SDLError(
         "Failed to load image \"" ~ path ~ "\" because image libraries have not been loaded."
     );
-    SDL_Surface* image = IMG_Load(toStringz(path));
+    SDL_Surface* image = IMG_Load(path.tocstring);
     if(image is null) throw new SDLError(
         "Failed to load image \"" ~ path ~ "\"."
     );
@@ -195,7 +194,7 @@ struct Surface{
     }
     /// Save the surface to an image file.
     void save(in string path, in SaveFormat format = SaveFormat.PNG){
-        if(format(this.surface, toStringz(path)) != 0){
+        if(format(this.surface, path.tocstring) != 0){
             throw new SDLError("Failed to save surface.");
         }
     }

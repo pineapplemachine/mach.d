@@ -169,14 +169,14 @@ template RelativePositionEventMixin(string xattr = `dx`, string yattr = `dy`){
 
 /// For events including text data.
 template TextEventMixin(){
-    import std.string : fromStringz;
+    import mach.text.cstring : fromcstring;
     /// All text events also include window data.
     mixin WindowEventMixin;
     /// The size limit of event text.
     static enum TextSize = typeof(this.eventdata).text.length;
     /// Get the text associated with the event.
     @property string text() const{
-        return cast(string) fromStringz(this.eventdata.text.ptr);
+        return this.eventdata.text.ptr.fromcstring;
     }
     /// Set the text associated with the event.
     @property void text(string text) in{assert(text.length < TextSize);} body{

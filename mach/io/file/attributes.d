@@ -6,10 +6,9 @@ version(Windows){
     import core.sys.windows.winbase : GetFileAttributesW;
     import core.sys.windows.windows : DWORD;
     import core.sys.windows.winnt;
+    import mach.text.cstring : tocstring;
+    import mach.io.file.common;
 }
-
-import std.internal.cstring : tempCString;
-import mach.io.file.common;
 
 public:
 
@@ -23,7 +22,7 @@ version(Windows){
         Attr attr;
         
         this(string path){
-            this(GetFileAttributesW(path.tempCString!FSChar()));
+            this(GetFileAttributesW(path.tocstring!wchar));
         }
         this(Attr attr){
             this.attr = attr;

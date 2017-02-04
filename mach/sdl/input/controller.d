@@ -4,7 +4,7 @@ private:
 
 import derelict.sdl2.sdl;
 
-import std.string : fromStringz, toStringz;
+import mach.text.cstring : tocstring, fromcstring;
 import mach.sdl.error : SDLError;
 import mach.sdl.input.common : EventState;
 import mach.sdl.input.joystick;
@@ -72,13 +72,13 @@ struct Controller{
     
     /// https://wiki.libsdl.org/SDL_GameControllerAddMapping
     auto addmapping(string mapping){
-        auto result = SDL_GameControllerAddMapping(toStringz(mapping));
+        auto result = SDL_GameControllerAddMapping(mapping.tocstring);
         if(result == -1) throw new SDLError("Failed to add controller mapping.");
         return result;
     }
     /// https://wiki.libsdl.org/SDL_GameControllerAddMappingsFromFile
     auto addmappings(string path){
-        auto result = SDL_GameControllerAddMappingsFromFile(toStringz(path));
+        auto result = SDL_GameControllerAddMappingsFromFile(path.tocstring);
         if(result == -1) throw new SDLError("Failed to add controller mappings.");
         return result;
     }
@@ -100,13 +100,13 @@ struct Controller{
     static string name(DeviceIndex index){
         auto name = SDL_GameControllerNameForIndex(index);
         if(name is null) throw new SDLError("Failed to get controller name.");
-        return cast(string) fromStringz(name).dup;
+        return name.fromcstring;
     }
     /// Get the name of an opened controller.
     string name(){
         auto name = SDL_GameControllerName(this.ctrl);
         if(name is null) throw new SDLError("Failed to get controller name.");
-        return cast(string) fromStringz(name).dup;
+        return name.fromcstring;
     }
     
     /// Get the joystick instance ID of an open controller.
