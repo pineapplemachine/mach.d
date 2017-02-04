@@ -4,13 +4,20 @@ private:
 
 import core.stdc.stdio : FILE;
 import core.stdc.stdio : SEEK_CUR, SEEK_END, SEEK_SET;
-import std.internal.cstring : tempCString;
+import mach.traits : isString;
 import mach.error : ErrnoException, SysErrorException;
-import mach.text : text;
+import mach.text.cstring : tocstring;
 import mach.io.file.attributes : Attributes;
 import mach.io.file.stat : Stat;
 import mach.io.file.common;
 import mach.io.file.exceptions;
+
+version(Windows){
+    extern (C) nothrow @nogc FILE* _wfopen(in wchar* filename, in wchar* mode);
+}
+version(CRuntime_Microsoft){
+    extern(C) @nogc nothrow int _fseeki64(FileHandle, long, int);
+}
 
 public:
 
@@ -18,9 +25,6 @@ public:
 
 version(CRuntime_Microsoft){
     alias off_t = long;
-    extern(C){
-        int _fseeki64(FileHandle, long, int) @nogc nothrow;
-    }
 }else version(Windows){
     alias off_t = int;
 }else version(Posix){
@@ -61,15 +65,20 @@ void fseek(FileHandle file, long offset, Seek origin = Seek.Set){
 
 
 
-auto fopen(string path, in char[] mode = "rb"){
+auto fopen(Path)(auto ref Path path, in char[] mode = "rb") if(isString!Path){
+    auto pathz = path.tocstring!FSChar;
     version(Windows){
-        import core.stdc.stdio : cfopen = fopen;
+        // Get mode as a null-terminated wstring, but don't worry about encoding
+        immutable(wchar)[] modez;
+        modez.reserve(mode.length + 1);
+        foreach(const ch; mode) modez ~= ch;
+        modez ~= wchar(0);
+        auto filehandle = _wfopen(pathz, modez.ptr);
     }else version(Posix){
         import core.sys.posix.stdio : cfopen = fopen;
+        const(char)[] modez = mode ~ '\0';
+        auto filehandle = cfopen(pathz, modez.ptr);
     }
-    auto cpath = path.tempCString!char();
-    auto cmode = mode.tempCString!char();
-    auto filehandle = cfopen(cpath, cmode);
     if(filehandle is null){
         throw new FileOpenException(path, new ErrnoException);
     }else{
@@ -120,16 +129,16 @@ void fsync(FileHandle file) @trusted{
 
 
 void rename(string src, string dst){
-    auto fsrc = src.tempCString!FSChar();
-    auto fdst = dst.tempCString!FSChar();
+    auto srcz = src.tocstring!FSChar;
+    auto dstz = dst.tocstring!FSChar;
     version(Windows){
         import core.sys.windows.winbase : MoveFileExW, MOVEFILE_REPLACE_EXISTING;
-        if(!MoveFileExW(fsrc, fdst, MOVEFILE_REPLACE_EXISTING)){
+        if(!MoveFileExW(srcz, dstz, MOVEFILE_REPLACE_EXISTING)){
             throw new FileRenameException(src, dst, new SysErrorException);
         }
     }else{
         import core.stdc.stdio : crename = rename;
-        if(crename(fsrc, fdst) != 0){
+        if(crename(srcz, dstz) != 0){
             throw new FileRenameException(src, dst, new ErrnoException);
         }
     }
@@ -138,11 +147,11 @@ void rename(string src, string dst){
 
 
 void copy(string src, string dst){
-    auto fsrc = src.tempCString!FSChar();
-    auto fdst = dst.tempCString!FSChar();
+    auto srcz = src.tocstring!FSChar;
+    auto dstz = dst.tocstring!FSChar;
     version(Windows){
         import core.sys.windows.winbase : CopyFileW;
-        if(!CopyFileW(fsrc, fdst, false)){
+        if(!CopyFileW(srcz, dstz, false)){
             throw new FileCopyException(src, dst, new SysErrorException);
         }
     }else{
@@ -150,7 +159,7 @@ void copy(string src, string dst){
         import core.sys.posix.sys.stat : stat_t, mode_t, time_t, fstat, fchmod;
         import core.sys.posix.utime : utime, utimbuf;
         // Read source file
-        auto infile = fopen(fsrc, "rb".tempCString!FSChar());
+        auto infile = fopen(srcz, "rb".tocstring!char);
         if(infile is null) throw new FileCopyException(
             src, dst, new FileOpenException(src, new ErrnoException)
         );
@@ -161,7 +170,7 @@ void copy(string src, string dst){
             src, dst, new FileStatException(src, new ErrnoException)
         );
         // Write destination file
-        auto outfile = fopen(fdst, "wb".tempCString!FSChar());
+        auto outfile = fopen(dstz, "wb".tocstring!char);
         if(outfile is null) throw new FileCopyException(
             src, dst, new FileOpenException(dst, new ErrnoException)
         );
@@ -183,7 +192,7 @@ void copy(string src, string dst){
         utimbuf time = void;
         time.actime = cast(time_t) stat.st_atime;
         time.modtime = cast(time_t) stat.st_mtime;
-        if(utime(fdst, &time) != -1) throw new FileCopyException(
+        if(utime(dstz, &time) != 0) throw new FileCopyException(
             src, dst, new FileSetTimeException(dst, new ErrnoException)
         );
     }
@@ -192,15 +201,15 @@ void copy(string src, string dst){
 
 
 void rmfile(string path){
-    auto fpath = path.tempCString!FSChar();
+    auto pathz = path.tocstring!FSChar;
     version(Windows){
         import core.sys.windows.winbase : DeleteFileW, MOVEFILE_REPLACE_EXISTING;
-        if(!DeleteFileW(fpath)){
+        if(!DeleteFileW(pathz)){
             throw new FileRemoveException(path, new SysErrorException);
         }
     }else{
         import core.stdc.stdio : cremove = remove;
-        if(cremove(fpath) != 0){
+        if(cremove(pathz) != 0){
             throw new FileRemoveException(path, new ErrnoException);
         }
     }
@@ -215,9 +224,9 @@ bool exists(string path){
         return Attributes(path).valid;
     }else{
         // http://stackoverflow.com/a/230070/3478907
-        auto fpath = path.tempCString!FSChar();
+        auto pathz = path.tocstring!wchar;
         import core.sys.posix.sys.stat : stat, stat_t;
-        stat_t st; return stat(fpath, &st) == 0;
+        stat_t st; return stat(pathz, &st) == 0;
     }
 }
 
@@ -281,15 +290,15 @@ auto filesize(string path){
 
 /// Set the current working directory.
 void chdir(string path){
-    auto fpath = path.tempCString!FSChar();
+    auto pathz = path.tocstring!FSChar;
     version(Windows){
         import core.sys.windows.winbase : SetCurrentDirectoryW;
-        if(!SetCurrentDirectoryW(fpath)){
+        if(!SetCurrentDirectoryW(pathz)){
             throw new FileChangeDirException(path, new SysErrorException);
         }
     }else{
         import core.sys.posix.unistd : cchdir = chdir;
-        if(cchdir(fpath) != 0){
+        if(cchdir(pathz) != 0){
             throw new FileChangeDirException(path, new ErrnoException);
         }
     }
@@ -299,16 +308,16 @@ void chdir(string path){
 
 /// Create a directory.
 void mkdir(string path){
-    auto fpath = path.tempCString!FSChar();
+    auto pathz = path.tocstring!FSChar;
     version(Windows){
         // https://msdn.microsoft.com/en-us/library/windows/desktop/aa363855(v=vs.85).aspx
         import core.sys.windows.winbase : CreateDirectoryW;
-        if(!CreateDirectoryW(fpath, null)){
+        if(!CreateDirectoryW(pathz, null)){
             throw new FileMakeDirException(path, new SysErrorException);
         }
     }else{
         import core.sys.posix.sys.stat : cmkdir = mkdir;
-        if(cmkdir(fpath, 0x1ff) != 0){
+        if(cmkdir(pathz, 0x1ff) != 0){
             throw new FileMakeDirException(path, new ErrnoException);
         }
     }
@@ -318,12 +327,12 @@ void mkdir(string path){
 
 /// If the directory doesn't already exist, create it.
 void ensuredir(string path){
-    auto fpath = path.tempCString!FSChar();
+    auto pathz = path.tocstring!FSChar;
     version(Windows){
         // https://msdn.microsoft.com/en-us/library/windows/desktop/aa363855(v=vs.85).aspx
         import core.sys.windows.winbase : CreateDirectoryW, GetLastError;
         import core.sys.windows.winerror : ERROR_ALREADY_EXISTS;
-        if(!CreateDirectoryW(fpath, null)){
+        if(!CreateDirectoryW(pathz, null)){
             if(GetLastError() != ERROR_ALREADY_EXISTS){
                 throw new FileMakeDirException(path, new SysErrorException);
             }
@@ -331,7 +340,7 @@ void ensuredir(string path){
     }else{
         import core.sys.posix.sys.stat : cmkdir = mkdir;
         import core.stdc.errno : errno, EEXIST, EISDIR;
-        if(cmkdir(fpath, 0x1ff) != 0){
+        if(cmkdir(pathz, 0x1ff) != 0){
             if(errno != EEXIST && errno != EISDIR){
                 throw new FileMakeDirException(path, new ErrnoException);
             }
@@ -345,16 +354,16 @@ void ensuredir(string path){
 
 
 void rmdir(string path){
-    auto fpath = path.tempCString!FSChar();
+    auto pathz = path.tocstring!FSChar;
     version(Windows){
         // https://msdn.microsoft.com/en-us/library/windows/desktop/aa363855(v=vs.85).aspx
         import core.sys.windows.winbase : RemoveDirectoryW;
-        if(!RemoveDirectoryW(fpath)){
+        if(!RemoveDirectoryW(pathz)){
             throw new FileRemoveDirException(path, new SysErrorException);
         }
     }else{
         import core.sys.posix.unistd : crmdir = rmdir;
-        if(crmdir(fpath) != 0){
+        if(crmdir(pathz) != 0){
             throw new FileRemoveDirException(path, new ErrnoException);
         }
     }
@@ -367,50 +376,33 @@ string currentdir(){
         // https://msdn.microsoft.com/en-us/library/windows/desktop/aa364934(v=vs.85).aspx
         import core.sys.windows.winbase : GetCurrentDirectoryW;
         import core.sys.windows.windows : DWORD;
-        import core.stdc.stdlib : malloc, free;
-        import mach.text.utf : utfencode;
-        
-        auto toutf8(FSChar[] buffer){
-            // Verify assumption with which this function was written
-            static assert(is(FSChar == wchar));
-            // Note that: Length of result will never be less than the buffer,
-            // and never be more than twice the buffer's length. Most common
-            // case can be expected to be 1:1.
-            immutable(char)[] result;
-            result.reserve(buffer.length);
-            foreach(ch; buffer.utfencode){
-                if(result.length == buffer.length){
-                    result.reserve(buffer.length * 2);
-                }
-                result ~= ch;
-            }
-            return cast(string) result;
-        }
-        
-        FSChar[512] buffer = void;
+        import mach.sys.memory : malloc, memfree;
+        import mach.text.utf : utf8encode;
+        import mach.range.asarray : asarray;
+        wchar[512] buffer = void;
         auto result = GetCurrentDirectoryW(cast(DWORD) buffer.length, buffer.ptr);
         if(result == 0){
             throw new FileGetCurrentDirException(new SysErrorException);
         }else if(result < buffer.length){
-            return toutf8(buffer[0 .. result]);
+            return buffer[0 .. result].utf8encode.asarray!(immutable char);
         }else{
-            auto buffer2 = cast(FSChar*) malloc(FSChar.sizeof * result);
-            scope(exit) free(buffer2);
+            auto buffer2 = malloc!wchar(result);
+            scope(exit) memfree(buffer2);
             auto result2 = GetCurrentDirectoryW(result, buffer2);
             if(result2 == 0 || result2 >= result){
                 throw new FileGetCurrentDirException(new SysErrorException);
             }else{
-                return toutf8(buffer2[0 .. result2]);
+                return buffer2[0 .. result2].utf8encode.asarray!(immutable char);
             }
         }
     }else{
         import core.sys.posix.unistd : getcwd;
-        import core.stdc.stdlib : free;
-        import core.stdc.string : strlen;
+        import mach.sys.memory : memfree;
+        import mach.text.cstring : cstringlength;
         auto result = getcwd(null, 0);
         if(result is null) throw new FileGetCurrentDirException(new ErrnoException);
-        scope(exit) free(result);
-        return cast(string) result[0 .. strlen(result)].idup;
+        scope(exit) memfree(result);
+        return cast(string) result[0 .. cstringlength(result)].idup;
     }
 }
 
@@ -430,6 +422,7 @@ private version(unittest){
     enum string TestPath = CurrentPath ~ "/sys.txt";
     enum string FakePath1 = CurrentPath ~ "/nope_not_a_real_file";
     enum string FakePath2 = CurrentPath ~ "/nope_not_a_real_file.txt";
+    enum string UnicodePath = CurrentPath ~ "/file/traverse/unicodeツ.txt";
 }
 
 unittest{ /// Exists
@@ -483,4 +476,21 @@ unittest{ /// Attributes
     assert(!isdir(FakePath1));
     assert(!isfile(FakePath2));
     assert(!isdir(FakePath2));
+    assert(!isfile(""));
+    assert(!isdir(""));
+}
+
+unittest{ /// Get/set current directory
+    version(Windows) enum ChPath = "C:\\Program Files";
+    else enum ChPath = "/usr/bin/abcd";
+    if(exists(ChPath)){
+        chdir(ChPath);
+        assert(currentdir() == ChPath);
+    }else{
+        import mach.io.stdio : stdio;
+        stdio.errorln(
+            "Unable to test chdir and currentdir because path ",
+            "\"", ChPath, "\" does not exist."
+        );
+    }
 }
