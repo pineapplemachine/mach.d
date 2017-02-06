@@ -5,7 +5,9 @@ private:
 import derelict.sdl2.sdl;
 import derelict.opengl3.gl;
 
-import mach.math : Vector2, isVector2, Vector3, isVector3, Box, isBox;
+import mach.traits : isIntegral;
+import mach.math : Vector2, isVector2, Vector3, isVector3, Box, isBox, tau;
+import std.math : sin, cos; // TODO: !!!
 
 import mach.sdl.error : GLError;
 import mach.sdl.window : Window;
@@ -27,9 +29,9 @@ void glVertex(T)(T x, T y){
     static if(!is(impl == void)){
         impl(x, y);
     }else static if(isIntegral!T){
-        glVertex3i(cast(int) x, cast(int) y);
+        glVertex2i(cast(int) x, cast(int) y);
     }else{
-        glVertex3d(cast(double) x, cast(double) y);
+        glVertex2d(cast(double) x, cast(double) y);
     }
 }
 void glVertex(T)(T x, T y, T z){
@@ -135,4 +137,32 @@ auto quadstrip(C, T)(Color!C color, Vector2!T[] vectors...) in{
 
 auto polygon(C, T)(Color!C color, Vector2!T[] vectors...){
     primitives!GL_POLYGON(color, vectors);
+}
+
+/// Credit http://slabode.exofire.net/circle_draw.shtml
+/// TODO: Ellipses
+auto circle(bool fill = true, V, R)(in Vector2!V center, in R radius, in uint segments){
+    immutable double theta = tau / cast(double) segments;
+    immutable double c = cos(theta);
+    immutable double s = sin(theta);
+    immutable dcenter = cast(Vector2!double) center;
+    double x = cast(double) radius;
+    double y = 0.0;
+    scope(exit) GLError.enforce();
+    static if(fill){
+        glBegin(GL_TRIANGLE_FAN);
+        glset(dcenter);
+    }else{
+        glBegin(GL_LINE_LOOP);
+    }
+    for(uint i = 0; i < segments; i++){
+        glset(dcenter + Vector2!double(x, y));
+        immutable double t = x;
+        x = c * x - s * y;
+        y = s * t + c * y;
+    }
+    static if(fill){
+        glset(dcenter + Vector2!double(x, y));
+    }
+    glEnd();
 }
