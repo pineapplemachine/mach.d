@@ -224,7 +224,7 @@ bool exists(string path){
         return Attributes(path).valid;
     }else{
         // http://stackoverflow.com/a/230070/3478907
-        auto pathz = path.tocstring!wchar;
+        auto pathz = path.tocstring!char;
         import core.sys.posix.sys.stat : stat, stat_t;
         stat_t st; return stat(pathz, &st) == 0;
     }
