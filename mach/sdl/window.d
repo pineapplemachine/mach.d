@@ -95,15 +95,18 @@ class Window{
     SDL_Window* window;
     SDL_GLContext context;
     
-    // TODO: Center window when no explicit x, y was provided
-    // http://stackoverflow.com/a/15575920/3478907
+    private static auto centeredbox(in int width, in int height){
+        immutable position = (DisplayMode.desktop.size - Vector2!int(width, height)) / 2;
+        return Box!int(width, height) + position;
+    }
+    
     this(
         in int width, in int height,
         in Style style = DefaultStyle,
         in VSync vsync = VSync.Disabled,
         in GLSettings settings = GLSettings.Default
     ){
-        this(DefaultTitle, Box!int(width, height), style, vsync);
+        this(DefaultTitle, width, height, style, vsync);
     }
     this(
         in string title, in int width, in int height,
@@ -111,7 +114,15 @@ class Window{
         in VSync vsync = VSync.Disabled,
         in GLSettings settings = GLSettings.Default
     ){
-        this(title, Box!int(width, height), style, vsync);
+        this(title, this.centeredbox(width, height), style, vsync);
+    }
+    this(
+        in string title, in Vector2!int size,
+        in Style style = DefaultStyle,
+        in VSync vsync = VSync.Disabled,
+        in GLSettings settings = GLSettings.Default
+    ){
+        this(title, size.x, size.y, style, vsync);
     }
     this(
         in string title, in Box!int view,
