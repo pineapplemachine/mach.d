@@ -4,7 +4,7 @@ private:
 
 import derelict.sdl2.sdl;
 
-import mach.string.cstring : fromcstring;
+import mach.text.cstring : fromcstring;
 import mach.sdl.error : SDLError;
 import mach.sdl.input.joystick;
 import mach.sdl.input.controller;
