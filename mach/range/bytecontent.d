@@ -214,9 +214,6 @@ struct ByteContentRange(Endian endian, Source) if(isRange!Source){
 private version(unittest){
     import mach.test;
     import mach.range.compare : equals;
-    
-    import mach.io:stdio;
-    import mach.text.numeric;
 }
 unittest{
     tests("Byte content", {
