@@ -90,16 +90,6 @@ struct ArrayRange(Array) if(isArray!Array){
     @property typeof(this) save(){
         return this;
     }
-    
-    bool opEquals(in Array rhs) const{
-        return this.array[this.startindex .. this.endindex] == rhs;
-    }
-    bool opEquals(in typeof(this) rhs) const{
-        return (
-            this.array[this.startindex .. this.endindex] ==
-            rhs.array[rhs.startindex .. rhs.endindex]
-        );
-    }
 }
 
 
@@ -119,11 +109,6 @@ unittest{
     static assert(isSavingRange!Range);
     static assert(hasNumericLength!Range);
     tests("Array as range", {
-        tests("Equality", {
-            auto range = ArrayRange!(int[])([1, 2, 3]);
-            testeq(range, [1, 2, 3]);
-            testeq(range, range);
-        });
         tests("Saving", {
             auto range = ArrayRange!(int[])([1, 2, 3]);
             auto saved = range.save;
