@@ -482,7 +482,7 @@ unittest{ /// Attributes
 
 unittest{ /// Get/set current directory
     version(Windows) enum ChPath = "C:\\Program Files";
-    else enum ChPath = "/usr/bin/abcd";
+    else enum ChPath = "/usr/bin";
     if(exists(ChPath)){
         chdir(ChPath);
         assert(currentdir() == ChPath);
