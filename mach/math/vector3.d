@@ -25,7 +25,7 @@ struct Vector3(T) if(isNumeric!T){
     
     T x, y, z;
     
-    @property auto astuple(){
+    @property auto astuple() const{
         return tuple(this.x, this.y, this.z);
     }
     alias astuple this;

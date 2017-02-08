@@ -25,7 +25,7 @@ struct Vector2(T) if(isNumeric!T){
     
     T x, y;
     
-    @property auto astuple(){
+    @property auto astuple() const{
         return tuple(this.x, this.y);
     }
     alias astuple this;
