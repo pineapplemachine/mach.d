@@ -89,8 +89,8 @@ T jsondeserialize(T)(in JsonValue value){
         return jsondeserializestring!T(value);
     }else static if(isEnumType!T){
         return jsondeserializeenum!T(value);
-    }else static if(is(typeof({JsonValue v = value.fromjson;}))){
-        return value.fromjson;
+    }else static if(is(typeof({T v = T.fromjson(value);}))){
+        return T.fromjson(value);
     }else{
         return jsondeserializetype!T(value);
     }
@@ -545,6 +545,7 @@ version(unittest){
     }
     struct CustomTest{
         int x;
+        int* y = null;
         JsonValue tojson() const{return JsonValue(this.x);}
         static typeof(this) fromjson(in JsonValue value){
             assert(value.type is JsonValue.Type.Integer);

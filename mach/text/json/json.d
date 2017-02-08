@@ -25,6 +25,8 @@ struct Json{
     
     /// Given a value of an arbitrary type, generate a `Json.Value` object.
     static alias serialize = jsonserialize;
+    /// Given a `Json.Value` object, deserialze to an object of an arbitrary type.
+    static alias deserialize = jsondeserialize;
     
     /// Given a json string, parse json values.
     static auto parse(
