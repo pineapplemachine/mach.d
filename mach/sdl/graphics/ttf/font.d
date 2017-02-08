@@ -209,7 +209,8 @@ struct Font{
         assert(text !is null, "Can't render null string.");
     }body{
         auto surface = TTF_RenderUTF8_Shaded(
-            this.font, text.tocstring, cast(SDL_Color) foreground
+            this.font, text.tocstring,
+            cast(SDL_Color) foreground, cast(SDL_Color) background
         );
         if(surface is null) throw new SDLError("Failed to render text.");
         return Surface(surface);
