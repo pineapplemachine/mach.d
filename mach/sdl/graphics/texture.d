@@ -46,15 +46,13 @@ struct Texture{
     
     /// Load a texture from a path.
     this(in string path, in bool mipmap = false){
-        Surface surface = Surface(path);
-        scope(exit) surface.free();
+        auto surface = Surface(path);
         this(surface, mipmap);
     }
     
     /// Create a texture from a surface.
     this(Surface surface, in bool mipmap = false){
         auto converted = surface.convert(SDLPixelFormat.Format.RGBA8888); // TODO: only convert when necessary
-        scope(exit) converted.free();
         this(converted.pixels, converted.width, converted.height, mipmap, PixelsFormat.RGBA);
     }
     
@@ -169,9 +167,8 @@ struct Texture{
     }
     
     void update(bool atomic = true)(
-        in Surface surface, in Vector2!int offset = Vector2!int.Zero
     ){
-        FormattedSurface formatted = FormattedSurface.make!convert(surface);
+        auto formatted = FormattedSurface.make!convert(surface);
         scope(exit) formatted.conclude();
         this.update(
             formatted.pixels, Box!int(offset, offset + formatted.size),

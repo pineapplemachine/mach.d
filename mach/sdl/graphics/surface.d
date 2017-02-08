@@ -50,7 +50,6 @@ private auto loadsurface(in string path){
 
 /// Wraps an SDL_Surface, which stores image data in RAM.
 struct Surface{
-    
     /// The underlying SDL_Surface
     SDL_Surface* surface;
     
@@ -116,7 +115,6 @@ struct Surface{
     }
     
     this(this){
-        // https://dlang.org/spec/struct.html#struct-postblit
         if(this.surface) this.surface.refcount++;
     }
     
