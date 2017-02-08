@@ -546,7 +546,7 @@ version(unittest){
     struct CustomTest{
         int x;
         JsonValue tojson() const{return JsonValue(this.x);}
-        typeof(this) fromjson(in JsonValue value){
+        static typeof(this) fromjson(in JsonValue value){
             assert(value.type is JsonValue.Type.Integer);
             return CustomTest(cast(int) value);
         }
