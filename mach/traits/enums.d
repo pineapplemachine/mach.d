@@ -151,6 +151,7 @@ version(unittest){
     private:
     enum int X = 0;
     enum Ints: int{A = 1, B = 2}
+    enum Doubles: double{A = 0.1, B = 1.5, C = 2.0}
     enum Enum{A, B, C}
 }
 
@@ -196,6 +197,7 @@ unittest{
 unittest{
     static assert(getEnumMember!(Ints, "A") is Ints.A);
     static assert(getEnumMember!(Ints, "B") is Ints.B);
+    static assert(getEnumMember!(Doubles, "A") is Doubles.A);
     static assert(getEnumMember!(Enum, "A") is Enum.A);
     static assert(getEnumMember!(Enum, "B") is Enum.B);
     static assert(getEnumMember!(Enum, "C") is Enum.C);
@@ -204,6 +206,7 @@ unittest{
 unittest{
     assert(getenummember!(Ints)("A") is Ints.A);
     assert(getenummember!(Ints)("B") is Ints.B);
+    assert(getenummember!(Doubles)("A") is Doubles.A);
     assert(getenummember!(Enum)("A") is Enum.A);
     assert(getenummember!(Enum)("B") is Enum.B);
     assert(getenummember!(Enum)("C") is Enum.C);
@@ -238,6 +241,7 @@ unittest{
 unittest{
     static assert(EnumMemberName!(Ints.A) == "A");
     static assert(EnumMemberName!(Ints.B) == "B");
+    static assert(EnumMemberName!(Doubles.A) == "A");
     static assert(EnumMemberName!(Enum.A) == "A");
     static assert(EnumMemberName!(Enum.B) == "B");
     static assert(EnumMemberName!(Enum.C) == "C");
@@ -245,6 +249,8 @@ unittest{
 unittest{
     assert(enummembername(Ints.A) == "A");
     assert(enummembername(Ints.B) == "B");
+    // https://issues.dlang.org/show_bug.cgi?id=17160
+    //assert(enummembername(Doubles.A) == "A");
     assert(enummembername(Enum.A) == "A");
     assert(enummembername(Enum.B) == "B");
     assert(enummembername(Enum.C) == "C");
