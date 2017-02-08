@@ -43,7 +43,7 @@ struct Color(T = float) if(isNumeric!T){
     static immutable Cyan = Color(0, this.Max, this.Max);
     static immutable Magenta = Color(this.Max, 0, this.Max);
     
-    this(N)(N r, N g, N b, N a = cast(N) this.Max) if(isNumeric!N){
+    this(N)(in N r, in N g, in N b, in N a = cast(N) this.Max) if(isNumeric!N){
         this.red = cast(T) r; this.green = cast(T) g;
         this.blue = cast(T) b; this.alpha = cast(T) a;
     }
@@ -66,6 +66,10 @@ struct Color(T = float) if(isNumeric!T){
         ubyte r, g, b, a;
         SDL_GetRGBA(value, format, &r, &g, &b, &a);
         this(r, g, b, a);
+    }
+    
+    static auto gray(N)(in N gray, in N alpha = cast(N) this.Max){
+        return typeof(this)(gray, gray, gray, alpha);
     }
     
     As valueas(As, string name)() const{
