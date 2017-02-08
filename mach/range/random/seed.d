@@ -31,9 +31,9 @@ auto seeds(T, size_t count)(T[] entropy...) @trusted nothrow if(
     enum shift = T.sizeof * 4;
     foreach(i; 0 .. max(count, seedentropy.length)){
         auto e = seedentropy[i % seedentropy.length];
-        output[i % count] ^= e;
         output[i % count] ^= e << shift;
         output[i % count] ^= e >> shift;
+        output[i % count] *= e;
         counter *= e;
         counter ^= e >> shift;
     }
