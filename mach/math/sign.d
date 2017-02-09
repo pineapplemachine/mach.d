@@ -2,7 +2,7 @@ module mach.math.sign;
 
 private:
 
-import mach.traits : isNumeric, isSignedIntegral, isUnsignedIntegral;
+import mach.traits : isNumeric, isSignedIntegral, isUnsignedIntegral, isImaginary;
 import mach.math.floats : fiszero, fextractsgn;
 
 /++ Docs
@@ -49,6 +49,11 @@ Sign signof(T)(in T value) if(isNumeric!T){
     }
 }
 
+/// Ditto
+Sign signof(T)(in T value) if(isImaginary!T){
+    return signof(value.im);
+}
+
 
 
 private version(unittest){
@@ -70,6 +75,14 @@ unittest{
     assert((float.nan).signof is Sign.Positive);
     assert((-float.nan).signof is Sign.Negative);
 }
+
+unittest{ /// Imaginary inputs
+    assert(ifloat(+1.0i).signof is Sign.Positive);
+    assert(ifloat(-1.0i).signof is Sign.Negative);
+    assert(ifloat(+0.0i).signof is Sign.Zero);
+    assert(ifloat(-0.0i).signof is Sign.Zero);
+}
+
 unittest{
     assert(Sign.Positive == 1);
     assert(Sign.Negative == -1);
