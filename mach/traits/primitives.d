@@ -199,22 +199,54 @@ template Signed(T) if(isIntegral!T){
 
 
 
-/// Given an imaginary type, get its corresponding floating point type.
-template Unimaginary(T) if(isImaginary!T){
-    alias U = Unqual!T;
-    static if(is(U == ifloat)) alias Unimaginary = Qualify!(T, float);
-    else static if(is(U == idouble)) alias Unimaginary = Qualify!(T, double);
-    else static if(is(U == ireal)) alias Unimaginary = Qualify!(T, real);
-    else static assert(false, "Unknown type.");
+/// Given a floating point, imaginary, or complex type, get its corresponding
+/// floating point type.
+template FloatingPointType(T) if(isFloatingPoint!T){
+    alias FloatingPointType = T;
+}
+/// Ditto
+template FloatingPointType(T) if(isImaginary!T){
+    alias FloatingPointType = Qualify!(T, typeof(T.init.im));
+}
+/// Ditto
+template FloatingPointType(T) if(isComplex!T){
+    alias FloatingPointType = Qualify!(T, typeof(T.init.re));
 }
 
-/// Given a complex type, get its corresponding floating point type.
-template Uncomplex(T) if(isComplex!T){
+/// Given a floating point, imaginary, or complex type, get its corresponding
+/// imaginary type.
+template ImaginaryType(T) if(isFloatingPoint!T){
     alias U = Unqual!T;
-    static if(is(U == cfloat)) alias Uncomplex = Qualify!(T, float);
-    else static if(is(U == cdouble)) alias Uncomplex = Qualify!(T, double);
-    else static if(is(U == creal)) alias Uncomplex = Qualify!(T, real);
-    else static assert(false, "Unknown type.");
+    static if(is(U == float)) alias ImaginaryType = Qualify!(T, ifloat);
+    else static if(is(U == double)) alias ImaginaryType = Qualify!(T, idouble);
+    else static if(is(U == real)) alias ImaginaryType = Qualify!(T, ireal);
+    else static assert(false, "Unknown imaginary type.");
+}
+/// Ditto
+template ImaginaryType(T) if(isImaginary!T){
+    alias ImaginaryType = T;
+}
+/// Ditto
+template ImaginaryType(T) if(isComplex!T){
+    alias ImaginaryType = ImaginaryType!(FloatingPointType!T);
+}
+
+/// Given a floating point, imaginary, or complex type, get its corresponding
+/// complex type.
+template ComplexType(T) if(isFloatingPoint!T){
+    alias U = Unqual!T;
+    static if(is(U == float)) alias ComplexType = Qualify!(T, cfloat);
+    else static if(is(U == double)) alias ComplexType = Qualify!(T, cdouble);
+    else static if(is(U == real)) alias ComplexType = Qualify!(T, creal);
+    else static assert(false, "Unknown complex type.");
+}
+/// Ditto
+template ComplexType(T) if(isImaginary!T){
+    alias ComplexType = ComplexType!(FloatingPointType!T);
+}
+/// Ditto
+template ComplexType(T) if(isComplex!T){
+    alias ComplexType = T;
 }
 
 
@@ -312,13 +344,46 @@ unittest{
     static assert(is(Unsigned!(const ubyte) == const ubyte));
     static assert(is(Unsigned!(const byte) == const ubyte));
 }
-unittest{
-    static assert(is(Unimaginary!(ifloat) == float));
-    static assert(is(Unimaginary!(idouble) == double));
-    static assert(is(Unimaginary!(ireal) == real));
-    static assert(is(Unimaginary!(const ifloat) == const float));
-    static assert(is(Uncomplex!(cfloat) == float));
-    static assert(is(Uncomplex!(cdouble) == double));
-    static assert(is(Uncomplex!(creal) == real));
-    static assert(is(Uncomplex!(const cfloat) == const float));
+
+unittest{ /// FloatingPointType
+    static assert(is(FloatingPointType!(float) == float));
+    static assert(is(FloatingPointType!(double) == double));
+    static assert(is(FloatingPointType!(real) == real));
+    static assert(is(FloatingPointType!(const float) == const float));
+    static assert(is(FloatingPointType!(ifloat) == float));
+    static assert(is(FloatingPointType!(idouble) == double));
+    static assert(is(FloatingPointType!(ireal) == real));
+    static assert(is(FloatingPointType!(const ifloat) == const float));
+    static assert(is(FloatingPointType!(cfloat) == float));
+    static assert(is(FloatingPointType!(cdouble) == double));
+    static assert(is(FloatingPointType!(creal) == real));
+    static assert(is(FloatingPointType!(const cfloat) == const float));
+}
+unittest{ /// ImaginaryType
+    static assert(is(ImaginaryType!(float) == ifloat));
+    static assert(is(ImaginaryType!(double) == idouble));
+    static assert(is(ImaginaryType!(real) == ireal));
+    static assert(is(ImaginaryType!(const float) == const ifloat));
+    static assert(is(ImaginaryType!(ifloat) == ifloat));
+    static assert(is(ImaginaryType!(idouble) == idouble));
+    static assert(is(ImaginaryType!(ireal) == ireal));
+    static assert(is(ImaginaryType!(const ifloat) == const ifloat));
+    static assert(is(ImaginaryType!(cfloat) == ifloat));
+    static assert(is(ImaginaryType!(cdouble) == idouble));
+    static assert(is(ImaginaryType!(creal) == ireal));
+    static assert(is(ImaginaryType!(const cfloat) == const ifloat));
+}
+unittest{ /// ComplexType
+    static assert(is(ComplexType!(float) == cfloat));
+    static assert(is(ComplexType!(double) == cdouble));
+    static assert(is(ComplexType!(real) == creal));
+    static assert(is(ComplexType!(const float) == const cfloat));
+    static assert(is(ComplexType!(ifloat) == cfloat));
+    static assert(is(ComplexType!(idouble) == cdouble));
+    static assert(is(ComplexType!(ireal) == creal));
+    static assert(is(ComplexType!(const ifloat) == const cfloat));
+    static assert(is(ComplexType!(cfloat) == cfloat));
+    static assert(is(ComplexType!(cdouble) == cdouble));
+    static assert(is(ComplexType!(creal) == creal));
+    static assert(is(ComplexType!(const cfloat) == const cfloat));
 }
