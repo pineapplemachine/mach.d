@@ -3,7 +3,7 @@ module mach.text.str.primitives;
 private:
 
 import mach.traits : isIntegral, isFloatingPoint, isCharacter;
-import mach.traits : isImaginary, isComplex, Unimaginary, isPointer;
+import mach.traits : isImaginary, isComplex, isPointer;
 import mach.traits : isFiniteIterable, isString, isCharString;
 import mach.traits : isWString, isDString, Unqual, isArray, hasNumericLength;
 import mach.traits : isEnumType, enummembername, PointerType;
