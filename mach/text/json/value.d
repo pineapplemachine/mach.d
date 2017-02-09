@@ -46,6 +46,9 @@ static struct JsonValue{
         Object objectval;
     }
     
+    /// Exception object thrown for operations upon invalid types.
+    static const OpException = new JsonInvalidOperationException();
+    
     Type valuetype = Type.Null;
     Store store;
     
@@ -304,6 +307,15 @@ static struct JsonValue{
         }
     }
     
+    auto ref array(){
+        if(this.type !is Type.Array) throw this.OpException;
+        return this.store.arrayval;
+    }
+    auto ref object(){
+        if(this.type !is Type.Object) throw this.OpException;
+        return this.store.objectval;
+    }
+    
     @property auto length() const{
         if(this.type is Type.String){
             return this.store.stringval.length;
@@ -312,7 +324,7 @@ static struct JsonValue{
         }else if(this.type is Type.Object){
             return this.store.objectval.length;
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     
@@ -346,7 +358,7 @@ static struct JsonValue{
         }else if(this.type is Type.Float){
             mixin(`return JsonValue(this.store.floatval ` ~ op ~ ` value);`);
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     /// ditto
@@ -356,7 +368,7 @@ static struct JsonValue{
         }else if(this.type is Type.Float){
             mixin(`return JsonValue(value ` ~ op ~ ` this.store.floatval);`);
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     /// ditto
@@ -370,7 +382,7 @@ static struct JsonValue{
         }else if(this.type is Type.Float && value.type is Type.Float){
             mixin(`return JsonValue(this.store.floatval ` ~ op ~ ` value.store.floatval);`);
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     /// ditto
@@ -380,7 +392,7 @@ static struct JsonValue{
         }else if(this.type is Type.Float){
             mixin(`this.store.floatval ` ~ op ~ `= value;`);
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     /// ditto
@@ -394,7 +406,7 @@ static struct JsonValue{
         }else if(this.type is Type.Float && value.type is Type.Float){
             mixin(`this.store.floatval ` ~ op ~ `= value.store.floatval;`);
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     
@@ -403,7 +415,7 @@ static struct JsonValue{
         if(this.type is Type.Integer){
             mixin(`return JsonValue(this.store.integerval ` ~ op ~ ` value);`);
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     /// ditto
@@ -411,7 +423,7 @@ static struct JsonValue{
         if(this.type is Type.Integer){
             mixin(`return JsonValue(value ` ~ op ~ ` this.store.integerval);`);
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     /// ditto
@@ -419,7 +431,7 @@ static struct JsonValue{
         if(this.type is Type.Integer && value.type is Type.Integer){
             mixin(`return JsonValue(this.store.integerval ` ~ op ~ ` value.store.integerval);`);
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     /// ditto
@@ -427,7 +439,7 @@ static struct JsonValue{
         if(this.type is Type.Integer){
             mixin(`this.store.integerval ` ~ op ~ `= value;`);
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     /// ditto
@@ -435,7 +447,7 @@ static struct JsonValue{
         if(this.type is Type.Integer && value.type is Type.Integer){
             mixin(`this.store.integerval ` ~ op ~ `= value.store.integerval;`);
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     
@@ -455,7 +467,7 @@ static struct JsonValue{
         if(this.type is Type.Array){
             this.store.arrayval ~= JsonValue(value);
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     /// Append values from an array to an array type.
@@ -466,7 +478,7 @@ static struct JsonValue{
             );
             foreach(i; value) this.store.arrayval ~= JsonValue(i);
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     /// ditto
@@ -477,7 +489,7 @@ static struct JsonValue{
             );
             foreach(i; value.store.arrayval) this.store.arrayval ~= i.dup;
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     
@@ -486,7 +498,7 @@ static struct JsonValue{
         if(this.type is Type.Object){
             return this.store.objectval.remove(key);
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     
@@ -497,7 +509,7 @@ static struct JsonValue{
         }else if(this.type is Type.Object){
             this.store.objectval.clear();
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     
@@ -510,7 +522,7 @@ static struct JsonValue{
         if(this.type is Type.String){
             this.store.stringval ~= value;
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     
@@ -519,7 +531,7 @@ static struct JsonValue{
         if(this.type is Type.String){
             return JsonValue(this.store.stringval ~ value);
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     /// ditto
@@ -527,7 +539,7 @@ static struct JsonValue{
         if(this.type is Type.String && value.type is Type.String){
             return JsonValue(this.store.stringval ~ value.store.stringval);
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     /// ditto
@@ -535,7 +547,7 @@ static struct JsonValue{
         if(this.type is Type.String){
             return JsonValue(value ~ this.store.stringval);
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     
@@ -547,7 +559,7 @@ static struct JsonValue{
             }
             return false;
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     /// Check for the presence of a key for object types.
@@ -555,7 +567,7 @@ static struct JsonValue{
         if(this.type is Type.Object){
             return key in this.store.objectval;
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     /// ditto
@@ -570,7 +582,7 @@ static struct JsonValue{
         }else if(this.type is Type.Float){
             return JsonValue(-this.store.floatval);
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     /// Implements kind of pointless '+' operator for numeric types.
@@ -578,7 +590,7 @@ static struct JsonValue{
         if(this.type is Type.Integer || this.type is Type.Float){
             return this;
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     /// Implements the complement operator for integral types.
@@ -586,7 +598,7 @@ static struct JsonValue{
         if(this.type is Type.Integer){
             return JsonValue(~this.store.integerval);
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     /// Implements the increment operator for numeric types.
@@ -598,7 +610,7 @@ static struct JsonValue{
             this.store.floatval++;
             return this;
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     /// Implements the decrement operator for numeric types.
@@ -610,35 +622,43 @@ static struct JsonValue{
             this.store.floatval--;
             return this;
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     
     /// Implements numeric index operator for string and array types.
     auto opIndex(in size_t index) const{
+        static const indexerror = new JsonIndexException();
         if(this.type is Type.String){
+            indexerror.enforce(index, this);
             return JsonValue(this.store.stringval[index]);
         }else if(this.type is Type.Array){
+            indexerror.enforce(index, this);
             return this.store.arrayval[index];
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     /// ditto
     auto opIndexAssign(T)(auto ref T value, in size_t index) if(canAssign!T){
+        static const indexerror = new JsonIndexException();
         if(this.type is Type.Array){
+            indexerror.enforce(index, this);
             return this.store.arrayval[index] = JsonValue(value);
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     
     /// Implements key index operator for object types.
     auto opIndex(in string key) const{
+        static const keyerror = new JsonKeyException();
         if(this.type is Type.Object){
-            return this.store.objectval[key];
+            auto val = key in this.store.objectval;
+            if(val is null) throw keyerror;
+            else return *val;
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     /// ditto
@@ -646,20 +666,21 @@ static struct JsonValue{
         if(this.type is Type.Object){
             return this.store.objectval[key] = JsonValue(value);
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     
     /// Implements slice operator for string and array types.
-    auto opSlice(in size_t low, in size_t high) const in{
-        assert(low >= 0 && high >= low && high <= this.length);
-    }body{
+    auto opSlice(in size_t low, in size_t high) const{
+        static const indexerror = new JsonIndexException();
         if(this.type is Type.String){
+            indexerror.enforce(low, high, this);
             return JsonValue(this.store.stringval[low .. high]);
         }else if(this.type is Type.Array){
+            indexerror.enforce(low, high, this);
             return JsonValue(this.store.arrayval[low .. high]);
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     
@@ -691,26 +712,26 @@ static struct JsonValue{
             }
         }else static if(isNull!T){
             if(this.type is Type.Null) return true;
-            else throw new JsonInvalidOperationException();
+            else throw this.OpException;
         }else static if(isBoolean!T){
             if(this.type is Type.Boolean) return value == this.store.booleanval;
-            else throw new JsonInvalidOperationException();
+            else throw this.OpException;
         }else static if(isNumeric!T){
             if(this.type is Type.Integer) return value == this.store.integerval;
             else if(this.type is Type.Float) return value == this.store.floatval;
-            else throw new JsonInvalidOperationException();
+            else throw this.OpException;
         }else static if(isCharacter!T){
             if(this.type is Type.Integer) return value == this.store.integerval;
-            else throw new JsonInvalidOperationException();
+            else throw this.OpException;
         }else static if(is(T : string)){
             if(this.type is Type.String) return value == this.store.stringval;
-            else throw new JsonInvalidOperationException();
+            else throw this.OpException;
         }else static if(is(T : Array)){
             if(this.type is Type.Array) return value == this.store.arrayval;
-            else throw new JsonInvalidOperationException();
+            else throw this.OpException;
         }else static if(is(T : Object)){
             if(this.type is Type.Object) return cast(const Object) value == this.store.objectval;
-            else throw new JsonInvalidOperationException();
+            else throw this.OpException;
         }else static if(canAssignArray!T){
             if(this.type is Type.Array){
                 if(this.store.arrayval.length != value.length) return false;
@@ -719,7 +740,7 @@ static struct JsonValue{
                 }
                 return true;
             }else{
-                throw new JsonInvalidOperationException();
+                throw this.OpException;
             }
         }else static if(canAssignAssociativeArray!T){
             if(this.type is Type.Object){
@@ -736,10 +757,10 @@ static struct JsonValue{
                 }
                 return true;
             }else{
-                throw new JsonInvalidOperationException();
+                throw this.OpException;
             }
         }else{
-            throw new JsonInvalidOperationException();
+            throw this.OpException;
         }
     }
     
@@ -748,18 +769,18 @@ static struct JsonValue{
             case Type.Boolean:
                 static if(isBoolean!T) return cast(T) this.store.booleanval;
                 else static if(isIntegral!T) return cast(T) this.store.booleanval;
-                else throw new JsonInvalidOperationException();
+                else throw this.OpException;
             case Type.Integer:
                 static if(isBoolean!T) return cast(T)(this.store.integerval != 0);
                 else static if(isNumeric!T) return cast(T) this.store.integerval;
-                else throw new JsonInvalidOperationException();
+                else throw this.OpException;
             case Type.Float:
                 static if(isBoolean!T) return cast(T)(this.store.floatval != 0);
                 else static if(isNumeric!T) return cast(T) this.store.floatval;
-                else throw new JsonInvalidOperationException();
+                else throw this.OpException;
             case Type.String:
                 static if(is(T : string) && !isNull!T) return cast(T) this.store.stringval;
-                else throw new JsonInvalidOperationException();
+                else throw this.OpException;
             case Type.Array:
                 static if(isArray!T){
                     T array;
@@ -768,7 +789,7 @@ static struct JsonValue{
                     }
                     return array;
                 }else{
-                    throw new JsonInvalidOperationException();
+                    throw this.OpException;
                 }
             case Type.Object:
                 static if(isAssociativeArray!T && is(ArrayKeyType!T : string)){
@@ -778,13 +799,13 @@ static struct JsonValue{
                     }
                     return array;
                 }else{
-                    throw new JsonInvalidOperationException();
+                    throw this.OpException;
                 }
             case Type.Null:
                 static if(isBoolean!T) return cast(T) false;
                 else static if(isFloatingPoint!T) return T.nan;
                 else static if(is(typeof({cast(T) null;}))) return cast(T) null;
-                else throw new JsonInvalidOperationException();
+                else throw this.OpException;
         }
     }
 }

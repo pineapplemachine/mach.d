@@ -13,6 +13,10 @@ class JsonException : Exception{
     this(string message, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
         super(message, file, line, next);
     }
+    auto enforce(T)(auto ref T condition) const{
+        if(!condition) throw this;
+        return condition;
+    }
 }
 
 /// Thrown when attempting to perform an operation upon a json value
@@ -20,6 +24,30 @@ class JsonException : Exception{
 class JsonInvalidOperationException : JsonException{
     this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
         super("Operation unsupported by type.", next, line, file);
+    }
+}
+
+/// Thrown when accessing a nonexistent object key.
+class JsonKeyException : JsonException{
+    this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super("Object has no such key.", next, line, file);
+    }
+}
+
+/// Thrown when accessing an out-of-bounds index.
+class JsonIndexException : JsonException{
+    this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super("Array index out of bounds.", next, line, file);
+    }
+    auto enforce(T)(auto ref T condition) const{
+        if(!condition) throw this;
+        return condition;
+    }
+    auto enforce(Index, Value)(in Index index, auto ref Value value) const{
+        this.enforce(index >= 0 && index < value.length);
+    }
+    auto enforce(Index, Value)(in Index low, in Index high, auto ref Value value) const{
+        this.enforce(low >= 0 && high >= low && value.length >= high);
     }
 }
 
