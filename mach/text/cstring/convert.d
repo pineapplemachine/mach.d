@@ -72,7 +72,15 @@ auto tocstring(Char = char, S)(auto ref S str) if(isString!S && isCharacter!Char
 /// TODO: lazy fromcstring
 alias fromcstring = eagerfromcstring;
 
+
+
 /// Get a string type from some null-terminated input string.
+@system pure nothrow auto eagerfromcstring(Char)(in Char[] cstr, in size_t approxlength = 256) if(
+    isCharacter!Char
+){
+    return eagerfromcstring(cstr.ptr, approxlength);
+}
+/// ditto
 @system pure nothrow auto eagerfromcstring(Char)(in Char* cstr, in size_t approxlength = 256) if(
     isCharacter!Char
 ){
@@ -83,8 +91,16 @@ alias fromcstring = eagerfromcstring;
     return result;
 }
 
+
+
 /// Get a string type from some null-terminated input string.
 /// Will not attempt to acquire any more than `limit` characters.
+@system pure nothrow auto eagerfromcstring(size_t limit, Char)(
+    in Char[] cstr, in size_t approxlength = 256
+) if(isCharacter!Char){
+    return eagerfromcstring!limit(cstr.ptr, approxlength);
+}
+/// ditto
 @system pure nothrow auto eagerfromcstring(size_t limit, Char)(
     in Char* cstr, in size_t approxlength = 256
 ) if(isCharacter!Char){
@@ -208,4 +224,8 @@ unittest{ /// Convert to and from cstring
 unittest{ /// fromcstring with limit
     auto input = "abcdef\0";
     assert(fromcstring!4(input.ptr) == "abcd");
+}
+
+unittest{
+    assert(['a', 'b', 'c', '\0', '\0'].fromcstring == "abc");
 }
