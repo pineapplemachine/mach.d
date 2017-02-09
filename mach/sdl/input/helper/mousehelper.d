@@ -59,6 +59,8 @@ struct MouseHelper(size_t historylength = 3){
         }else if(event.type is event.Type.MouseWheel){
             this.scrollx = event.mousewheel.x;
             this.scrolly = event.mousewheel.y;
+        }else{
+            this.history.update(event.timestamp);
         }
     }
     /// Update given a mouse state. Clears all prior history.

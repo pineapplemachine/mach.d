@@ -42,6 +42,8 @@ struct KeyHelper(size_t historylength = 3, bool repeats = false){
             this.history.update(
                 event.timestamp, event.key.scancode, History.State.Released
             );
+        }else{
+            this.history.update(event.timestamp);
         }
         this.updatemod();
     }
