@@ -93,14 +93,28 @@ struct Box(T) if(isNumeric!T){
     @property T centerx() const{
         return (this.minx + this.maxx) / 2;
     }
+    @property void centerx(N)(in N x) if(isNumeric!N){
+        immutable width = this.width;
+        this.minx = cast(T)(x - width / 2);
+        this.maxx = this.minx + width;
+    }
     /// Get the vertical center of the box.
     @property T centery() const{
         return (this.miny + this.maxy) / 2;
+    }
+    @property void centery(N)(in N y) if(isNumeric!N){
+        immutable height = this.height;
+        this.miny = cast(T)(y - height / 2);
+        this.maxy = this.miny + height;
     }
     
     /// Get the center of the box.
     @property Vector2!T center() const{
         return Vector2!T(this.centerx(), this.centery());
+    }
+    @property void center(V)(in Vector2!V center){
+        this.centerx = center.x;
+        this.centery = center.y;
     }
     
     @property Vector2!T topleft() const{
@@ -243,9 +257,6 @@ struct Box(T) if(isNumeric!T){
         );
     }
     
-    void moveto(N)(in Box!N vector){
-        this.to(vector.minx, vector.miny);
-    }
     void moveto(N)(in Vector2!N vector){
         this.to(vector.x, vector.y);
     }
@@ -254,14 +265,19 @@ struct Box(T) if(isNumeric!T){
         this.minx = x; this.miny = y;
         this.maxx = x + width; this.maxy = y + height;
     }
-    Box!T at(N)(in Box!N box) const{
-        return this.at(box.minx, box.miny);
-    }
+    
     Box!T at(N)(in Vector2!N vector) const{
         return this.at(vector.x, vector.y);
     }
     Box!T at(N)(in N x, in N y) const if(isNumeric!N){
         return Box!T(x, y, x + this.width, y + this.height);
+    }
+    
+    Box!T centered(N)(in Vector2!N vector) const{
+        return this.centered(vector.x, vector.y);
+    }
+    Box!T centered(N)(in N x, in N y) const if(isNumeric!N){
+        return Box!T(this.size).at(x - this.width / 2, y - this.height / 2);
     }
     
     Box!T opBinary(string op: "|", N)(in Box!N rhs) const{
