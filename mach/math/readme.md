@@ -284,3 +284,31 @@ assert(signof(0) is Sign.Zero);
 ```
 
 
+## mach.math.sqrt
+
+
+This module defines the `sqrt` and `isqrt` functions.
+
+`sqrt` may be used to determine the square root of any numeric, imaginary, or
+complex input.
+When pasing an integer or float to `sqrt`, the return type is a float.
+Negative inputs produce a NaN output. Infinity produces an infinite output.
+When passing an imaginary or complex number to `sqrt`, the return type is a
+complex number.
+
+``` D
+assert(sqrt(4) == 2);
+assert(sqrt(256) == 16);
+```
+
+
+The `isqrt` function is an optimized equivalent to calling `floor(sqrt(abs(i)))`
+for some integer input.
+Its return type is the same as its input type.
+
+``` D
+assert(isqrt(4) == 2);
+assert(isqrt(15) == 3);
+```
+
+

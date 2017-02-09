@@ -23,5 +23,6 @@ import mach.math.normalizescalar;
 import mach.math.numrange;
 import mach.math.round;
 import mach.math.sign;
+import mach.math.sqrt;
 import mach.math.vector2;
 import mach.math.vector3;
