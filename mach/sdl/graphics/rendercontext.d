@@ -5,9 +5,12 @@ private:
 import derelict.sdl2.sdl;
 import derelict.opengl3.gl;
 
+import mach.traits : isNumeric;
 import mach.math : clamp, Vector2, Box;
 import mach.sdl.window : Window;
 import mach.sdl.graphics.color : Color;
+import mach.sdl.graphics.texture : Texture;
+import mach.sdl.graphics.vertex : Vertexesf;
 import mach.sdl.graphics.primitives;
 
 public:
@@ -16,6 +19,7 @@ public:
 
 struct RenderContext{
     Color!float rendercolor;
+    // TODO: Offset, viewport
     
     @property auto color(T = float)() const{
         return cast(Color!T) this.rendercolor;
@@ -60,10 +64,24 @@ struct RenderContext{
         this.circle(Vector2!T(x, y), radius);
     }
     void circle(V, R)(in Vector2!V position, in R radius){
-        this.circle(position, radius, clamp(radius / 2, 8, 128));
+        this.circle(position, radius, clamp(cast(uint)(radius / 2), 8, 128));
     }
     void circle(V, R)(in Vector2!V position, in R radius, in uint segments){
         this.rendercolor.glset();
         .circle(position, radius, segments);
+    }
+    
+    void texture(T)(Texture* texture, in Vector2!T pos) const{
+        this.texture(texture, pos.x, pos.y);
+    }
+    void texture(T)(Texture* texture, in T x, in T y) const if(isNumeric!T){
+        this.texture(texture, Box!T(x, y, x + texture.width, y + texture.height));
+    }
+    void texture(T)(Texture* texture, in Box!T target) const{
+        texture.draw(Vertexesf.rect(
+            target.topleft, target.size,
+            Box!double(0, 0, 1, 1),
+            this.color
+        ));
     }
 }
