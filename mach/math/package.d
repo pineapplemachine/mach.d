@@ -21,6 +21,7 @@ import mach.math.mean;
 import mach.math.median;
 import mach.math.normalizescalar;
 import mach.math.numrange;
+import mach.math.polynomial;
 import mach.math.round;
 import mach.math.sign;
 import mach.math.sqrt;

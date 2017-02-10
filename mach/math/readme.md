@@ -235,6 +235,25 @@ assert(numrange(0, 8).asrange(3).equals([0, 3, 6])); // Explicit step
 ```
 
 
+## mach.math.polynomial
+
+
+The `polynomial` function accepts a value and an array of coefficients as
+input, and calculates `c[0] * x^0 + c[1] * x^1 + c[2] * x^2 + ...` where
+coefficients following the last element of the passed coefficients array
+are zero.
+
+In this computation `x` must be passed as a runtime argument, but the array
+of coefficients may be passed as either a runtime or a template argument.
+
+``` D
+// Coefficients passed as a runtime argument
+assert(polynomial(2, [1, 2, 3]) == 17); // (1 * 2^0) + (2 * 2^1) + (3 * 2^2)
+// Coefficients passed as a template argument
+assert(polynomial!([3, 2, 1])(3) == 18); // (3 * 3^0) + (2 * 3^1) + (1 * 3^2)
+```
+
+
 ## mach.math.round
 
 
