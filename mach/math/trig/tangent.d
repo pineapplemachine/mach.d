@@ -83,7 +83,7 @@ auto fasttan(in real value){
 
 
 /// Calculate the tangent of an input using the `fptan` x86 instruction.
-auto tanx86impl(in real value){
+private auto tanx86impl(in real value){
     static if(X86Asm){
         // http://x86.renejeschke.de/html/file_module_x86_id_109.html
         // https://courses.engr.illinois.edu/ece390/books/artofasm/CH14/CH14-5.html#HEADING5-1
@@ -128,7 +128,6 @@ auto tanx86impl(in real value){
             fstp ST(0); // Pop value from the FPU stack
         }
         return real.nan;
-        TEST: {}
         DONE: asm pure nothrow @nogc{
             // Pop 1.0 from FPU stack after a successful fptan calculation
             fstp ST(0);
@@ -141,7 +140,7 @@ auto tanx86impl(in real value){
 
 
 /// Calculate the tangent of an input as `cos(x) / sin(x)`.
-auto tannativeimpl(in real value){
+private auto tannativeimpl(in real value){
     return sin(value) / cos(value);
 }
 
@@ -151,7 +150,7 @@ auto tannativeimpl(in real value){
 /// Faster than `tannativeimpl`, but less accurate. Slower than `tanx86impl`.
 /// https://svnweb.freebsd.org/base/head/lib/msun/src/k_tanf.c?revision=239192&view=markup
 /// http://mathonweb.com/help_ebook/html/algorithms.htm#tan
-auto fasttannativeimpl(in real value){
+private auto fasttannativeimpl(in real value){
     enum real[] Coeff = [
         0x15554d3418c99f.0p-54, // 0.333331395030791399758
         0x1112fd38999f72.0p-55, // 0.133392002712976742718
