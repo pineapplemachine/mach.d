@@ -331,3 +331,9 @@ assert(isqrt(15) == 3);
 ```
 
 
+## mach.math.trig
+
+
+This package implements or otherwise exposes various trigonometric functions.
+
+
