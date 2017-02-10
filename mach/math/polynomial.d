@@ -36,7 +36,7 @@ auto polynomial(T, C)(in T value, in C[] coefficients) if(
         return R(0);
     }else{
         R result = cast(R) coefficients[$-1];
-        for(int i = coefficients.length - 2; i >= 0; i--){
+        for(int i = cast(int)(coefficients.length - 2); i >= 0; i--){
             result = (result * value) + coefficients[i];
         }
         return result;
@@ -52,7 +52,7 @@ auto polynomial(alias coefficients, T)(in T value) if(
         return R(0);
     }else{
         R result = cast(R) coefficients[$-1];
-        for(int i = coefficients.length - 2; i >= 0; i--){
+        for(int i = cast(int)(coefficients.length - 2); i >= 0; i--){
             result = (result * value) + coefficients[i];
         }
         return result;
