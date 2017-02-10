@@ -2,7 +2,6 @@ module mach.math.trig.tangent;
 
 private:
 
-import mach.traits : isFloatingPoint;
 import mach.math.constants : pi;
 import mach.math.polynomial : polynomial;
 import mach.math.floats.properties : fisnan, fisinf;
@@ -84,14 +83,13 @@ auto fasttan(in real value){
 
 
 /// Calculate the tangent of an input using the `fptan` x86 instruction.
-auto tanx86impl(T)(in T value) if(isFloatingPoint!T){
+auto tanx86impl(in real value){
     static if(X86Asm){
-        immutable x = cast(real) value;
         // http://x86.renejeschke.de/html/file_module_x86_id_109.html
         // https://courses.engr.illinois.edu/ece390/books/artofasm/CH14/CH14-5.html#HEADING5-1
         asm pure nothrow @nogc{
             // Load value, push to FPU register stack
-            fld x[EBP];
+            fld value[EBP];
             // Set C3, C2, C0 to represent type of FP value, and C1 to its sign
             fxam;
             // Store FPU status word into register AX; load AH (upper 8 bits of AX) into EFLAGS
@@ -143,7 +141,7 @@ auto tanx86impl(T)(in T value) if(isFloatingPoint!T){
 
 
 /// Calculate the tangent of an input as `cos(x) / sin(x)`.
-auto tannativeimpl(T)(in T value) if(isFloatingPoint!T){
+auto tannativeimpl(in real value){
     return sin(value) / cos(value);
 }
 
@@ -153,7 +151,7 @@ auto tannativeimpl(T)(in T value) if(isFloatingPoint!T){
 /// Faster than `tannativeimpl`, but less accurate. Slower than `tanx86impl`.
 /// https://svnweb.freebsd.org/base/head/lib/msun/src/k_tanf.c?revision=239192&view=markup
 /// http://mathonweb.com/help_ebook/html/algorithms.htm#tan
-auto fasttannativeimpl(T)(in T value) if(isFloatingPoint!T){
+auto fasttannativeimpl(in real value){
     enum real[] Coeff = [
         0x15554d3418c99f.0p-54, // 0.333331395030791399758
         0x1112fd38999f72.0p-55, // 0.133392002712976742718
@@ -175,9 +173,9 @@ auto fasttannativeimpl(T)(in T value) if(isFloatingPoint!T){
             return (x + s * u) + (s * w) * (t + w * r);
         }
         immutable bool sign = value < 0;
-        immutable realval = cast(real)(sign ? -value : value) % pi;
-        immutable bool invert = realval > halfpi;
-        immutable x = invert ? pi - realval : realval;
+        immutable bounded = (sign ? -value : value) % pi;
+        immutable bool invert = bounded > halfpi;
+        immutable x = invert ? pi - bounded : bounded;
         immutable reciprocal = x > quarterpi;
         immutable y = reciprocal ? halfpi - x : x;
         immutable result = impl(y);
