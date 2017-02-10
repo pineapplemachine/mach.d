@@ -2,8 +2,10 @@ module mach.math.floats.compare;
 
 private:
 
-import mach.traits : isFloatingPoint, IEEEFormatOf;
+import mach.traits : isFloatingPoint, isImaginary, isComplex, IEEEFormatOf;
 import mach.math.bits : pow2d, bitsidentical;
+
+enum DefaultEpsilon = 1e-10;
 
 /++ Docs
 
@@ -18,6 +20,19 @@ unittest{ /// Example
     assert(!fidentical(0.1, 0.2));
 }
 
+/++ Docs
+
+`fnearequal` can be used to test whether the positive difference between two
+floats is less than or equal to a given epsilon.
+When no epsilon is provided, a default value of `1e-10` is used.
+
++/
+
+unittest{
+    assert(fnearequal(1.00001, 1.00002, 0.00001));
+    assert(fnearequal(1.0, 0.9999999999999999));
+}
+
 public:
 
 
@@ -28,6 +43,21 @@ public:
     return bitsidentical!size(a, b);
 }
 
+/// Returns true when two values are equal or close to equal.
+bool fnearequal(T)(in T a, in T b, in T epsilon = DefaultEpsilon) if(isFloatingPoint!T){
+    immutable delta = a - b;
+    return delta >= -epsilon && delta <= epsilon;
+}
+/// Ditto
+bool fnearequal(T, E)(in T a, in T b, in E epsilon = DefaultEpsilon) if(isImaginary!T && isFloatingPoint!E){
+    return fnearequal(a.im, b.im, epsilon);
+}
+/// Ditto
+bool fnearequal(T, E)(in T a, in T b, in E epsilon = DefaultEpsilon) if(isComplex!T && isFloatingPoint!E){
+    return fnearequal(a.re, b.re, epsilon) && fnearequal(a.im, b.im, epsilon);
+}
+
+
 
 
 private version(unittest){
@@ -35,6 +65,7 @@ private version(unittest){
     import mach.math.floats.inject : fcompose;
     import mach.math.floats.properties : fisnan;
 }
+
 unittest{
     foreach(T; Aliases!(float, double, real)){
         // Identical
@@ -67,4 +98,9 @@ unittest{
         assert(!fidentical(x, y));
         assert(!fidentical(y, x));
     }
+}
+
+unittest{
+    assert(fnearequal(2.0, 2.0000000000000004));
+    assert(fnearequal(1.0, 0.9999999999999999));
 }
