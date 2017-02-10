@@ -62,19 +62,20 @@ auto sqrt(T)(in T value) if(isFloatingPoint!T){
 /// Get the principal square root of an imaginary number, which is a complex number.
 auto sqrt(T)(in T value) if(isImaginary!T){
     alias F = FloatingPointType!T;
-    return (F(1) / F(Sqrt2)) * (F(1) + T(1i)) * sqrt(value.im);
+    immutable x = (F(1) / F(Sqrt2)) * sqrt(value.im);
+    return x + x * T(1i);
 }
 
-/// Get the principal square root of a complex number.
-/// https://pdfs.semanticscholar.org/8895/3cfa5bc448cc007f23b48b04551cce8de444.pdf p. 2
-auto sqrt(T)(in T value) if(isComplex!T){
+auto sqrt(T)(in T value) if(isComplex!T) out{
+    // Workaround https://issues.dlang.org/show_bug.cgi?id=17173
+}body{
     alias F = FloatingPointType!T;
     alias I = ImaginaryType!T;
     if(value.im.fiszero){
         if(value.re > 0){
-            return cast(T)(sqrt(value.re) + I(0i));
+            return sqrt(value.re) + I(0i);
         }else{
-            return cast(T)(sqrt(-value.re) * I(1i));
+            return F(0) + sqrt(-value.re) * I(1i);
         }
     }else{
         immutable x = sqrt(value.re * value.re + value.im * value.im);
@@ -114,7 +115,7 @@ private version(unittest){
     import mach.traits.primitives : NumericTypes, IntegralTypes, FloatingPointTypes;
     import mach.math.abs : abs;
     import mach.math.floats.properties;
-    import mach.math.floats.compare : fidentical;
+    import mach.math.floats.compare : fnearequal;
 }
 
 unittest{ /// Perfect squares
@@ -146,10 +147,10 @@ unittest{ /// Negative integers
 
 unittest{ /// Imaginary numbers
     assert(sqrt(0i) == 0);
-    assert(fidentical(sqrt(8i).re, 2.0));
-    assert(fidentical(sqrt(8i).im, 2.0));
-    assert(fidentical(sqrt(128i).re, 8.0));
-    assert(fidentical(sqrt(128i).im, 8.0));
+    assert(fnearequal(sqrt(8i).re, 2.0));
+    assert(fnearequal(sqrt(8i).im, 2.0));
+    assert(fnearequal(sqrt(128i).re, 8.0));
+    assert(fnearequal(sqrt(128i).im, 8.0));
     immutable result = sqrt(ireal(14i));
     immutable expected = 2.6457513110645905905016L;
     immutable epsilon = 1e-18;
@@ -159,8 +160,8 @@ unittest{ /// Imaginary numbers
 
 unittest{ /// Complex numbers
     assert(sqrt(0 + 0i) == 0);
-    assert(sqrt(64 + 0i) == 8);
-    assert(sqrt(-64 + 0i) == 8i);
+    assert(fnearequal(sqrt(64 + 0i), 8+0i));
+    assert(fnearequal(sqrt(-64 + 0i), 0+8i));
     immutable aresult = sqrt(creal(+64 + 64i));
     immutable bresult = sqrt(creal(-64 + 64i));
     immutable expectedre = 8.7894729077424797283184L;
