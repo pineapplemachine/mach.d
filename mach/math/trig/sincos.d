@@ -2,13 +2,7 @@ module mach.math.trig.sincos;
 
 private:
 
-version(D_InlineAsm_X86){
-    enum X86Asm = true;
-}else version(D_InlineAsm_X86_64){
-    enum X86Asm = true;
-}else{
-    enum X86Asm = false;
-}
+import mach.sys.platform : InlineAsm_X86_Any;
 
 /++ Docs
 
@@ -59,7 +53,7 @@ struct SinCosResult{
 /// On some platforms, this will be more performant than making separate calls
 /// to `sin` and `cos`.
 SinCosResult sincos(in real value){
-    static if(X86Asm){
+    static if(InlineAsm_X86_Any){
         return sincosx86impl(value);
     }else{
         return sincossepimpl(value);
@@ -74,11 +68,11 @@ private SinCosResult sincossepimpl(in real value){
 }
 
 
-
+import mach.io.stdio;
 /// Calculate sine and cosine simultaneously using the `fsincos` x86 instruction.
 /// More efficient than calculating the values separately.
 private SinCosResult sincosx86impl(in real value){
-    static if(X86Asm){
+    static if(InlineAsm_X86_Any){
         // TODO: How to not wrap in a function returning creal?
         static creal impl(in real value){
             // http://x86.renejeschke.de/html/file_module_x86_id_115.html

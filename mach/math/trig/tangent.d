@@ -6,14 +6,7 @@ import mach.math.constants : pi;
 import mach.math.polynomial : polynomial;
 import mach.math.floats.properties : fisnan, fisinf;
 import mach.math.trig.sincos : sin, cos;
-
-version(D_InlineAsm_X86){
-    enum X86Asm = true;
-}else version(D_InlineAsm_X86_64){
-    enum X86Asm = true;
-}else{
-    enum X86Asm = false;
-}
+import mach.sys.platform : InlineAsm_X86_Any;
 
 /++ Docs
 
@@ -56,7 +49,7 @@ public:
 
 /// Calculate the tangent of an angle given in radians.
 auto tan(in real value){
-    static if(X86Asm){
+    static if(InlineAsm_X86_Any){
         return tanx86impl(value);
     }else{
         return tannativeimpl(value);
@@ -67,7 +60,7 @@ auto tan(in real value){
 /// Depending on platform or other factors, may choose a faster implementation
 /// over a more accurate one.
 auto fasttan(in real value){
-    static if(X86Asm){
+    static if(InlineAsm_X86_Any){
         return tanx86impl(value);
     }else{
         return fasttannativeimpl(value);
@@ -78,7 +71,7 @@ auto fasttan(in real value){
 
 /// Calculate the tangent of an input using the `fptan` x86 instruction.
 private auto tanx86impl(in real value){
-    static if(X86Asm){
+    static if(InlineAsm_X86_Any){
         // http://x86.renejeschke.de/html/file_module_x86_id_109.html
         // https://courses.engr.illinois.edu/ece390/books/artofasm/CH14/CH14-5.html#HEADING5-1
         asm pure nothrow @nogc{
@@ -181,7 +174,7 @@ private version(unittest){
     import mach.meta : Aliases;
     import mach.math.floats.compare : fidentical, fnearequal;
     import mach.math.floats.properties : fiszero;
-    static if(X86Asm){
+    static if(InlineAsm_X86_Any){
         alias TanFns = Aliases!(tan, tannativeimpl, tanx86impl);
     }else{
         alias TanFns = Aliases!(tan, tannativeimpl);
