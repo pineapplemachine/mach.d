@@ -26,9 +26,11 @@ Major departures from Phobos' school of thought include:
 
 ### No auto-decoding strings
 
-The mach library does not give special treatment to character strings. Unless otherwise specified, the functions defined throughout the library will treat an array of chars as just that - an an array of chars. The `mach.text.utf` module provides `utfencode` and `utfdecode` functions which should be called to explicitly encode and decode UTF-8 strings.
+The mach library does not give special treatment to character strings. Unless otherwise specified, the functions defined throughout the library will treat an array of chars or wchars as just that - an an array of chars (or wchars). The `mach.text.utf` module provides `utfencode` and `utfdecode` functions which should be called to explicitly encode and decode UTF strings.
 
 ``` D
+import mach.text : utfdecode;
+import mach.range : walklength;
 string str = "\xE3\x83\x84";
 assert(str.length == 3);
 auto decoded = str.utfdecode;
@@ -41,6 +43,7 @@ assert(decoded.walklength == 1);
 Functions in this library do not necessarily accept _ranges_, they accept types which are _valid as ranges_. The distinction becomes most significant when working with arrays. Functions which accept ranges also accept types with an `asrange` property which returns an actual range. There are default `asrange` implementations for several types, including static and dynamic arrays, which functions throughout this library rely on to get a range from an inputted iterable when only a range will do.
 
 ``` D
+import mach.range : asrange, filter, equals;
 // An array - but not a range
 int[] array = [0, 1, 2, 3];
 // A range which iterates over an array
@@ -55,7 +58,9 @@ assert(arrayfilter.equals(rangefilter));
 Other types can become similarly valid as ranges by giving them an `asrange` method. With this other collections can become valid as ranges, too, such as the doubly-linked list type defined in `mach.collect`.
 
 ``` D
-auto list = new LinkedList!int([0, 1, 2, 3]);
+import mach.collect : DoublyLinkedList;
+import mach.range : filter, equals;
+auto list = new DoublyLinkedList!int([0, 1, 2, 3]);
 assert(list.filter!(n => n % 2).equals([1, 3]));
 ```
 
@@ -66,6 +71,7 @@ In Phobos, ranges are conceptualized as moving windows over some source of data.
 The indexes referred to via opIndex and opSlice remain consistent even while consuming the range, as does length.
 
 ``` D
+import mach.range : asrange;
 auto range = "hello".asrange;
 assert(range.length == 5);
 assert(range[0] == 'h');
@@ -77,6 +83,7 @@ assert(range[0] == 'h');
 To get the number of elements remaining in a range, as the `length` property does in Phobos, ranges in this library support a `remaining` property which returns the number of elements the range will still iterate over.
 
 ``` D
+import mach.range : asrange;
 auto range = "hello".asrange;
 assert(range.remaining == 5);
 range.popFront();
