@@ -5,13 +5,7 @@ private:
 import mach.math.constants : pi;
 import mach.math.polynomial : polynomial;
 import mach.math.floats.properties : fisnan, fisinf;
-import core.math : sin, cos;
-
-/// Constants used by native implementation
-enum halfpi = pi / 2;
-enum quarterpi = pi / 4;
-enum threequarterspi = halfpi + quarterpi;
-enum eigthpi = pi / 8;
+import mach.math.trig.sincos : sin, cos;
 
 version(D_InlineAsm_X86){
     enum X86Asm = true;
@@ -88,44 +82,40 @@ private auto tanx86impl(in real value){
         // http://x86.renejeschke.de/html/file_module_x86_id_109.html
         // https://courses.engr.illinois.edu/ece390/books/artofasm/CH14/CH14-5.html#HEADING5-1
         asm pure nothrow @nogc{
-            // Load value, push to FPU register stack
+            // Push value onto FPU register stack
             fld value[EBP];
-            // Set C3, C2, C0 to represent type of FP value, and C1 to its sign
+            // Fiddle with FPU status word and EFLAGS to act on float properties
             fxam;
-            // Store FPU status word into register AX; load AH (upper 8 bits of AX) into EFLAGS
             fstsw AX;
             sahf;
             // Jump if x is NaN, infinity, or empty, otherwise proceed to fptan
             jc NAN;
-        TAN:
             // Calculate tan(ST(0)), store in ST(0), push 1.0 onto FPU stack
             // Value may be out of range (-2^63, +2^63), in which case C2 is set
             fptan;
-            // If C2 was not set (value wasn't out of range) then exit
+            // If C2 was not set (value wasn't out of range) then jump to DONE
             fstsw AX;
             sahf;
             jnp DONE;
-            // Otherwise, bring it into range by calculating remainder(x / pi) and try again
+            // Otherwise, bring it into range by calculating x % pi and try again
             // Push pi onto the FPU register stack
             fldpi;
-            // Swap the places of pi (ST(0)) and x (ST(1)) on the stack
+            // Swap the places of pi and x on the stack for fprem
             fxch;
         REM:
-            // Calculate remainder(x / pi)
-            // This instruction should be evaluated repeatedly until C2 is not set
+            // Calculate x % pi
             fprem;
-            // If C2 was set, do it again
+            // Evaluate fprem repeatedly until C2 isn't set
             fstsw AX;
             sahf;
             jp REM;
-            // Otherwise, proceed to calculate tangent
             // Pop pi which was previously pushed onto the stack
             fstp ST(1);
-            // Calculate tangent
+            // x is in range now; calculate the tangent
             fptan;
             jmp DONE;
         NAN:
-            fstp ST(0); // Pop value from the FPU stack
+            fstp ST(0); // Pop input from the FPU stack
         }
         return real.nan;
         DONE: asm pure nothrow @nogc{
@@ -151,6 +141,8 @@ private auto tannativeimpl(in real value){
 /// https://svnweb.freebsd.org/base/head/lib/msun/src/k_tanf.c?revision=239192&view=markup
 /// http://mathonweb.com/help_ebook/html/algorithms.htm#tan
 private auto fasttannativeimpl(in real value){
+    enum halfpi = pi / 2;
+    enum quarterpi = pi / 4;
     enum real[] Coeff = [
         0x15554d3418c99f.0p-54, // 0.333331395030791399758
         0x1112fd38999f72.0p-55, // 0.133392002712976742718

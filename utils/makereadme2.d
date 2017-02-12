@@ -19,6 +19,7 @@ immutable readmepaths = [
     "mach/math",
     "mach/math/bits",
     "mach/math/ints",
+    "mach/math/trig",
     "mach/meta",
     "mach/range",
     "mach/sys",
