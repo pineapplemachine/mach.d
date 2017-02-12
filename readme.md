@@ -1,27 +1,16 @@
 # mach.d
 
-Mach is a general-purpose library for the D programming language, made with game
-development in mind.
+A general-purpose library for the D programming language, made with game development in mind.
 
-This library is distributed under the very permissive
-[zlib/libpng license](https://github.com/pineapplemachine/mach.d/blob/master/license).
-In short: You may do nearly anything you like with this software, provided you
-don't misrepresent its origin.
+This library is distributed under the very permissive [zlib/libpng license](https://github.com/pineapplemachine/mach.d/blob/master/license). In short: You may do nearly anything you like with this software, provided you don't misrepresent its origin.
 
-Be warned: This library is not yet mature, and I am constantly rewriting and
-improving and occassionally breaking code. That being said, I take some pride
-in the thoroughness of this library's unit tests.
-Said tests are frequently verified on Windows 7 and occassionally on OSX 10.9.5.
-(Eventually, I'll get around to setting up an automated build process that
-regularly tests on as many platforms as possible.)
+Be warned: This library is not yet mature, and I am constantly rewriting and improving and occassionally breaking code. That being said, I take some pride in the thoroughness of this library's unit tests. Said tests are frequently verified on Windows 7 and occassionally on OSX 10.9.5. (Eventually, I'll get around to setting up an automated build process that regularly tests on as many platforms as possible.)
 
 ## Dependencies
 
-The majority of this package depends only on the druntime and D's standard library,
-Phobos, and I'm working on cutting out the remaining Phobos dependencies.
+The majority of this package depends only on the druntime and D's standard library, Phobos, and I'm working on cutting out the remaining Phobos dependencies.
 
-The `mach.sdl` package requires some additional dependencies.
-See the [package readme](https://github.com/pineapplemachine/mach.d/blob/master/mach/sdl/readme.md) for details.
+The `mach.sdl` package requires some additional dependencies. See the [package readme](https://github.com/pineapplemachine/mach.d/blob/master/mach/sdl/readme.md) for details.
 
 ## Usage
 
@@ -37,7 +26,7 @@ Major departures from Phobos' school of thought include:
 
 ### No auto-decoding strings
 
-The mach library does not give special treatment to character strings. Unless otherwise specified, the functions defined throughout the library will treat an array of chars or wchars as just that - an an array of chars (or wchars). The `mach.text.utf` module provides `utfencode` and `utfdecode` functions which should be called to explicitly encode and decode UTF strings.
+The mach library does not give special treatment to character strings. Unless otherwise specified, the functions defined throughout the library will treat an array of chars as just that - an an array of chars. The `mach.text.utf` module provides `utfencode` and `utfdecode` functions which should be called to explicitly encode and decode UTF-8 strings.
 
 ``` D
 string str = "\xE3\x83\x84";
