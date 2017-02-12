@@ -3,7 +3,6 @@ module mach.math.trig.tangent;
 private:
 
 import mach.math.constants : pi;
-import mach.math.polynomial : polynomial;
 import mach.math.floats.properties : fisnan, fisinf;
 import mach.math.trig.sincos : sin, cos;
 import mach.sys.platform : InlineAsm_X86_Any;
