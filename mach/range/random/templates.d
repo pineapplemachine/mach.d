@@ -69,7 +69,7 @@ template RNGMixin(T){
         
         /// Get a random float in the range [0, 1).
         @property As random(As)() if(isFloatingPoint!As){
-            return this.random!ulong / (cast(double) ulong.max + 1);
+            return this.random!ulong / (cast(As) ulong.max + 1);
         }
         /// Get a random float in the range [0, high).
         @property As random(As)(in As high) if(isFloatingPoint!As){
