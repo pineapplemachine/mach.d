@@ -130,8 +130,7 @@ private version(unittest){
     import mach.meta : Aliases;
     import mach.math.floats.compare : fnearequal;
     import mach.math.floats.properties : fisnan;
-    import mach.math.constants : pi;
-    enum halfpi = pi / 2;
+    import mach.math.constants : pi, halfpi;
 }
 
 unittest{ // Sine of multiples of pi/2
