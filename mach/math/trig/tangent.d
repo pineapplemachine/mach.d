@@ -2,7 +2,6 @@ module mach.math.trig.tangent;
 
 private:
 
-import mach.math.constants : pi;
 import mach.math.floats.properties : fisnan, fisinf;
 import mach.math.trig.sincos : sin, cos;
 import mach.sys.platform : InlineAsm_X86_Any;
@@ -30,18 +29,6 @@ unittest{ /// Example
     assert(fnearequal(tan(1.0), 1.5574077246549022, 1e-12));
 }
 
-/++ Docs
-
-This module also defines a `fasttan` function, which may use a faster algorithm
-at the expense of accuracy.
-
-+/
-
-unittest{ /// Example
-    import mach.math.floats : fnearequal;
-    assert(fnearequal(fasttan(1.0), 1.5574077246549022, 1e-6));
-}
-
 public:
 
 
@@ -52,17 +39,6 @@ auto tan(in real value){
         return tanx86impl(value);
     }else{
         return tannativeimpl(value);
-    }
-}
-
-/// Calculate the tangent of an angle given in radians.
-/// Depending on platform or other factors, may choose a faster implementation
-/// over a more accurate one.
-auto fasttan(in real value){
-    static if(InlineAsm_X86_Any){
-        return tanx86impl(value);
-    }else{
-        return fasttannativeimpl(value);
     }
 }
 
@@ -128,63 +104,22 @@ private auto tannativeimpl(in real value){
 
 
 
-/// Calculate the approximate tangent of an input with a native D algorithm.
-/// Faster than `tannativeimpl`, but less accurate. Slower than `tanx86impl`.
-/// https://svnweb.freebsd.org/base/head/lib/msun/src/k_tanf.c?revision=239192&view=markup
-/// http://mathonweb.com/help_ebook/html/algorithms.htm#tan
-private auto fasttannativeimpl(in real value){
-    enum halfpi = pi / 2;
-    enum quarterpi = pi / 4;
-    enum real[] Coeff = [
-        0x15554d3418c99f.0p-54, // 0.333331395030791399758
-        0x1112fd38999f72.0p-55, // 0.133392002712976742718
-        0x1b54c91d865afe.0p-57, // 0.0533812378445670393523
-        0x191df3908c33ce.0p-58, // 0.0245283181166547278873
-        0x185dadfcecf44e.0p-61, // 0.00297435743359967304927
-        0x1362b9bf971bcd.0p-59, // 0.00946564784943673166728
-    ];
-    if(value.fisinf || value.fisnan){
-        return real.nan;
-    }else{
-        auto impl(in real x){ // 0 <= x <= pi/4
-            immutable z = x * x;
-            immutable r = Coeff[4] + z * Coeff[5];
-            immutable t = Coeff[2] + z * Coeff[3];
-            immutable w = z * z;
-            immutable s = z * x;
-            immutable u = Coeff[0] + z * Coeff[1];
-            return (x + s * u) + (s * w) * (t + w * r);
-        }
-        immutable bool sign = value < 0;
-        immutable bounded = (sign ? -value : value) % pi;
-        immutable bool invert = bounded > halfpi;
-        immutable x = invert ? pi - bounded : bounded;
-        immutable reciprocal = x > quarterpi;
-        immutable y = reciprocal ? halfpi - x : x;
-        immutable result = impl(y);
-        immutable sresult = (sign ^ invert) ? -result : result;
-        return reciprocal ? 1 / sresult : sresult;
-    }
-}
-
-
-
 private version(unittest){
     import mach.meta : Aliases;
     import mach.math.floats.compare : fidentical, fnearequal;
     import mach.math.floats.properties : fiszero;
+    import mach.math.constants : pi, halfpi;
+    import mach.math.abs : abs;
     static if(InlineAsm_X86_Any){
         alias TanFns = Aliases!(tan, tannativeimpl, tanx86impl);
     }else{
         alias TanFns = Aliases!(tan, tannativeimpl);
     }
-    alias FastTanFns = Aliases!(fasttan, fasttannativeimpl);
-    alias AllTanFns = Aliases!(TanFns, FastTanFns);
 }
 
 unittest{ /// Invalid inputs
     foreach(T; Aliases!(float, double, real)){
-        foreach(TanFn; AllTanFns){
+        foreach(TanFn; TanFns){
             assert(TanFn(T.nan).fisnan);
             assert(TanFn(-T.nan).fisnan);
             assert(TanFn(T.infinity).fisnan);
@@ -195,7 +130,7 @@ unittest{ /// Invalid inputs
 
 unittest{ /// Tangent of zero
     foreach(T; Aliases!(float, double, real)){
-        foreach(TanFn; AllTanFns){
+        foreach(TanFn; TanFns){
             assert(TanFn(T(0)).fiszero);
             assert(TanFn(-T(0)).fiszero);
         }
@@ -203,7 +138,7 @@ unittest{ /// Tangent of zero
 }
 
 unittest{ /// Tangent of multiples of pi
-    foreach(TanFn; AllTanFns){
+    foreach(TanFn; TanFns){
         assert(fnearequal(TanFn(pi), 0));
         assert(fnearequal(TanFn(-pi), 0));
         assert(fnearequal(TanFn(pi + pi), 0));
@@ -211,13 +146,14 @@ unittest{ /// Tangent of multiples of pi
     }
 }
 
-unittest{ /// Tangent is infinite/very large
+unittest{ /// Tangent is infinite (or very large in magnitude)
     // Why isn't tan(pi/2) infinite? See: http://www.website.masmforum.com/tutorials/fptute/fpuchap10.htm
-    foreach(TanFn; AllTanFns){
-        assert(TanFn(pi * 0.5) > 1e18);
-        assert(TanFn(pi * -0.5) < -1e18);
-        assert(TanFn(pi * 1.5) > 1e18);
-        assert(TanFn(pi * -1.5) < -1e18);
+    foreach(TanFn; TanFns){
+        import mach.io.stdio;
+        assert(abs(TanFn(halfpi)) > 1e18);
+        assert(abs(TanFn(-halfpi)) > 1e18);
+        assert(abs(TanFn(pi + halfpi)) > 1e18);
+        assert(abs(TanFn(-pi - halfpi)) > 1e18);
     }
 }
 
@@ -244,17 +180,11 @@ unittest{ /// Tangent is correct (or nearly correct) for some set cases
     foreach(tancase; cases){
         immutable input = tancase[0];
         immutable expected = tancase[1];
-        foreach(TanFn; TanFns){ // Regular `tan` must be correct to at least 12 decimal places
+        foreach(TanFn; TanFns){ // Must be correct to at least 12 decimal places
             assert(fnearequal(TanFn(input), expected, 1e-12));
             assert(fnearequal(TanFn(-input), -expected, 1e-12));
             assert(fnearequal(TanFn(input + pi*4), expected, 1e-12));
             assert(fnearequal(TanFn(-input - pi*4), -expected, 1e-12));
-        }
-        foreach(TanFn; FastTanFns){ // Fast `tan` must be correct to at least 6 decimal places
-            assert(fnearequal(TanFn(input), expected, 1e-6));
-            assert(fnearequal(TanFn(-input), -expected, 1e-6));
-            assert(fnearequal(TanFn(input + pi*4), expected, 1e-6));
-            assert(fnearequal(TanFn(-input - pi*4), -expected, 1e-6));
         }
     }
 }
