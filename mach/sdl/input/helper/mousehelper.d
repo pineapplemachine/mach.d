@@ -56,9 +56,11 @@ struct MouseHelper(size_t historylength = 3){
         }else if(event.type is event.Type.MouseMotion){
             this.x = event.mousex;
             this.y = event.mousey;
+            this.history.update(event.timestamp);
         }else if(event.type is event.Type.MouseWheel){
             this.scrollx = event.mousewheel.x;
             this.scrolly = event.mousewheel.y;
+            this.history.update(event.timestamp);
         }else{
             this.history.update(event.timestamp);
         }
