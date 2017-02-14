@@ -28,6 +28,9 @@ enum real halfpi = 0x1.921fb54442d1846ap0L;
 /// Pi/4, approximately 0.78539.
 enum real quarterpi = 0x1.921fb54442d1846ap-1L;
 
+/// Pi * 3/4, approximately 2.35619.
+enum real threequarterspi = 0x1.2d97c7f3321d235p1L;
+
 /// Tau, or 2π, approximately 6.28315.
 /// https://en.wikipedia.org/wiki/Turn_(geometry)#Tau_proposal
 enum real tau = 6.283185307179586476925286766559005768394338798750211641949L;

@@ -4,6 +4,21 @@
 This package implements or otherwise exposes various trigonometric functions.
 
 
+## mach.math.trig.arctangent
+
+
+This module implements the [`atan`](https://en.wikipedia.org/wiki/Inverse_trigonometric_functions)
+and [`atan2`](https://en.wikipedia.org/wiki/Atan2) trigonometric functions.
+
+`atan` is the arctangent function for a single floating point input, and it
+returns an angle between -π/2 and +π/2 radians.
+Its companion, `atan2`, accepts two inputs and finds the arctangent of the
+first input divided by the second. This makes it possible to retain quadrant
+information, such that `atan2` may return an angle from -π to +π radians.
+
+When any input to either of these functions is NaN, the output is also NaN.
+
+
 ## mach.math.trig.sincos
 
 
@@ -53,15 +68,6 @@ import mach.math.floats : fnearequal;
 import mach.math.constants : pi;
 assert(fnearequal(tan(pi), 0));
 assert(fnearequal(tan(1.0), 1.5574077246549022, 1e-12));
-```
-
-
-This module also defines a `fasttan` function, which may use a faster algorithm
-at the expense of accuracy.
-
-``` D
-import mach.math.floats : fnearequal;
-assert(fnearequal(fasttan(1.0), 1.5574077246549022, 1e-6));
 ```
 
 
