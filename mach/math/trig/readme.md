@@ -19,6 +19,22 @@ information, such that `atan2` may return an angle from -π to +π radians.
 When any input to either of these functions is NaN, the output is also NaN.
 
 
+## mach.math.trig.inverse
+
+
+This module defines the `asin` and `acos` [trigonometric functions]
+(https://en.wikipedia.org/wiki/Inverse_trigonometric_functions).
+Their inputs are expected to be at least -1 and at most +1, otherwise they
+return NaN.
+
+``` D
+import mach.math.floats.compare : fnearequal;
+import mach.math.trig.sincos : sin, cos;
+assert(fnearequal(sin(asin(0.5)), 0.5, 1e-18));
+assert(fnearequal(cos(acos(0.5)), 0.5, 1e-18));
+```
+
+
 ## mach.math.trig.sincos
 
 
