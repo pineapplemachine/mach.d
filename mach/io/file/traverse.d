@@ -144,16 +144,33 @@ struct ListDirRange{
         
         /// http://pubs.opengroup.org/onlinepubs/009695399/functions/readdir_r.html
         static struct Entry{
+            static if(is(typeof(dirent.d_fileno))){
+                alias FileNo = typeof(dirent.d_fileno);
+                static private auto getdirentfileno(in dirent* entry){
+                    return entry.d_fileno;
+                }
+            }else static if(is(typeof(dirent.d_ino))){
+                alias FileNo = typeof(dirent.d_ino);
+                static private auto getdirentfileno(in dirent* entry){
+                    return entry.d_ino;
+                }
+            }else{
+                static assert(false, "Unsupported platform.");
+            }
+            
             string listpath;
-            typeof(dirent.d_fileno) d_fileno;
+            FileNo d_fileno;
             typeof(dirent.d_type) d_type;
             string entryname;
             
             this(string listpath, dirent* entry){
                 this.listpath = listpath;
                 // This memory is liable to be overwritten later, so dup it now.
-                this.d_fileno = entry.d_fileno;
+                this.d_fileno = this.getdirentfileno(entry);
                 this.d_type = entry.d_type;
+                // TODO: This will not work on Solaris because of a different
+                // representation of file name in the dirent struct.
+                // See http://stackoverflow.com/a/563411/4099022
                 static if(is(typeof({size_t x = entry.d_namlen;}))){
                     // Optimization available on most posix platforms
                     this.entryname = entry.d_name[0 .. entry.d_namlen].idup;
