@@ -91,7 +91,7 @@ version(unittest){
     import mach.test;
     import mach.range : headis;
     import mach.io.stream.filestream : FileStream;
-    enum string TestPath = __FILE__.dirName ~ "/range.txt";
+    enum string TestPath = __FILE_FULL_PATH__.dirName ~ "/range.txt";
 }
 unittest{
     // TODO: Use an ArrayStream or something instead of a FileStream for tests

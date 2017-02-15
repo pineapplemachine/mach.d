@@ -333,7 +333,7 @@ version(unittest){
     import std.path;
     import mach.test;
     import mach.range : filter, asarray;
-    enum string TestPath = __FILE__.dirName ~ "/traverse";
+    enum string TestPath = __FILE_FULL_PATH__.dirName ~ "/traverse";
     struct Entry{
         string path;
         bool isdir = false;

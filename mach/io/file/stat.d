@@ -157,7 +157,7 @@ version(unittest){
     private:
     import std.path;
     import mach.test;
-    enum string TestPath = __FILE__.dirName ~ "/stat.txt";
+    enum string TestPath = __FILE_FULL_PATH__.dirName ~ "/stat.txt";
 }
 unittest{
     tests("Stat", {

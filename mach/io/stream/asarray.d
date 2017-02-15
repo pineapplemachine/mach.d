@@ -68,7 +68,7 @@ version(unittest){
     import std.path;
     import mach.test;
     import mach.io.stream.filestream : FileStream;
-    enum string TestPath = __FILE__.dirName ~ "/range.txt";
+    enum string TestPath = __FILE_FULL_PATH__.dirName ~ "/range.txt";
 }
 unittest{
     tests("Stream as array", {

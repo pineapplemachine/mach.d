@@ -127,7 +127,7 @@ version(unittest){
     import mach.test;
     import mach.io.stream.io;
     import mach.io.stream.templates;
-    enum string TestPath = __FILE__.dirName ~ "/filestream.txt";
+    enum string TestPath = __FILE_FULL_PATH__.dirName ~ "/filestream.txt";
 }
 unittest{
     tests("File stream", {

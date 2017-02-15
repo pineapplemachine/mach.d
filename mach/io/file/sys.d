@@ -418,7 +418,7 @@ private version(unittest){
     import std.path;
     import mach.test;
     import mach.error.mustthrow : mustthrow;
-    enum string CurrentPath = __FILE__.dirName;
+    enum string CurrentPath = __FILE_FULL_PATH__.dirName;
     enum string TestPath = CurrentPath ~ "/sys.txt";
     enum string FakePath1 = CurrentPath ~ "/nope_not_a_real_file";
     enum string FakePath2 = CurrentPath ~ "/nope_not_a_real_file.txt";
