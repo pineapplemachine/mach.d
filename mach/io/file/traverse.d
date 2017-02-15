@@ -385,6 +385,7 @@ unittest{
             Entry(TestPath ~ "/dir/d.txt"),
             Entry(TestPath ~ "/dir/nesteddir", true),
             Entry(TestPath ~ "/dir/nesteddir/deep.txt", true),
+            Entry(TestPath ~ "/dir/nesteddir/deep.txt/deeper.txt", false),
         ];
         void TestTraverse(TraverseDirMode mode)(){
             auto files = traversedir!mode(TestPath).asarray;
