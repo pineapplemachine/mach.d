@@ -2,6 +2,8 @@ module mach.math.bits.compare;
 
 private:
 
+import mach.math.bits.pow2 : pow2d;
+
 /++ Docs
 
 The `bitsidentical` function can be used to compare the low bits of two
