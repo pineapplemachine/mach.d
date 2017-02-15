@@ -336,13 +336,13 @@ unittest{ /// Write and parse normal reals
 
 unittest{ /// Write subnormals
     assert(writehexfloat(float(0x0.0123p-126)) == "0x0.0123p-126");
-    assert(writehexfloat(double(0x0.0123p-1022)) == "0x0.0123p-1022");
+    assert(writehexfloat(double(0x0.0123p-1022L)) == "0x0.0123p-1022");
     assert(writehexfloat(real(0x0.0123p-16382L)) == "0x0.0123p-16382");
 }
 
 unittest{ /// Parse subnormals
     assert(fidentical(parsehexfloat!float("0x0.0123p-126"), float(0x0.0123p-126)));
-    assert(fidentical(parsehexfloat!double("0x0.0123p-1022"), double(0x0.0123p-1022)));
+    assert(fidentical(parsehexfloat!double("0x0.0123p-1022"), double(0x0.0123p-1022L)));
     assert(fidentical(parsehexfloat!real("0x0.0123p-16382"), real(0x0.0123p-16382L)));
 }
 
