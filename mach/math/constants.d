@@ -33,7 +33,7 @@ enum real threequarterspi = 0x1.2d97c7f3321d235p1L;
 
 /// Tau, or 2π, approximately 6.28315.
 /// https://en.wikipedia.org/wiki/Turn_(geometry)#Tau_proposal
-enum real tau = 6.283185307179586476925286766559005768394338798750211641949L;
+enum real tau = 0x1.921fb54442d1846ap+2L;
 /// ditto
 alias τ = tau;
 
