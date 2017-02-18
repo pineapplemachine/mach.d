@@ -210,15 +210,21 @@ private T getangleas(T, A)(in A value) if(isUnsignedIntegral!T && isUnsignedInte
 /// trigonometric functions where using radians could result in slightly
 /// different answers from what may be expected because of rounding.
 struct Angle(T = ulong) if(isUnsignedIntegral!T){
-    enum real RealMax = cast(real) T.max + 1;
+    /// The smallest representable angle, which is exactly 0 radians.
+    static enum min = typeof(this)(0);
+    /// The largest representable angle, which is just under 2π radians.
+    static enum max = typeof(this)(T.max);
     
-    enum T T1_8 = T.max / 8 + 1;
-    enum T T1_4 = T.max / 4 + 1;
-    enum T T3_8 = T1_4 + T1_8;
-    enum T T1_2 = T.max / 2 + 1;
-    enum T T5_8 = T1_2 + T1_8;
-    enum T T3_4 = T1_2 + T1_4;
-    enum T T7_8 = T3_4 + T1_8;
+    private static enum real RealMax = cast(real) T.max + 1;
+    
+    /// Fractions of angles.
+    private static enum T T1_8 = T.max / 8 + 1;
+    private static enum T T1_4 = T.max / 4 + 1;
+    private static enum T T3_8 = T1_4 + T1_8;
+    private static enum T T1_2 = T.max / 2 + 1;
+    private static enum T T5_8 = T1_2 + T1_8;
+    private static enum T T3_4 = T1_2 + T1_4;
+    private static enum T T7_8 = T3_4 + T1_8;
     
     T value = 0;
     
@@ -653,6 +659,15 @@ unittest{ /// Type promotion
             static assert(is(typeof(Angle!T0(0).distance(Angle!T1(0)).angle) == Larger));
             static assert(is(typeof(Angle!T0(0).lerp(Angle!T1(0), 0)) == Larger));
         }
+    }
+}
+
+unittest{ /// Min and max
+    foreach(T; UnsignedIntegralTypes){
+        auto angle = Angle!T.min;
+        assert(angle < Angle!T.max);
+        angle--;
+        assert(angle == Angle!T.max);
     }
 }
 
