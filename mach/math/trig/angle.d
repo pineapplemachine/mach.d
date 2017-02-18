@@ -172,15 +172,18 @@ public import mach.math.trig.rotdirection : RotationDirection;
 
 
 
+/// Type returned by `getsametypeangle`.
+private struct GetSameTypeAngleResult(T){
+    alias Type = T;
+    alias Angle = .Angle!Type;
+    T a; T b;
+}
+
 /// Helper method to, given two values belonging to angles of potentially
 /// different types, get those values as though they belonged to angles of the
 /// same type.
 private auto getsametypeangle(A, B)(in A a, in B b) if(isUnsignedIntegral!A && isUnsignedIntegral!B){
-    struct Result(T){
-        alias Type = T;
-        alias Angle = .Angle!Type;
-        T a; T b;
-    }
+    alias Result = GetSameTypeAngleResult;
     static if(is(A == B)){
         return Result!A(a, b);
     }else static if(A.sizeof > B.sizeof){
@@ -226,7 +229,25 @@ struct Angle(T = ulong) if(isUnsignedIntegral!T){
     private static enum T T3_4 = T1_2 + T1_4;
     private static enum T T7_8 = T3_4 + T1_8;
     
-    T value = 0;
+    /// An angle representing one-sixteenth of a rotation.
+    static enum Sixteenth = typeof(this)(T.max / 16 + 1);
+    /// An angle representing one-eighth of a rotation.
+    static enum Eighth = typeof(this)(T1_8);
+    /// An angle representing one-quarter of a rotation.
+    static enum Quarter = typeof(this)(T1_4);
+    /// An angle representing three-eighths of a rotation.
+    static enum ThreeEighths = typeof(this)(T3_8);
+    /// An angle representing one-half of a rotation.
+    static enum Half = typeof(this)(T1_2);
+    /// An angle representing five-eighths of a rotation.
+    static enum FiveEighths = typeof(this)(T5_8);
+    /// An angle representing three-quarters of a rotation.
+    static enum ThreeQuarters = typeof(this)(T3_4);
+    /// An angle representing seven-eighths of a rotation.
+    static enum SevenEighths = typeof(this)(T7_8);
+    
+    alias Value = T;
+    Value value = 0;
     
     this(N)(in N value) if(isIntegral!N){
         this.value = cast(T) value;
@@ -275,12 +296,7 @@ struct Angle(T = ulong) if(isUnsignedIntegral!T){
     private real phaseconvertto(real revolution)() const{
         enum halfrev = revolution / 2;
         enum quarterrev = revolution / 4;
-        static if(revolution is tau){
-            // Give a more accurate answer in this special case
-            enum threequartersrev = threequarterspi;
-        }else{
-            enum threequartersrev = halfrev + quarterrev;
-        }
+        enum threequartersrev = halfrev + quarterrev;
         if(this.value == 0) return 0;
         else if(this.value == T1_4) return quarterrev;
         else if(this.value == T1_2) return halfrev;
@@ -415,16 +431,21 @@ struct Angle(T = ulong) if(isUnsignedIntegral!T){
     }
     
     /// Type returned by a call to the `distance` method.
-    struct Distance{
+    static struct Distance{
         /// Quantify the distance between two angles.
-        T value;
+        Angle!T angle;
         /// Indicate the direction in which this is the distance.
         RotationDirection direction;
-        /// Make the result usable as an actual angle.
-        @property auto angle() const{
-            return Angle!T(this.value);
+        
+        this(in T value, in RotationDirection direction){
+            this(Angle!T(value), direction);
         }
-        /// Ditto
+        this(in Angle!T angle, in RotationDirection direction){
+            assert(angle <= angle.Half);
+            this.angle = angle;
+            this.direction = direction;
+        }
+        
         alias angle this;
     }
     
@@ -516,6 +537,15 @@ struct Angle(T = ulong) if(isUnsignedIntegral!T){
         return same.a / cast(double) same.b;
     }
     
+    /// Divide this angle by some amount.
+    auto opBinary(string op: "/", N)(in N rhs) const if(isNumeric!N){
+        return typeof(this)(cast(T)(this.value / rhs));
+    }
+    /// Multiply this angle by some amount.
+    auto opBinary(string op: "*", N)(in N rhs) const if(isNumeric!N){
+        return typeof(this)(cast(T)(this.value * rhs));
+    }
+    
     /// Compare two angles.
     auto opEquals(X)(in Angle!X rhs) const{
         immutable same = getsametypeangle(this.value, rhs.value);
@@ -553,7 +583,7 @@ unittest{ /// Conversion to degrees/radians at quarter-rotation increments
         assert(Angle!T(Half).degrees == 180);
         assert(Angle!T(Half).radians == pi);
         assert(Angle!T(Half + Quarter).degrees == 270);
-        assert(Angle!T(Half + Quarter).radians == threequarterspi);
+        assert(Angle!T(Half + Quarter).radians == pi + halfpi);
     }
 }
 
@@ -644,9 +674,21 @@ unittest{ /// Assign degrees/radians/revolutions
         assert(angle.degrees == 90);
         assert(angle.revolutions == 0.25);
         angle.revolutions = 0.75;
-        assert(angle.radians == threequarterspi);
+        assert(angle.radians == pi + halfpi);
         assert(angle.degrees == 270);
         assert(angle.revolutions == 0.75);
+        angle.radians = -halfpi;
+        assert(angle.radians == pi + halfpi);
+        assert(angle.degrees == 270);
+        assert(angle.revolutions == 0.75);
+        angle.degrees = -180;
+        assert(angle.radians == pi);
+        assert(angle.degrees == 180);
+        assert(angle.revolutions == 0.5);
+        angle.revolutions = -0.75;
+        assert(angle.radians == halfpi);
+        assert(angle.degrees == 90);
+        assert(angle.revolutions == 0.25);
     }
 }
 
