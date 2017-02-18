@@ -36,6 +36,21 @@ unittest{ /// Example
     static assert(!is(SmallerType!ubyte)); // Fails because there is no smaller type!
 }
 
+/++ Docs
+
+The `LargestTypeOf` and `SmallestTypeOf` templates accept any number of types as
+template arguments, and evaluate to the largest/smallest type provided, as
+judged by comparisons of `sizeof`.
+When multiple inputs have the same size, the output is that input which appears
+earliest in the sequence of inputs.
+
++/
+
+unittest{ /// Example
+    static assert(is(LargestTypeOf!(int, short, byte) == int));
+    static assert(is(SmallestTypeOf!(int, short, byte) == byte));
+}
+
 public:
 
 
@@ -236,6 +251,50 @@ template SmallerType(T) if(isComplex!T){
 
 
 
+/// Get the largest input type, as judged by `sizeof`.
+/// When multiple inputs are of the same size, the output is that input with
+/// the lowest index in the input sequence.
+template LargestTypeOf(T...) if(T.length){
+    static if(T.length == 1){
+        alias LargestTypeOf = T[0];
+    }else static if(T.length == 2){
+        static if(T[0].sizeof >= T[1].sizeof){
+            alias LargestTypeOf = T[0];
+        }else{
+            alias LargestTypeOf = T[1];
+        }
+    }else{
+        static if(T[0].sizeof >= T[1].sizeof){
+            alias LargestTypeOf = LargestTypeOf!(T[0], T[2 .. $]);
+        }else{
+            alias LargestTypeOf = LargestTypeOf!(T[1], T[2 .. $]);
+        }
+    }
+}
+
+/// Get the smallest input type, as judged by `sizeof`.
+/// When multiple inputs are of the same size, the output is that input with
+/// the lowest index in the input sequence.
+template SmallestTypeOf(T...) if(T.length){
+    static if(T.length == 1){
+        alias SmallestTypeOf = T[0];
+    }else static if(T.length == 2){
+        static if(T[0].sizeof <= T[1].sizeof){
+            alias SmallestTypeOf = T[0];
+        }else{
+            alias SmallestTypeOf = T[1];
+        }
+    }else{
+        static if(T[0].sizeof <= T[1].sizeof){
+            alias SmallestTypeOf = SmallestTypeOf!(T[0], T[2 .. $]);
+        }else{
+            alias SmallestTypeOf = SmallestTypeOf!(T[1], T[2 .. $]);
+        }
+    }
+}
+
+
+
 private version(unittest){
     import mach.meta : Aliases;
     import mach.traits.primitives : UnsignedIntegralTypes, SignedIntegralTypes;
@@ -316,4 +375,17 @@ unittest{ /// SmallerType and LargerType
             }
         }
     }
+}
+
+unittest{ /// SmallestTypeOf and LargestTypeOf
+    static assert(is(LargestTypeOf!(int) == int));
+    static assert(is(LargestTypeOf!(const int) == const int));
+    static assert(is(LargestTypeOf!(int, uint) == int));
+    static assert(is(LargestTypeOf!(int, byte, short) == int));
+    static assert(is(LargestTypeOf!(byte, short, int) == int));
+    static assert(is(SmallestTypeOf!(int) == int));
+    static assert(is(SmallestTypeOf!(const int) == const int));
+    static assert(is(SmallestTypeOf!(int, uint) == int));
+    static assert(is(SmallestTypeOf!(int, long, double) == int));
+    static assert(is(SmallestTypeOf!(long, double, int) == int));
 }
