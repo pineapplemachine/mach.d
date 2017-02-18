@@ -92,6 +92,8 @@ struct WriteFloatSettings{
     /// Whether to write a trailing ".0" when the value would otherwise be
     /// represented by an integral.
     bool trailingfraction = false;
+    /// Whether to write a leading "0" for fractional values e.g. "0.5".
+    bool leadingzero = true;
     /// Setting for when, if ever, to use exponents to describe inputted
     /// values.
     ExponentSetting exponentsetting = ExponentSetting.Threshold;
@@ -108,7 +110,11 @@ string writefloat(
 )(in double value){
     auto zero(){
         static if(settings.trailingfraction){
-            return value.fextractsgn ? "-0.0" : "0.0";
+            static if(settings.leadingzero){
+                return value.fextractsgn ? "-0.0" : "0.0";
+            }else{
+                return value.fextractsgn ? "-.0" : ".0";
+            }
         }else{
             return value.fextractsgn ? "-0" : "0";
         }
@@ -150,7 +156,8 @@ private string writeunsignedfloat(WriteFloatSettings settings)(
         }
     }
     string leadingz(){
-        return cast(string)("0." ~ finiterangeof(-k - 1, '0').asarray ~ digits);
+        enum leading = settings.leadingzero ? "0." : ".";
+        return cast(string)(leading ~ finiterangeof(-k - 1, '0').asarray ~ digits);
     }
     string trailingz(){
         immutable zeros = finiterangeof(1 + k - digits.length, '0').asarray;
@@ -445,6 +452,18 @@ unittest{ // TODO: rewrite without using mach.test
                 "1", "0.1", "0.125", "10", "100", "1e3",
                 "123.456", "0.3333", "0.9999", "9001", "0.9001", "0.009001",
                 "9.001e-4", double_min, double_max
+            )){
+                testwrite!(settings, str)();
+            }
+        }
+        // No leading zero
+        {
+            enum WriteFloatSettings settings = {
+                leadingzero: false
+            };
+            commontests!settings();
+            foreach(str; Aliases!(
+                "1", ".1", ".125", ".5", ".8", "10", "100"
             )){
                 testwrite!(settings, str)();
             }
