@@ -4,6 +4,141 @@
 This package implements or otherwise exposes various trigonometric functions.
 
 
+## mach.math.trig.angle
+
+
+The `Angle` type can be used to represent an angle in the range [0, 2π) radians.
+Angles outside the range are wrapped to fit inside it.
+Unlike using a floating point to represent an angle with radians, `Angle` is
+able to exactly represent quarter, half, etc. rotations that have special
+meanings in trigonometric functions and identities.
+
+The case of `tan(2π)` is where this difference is most immediately apparent:
+
+``` D
+import mach.math.constants : pi;
+import mach.math.trig.tangent : tan;
+import mach.math.floats.properties : fisinf;
+// π/2 radians is not exactly representable as a floating-point value.
+// The tangent of the closest representable value isn't infinite.
+assert(!fisinf(tan(pi / 2)));
+// The `Angle` type is not subject to the same limitation.
+auto angle = Angle!ulong.Revolutions(0.25);
+assert(angle.radians == pi / 2);
+assert(fisinf(angle.tan));
+```
+
+
+The `Angle` type has the `Radians`, `Degrees`, and `Revolutions` initializers.
+It also has the `radians`, `degrees`, and `revolutions` properties.
+These allow converting the internal representation to common angle
+measurements, or converting those common measurements to values of the `Angle`
+type.
+
+``` D
+import mach.math.constants : pi;
+assert(Angle!ulong.Degrees(270) == Angle!ulong.Revolutions(0.75));
+assert(Angle!ulong.Radians(pi) == Angle!ulong.Degrees(180));
+auto angle = Angle!ulong.Revolutions(0.5);
+assert(angle.revolutions == 0.5);
+assert(angle.radians == pi);
+assert(angle.degrees == 180);
+angle.degrees = 45;
+assert(angle.revolutions == 0.125);
+angle.radians = pi / 2;
+assert(angle.revolutions == 0.25);
+angle.revolutions = 0.75;
+assert(angle.revolutions == 0.75);
+```
+
+
+The `Angle` template type accepts a single template argument, which must be
+an unsigned integral type. It defaults to `ulong`. The larger the type used
+as a basis for the angle's internal representation, the greater the number of
+discrete equidistant angles that can be represented by that type.
+
+When performing operations upon mixed `Angle` types, the result will always
+be of the larger type.
+
+``` D
+auto a = Angle!ubyte.Degrees(90); // Can represent 256 different angles.
+auto b = Angle!ulong.Degrees(90); // Can represent 2^64 different angles.
+// But they are still equal,
+assert(a == b);
+// And can still be added to one another,
+Angle!ulong sum = a + b;
+assert(sum == Angle!ushort.Degrees(180));
+// Or subtracted,
+assert(sum - a == b);
+// Or compared for distance.
+Angle!ulong dist = a.distance(b);
+assert(dist == Angle!ubyte.Degrees(0));
+```
+
+
+`Angle` objects implement `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, and `atan2`
+trigonometric functions as methods.
+These behave the same as the identically-named functions defined elsewhere in
+the `mach.math.trig` package, except that in many cases their outputs will be
+more accurate relative to simply using radians.
+
+``` D
+import mach.math.floats.properties : fisinf;
+assert(Angle!ulong.Degrees(90).sin == 1); // Sine
+assert(Angle!ulong.Degrees(90).cos == 0); // Cosine
+assert(Angle!ulong.Degrees(90).tan.fisinf); // Tangent
+assert(Angle!ulong.asin(1).degrees == 90); // Arcsine
+assert(Angle!ulong.acos(0).degrees == 90); // Arccosine
+assert(Angle!ulong.atan(real.infinity).degrees == 90); // Arctangent
+assert(Angle!ulong.atan2(1, 1).degrees == 45); // atan2
+```
+
+
+The `Angle` type supports the `-`, `++`, and `--` unary operators.
+`-angle` returns an angle which is pointing in the direction opposite the
+original angle.
+`angle++` evaluates to the first representable angle that is clockwise
+relative to the original angle.
+`angle--` evaluates to the first representable angle that is counterclockwise
+relative to the original angle.
+
+``` D
+auto angle = Angle!uint.Degrees(90);
+assert(-angle == Angle!uint.Degrees(270));
+assert(++angle > Angle!uint.Degrees(90));
+assert(--angle == Angle!uint.Degrees(90));
+```
+
+
+The `distance` method can be used to find the distance between two angles,
+and the result will always be less than or equal to π radians.
+The returned type acts like an `Angle` but it also has a `direction`
+attribute carrying information regarding whether the closer distance given is
+in a clockwise or counterclockwise direction.
+
+``` D
+import mach.math.trig.rotdirection : RotationDirection;
+auto x = Angle!ulong.Degrees(45);
+auto y = Angle!ulong.Degrees(315);
+auto dist = x.distance(y);
+assert(dist.degrees == 90);
+assert(dist.direction is RotationDirection.Counterclockwise);
+```
+
+
+The `lerp` method can be used to linearly interpolate between two angles.
+When the second argument `t` is out of the range [0, 1], it is clamped.
+When the argument `t` is NaN, an angle of 0 radians is returned.
+
+``` D
+auto x = Angle!ulong.Revolutions(0.0);
+auto y = Angle!ulong.Revolutions(0.5);
+assert(x.lerp(y, 0.0) == x);
+assert(x.lerp(y, 1.0) == y);
+assert(x.lerp(y, 0.5).revolutions == 0.25);
+```
+
+
 ## mach.math.trig.arctangent
 
 
@@ -33,6 +168,13 @@ import mach.math.trig.sincos : sin, cos;
 assert(fnearequal(sin(asin(0.5)), 0.5, 1e-18));
 assert(fnearequal(cos(acos(0.5)), 0.5, 1e-18));
 ```
+
+
+## mach.math.trig.rotdirection
+
+
+This module defines a `RotationDirection` enum with `Clockwise`,
+`Counterclockwise`, and `None` members.
 
 
 ## mach.math.trig.sincos
