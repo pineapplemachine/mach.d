@@ -4,6 +4,7 @@ private:
 
 import mach.types : Rebindable;
 import mach.traits : ElementType;
+import mach.range.asrange : asrange, validAsRange;
 
 /++ Docs
 
@@ -91,8 +92,8 @@ alias DefaultFirstPredicate = (e) => (true);
 /// Determine whether `first` is valid for some given arguments.
 template canFirst(alias pred, Iter){
     enum bool canFirst = is(typeof({
-        foreach(item; Iter.init){
-            if(pred(item)){}
+        foreach(element; Iter.init){
+            if(pred(element)){}
         }
     }));
 }
@@ -100,8 +101,8 @@ template canFirst(alias pred, Iter){
 /// ditto
 template canFirst(alias pred, Iter, Fallback){
     enum bool canFirst = canFirst!(pred, Iter) && is(typeof({
-        foreach(item; Iter.init){
-            auto x = 0 ? item : Fallback.init;
+        foreach(element; Iter.init){
+            auto x = 0 ? element : Fallback.init;
         }
     }));
 }
@@ -113,8 +114,8 @@ alias canLast = canFirst;
 /// for some given arguments.
 template canReverseLast(alias pred, Iter){
     enum bool canReverseLast = is(typeof({
-        foreach_reverse(item; Iter.init){
-            if(pred(item)){}
+        foreach_reverse(element; Iter.init){
+            if(pred(element)){}
         }
     }));
 }
@@ -127,8 +128,8 @@ template canReverseLast(alias pred, Iter){
 auto first(alias pred = DefaultFirstPredicate, Iter)(
     auto ref Iter iter
 ) if(canFirst!(pred, Iter)){
-    foreach(item; iter){
-        if(pred(item)) return item;
+    foreach(element; iter){
+        if(pred(element)) return element;
     }
     static const error = new NoFirstElementError();
     throw error; // No elements matched the predicate
@@ -140,8 +141,8 @@ auto first(alias pred = DefaultFirstPredicate, Iter)(
 auto first(alias pred = DefaultFirstPredicate, Iter, Fallback)(
     auto ref Iter iter, auto ref Fallback fallback
 ) if(canFirst!(pred, Iter, Fallback)){
-    foreach(item; iter){
-        if(pred(item)) return item;
+    foreach(element; iter){
+        if(pred(element)) return element;
     }
     return fallback;
 }
@@ -153,20 +154,20 @@ auto first(alias pred = DefaultFirstPredicate, Iter, Fallback)(
 /// If no elements match the predicate, a `NoLastElementError` is thrown.
 /// If the input doesn't support `foreach_reverse`, then the entire
 /// thing will be consumed to find the last matching element.
-auto last(alias pred = DefaultFirstPredicate, Iter)(
+auto last(alias pred, Iter)(
     auto ref Iter iter
 ) if(canLast!(pred, Iter)){
     static if(canReverseLast!(pred, Iter)){
-        foreach_reverse(item; iter){
-            if(pred(item)) return item;
+        foreach_reverse(element; iter){
+            if(pred(element)) return element;
         }
     }else{
         alias Element = ElementType!Iter;
         Rebindable!Element last;
         bool bound = false;
-        foreach(item; iter){
-            if(pred(item)){
-                last = item;
+        foreach(element; iter){
+            if(pred(element)){
+                last = element;
                 bound = true;
             }
         }
@@ -181,24 +182,63 @@ auto last(alias pred = DefaultFirstPredicate, Iter)(
 /// If no elements match the predicate, the fallback is returned.
 /// If the input doesn't support `foreach_reverse`, then the entire
 /// thing will be consumed to find the last matching element.
-auto last(alias pred = DefaultFirstPredicate, Iter, Fallback)(
+auto last(alias pred, Iter, Fallback)(
     auto ref Iter iter, auto ref Fallback fallback
 ) if(canLast!(pred, Iter, Fallback)){
     static if(canReverseLast!(pred, Iter)){
-        foreach_reverse(item; iter){
-            if(pred(item)) return item;
+        foreach_reverse(element; iter){
+            if(pred(element)) return element;
         }
     }else{
         alias Element = ElementType!Iter;
         Rebindable!Element last;
         bool bound = false;
-        foreach(item; iter){
-            if(pred(item)){
-                last = item;
+        foreach(element; iter){
+            if(pred(element)){
+                last = element;
                 bound = true;
             }
         }
         if(bound) return cast(Element) last;
+    }
+    return fallback;
+}
+
+/// More optimal implementation for simply acquiring the last element of the input.
+auto last(Iter)(auto ref Iter iter) if(
+    validAsRange!Iter && canLast!(DefaultFirstPredicate, Iter)
+){
+    static if(canReverseLast!(DefaultFirstPredicate, Iter)){
+        foreach_reverse(element; iter){
+            return element;
+        }
+    }else{
+        auto range = iter.asrange;
+        while(!range.empty){
+            auto element = range.front;
+            range.popFront();
+            if(range.empty) return element;
+        }
+    }
+    static const error = new NoLastElementError();
+    throw error; // No elements matched the predicate
+}
+
+/// Ditto
+auto last(Iter, Fallback)(auto ref Iter iter, auto ref Fallback fallback) if(
+    validAsRange!Iter && canLast!(DefaultFirstPredicate, Iter, Fallback)
+){
+    static if(canReverseLast!(DefaultFirstPredicate, Iter)){
+        foreach_reverse(element; iter){
+            return element;
+        }
+    }else{
+        auto range = iter.asrange;
+        while(!range.empty){
+            auto element = range.front;
+            range.popFront();
+            if(range.empty) return element;
+        }
     }
     return fallback;
 }
