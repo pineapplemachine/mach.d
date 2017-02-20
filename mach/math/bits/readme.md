@@ -162,3 +162,39 @@ debug mustthrow({
 ```
 
 
+## mach.math.bits.split
+
+
+The `lowbits` and `highbits` functions can be use to acquire the low or high
+half of the bits comprising an input integer value, respectively.
+The output is always the same type as the input.
+
+``` D
+assert(uint(0x12345678).highbits == 0x1234);
+assert(uint(0x12345678).lowbits == 0x5678);
+```
+
+
+The `splitbits` function may be used to get both at once.
+It returns a type with `low` and `high` attributes, and can also be indexed
+as though it was a tuple.
+
+``` D
+auto split = ushort(0xabcd).splitbits;
+// Access via the `high` and `low` attributes:
+assert(split.high == 0xab);
+assert(split.low == 0xcd);
+// Access via indexing:
+assert(split[1] == 0xab);
+assert(split[0] == 0xcd);
+```
+
+
+Additionally, the `mergebits` function may be used to perform the complementary
+operation where an integer is built from its separately-known high and low bits.
+
+``` D
+assert(mergebits(uint(0x1234), uint(0x5678)) == uint(0x12345678));
+```
+
+
