@@ -194,7 +194,7 @@ template SmallerType(T) if(isUnsignedIntegral!T){
         alias SmallerType = Qualify!(T, ushort);
     }else static if(is(U == ulong)){
         alias SmallerType = Qualify!(T, uint);
-    }else static if(is(U == ucent)){
+    }else static if(is(ucent) && is(U == ucent)){
         alias SmallerType = Qualify!(T, ulong);
     }else{
         static assert(false, "No smaller type available.");
@@ -210,7 +210,7 @@ template SmallerType(T) if(isSignedIntegral!T){
         alias SmallerType = Qualify!(T, short);
     }else static if(is(U == long)){
         alias SmallerType = Qualify!(T, int);
-    }else static if(is(U == cent)){
+    }else static if(is(cent) && is(U == cent)){
         alias SmallerType = Qualify!(T, long);
     }else{
         static assert(false, "No smaller type available.");
