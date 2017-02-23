@@ -4,6 +4,7 @@ private:
 
 import std.datetime : SysTime; // TODO: Ewww, this.st module. I should write my own
 import mach.error : ErrnoException;
+import mach.text.cstring : tocstring;
 import mach.io.file.common;
 
 version(Windows){
@@ -80,16 +81,15 @@ struct Stat{
     cstatstruct st;
     bool valid = false;
     
-    this(string path){
+    this(in string path){
         cstatstruct st = void;
-        version(Windows) auto result = stat(cast(char*) path.ptr, &st);
-        else auto result = stat(path.ptr, &st);
+        auto result = cstat(path.tocstring, &st);
         this(st, result == 0);
     }
     this(FileHandle file){
         import core.stdc.stdio : fileno;
         cstatstruct st = void;
-        auto result = fstat(file.fileno, &st);
+        auto result = cfstat(file.fileno, &st);
         this(st, result == 0);
     }
     this(cstatstruct st, bool valid = true){
