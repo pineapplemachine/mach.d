@@ -132,6 +132,9 @@ struct Path{
             return "";
         }
     }
+    /// Ditto
+    alias name = basename;
+    
     /// Get the directory in which the file, directory, etc. resides.
     /// For example, `Path("a/b/c").directory == "a/b"`.
     Path directory(bool includeslash = false)() const{
@@ -164,6 +167,7 @@ struct Path{
             return this;
         }
     }
+    
     /// Get the file extension.
     /// For example, `Path("a/b/c.txt").extension == "txt"`.
     string extension() const{

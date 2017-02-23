@@ -9,6 +9,7 @@ import mach.range.asarray : asarray;
 import mach.io.file.attributes : Attributes;
 import mach.io.file.common;
 import mach.io.file.exceptions;
+import mach.io.file.path : Path;
 
 public:
 
@@ -92,8 +93,8 @@ struct ListDirRange{
             @property string name() const{
                 return this.finddata.cFileName.ptr.fromcstring.utf8encode.asarray!(immutable char);
             }
-            @property string path() const{
-                return this.listpath ~ "/" ~ this.name;
+            @property Path path() const{
+                return Path(this.listpath ~ "/" ~ this.name);
             }
             
             @property bool isdots() const{
@@ -196,8 +197,8 @@ struct ListDirRange{
             @property string name() const{
                 return this.entryname;
             }
-            @property string path() const{
-                return this.listpath ~ "/" ~ this.name;
+            @property Path path() const{
+                return Path(this.listpath ~ "/" ~ this.name);
             }
             @property bool isdots() const{
                 return this.entryname == "." || this.entryname == "..";
