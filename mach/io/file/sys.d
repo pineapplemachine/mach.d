@@ -128,7 +128,7 @@ void fsync(FileHandle file) @trusted{
 
 
 
-void rename(string src, string dst){
+void rename(in string src, in string dst){
     auto srcz = src.tocstring!FSChar;
     auto dstz = dst.tocstring!FSChar;
     version(Windows){
@@ -146,7 +146,7 @@ void rename(string src, string dst){
 
 
 
-void copy(string src, string dst){
+void copyfile(in string src, in string dst){
     auto srcz = src.tocstring!FSChar;
     auto dstz = dst.tocstring!FSChar;
     version(Windows){
@@ -200,7 +200,7 @@ void copy(string src, string dst){
 
 
 
-void rmfile(string path){
+void rmfile(in string path){
     auto pathz = path.tocstring!FSChar;
     version(Windows){
         import core.sys.windows.winbase : DeleteFileW, MOVEFILE_REPLACE_EXISTING;
@@ -218,7 +218,7 @@ void rmfile(string path){
 
 
 /// Get whether the given path refers to any existing file.
-bool exists(string path){
+bool exists(in string path){
     version(Windows){
         // https://blogs.msdn.microsoft.com/oldnewthing/20071023-00/?p=24713/
         return Attributes(path).valid;
@@ -233,8 +233,7 @@ bool exists(string path){
 
 
 /// Returns true when the path exists and refers to a file.
-/// TODO: Why is this rarely returning false negatives for certain files on OSX?
-bool isfile(string path){
+bool isfile(in string path){
     version(Windows){
         immutable attr = Attributes(path);
         return attr.valid && attr.isfile;
@@ -245,7 +244,7 @@ bool isfile(string path){
 }
 
 /// Returns true when the path exists and refers to a directory.
-bool isdir(string path){
+bool isdir(in string path){
     version(Windows){
         immutable attr = Attributes(path);
         return attr.valid && attr.isdir;
@@ -256,7 +255,7 @@ bool isdir(string path){
 }
 
 /// Returns true when the path exists and refers to a symbolic link.
-bool islink(string path){
+bool islink(in string path){
     version(Windows){
         immutable attr = Attributes(path);
         return attr.valid && attr.islink;
@@ -269,7 +268,7 @@ bool islink(string path){
 /// Get the size of a file in bytes.
 /// Throws a `FileSizeException` when the operation fails, probably because
 /// the given path did not exist.
-auto filesize(string path){
+auto filesize(in string path){
     version(Posix){
         immutable stat = Stat(path);
         if(stat.valid) return stat.size;
@@ -289,7 +288,7 @@ auto filesize(string path){
 
 
 /// Set the current working directory.
-void chdir(string path){
+void chdir(in string path){
     auto pathz = path.tocstring!FSChar;
     version(Windows){
         import core.sys.windows.winbase : SetCurrentDirectoryW;
@@ -307,7 +306,7 @@ void chdir(string path){
 
 
 /// Create a directory.
-void mkdir(string path){
+void mkdir(in string path){
     auto pathz = path.tocstring!FSChar;
     version(Windows){
         // https://msdn.microsoft.com/en-us/library/windows/desktop/aa363855(v=vs.85).aspx
@@ -326,7 +325,7 @@ void mkdir(string path){
 
 
 /// If the directory doesn't already exist, create it.
-void ensuredir(string path){
+void ensuredir(in string path){
     auto pathz = path.tocstring!FSChar;
     version(Windows){
         // https://msdn.microsoft.com/en-us/library/windows/desktop/aa363855(v=vs.85).aspx
@@ -353,7 +352,7 @@ void ensuredir(string path){
 
 
 
-void rmdir(string path){
+void rmdir(in string path){
     auto pathz = path.tocstring!FSChar;
     version(Windows){
         // https://msdn.microsoft.com/en-us/library/windows/desktop/aa363855(v=vs.85).aspx

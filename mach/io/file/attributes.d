@@ -21,10 +21,10 @@ version(Windows){
         
         Attr attr;
         
-        this(string path){
+        this(in string path){
             this(GetFileAttributesW(path.tocstring!wchar));
         }
-        this(Attr attr){
+        this(in Attr attr){
             this.attr = attr;
         }
         

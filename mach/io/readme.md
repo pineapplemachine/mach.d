@@ -5,6 +5,12 @@ This package implements functionality for outputting and inputting data to and
 from the outside world, e.g. standard input/ouput and file input/output.
 
 
+## mach.io.file
+
+
+This package provides functionality for dealing with the file system.
+
+
 ## mach.io.stdio
 
 

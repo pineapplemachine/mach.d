@@ -8,12 +8,18 @@ import mach.io.file.exceptions;
 import mach.io.file.stat;
 import mach.io.file.sys;
 
+/++ Docs
+
+This module is deprecated. Please use `mach.io.file.path` instead.
+
++/
+
 public:
 
 
 
 /// Provides clean syntax for initializing file streams.
-abstract class File{
+deprecated abstract class File{
     /// Open the file at a path.
     static auto open(string path, in char[] mode = "rb"){
         return FileStream(path, mode);

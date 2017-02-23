@@ -4,7 +4,7 @@ private:
 
 import mach.traits : hash;
 import mach.io.stdio : stdio;
-import mach.io.path : Path;
+import mach.io.file.path : Path;
 
 public:
 
@@ -24,7 +24,7 @@ void log(
 )(
     auto ref Args args
 ){
-    stdio.writeln(args, " in ", Path.basename(file), "(", line, ")");
+    stdio.writeln(args, " in ", Path(file).basename, "(", line, ")");
     stdio.flushout();
 }
 

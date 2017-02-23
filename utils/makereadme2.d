@@ -16,6 +16,7 @@ public:
 
 immutable readmepaths = [
     "mach/io",
+    "mach/io/file",
     "mach/math",
     "mach/math/bits",
     "mach/math/ints",
@@ -45,13 +46,13 @@ void makereadme(in string path){
     dstring[][dstring] docs;
     ParseResult[] stats;
     void handlepath(in string path){
-        auto file = File.readfrom(path);
+        auto file = Path(path).readfrom;
         dstring source = cast(dstring) file.utf8decode.asarray;
         file.close();
         auto result = parsemodule(path, source, docs);
         if(result.modulename.length) stats ~= result;
     }
-    foreach(entry; path.listdir){
+    foreach(entry; Path(path).listdir){
         if(
             !entry.name.headis("wip_") &&
             !entry.name.headis("old_") &&
@@ -66,7 +67,7 @@ void makereadme(in string path){
     }
     reportstats(stats);
     dstring content = makecontent(docs);
-    File.writeto(path ~ "/readme.md", content.utf8encode);
+    Path(path ~ "/readme.md").writeto(content.utf8encode);
 }
 
 struct ParseResult{
