@@ -90,9 +90,9 @@ auto makereadme(in string path){
 }
 
 auto makereadme(in string inpath, in string outpath){
-    auto infile = File.read(inpath);
+    auto infile = Path(inpath).read;
     scope(exit) infile.close();
     auto content = infile.asrange!char.utfdecode.asarray;
     auto mdcontent = makereadmecontent(cast(dstring) content);
-    File.writeto(outpath, mdcontent);
+    Path(outpath).writeto(mdcontent);
 }
