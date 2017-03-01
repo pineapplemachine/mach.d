@@ -13,6 +13,13 @@ import mach.text.str.settings;
 
 alias writeptr = WriteBase!16;
 
+/++ Docs
+
+This module implements functions used by `str` to serialize various primitive
+types; they are not intended to be called directly.
+
++/
+
 public:
 
 
@@ -179,12 +186,12 @@ string enumtostring(StrSettings settings = StrSettings.Default, T)(
 
 
 
-version(unittest){
-    private:
+private version(unittest){
     import mach.traits : FloatingPointTypes, IntegralTypes, isSigned;
     import mach.meta : Aliases;
     alias Verbose = StrSettings.Verbose;
 }
+
 unittest{
     assert(false.booleantostring == "false");
     assert(true.booleantostring == "true");

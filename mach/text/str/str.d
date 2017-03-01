@@ -2,6 +2,8 @@ module mach.text.str.str;
 
 private:
 
+import mach.types : isTuple;
+
 import mach.traits : isNull, isBoolean, isIntegral, isFloatingPoint, isCharacter;
 import mach.traits : isImaginary, isComplex, isIterable, isFiniteIterable, isArray;
 import mach.traits : isString, isPointer, isEnumType, isAssociativeArray, isRange;
@@ -9,10 +11,70 @@ import mach.traits : isString, isPointer, isEnumType, isAssociativeArray, isRang
 import mach.range.asrange : validAsRange;
 
 import mach.text.str.arrays : iterabletostring, arraytostring;
+import mach.text.str.tuples : tupletostring;
 import mach.text.str.types : typetostring, typetostringtostring, hasToString, hasCustomToString;
 
 import mach.text.str.primitives;
 import mach.text.str.settings;
+
+/++ Docs
+
+The `str` function may be used to acquire a string representation of just about
+anything.
+It optionally accepts a `StrSettings` object as a template argument to specify
+behavior.
+
++/
+
+unittest{ /// Example
+    assert(str(100) == `100`);
+    assert(str(1.234) == `1.234`);
+    assert(str('x') == `x`);
+    assert(str("hello") == `hello`);
+    assert(str([1, 2, 3]) == `[1, 2, 3]`);
+    assert(str(["key": "value"]) == `["key": "value"]`);
+    assert(str(null) == `null`);
+}
+
+unittest{ /// Example
+    enum Enum{Hello, World}
+    assert(str(Enum.Hello) == `Hello`);
+    assert(str(Enum.World) == `World`);
+}
+
+unittest{ /// Example
+    struct MyType{
+        string name;
+        int x, y;
+    }
+    assert(str(MyType("hi", 1, -2)) == `{name: "hi", x: 1, y: -2}`);
+}
+
+unittest{ /// Example
+    import mach.range : map, filter;
+    import mach.text.ascii : toupper;
+    auto numrange = [0, 1, 2, 3, 4, 5, 6].map!(n => n * n).filter!(n => n % 2 == 0);
+    assert(str(numrange) == `[0, 4, 16, 36]`);
+    auto charrange = "hello world!".map!toupper;
+    assert(str(charrange) == `HELLO WORLD!`);
+}
+
+/++ Docs
+
+The default settings show a minimum of information about the type that's being
+serialized.
+This default preset can be referred to with `StrSettings.Default` or
+`StrSettings.Concise`. The `StrSettings.Verbose` preset includes almost all
+type information. Other presets include `StrSettings.Medium` and
+`StrSettings.Maximum`.
+
++/
+
+unittest{ /// Example
+    assert(str!(StrSettings.Verbose)(int(100)) == `int(100)`);
+    assert(str!(StrSettings.Verbose)(ulong(100)) == `ulong(100)`);
+    assert(str!(StrSettings.Verbose)(char('x')) == `char('x')`);
+}
 
 public:
 
@@ -52,6 +114,8 @@ string str(
         return value.iterabletostring!settings;
     }else static if(validAsRange!T && settings.valueasrange){
         return value.asrange.iterabletostring!(settings, T);
+    }else static if(isTuple!T){
+        return value.tupletostring!settings;
     }else static if(is(T == struct) || is(T == class) || is(T == union)){
         return value.typetostring!settings;
     }else{
@@ -63,6 +127,7 @@ string str(
 
 
 private version(unittest){
+    import mach.types : tuple;
     alias Verbose = StrSettings.Verbose;
     enum Enum{Yes, No}
     struct TestStruct{string hi;}
@@ -125,5 +190,6 @@ unittest{
     assert(str(ToStringStruct("hi")) == "hi");
     assert(str(new ToStringClass("hi")) == "hi");
     assert(str(AsRangeTest()) == "[]");
+    assert(str(tuple("x", "y")) == `("x", "y")`);
     assert(str!Verbose(AsRangeTest()) == "struct:asrange:AsRangeTest:[]");
 }

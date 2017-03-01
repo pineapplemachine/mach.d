@@ -2,9 +2,15 @@ module mach.text.str.types;
 
 private:
 
-import mach.traits : isClass;
 import mach.text.str.settings;
 import mach.text.str.str : str;
+
+/++ Docs
+
+This module implements functions used by `str` to serialize user-defined types;
+they are not intended to be called directly.
+
++/
 
 public:
 
@@ -16,7 +22,7 @@ string typetostring(StrSettings settings = StrSettings.Default, T)(
     enum showclasstype = settings.showclasstype;
     enum showstructtype = settings.showstructtype;
     enum showuniontype = settings.showuniontype;
-    static if(isClass!T){
+    static if(is(T == class)){
         static if(showclasstype){
             if(value is null) return settings.typeprefix!(showclasstype, T) ~ ":null";
         }else{
@@ -82,8 +88,7 @@ string typetostringtostring(StrSettings settings = StrSettings.Default, T)(
 
 
 
-version(unittest){
-    private:
+private version(unittest){
     alias Verbose = StrSettings.Verbose;
 }
 

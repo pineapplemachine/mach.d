@@ -1,4 +1,4 @@
-module mach.types.tuple.tuple;
+module mach.types.tuple;
 
 private:
 
@@ -7,23 +7,93 @@ import mach.types.types : Types, isTypes;
 import mach.traits : AsUnaryOp, isUnaryOpPlural, AsBinaryOp, isBinaryOpPlural;
 import mach.traits : canCastPlural, canHash, hash, isTemplateOf, isCallable;
 
+/++ Docs
+
+This module implements a tuple type which serves a fairly simple purpose of
+holding any number of values of aribtrary types, but does so in such a way that
+is accommodating to the language syntax.
+Tuples overload various operators, can be indexed with compile-time bounds
+checking, and can be passed to functions expecting as arguments the tuple's
+constituent types by using `tuple.expand`.
+
+`Tuple` is a template which can be used to acquire a struct representing a
+tuple holding some given types, and `tuple` is a function which can be used
+to acquire a tuple holding some given values.
+
++/
+
+unittest{ /// Example
+    // Reference a tuple type with `Tuple` or instantiate one with `tuple`.
+    Tuple!(string, char) tup = tuple("hello", '!');
+    static assert(tup.length == 2); /// Length is known at compile time.
+    assert(tup[0] == "hello");
+    assert(tup[1] == '!');
+    // Out-of-bounds indexes produce a compile error!
+    static assert(!is(typeof({tup[2];})));
+}
+
+unittest{ /// Example
+    // Unary operators are simply applied to every member of the tuple.
+    // They are only allowed when every member of the tuple supports the operator.
+    Tuple!(int, int) itup = tuple(1, 2);
+    Tuple!(float, float) ftup = cast(Tuple!(float, float)) itup;
+    assert(-itup == tuple(-1, -2));
+    assert(-itup == -ftup);
+}
+
+unittest{ /// Example
+    // Binary operators are applied to every pair of elements in tuples.
+    // They're only allowed when every pair of elements supports the operator.
+    auto tup = tuple(1, 2, 3);
+    assert(tup + tuple(4, 5, 6) == tuple(5, 7, 9));
+    assert(tup - tuple(1, 1, 1) == tuple(0, 1, 2));
+}
+
+unittest{ /// Example
+    // Tuples can be ordered if their corresponding pairs of elements can be ordered.
+    // The second elements are compared only if the first are equal, the third
+    // only if the second are equal, etc., in a manner similar to string sorting.
+    assert(tuple(0, 1) < tuple(1, 1));
+    assert(tuple(1, 1) > tuple(1, 0));
+}
+
 public:
 
 
 
+/// Determine whether a type is a tuple.
+/// To qualify as a tuple, the type must:
+/// - Have a `length` known at compile time.
+/// - Valid `foreach(i, element; tuple)` such that `i` is known at compile time.
+/// - Must support indexing i.e. `tuple[0]`.
+/// - Accessing an out-of-bounds index via indexing must produce a compile error.
 template isTuple(T...) if(T.length == 1){
-    enum bool isTuple = isTemplateOf!(T, Tuple);
+    enum bool isTuple = is(typeof({
+        enum length = T[0].init.length;
+        auto ex = T[0].init.expand;
+        foreach(i, _; T[0].init){
+            enum j = i;
+            auto x = T[0].init[i];
+        }
+        static if(length != 0){
+            auto x = T[0].init[0] == T[0].init[length - 1];
+        }
+        static assert(!is(typeof({
+            T[0].init[length];
+        })));
+    }));
 }
 
 
 
+/// Build a tuple from the given values.
 auto tuple(T...)(T args){
     return Tuple!T(args);
 }
 
 
 
-template canTupleOp(alias op, L, R...){
+private template canTupleOp(alias op, L, R...){
     static if(R.length == 1){
         static if(isTuple!L && isTuple!R){
             enum bool canTupleOp = (
@@ -37,7 +107,7 @@ template canTupleOp(alias op, L, R...){
     }
 }
 
-template canUnaryOpTuple(alias op, T){
+private template canUnaryOpTuple(alias op, T){
     static if(isTuple!T){
         alias canUnaryOpTuple = isUnaryOpPlural!(op, T.T);
     }else{
@@ -45,24 +115,24 @@ template canUnaryOpTuple(alias op, T){
     }
 }
 
-template canUnaryOpTuple(string op, T){
+private template canUnaryOpTuple(string op, T){
     alias canUnaryOpTuple = canUnaryOpTuple!(AsUnaryOp!op, T);
 }
 
-template canBinaryOpTuple(string op, L, R...){
+private template canBinaryOpTuple(string op, L, R...){
     alias canBinaryOpTuple = canTupleOp!(AsBinaryOp!op, L, R);
 }
 
-template canAssignTuple(L, R...){
+private template canAssignTuple(L, R...){
     alias canAssignTuple = canOpAssignTuple!(``, L, R);
 }
 
-template canOpAssignTuple(string op, L, R...){
+private template canOpAssignTuple(string op, L, R...){
     alias assign = (a, b){mixin(`a ` ~ op ~ `= b;`); return 0;};
     alias canOpAssignTuple = canTupleOp!(assign, L, R);
 }
 
-template canCastTuple(From, To){
+private template canCastTuple(From, To){
     static if(isTuple!From && isTuple!To){
         enum bool canCastTuple = canCastPlural!(From.Types, To.Types);
     }else{
@@ -72,7 +142,7 @@ template canCastTuple(From, To){
 
 
 
-/// Encapsulates an arbitrary number of values of arbitrary types.
+/// Encapsulate an arbitrary number of values of arbitrary types.
 struct Tuple(X...){
     alias T = X;
     alias Types = .Types!X;
@@ -321,7 +391,19 @@ version(unittest){
         void popFront(){this.empty = true;}
     }
 }
-unittest{ // Empty tuple
+
+unittest{ /// isTuple template
+    static assert(isTuple!(Tuple!()));
+    static assert(isTuple!(Tuple!(int)));
+    static assert(isTuple!(Tuple!(int, int)));
+    static assert(!isTuple!(int));
+    static assert(!isTuple!(int[]));
+    static assert(!isTuple!(int[4]));
+    static assert(!isTuple!(string));
+    static assert(!isTuple!(void));
+}
+
+unittest{ /// Empty tuple
     {
         auto t = tuple();
         static assert(t.length == 0);
@@ -350,7 +432,8 @@ unittest{ // Empty tuple
         }
     }
 }
-unittest{ // Single-element tuple
+
+unittest{ /// Single-element tuple
     {
         auto t = tuple(0);
         static assert(t.length == 1);
@@ -403,7 +486,8 @@ unittest{ // Single-element tuple
         assert(f == 0);
     }
 }
-unittest{ // Multiple-element tuple
+
+unittest{ /// Multiple-element tuple
     {
         auto t = tuple(0, 1);
         static assert(t.length == 2);

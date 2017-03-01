@@ -1,5 +1,14 @@
 module mach.types;
 
+private:
+
+/++ Docs
+
+This package implements several highly-generalized types intended for use
+primarily with generalized algorithms and code.
+
++/
+
 public:
 
 import mach.types.keyvaluepair;

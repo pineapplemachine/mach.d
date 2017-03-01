@@ -7,6 +7,13 @@ import mach.traits : isAssociativeArray, ArrayKeyType, ArrayValueType, isPrimiti
 import mach.text.str.settings;
 import mach.text.str.str : str;
 
+/++ Docs
+
+This module implements functions used by `str` to serialize arrays and other
+iterable types; they are not intended to be called directly.
+
++/
+
 public:
 
 
@@ -121,8 +128,7 @@ string arraytostring(StrSettings settings = StrSettings.Default, T)(
 
 
 
-version(unittest){
-    private:
+private version(unittest){
     alias Verbose = StrSettings.Verbose;
 }
 

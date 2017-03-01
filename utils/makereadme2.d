@@ -28,6 +28,7 @@ immutable readmepaths = [
     "mach/text/cstring",
     "mach/text/english",
     "mach/text/numeric",
+    "mach/text/str",
     "mach/text/utf",
     "mach/text/utf/utf8",
     "mach/text/utf/utf16",

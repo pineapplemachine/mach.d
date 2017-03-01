@@ -5,6 +5,13 @@ private:
 import mach.traits : Unqual, isRange;
 import mach.text.numeric : WriteFloatSettings;
 
+/++ Docs
+
+This module defines a `StrSettings` type, which may be used to customize the
+behavior of the `str` serialization function.
+
++/
+
 public:
 
 
@@ -20,9 +27,9 @@ struct StrSettings{
     static enum TypeDetail: int{
         /// Strings describe value, but not type.
         None = 0,
-        /// Strings describe value and type, but not qualifications e.g. `const`.
+        /// Strings describe value and type, but not qualifiers e.g. `const`.
         Unqual = 1,
-        /// Strings describe value and type, including qualifications.
+        /// Strings describe value and type, including qualifiers.
         Full = 2,
     }
     

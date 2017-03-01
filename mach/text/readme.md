@@ -80,6 +80,18 @@ assert(double(456.789).writenumber == "456.789");
 ```
 
 
+# mach.text.str
+
+
+This package implements the `str` function, which may be used to generate a
+useful string representation of just about anything.
+
+``` D
+assert(str("Hello!") == "Hello!");
+assert(str(1234) == "1234");
+```
+
+
 # mach.text.text
 
 
