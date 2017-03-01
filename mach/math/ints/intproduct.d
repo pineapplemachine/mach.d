@@ -52,17 +52,22 @@ public:
 
 
 /// Type returned by `intproduct`.
+/// TODO: This has good general usage for storing e.g. a 128-bit number,
+/// put it somewhere representative of that and give it a better name.
 struct IntProduct(T) if(isUnsignedIntegral!T){
     enum isBigger(X) = isUnsignedIntegral!X && X.sizeof >= T.sizeof * 2;
+    enum isSmaller(X) = isUnsignedIntegral!X && X.sizeof < T.sizeof;
     
     T high; // High bits of product.
     T low; // Low bits of product.
     
-    auto opCast(To: T)() const{
-        return this.low;
+    auto opCast(To)() const if(isUnsignedIntegral!To && To.sizeof <= T.sizeof){
+        return cast(To) this.low;
     }
     auto opCast(To)() const if(isBigger!To){
-        return (cast(To) this.low) | (((cast(To) this.high) << T.sizeof * 8));
+        return cast(To)(
+            (cast(To) this.low) | (((cast(To) this.high) << T.sizeof * 8))
+        );
     }
     
     bool opEquals(in T value) const{

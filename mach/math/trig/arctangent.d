@@ -149,9 +149,10 @@ private real atan2nativeimpl(in real y, in real x){
         return fcopysgn(y, x.fisinf ? (x > 0 ? quarterpi : threequarterspi) : halfpi);
     }else if(x.fisinf){
         return fcopysgn(y, x > 0 ? 0 : pi);
+    }else if(x > 0){
+        return atannativeimpl(y / x);
     }else{
-        if(x > 0) return atannativeimpl(y / x);
-        else return atannativeimpl(y / x) + fcopysgn(y, pi);
+        return atannativeimpl(y / x) + fcopysgn(y, pi);
     }
 }
 

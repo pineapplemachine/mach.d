@@ -92,6 +92,8 @@ struct SplitBits(T) if(isIntegral!T){
     }
     
     this(in T high, in T low){
+        assert(high <= pow2d!(T.sizeof * 4));
+        assert(low <= pow2d!(T.sizeof * 4));
         this.high = high;
         this.low = low;
     }
@@ -124,7 +126,7 @@ auto splitbits(T)(in T value) if(isIntegral!T){
 /// Return a value of type T for which `high` is the high bits and `low` the
 /// low bits.
 /// If either input is larger than `T.max / 2` then an error may be produced.
-auto mergebits(T)(in T high, in T low) if(isIntegral!T){
+T mergebits(T)(in T high, in T low) if(isIntegral!T){
     assert(high <= pow2d!(T.sizeof * 4));
     assert(low <= pow2d!(T.sizeof * 4));
     return cast(T)(cast(T)(high << T.sizeof * 4) | low);

@@ -62,7 +62,7 @@ template canFilterRange(T, alias pred){
 
 /// Given an object that can be taken as a range, create a new range which
 /// enumerates only those values of the original range matching some predicate.
-auto filter(alias pred, Iter)(Iter iter) if(canFilter!(Iter, pred)){
+auto filter(alias pred, Iter)(auto ref Iter iter) if(canFilter!(Iter, pred)){
     auto range = iter.asrange;
     return FilterRange!(pred, typeof(range))(range);
 }

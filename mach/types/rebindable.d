@@ -5,6 +5,18 @@ private:
 import mach.traits : Unqual;
 import mach.sys.memory : malloc, memfree, memcopy;
 
+/++ Docs
+
+The `rebindable` function and `Rebindable` template can be used to acquire
+a value stored in a type whose value can be rebound using assignments.
+If the type is already rebindable, the value is itself returned when calling
+`rebindable` and the template aliases to that input type in the case of
+`Rebindable`.
+If the type would be rebindable if a `const` or `immutable` qualifier were
+removed,
+
++/
+
 public:
 
 
@@ -44,10 +56,23 @@ template Rebindable(T){
 
 
 
+/// Exception type thrown when an operation upon a `RebindableType` fails
+/// because it hasn't been assigned a payload.
+class RebindableError: Error{
+    this(size_t line = __LINE__, string file = __FILE__){
+        super(
+            "Cannot perform operation upon an uninitialized rebindable instance.",
+            file, line, null
+        );
+    }
+}
+
+
+
 /// Wraps a value that would normally not be rebindable in a struct whose value
 /// can be freely rebound.
 struct RebindableType(T){
-    T* boundvalue = null;
+    T* payload = null;
     
     alias value this;
     
@@ -55,22 +80,22 @@ struct RebindableType(T){
     version(unittest) static long alive = 0;
     
     this(T value) @trusted @nogc{
-        this.boundvalue = malloc!T;
+        this.payload = malloc!T;
         version(unittest) alive++;
-        memcopy(this.boundvalue, &value, T.sizeof);
+        memcopy(this.payload, &value, T.sizeof);
     }
     
     this(this) @trusted @nogc{
-        if(this.boundvalue !is null){
+        if(this.payload !is null){
             T* newptr = malloc!T;
             version(unittest) alive++;
-            memcopy(newptr, this.boundvalue, T.sizeof);
-            this.boundvalue = newptr;
+            memcopy(newptr, this.payload, T.sizeof);
+            this.payload = newptr;
         }
     }
     ~this() @trusted @nogc{
-        if(this.boundvalue !is null){
-            memfree(this.boundvalue);
+        if(this.payload !is null){
+            memfree(this.payload);
             version(unittest) alive--;
         }
     }
@@ -81,29 +106,30 @@ struct RebindableType(T){
         return typeof(this)(T.init);
     }
     
-    /// Throws an AssertError if the internal `boundvalue` pointer is null,
-    /// which should be considered an illegal state.
-    void assertbound() const @safe pure nothrow{
-        assert(this.boundvalue !is null, "Rebindable type has no value.");
+    /// Get the value wrapped by this rebindable type.
+    @property auto value() @safe in{
+        static const error = new RebindableError();
+        if(this.payload is null) throw error;
+    }body{
+        return *this.payload;
     }
     
-    /// Get the value wrapped by this rebindable type.
-    @property auto value() @safe pure nothrow in{this.assertbound();} body{
-        return *this.boundvalue;
-    }
     /// Set the value wrapped by this rebindable type.
     @property void value(T value) @trusted nothrow{
-        if(this.boundvalue is null){
-            this.boundvalue = malloc!T;
+        if(this.payload is null){
+            this.payload = malloc!T;
             version(unittest) alive++;
         }
-        memcopy(this.boundvalue, &value, T.sizeof);
+        memcopy(this.payload, &value, T.sizeof);
     }
     
     auto ref opUnary(string op)() if(is(typeof({
-        mixin(`return `~ op ~ `(*this.boundvalue);`);
-    }))) in{this.assertbound();} body{
-        mixin(`return `~ op ~ `(*this.boundvalue);`);
+        mixin(`return `~ op ~ `(*this.payload);`);
+    }))) in{
+        static const error = new RebindableError();
+        if(this.payload is null) throw error;
+    }body{
+        mixin(`return `~ op ~ `(*this.payload);`);
     }
     
     auto ref opBinary(string op, X)(auto ref X value) if(is(typeof({
@@ -111,14 +137,17 @@ struct RebindableType(T){
     }))){
         mixin(`return this.value ` ~ op ~ ` value;`);
     }
+    
     auto ref opBinaryRight(string op, X)(auto ref X value) if(is(typeof({
         mixin(`return value ` ~ op ~ ` this.value;`);
     }))){
         mixin(`return value ` ~ op ~ ` this.value;`);
     }
+    
     void opAssign(T value) @safe nothrow{
         this.value = value;
     }
+    
     auto ref opOpAssign(string op, X)(auto ref X value) if(is(typeof({
         mixin(`this.value = this.value ` ~ op ~ ` value;`);
     }))){
@@ -175,22 +204,20 @@ unittest{
     static assert(is(typeof(rebindable(const(MutMember).init)) == MutMember));
 }
 
-unittest{
-    // Test uninitialized value
+unittest{ /// Uninitialized value
     Rebindable!ConstMember val;
 }
-unittest{
-    // Test assignment for uninitialized value
+unittest{ /// Assignment for uninitialized value
     Rebindable!ConstMember val;
     val = ConstMember(0);
     val = ConstMember(1);
 }
-unittest{
-    // Test postblit for uninitialized value
+unittest{ /// Postblit for uninitialized value
     Rebindable!ConstMember a;
     Rebindable!ConstMember b = a;
 }
-unittest{
+
+unittest{ /// Various cases
     auto x = ConstMember(0);
     static assert(!isRebindable!(typeof(x)));
     alias T = Rebindable!ConstMember;
