@@ -154,7 +154,9 @@ struct OrderedCombinationsRange(Source, size_t size) if(
     alias opDollar = length;
     
     @property typeof(this) save(){
-        return typeof(this)(this.source, this.sources.varmap!(s => s.save).expand);
+        return typeof(this)(
+            this.source, this.sources.varmap!(s => s.save).expand, this.countconsumed
+        );
     }
     
     static if(isRandomAccessRange!Source && hasNumericLength!Source){
@@ -255,7 +257,9 @@ struct UnorderedCombinationsRange(Source, size_t size) if(
         static if(size == 0){
             return this;
         }else{
-            return typeof(this)(this.sources.varmap!(s => s.save).expand);
+            return typeof(this)(
+                this.sources.varmap!(s => s.save).expand, this.countconsumed
+            );
         }
     }
 }
