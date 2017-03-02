@@ -55,15 +55,20 @@ auto muldiv(T)(in T x, in T y, in T w) if(isIntegral!T){
 
 /// Get `x / y * w` where `abs(y) > abs(w)`.
 /// May overflow for large values of x or w when `x > y`.
-auto muldiv_ygtw(T)(in T x, in T y, in T w) if(isIntegral!T){
-    assert(y != 0 && uabs(y) > uabs(w));
+auto muldiv_ygtw(T)(in T x, in T y, in T w) if(isIntegral!T) in{
+    assert(y != 0, "Cannot divide by zero.");
+    assert(uabs(y) > uabs(w), "Magnitude of y must be greater than the magnitude of w.");
+}body{
     return muldiv_ygtw_xltey(x % y, y, w) + x / y * w;
 }
 
 /// Get `x / y * w` where `abs(y) > abs(w)` and `abs(x) <= abs(y)`.
 /// TODO: The result of this function is not correctly rounded.
-auto muldiv_ygtw_xltey(T)(in T x, in T y, in T w) if(isIntegral!T){
-    assert(y != 0 && uabs(y) > uabs(w) && uabs(x) <= uabs(y));
+auto muldiv_ygtw_xltey(T)(in T x, in T y, in T w) if(isIntegral!T) in{
+    assert(y != 0, "Cannot divide by zero.");
+    assert(uabs(x) <= uabs(y), "Magnitude of x must be less than or equal to the magnitude of y.");
+    assert(uabs(y) > uabs(w), "Magnitude of y must be greater than the magnitude of w.");
+}body{
     immutable q = y / w;
     immutable hx = x / q / 2;
     immutable hy = y / q / 2;
@@ -72,14 +77,19 @@ auto muldiv_ygtw_xltey(T)(in T x, in T y, in T w) if(isIntegral!T){
 
 /// Get `x / y * w` where `x/y = z/w` for z where `abs(y) <= abs(w)`.
 /// May overflow for large values of x or w when `x > y`.
-auto muldiv_yltew(T)(in T x, in T y, in T w) if(isIntegral!T){
-    assert(y != 0 && uabs(y) <= uabs(w));
+auto muldiv_yltew(T)(in T x, in T y, in T w) if(isIntegral!T) in{
+    assert(y != 0, "Cannot divide by zero.");
+    assert(uabs(y) <= uabs(w), "Magnitude of y must be less than or equal to the magnitude of w.");
+}body{
     return muldiv_yltew_xltey(x % y, y, w) + x / y * w;
 }
 
 /// Get `x / y * w` where `abs(y) <= abs(w)` and `abs(x) <= abs(y)`.
-auto muldiv_yltew_xltey(T)(in T x, in T y, in T w) if(isIntegral!T){
-    assert(y != 0 && uabs(y) <= uabs(w) && uabs(x) <= uabs(y));
+auto muldiv_yltew_xltey(T)(in T x, in T y, in T w) if(isIntegral!T) in{
+    assert(y != 0, "Cannot divide by zero.");
+    assert(uabs(x) <= uabs(y), "Magnitude of x must be less than or equal to the magnitude of y.");
+    assert(uabs(y) <= uabs(w), "Magnitude of y must be less than or equal to the magnitude of w.");
+}body{
     // immutable quotient = w / y;
     // immutable remainder = w % y;
     // immutable error = remainder / (y/x); // should be remainder / (y/x)
@@ -88,8 +98,10 @@ auto muldiv_yltew_xltey(T)(in T x, in T y, in T w) if(isIntegral!T){
 }
 
 /// Get `x / y * w` where `w = T.max + 1` and `abs(x) < abs(y)`.
-auto muldiv_xlty_wmax(T)(in T x, in T y) if(isIntegral!T){
-    assert(y != 0 && uabs(x) < uabs(y));
+auto muldiv_xlty_wmax(T)(in T x, in T y) if(isIntegral!T) in{
+    assert(y != 0, "Cannot divide by zero.");
+    assert(uabs(x) < uabs(y), "Magnitude of x must be less than the magnitude of y.");
+}body{
     static if(is(Larger: LargerType!T)){
         enum w = (cast(Larger) T.max + 1);
         return x * w / y;
