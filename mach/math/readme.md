@@ -144,6 +144,35 @@ mustthrow!MedianEmptyInputError({
 ```
 
 
+## mach.math.muldiv
+
+
+This module provides functions for performing the computation `x * y / w` for
+inputs meeting various constraints.
+When the inputs are integers, these computations are performed using only
+integer math and will never overflow when the result of the computation is
+representable of the input type.
+Therefore, none of the provided functions will overflow if `abs(x) <= abs(y)`.
+
+The module additionally provides a function for computing `x * y / (T.max + 1)`.
+In this case, the input must satisfy the condition `abs(x) < abs(y)`.
+
+The output of `muldiv` called with integers is not guaranteed to be accurately
+rounded. However, these things are guaranteed:
+If the result can fit in the given integer type, then it will not be incorrect
+as a result of overflowing intermediate operations.
+Additionally, when that condition holds, `muldiv(x*y, y, w) == x` and
+`muldiv(x, y, w) <= muldiv(x + 1, y, w)`.
+
+``` D
+assert(muldiv(0, 16, 32) == 0); // 0 / 16 * 32 == 0
+assert(muldiv(4, 16, 32) == 8); // 4 / 16 * 32 == 8
+assert(muldiv(8, 16, 32) == 16); // 8 / 16 * 32 == 16
+assert(muldiv(12, 16, 32) == 24); // 12 / 16 * 32 == 24
+assert(muldiv(16, 16, 32) == 32); // 16 / 16 * 32 == 32
+```
+
+
 ## mach.math.normalizescalar
 
 

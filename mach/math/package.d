@@ -19,6 +19,7 @@ import mach.math.ints;
 import mach.math.matrix4;
 import mach.math.mean;
 import mach.math.median;
+import mach.math.muldiv;
 import mach.math.normalizescalar;
 import mach.math.numrange;
 import mach.math.polynomial;
