@@ -744,6 +744,33 @@ assert(range.front == 0); // Repeated access ok!
 ```
 
 
+## mach.range.cartpower
+
+
+The `cartpower` function produces a range that is the [n-ary Cartesian product]
+(https://en.wikipedia.org/wiki/Cartesian_product#n-ary_product)
+of an input iterable with itself.
+It accepts a single input iterable that is valid as a saving range to perform
+the operation upon, and an unsigned integer representing the dimensionality of
+the exponentiation as a template argument.
+
+``` D
+import mach.types : tuple;
+import mach.range.compare : equals;
+assert(cartpower!2([1, 2, 3]).equals([
+    tuple(1, 1), tuple(1, 2), tuple(1, 3),
+    tuple(2, 1), tuple(2, 2), tuple(2, 3),
+    tuple(3, 1), tuple(3, 2), tuple(3, 3),
+]));
+```
+
+
+The function accepts an optional template argument deciding whether outputs
+containing the same elements in different orders should be considered
+duplicates, and the duplicates omitted.
+The two options are `CartesianPowerType.Ordered` and `CartesianPowerType.Unordered`.
+
+
 ## mach.range.chain
 
 
