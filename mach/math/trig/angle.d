@@ -2,14 +2,19 @@ module mach.math.trig.angle;
 
 private:
 
-import mach.traits : Unqual, isNumeric, isFloatingPoint, isIntegral, isUnsignedIntegral;
+import mach.traits : isNumeric, isFloatingPoint, isIntegral, Signed;
+import mach.traits : isSignedIntegral, isUnsignedIntegral, LargestTypeOf;
+import mach.math.abs : abs, uabs;
 import mach.math.constants : tau, quarterpi, threequarterspi;
+import mach.math.round : floor;
 import mach.math.floats.extract : fextractsgn;
-import mach.math.floats.properties : fisnan, fisinf;
+import mach.math.floats.properties : fisnan, fisinf, fiszero;
+import mach.math.ints.intproduct : intproduct;
 import mach.math.trig.arctangent : atan, atan2;
 import mach.math.trig.inverse : asin, acos;
 import mach.math.trig.sincos : sin, cos;
 import mach.math.trig.tangent : tan;
+import mach.math.trig.rotation : Rotation;
 
 /++ Docs
 
@@ -170,6 +175,15 @@ public:
 
 public import mach.math.trig.rotdirection : RotationDirection;
 
+
+
+template CommonAngleType(A: Angle!AT, B: Angle!BT, AT, BT){
+    static if(AT.sizeof >= BT.sizeof){
+        alias CommonAngleType = A;
+    }else{
+        alias CommonAngleType = B;
+    }
+}
 
 
 /// Type returned by `getsametypeangle`.
@@ -497,8 +511,15 @@ struct Angle(T = ulong) if(isUnsignedIntegral!T){
     
     /// Get an angle pointing in the opposite direction.
     auto opUnary(string op: "-")() const{
-        return typeof(this)(this.value >= T1_2 ? this.value - T1_2 : this.value + T1_2);
+        return typeof(this)(this.value + T1_2);
     }
+    
+    /// Get an angle that is a reflection of this one relative to π radians.
+    /// For example: When `this.radians == π/2`, outputs 3/2 π.
+    auto opUnary(string op: "~")() const{
+        return typeof(this)(T.max - this.value + 1);
+    }
+    
     /// Get the first representable angle clockwise relative to this one.
     auto opUnary(string op: "++")(){
         this.value++;
@@ -512,11 +533,13 @@ struct Angle(T = ulong) if(isUnsignedIntegral!T){
     
     /// Rotate this angle clockwise by another angle.
     auto opOpAssign(string op: "+", X)(in Angle!X rhs){
-        return this.value += getangleas!T(rhs.value);
+        this.value += getangleas!T(rhs.value);
+        return this;
     }
     /// Rotate this angle counterclockwise by another angle.
     auto opOpAssign(string op: "-", X)(in Angle!X rhs){
-        return this.value -= getangleas!T(rhs.value);
+        this.value -= getangleas!T(rhs.value);
+        return this;
     }
     
     /// Get the first angle rotated clockwise by the second angle.
@@ -537,13 +560,53 @@ struct Angle(T = ulong) if(isUnsignedIntegral!T){
         return same.a / cast(double) same.b;
     }
     
-    /// Divide this angle by some amount.
-    auto opBinary(string op: "/", N)(in N rhs) const if(isNumeric!N){
-        return typeof(this)(cast(T)(this.value / rhs));
-    }
     /// Multiply this angle by some amount.
+    /// Returns a Rotation.
+    /// Multiplication by NaN or infinity produces a zero rotation.
     auto opBinary(string op: "*", N)(in N rhs) const if(isNumeric!N){
-        return typeof(this)(cast(T)(this.value * rhs));
+        static if(isSignedIntegral!N){
+            immutable product = this * uabs(rhs);
+            return rhs > 0 ? product : -product;
+        }else static if(isUnsignedIntegral!N){
+            alias C = LargestTypeOf!(N, T);
+            immutable product = intproduct(cast(C) this.value, cast(C) rhs);
+            return Rotation!C(Angle!C(product.low), product.high);
+        }else{
+            alias RotType = Rotation!T;
+            if(rhs.fisnan || rhs.fisinf || rhs.fiszero){
+                return RotType(0);
+            }else{
+                immutable product = abs(this.value * cast(real) rhs);
+                immutable rot = RotType(
+                    typeof(this)(cast(T)(product % RealMax)),
+                    cast(RotType.RotRevs) floor(product / RealMax)
+                );
+                return rhs > 0 ? rot : -rot;
+            }
+        }
+    }
+    /// Divide this angle by some amount.
+    /// Returns a Rotation.
+    /// Division by zero, NaN, or infinity returns a zero rotation.
+    auto opBinary(string op: "/", N)(in N rhs) const if(isNumeric!N){
+        static if(isSignedIntegral!N){
+            immutable quotient = this / uabs(rhs);
+            return rhs > 0 ? quotient : -quotient;
+        }else static if(isUnsignedIntegral!N){
+            alias C = LargestTypeOf!(N, T);
+            if(rhs == 0){
+                return Rotation!C(0);
+            }else{
+                return Rotation!C(Angle!C(this.value / rhs));
+            }
+        }else{
+            return this * (real(1) / rhs);
+        }
+    }
+    
+    /// Assign to the value of an angle of another type.
+    auto opAssign(X)(in Angle!X rhs){
+        this.value = (cast(typeof(this)) rhs).value;
     }
     
     /// Compare two angles.
@@ -563,7 +626,7 @@ struct Angle(T = ulong) if(isUnsignedIntegral!T){
 
 
 private version(unittest){
-    import mach.traits : UnsignedIntegralTypes, LargestTypeOf;
+    import mach.traits : UnsignedIntegralTypes;
     import mach.math.constants : pi, halfpi;
     import mach.math.floats.compare : fnearequal;
     import mach.math.floats.properties : fisinf;
@@ -618,6 +681,71 @@ unittest{ /// Operator overloads
             assert(a0 == Angle!T0.Degrees(90));
         }
     }
+}
+
+unittest{ /// Negation and reflection
+    // Negation
+    assert((-Angle!().Revolutions(0.0)).revolutions == 0.5);
+    assert((-Angle!().Revolutions(0.5)).revolutions == 0.0);
+    assert((-Angle!().Revolutions(0.25)).revolutions == 0.75);
+    assert((-Angle!().Revolutions(0.75)).revolutions == 0.25);
+    assert((-Angle!().Revolutions(0.625)).revolutions == 0.125);
+    assert((-Angle!().Revolutions(0.125)).revolutions == 0.625);
+    // Reflection
+    assert((~Angle!().Revolutions(0.0)).revolutions == 0.0);
+    assert((~Angle!().Revolutions(0.5)).revolutions == 0.5);
+    assert((~Angle!().Revolutions(0.25)).revolutions == 0.75);
+    assert((~Angle!().Revolutions(0.75)).revolutions == 0.25);
+    assert((~Angle!().Revolutions(0.875)).revolutions == 0.125);
+    assert((~Angle!().Revolutions(0.125)).revolutions == 0.875);
+}
+
+unittest{ /// Multiplication and division by integers and floats
+    immutable x = Angle!ulong.Degrees(180);
+    assert((x * int(2)).degrees == 360);
+    assert((x * uint(2)).degrees == 360);
+    assert((x * double(2)).degrees == 360);
+    assert((x * int(0)).degrees == 0);
+    assert((x * uint(0)).degrees == 0);
+    assert((x * double(0)).degrees == 0);
+    assert((x * 0.5).degrees == 90);
+    assert((x / int(2)).degrees == 90);
+    assert((x / uint(2)).degrees == 90);
+    assert((x / double(2)).degrees == 90);
+    assert((x / 0.5).degrees == 360);
+}
+unittest{ /// Multiplication and division for arbitrary inputs
+    enum inputs = [
+        0.0L, 0.125L, 0.25L, 0.3L, 0.5L, 0.75L, 0.8L, 0.9L, 0.95L, 1.0L, 1.41L,
+        1.5L, 1.9L, 2.25L, 3.75L, 4.5L, 8.2L, 11.0L, 20.55L, 30.1L, 256.24L
+    ];
+    foreach(x; inputs){
+        foreach(y; inputs){
+            assert(fnearequal((Angle!ulong.Revolutions(+x) * +y).revolutions, (x % 1) * +y, 1e-16));
+            assert(fnearequal((Angle!ulong.Revolutions(+x) * -y).revolutions, (x % 1) * -y, 1e-16));
+            if(y != 0){
+                assert(fnearequal((Angle!ulong.Revolutions(+x) / +y).revolutions, (x % 1) / +y, 1e-16));
+                assert(fnearequal((Angle!ulong.Revolutions(+x) / -y).revolutions, (x % 1) / -y, 1e-16));
+            }
+        }
+    }
+}
+unittest{ /// Multiplication and division special cases
+    immutable x = Angle!().Revolutions(0.5);
+    assert((x * int(0)).revolutions == 0);
+    assert((x * uint(0)).revolutions == 0);
+    assert((x * double(0)).revolutions == 0);
+    assert((x * +double.infinity).revolutions == 0);
+    assert((x * -double.infinity).revolutions == 0);
+    assert((x * +double.nan).revolutions == 0);
+    assert((x * -double.nan).revolutions == 0);
+    assert((x / int(0)).revolutions == 0);
+    assert((x / uint(0)).revolutions == 0);
+    assert((x / double(0)).revolutions == 0);
+    assert((x / +double.infinity).revolutions == 0);
+    assert((x / -double.infinity).revolutions == 0);
+    assert((x / +double.nan).revolutions == 0);
+    assert((x / -double.nan).revolutions == 0);
 }
 
 unittest{ /// Distance and interpolation - same angle
@@ -700,6 +828,18 @@ unittest{ /// Type promotion
             static assert(is(typeof(Angle!T0(0) - Angle!T1(0)) == Larger));
             static assert(is(typeof(Angle!T0(0).distance(Angle!T1(0)).angle) == Larger));
             static assert(is(typeof(Angle!T0(0).lerp(Angle!T1(0), 0)) == Larger));
+            static assert(is(CommonAngleType!(Angle!T0, Angle!T1) == Larger));
+        }
+    }
+}
+
+unittest{ /// Assignment
+    foreach(T0; UnsignedIntegralTypes){
+        foreach(T1; UnsignedIntegralTypes){
+            auto x = Angle!T0.Revolutions(0.25);
+            auto y = Angle!T1.Revolutions(0.75);
+            x = y;
+            assert(x == y);
         }
     }
 }

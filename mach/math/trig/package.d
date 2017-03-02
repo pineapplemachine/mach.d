@@ -13,6 +13,7 @@ public:
 import mach.math.trig.angle;
 import mach.math.trig.arctangent;
 import mach.math.trig.inverse;
+import mach.math.trig.rotation;
 import mach.math.trig.rotdirection;
 import mach.math.trig.sincos;
 import mach.math.trig.tangent;

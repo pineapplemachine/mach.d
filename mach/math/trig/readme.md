@@ -170,6 +170,94 @@ assert(fnearequal(cos(acos(0.5)), 0.5, 1e-18));
 ```
 
 
+## mach.math.trig.rotation
+
+
+This module implements a `Rotation` type which, similar to the `Angle` type in
+`mach.math.trig.angle`, is able to represent amounts of rotation with greater
+precision than some other methods.
+Unlike `Angle`, which only stores a direction in the range [0, 2π) radians,
+the `Rotation` type stores an amount of rotation which includes positive and
+negative whole revolutions.
+Note that there is an upper and lower limit to the amount of rotation that is
+representable, and underflow and overflow will cause the value to wrap between
+the lowest and highest representable values.
+
+The `Rotation` struct accepts two template arguments. The first argument must
+be an unsigned integer type; this type is used to represent the value's
+fractional rotation, and a larger integral type allows for a greater number
+of discrete fractional rotations to be represented.
+When not provided, it defaults to `ulong`.
+
+The second argument must be a signed integer type; this type is used to
+represent the value's whole rotations. A larger integral type allows for
+a lower low boundary and a higher high boundary of representable amounts of
+rotation.
+When not provided, it defaults to a signed complement to the first argument,
+e.g. when the first argument is `ulong` the second argument defaults to `long`.
+
+Like the `Angle` type, the `Rotation` type provides methods for converting
+to and from radians, degrees, and revolutions.
+
+``` D
+import mach.math.constants : pi;
+import mach.math.floats : fnearequal;
+auto a = Rotation!(ulong, long).Radians(pi * 3);
+assert(fnearequal(a.radians, pi * 3));
+assert(a.degrees == 540);
+assert(a.revolutions == 1.5);
+auto b = Rotation!(ulong, long).Degrees(-90);
+assert(fnearequal(b.radians, -pi / 2));
+assert(b.degrees == -90);
+assert(b.revolutions == -0.25);
+auto c = Rotation!(ulong, long).Revolutions(-2.5);
+assert(fnearequal(c.radians, -pi * 5));
+assert(c.degrees == -900);
+assert(c.revolutions == -2.5);
+```
+
+``` D
+import mach.math.constants : pi;
+Rotation!(ulong, long) rot;
+rot.radians = pi;
+assert(rot.revolutions == 0.5);
+rot.degrees = -270;
+assert(rot.revolutions == -0.75);
+rot.revolutions = 2;
+assert(rot.revolutions == 2);
+```
+
+
+The `Rotation` type supports the trigonometric functions `sin`, `cos`, `tan`,
+`asin`, `acos`, `atan`, and `atan2`.
+
+``` D
+import mach.math.floats.properties : fisinf;
+assert(Rotation!().Degrees(90).sin == 1); // Sine
+assert(Rotation!().Degrees(90).cos == 0); // Cosine
+assert(Rotation!().Degrees(90).tan.fisinf); // Tangent
+assert(Rotation!().asin(1).degrees == 90); // Arcsine
+assert(Rotation!().acos(0).degrees == 90); // Arccosine
+assert(Rotation!().atan(real.infinity).degrees == 90); // Arctangent
+assert(Rotation!().atan2(1, 1).degrees == 45); // atan2
+```
+
+
+`Rotation` objects support a range of addition, subtraction, multiplication,
+division, and comparison operations with other rotations, with angles, or
+with numbers.
+
+``` D
+alias Rot = Rotation!(uint, int);
+assert(Rot.Revolutions(1.5) + Rot.Revolutions(2.5) == Rot.Revolutions(4.0));
+assert(Rot.Revolutions(2.5) - Rot.Revolutions(3.5) == Rot.Revolutions(-1.0));
+assert(Rot.Revolutions(1.5) + Angle!().Revolutions(0.5) == Rot.Revolutions(2.0));
+assert(Rot.Revolutions(2.5) - Angle!().Revolutions(0.5) == Rot.Revolutions(2.0));
+assert(Rot.Revolutions(1.5) * 0.5 == Rot.Revolutions(0.75));
+assert(Rot.Revolutions(1.5) / 4.0 == Rot.Revolutions(0.375));
+```
+
+
 ## mach.math.trig.rotdirection
 
 
