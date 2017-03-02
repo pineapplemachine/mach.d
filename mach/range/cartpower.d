@@ -333,16 +333,16 @@ unittest{ /// Ordered combinations, size == 2
     auto range = [1, 2].cartpower!(2, CartesianPowerType.Ordered);
     testf(range.empty);
     testeq(range.length, 4);
-    //testeq(range.remaining, 4); // TODO
+    testeq(range.remaining, 4);
     testeq(range.next, tuple(1, 1));
     testeq(range.length, 4);
-    //testeq(range.remaining, 3); // TODO
+    testeq(range.remaining, 3);
     testeq(range.next, tuple(1, 2));
-    //testeq(range.remaining, 2); // TODO
+    testeq(range.remaining, 2);
     testeq(range.next, tuple(2, 1));
-    //testeq(range.remaining, 1); // TODO
+    testeq(range.remaining, 1);
     testeq(range.next, tuple(2, 2));
-    //testeq(range.remaining, 0); // TODO
+    testeq(range.remaining, 0);
     test(range.empty);
     testfail({range.front;});
     testfail({range.popFront();});
@@ -383,14 +383,14 @@ unittest{ /// Unordered combinations, size == 2
     auto range = [1, 2].cartpower!(2, CartesianPowerType.Unordered);
     testf(range.empty);
     testeq(range.length, 3);
-    //testeq(range.remaining, 3); // TODO
+    testeq(range.remaining, 3);
     testeq(range.next, tuple(1, 1));
     testeq(range.length, 3);
-    //testeq(range.remaining, 2); // TODO
+    testeq(range.remaining, 2);
     testeq(range.next, tuple(1, 2));
-    //testeq(range.remaining, 1); // TODO
+    testeq(range.remaining, 1);
     testeq(range.next, tuple(2, 2));
-    //testeq(range.remaining, 0); // TODO
+    testeq(range.remaining, 0);
     test(range.empty);
     testfail({range.front;});
     testfail({range.popFront();});
