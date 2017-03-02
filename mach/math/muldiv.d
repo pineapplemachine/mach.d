@@ -46,8 +46,7 @@ auto muldiv(T)(in T x, in T y, in T w) if(isFloatingPoint!T){
 
 /// Ditto
 auto muldiv(T)(in T x, in T y, in T w) if(isIntegral!T){
-    alias Larger = LargerType!T;
-    static if(!is(Larger == Larger)){
+    static if(is(Larger: LargerType!T)){
         return cast(T)(cast(Larger) x * w / y);
     }else{
         return y > w ? muldiv_ygtw(x, y, w) : muldiv_yltew(x, y, w);
@@ -91,8 +90,7 @@ auto muldiv_yltew_xltey(T)(in T x, in T y, in T w) if(isIntegral!T){
 /// Get `x / y * w` where `w = T.max + 1` and `abs(x) < abs(y)`.
 auto muldiv_xlty_wmax(T)(in T x, in T y) if(isIntegral!T){
     assert(y != 0 && uabs(x) < uabs(y));
-    alias Larger = LargerType!T;
-    static if(!is(Larger == Larger)){
+    static if(is(Larger: LargerType!T)){
         enum w = (cast(Larger) T.max + 1);
         return x * w / y;
     }else{
@@ -106,16 +104,19 @@ auto muldiv_xlty_wmax(T)(in T x, in T y) if(isIntegral!T){
 
 
 private version(unittest){
+    import mach.meta : Aliases;
     import mach.math.round : floor;
 }
 
 unittest{
-    assert(muldiv(0, 8, 4) == 0);
-    assert(muldiv(4, 8, 4) == 2);
-    assert(muldiv(8, 8, 4) == 4);
-    assert(muldiv(0, 6, 12) == 0);
-    assert(muldiv(3, 6, 12) == 6);
-    assert(muldiv(6, 6, 12) == 12);
+    foreach(T; Aliases!(int, uint, long, ulong)){
+        assert(muldiv(T(0), T(8), T(4)) == 0);
+        assert(muldiv(T(4), T(8), T(4)) == 2);
+        assert(muldiv(T(8), T(8), T(4)) == 4);
+        assert(muldiv(T(0), T(6), T(12)) == 0);
+        assert(muldiv(T(3), T(6), T(12)) == 6);
+        assert(muldiv(T(6), T(6), T(12)) == 12);
+    }
 }
 
 unittest{
