@@ -571,6 +571,7 @@ import mach.range.associate : associate, aagroup, aadistribution;
 import mach.range.asstaticarray : asstaticarray;
 import mach.range.bytecontent : bytecontent, bytecontentle, bytecontentbe;
 import mach.range.cache : cache;
+import mach.range.cartpower : cartpower;
 import mach.range.chain : chain, chainiter, chainiters;
 import mach.range.chunk : chunk;
 import mach.range.compare : compare, equals, iterequals, recursiveequals;
