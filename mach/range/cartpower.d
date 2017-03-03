@@ -76,9 +76,9 @@ auto cartpower(
 )(auto ref Iter iter) if(validAsSavingRange!Iter){
     auto range = iter.asrange;
     static if(type is CartesianPowerType.Ordered){
-        return OrderedCombinationsRange!(typeof(range), size)(range);
+        return OrderedCartPowerRange!(typeof(range), size)(range);
     }else{
-        return UnorderedCombinationsRange!(typeof(range), size)(range);
+        return UnorderedCartPowerRange!(typeof(range), size)(range);
     }
 }
 
@@ -87,7 +87,7 @@ auto cartpower(
 /// Enumerate ordered combinations of elements of a given length given an
 /// input range.
 /// Combinations are ordered as in (a, b) and (b, a) are both included.
-struct OrderedCombinationsRange(Source, size_t size) if(
+struct OrderedCartPowerRange(Source, size_t size) if(
     isFiniteRange!Source && isSavingRange!Source
 ){
     alias Sources = Repeat!(size, Source);
@@ -186,7 +186,7 @@ struct OrderedCombinationsRange(Source, size_t size) if(
 /// Enumerate unordered combinations of elements of a given length given an
 /// input range.
 /// Combinations are unordered as in only one of (a, b) or (b, a) are included.
-struct UnorderedCombinationsRange(Source, size_t size) if(
+struct UnorderedCartPowerRange(Source, size_t size) if(
     isFiniteRange!Source && isSavingRange!Source
 ){
     alias Sources = Repeat!(size, Source);
@@ -264,7 +264,7 @@ struct UnorderedCombinationsRange(Source, size_t size) if(
     }
 }
 
-/// Compute the length of a `UnorderedCombinationsRange` given an input length
+/// Compute the length of a `UnorderedCartPowerRange` given an input length
 /// and output tuple size.
 /// TODO: Can this be expressed without using recursion?
 static private size_t unorderedlength(size_t size)(in size_t ilen){
