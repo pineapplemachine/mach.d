@@ -26,21 +26,29 @@ private template isUCent(T){
 
 
 
-static if(is(cent)){
-    /// An alias sequence of all signed integral types.
-    alias SignedIntegralTypes = Aliases!(byte, short, int, long, cent);
-}else{
-    /// ditto
-    alias SignedIntegralTypes = Aliases!(byte, short, int, long);
+/// Funky templates are a workaround for a linker issue occurring when when
+/// symbols are defined in a `static if`.
+private template CondSignedIntegralTypes(){
+    static if(is(cent)){
+        alias CondSignedIntegralTypes = Aliases!(byte, short, int, long, cent);
+    }else{
+        alias CondSignedIntegralTypes = Aliases!(byte, short, int, long);
+    }
+}
+private template CondUnsignedIntegralTypes(){
+    static if(is(ucent)){
+        alias CondUnsignedIntegralTypes = Aliases!(ubyte, ushort, uint, ulong, ucent);
+    }else{
+        alias CondUnsignedIntegralTypes = Aliases!(ubyte, ushort, uint, ulong);
+    }
 }
 
-static if(is(ucent)){
-    /// An alias sequence of all unsigned integral types.
-    alias UnsignedIntegralTypes = Aliases!(ubyte, ushort, uint, ulong, ucent);
-}else{
-    /// ditto
-    alias UnsignedIntegralTypes = Aliases!(ubyte, ushort, uint, ulong);
-}
+/// An alias sequence of all signed integral types.
+alias SignedIntegralTypes = CondSignedIntegralTypes!();
+/// An alias sequence of all unsigned integral types.
+alias UnsignedIntegralTypes = CondUnsignedIntegralTypes!();
+
+
 
 /// An alias sequence of all integral types.
 alias IntegralTypes = Aliases!(SignedIntegralTypes, UnsignedIntegralTypes);
