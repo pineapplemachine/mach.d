@@ -27,3 +27,4 @@ import mach.meta.varlogical;
 import mach.meta.varmap;
 import mach.meta.varreduce;
 import mach.meta.varselect;
+import mach.meta.varzip;
