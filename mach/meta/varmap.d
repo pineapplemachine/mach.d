@@ -4,7 +4,7 @@ private:
 
 import mach.types : tuple;
 
-/++ Docs: mach.meta.varmap
+/++ Docs
 
 Performs the
 [map higher-order function](https://en.wikipedia.org/wiki/Map_(higher-order_function))
@@ -19,11 +19,15 @@ unittest{ /// Example
     assert(varmap!(e => e + 1)(0, 1, 2) == tuple(1, 2, 3));
 }
 
-/++ Docs: mach.meta.varmap
+/++ Docs
 
 The module also provides a `varmapi` function, which passes the zero-based
 index of the argument being mapped to the transformation function,
 in addition to the element being transformed.
+
+There is additionally a `varmapis` function which accepts as its template
+argument a templated function taking the index as a template argument and
+the value as a runtime argument.
 
 +/
 
@@ -62,6 +66,19 @@ template canVarMapIndex(alias transform, T...){
     }
 }
 
+template canVarMapStaticIndex(alias transform, T...){
+    static if(T.length == 0){
+        enum bool canVarMapStaticIndex = true;
+    }else static if(T.length == 1){
+        enum bool canVarMapStaticIndex = is(typeof({auto x = transform!0(T.init);}));
+    }else{
+        enum bool canVarMapStaticIndex = (
+            canVarMapStaticIndex!(transform, T[0]) &&
+            canVarMapStaticIndex!(transform, T[1 .. $])
+        );
+    }
+}
+
 /// Perform a transformation upon each passed argument and return the results
 /// as a tuple.
 auto varmap(alias transform, T...)(auto ref T args) if(canVarMap!(transform, T)){
@@ -91,6 +108,20 @@ auto varmapi(alias transform, size_t index = 0, T...)(auto ref T args) if(
     }else{
         auto here = transform(index, args[0]);
         auto rest = varmapi!(transform, index + 1)(args[1 .. $]);
+        return tuple(here, rest.expand);
+    }
+}
+
+auto varmapis(alias transform, size_t index = 0, T...)(auto ref T args) if(
+    canVarMapStaticIndex!(transform, T)
+){
+    static if(T.length == 0){
+        return tuple();
+    }else static if(T.length == 1){
+        return tuple(transform!index(args));
+    }else{
+        auto here = transform!index(args[0]);
+        auto rest = varmapis!(transform, index + 1)(args[1 .. $]);
         return tuple(here, rest.expand);
     }
 }
@@ -132,4 +163,15 @@ unittest{
     static assert(values.length == 2);
     assert(values[0] == 1);
     assert(values[1] == 2);
+}
+
+private version(unittest){
+    auto mapisfn(size_t i)(in int x){return x * i;}
+}
+unittest{
+    auto values = varmapis!mapisfn(2, 3, 4);
+    static assert(values.length == 3);
+    assert(values[0] == 0);
+    assert(values[1] == 3);
+    assert(values[2] == 8);
 }

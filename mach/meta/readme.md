@@ -395,6 +395,10 @@ The module also provides a `varmapi` function, which passes the zero-based
 index of the argument being mapped to the transformation function,
 in addition to the element being transformed.
 
+There is additionally a `varmapis` function which accepts as its template
+argument a templated function taking the index as a template argument and
+the value as a runtime argument.
+
 ``` D
 alias func = (index, element) => (index + element);
 assert(varmapi!func(1, 1, 1) == tuple(1, 2, 3));
