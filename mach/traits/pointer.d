@@ -4,6 +4,28 @@ private:
 
 import mach.traits.primitives : isPointer;
 
+/++ Docs
+
+The `PointerType` template accepts a pointer type as input and aliases to
+the type that the pointer refers to.
+
+It also provides an overload of the `isPointer` template which can be used
+to determine whether a pointer refers to a type satisfying some predicate
+template.
+
++/
+
+unittest{ /// Example
+    static assert(is(PointerType!(int*) == int));
+    static assert(is(PointerType!(string**) == string*));
+}
+
+unittest{ /// Example
+    import mach.traits.primitives : isIntegral, isFloatingPoint;
+    static assert(isPointer!(isIntegral, int*));
+    static assert(isPointer!(isFloatingPoint, float*));
+}
+
 public:
 
 
@@ -25,13 +47,12 @@ template isPointer(alias pred, T){
 
 
 
-version(unittest){
-    private:
+private version(unittest){
     import mach.meta.aliases : Aliases;
     import mach.traits.primitives : isBoolean, isIntegral;
 }
 
-unittest{
+unittest{ /// PointerType
     struct Struct{int x;}
     class Class{int x;}
     foreach(T; Aliases!(
@@ -47,12 +68,11 @@ unittest{
     }
 }
 
-unittest{
+unittest{ /// isPointer with type
     static assert(isPointer!(const(int*)));
     static assert(isPointer!(const(void*)));
 }
-
-unittest{
+unittest{ /// isPointer with type and predicate
     static assert(isPointer!(isBoolean, bool*));
     static assert(isPointer!(isIntegral, int*));
     static assert(isPointer!(isIntegral, long*));

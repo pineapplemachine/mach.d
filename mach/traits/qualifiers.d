@@ -2,7 +2,49 @@ module mach.traits.qualifiers;
 
 private:
 
-//
+/++ Docs
+
+This module implements the `Unqual`, `isUnqual`, and `Qualify` templates for
+manipulating the qualifiers `immutable`, `shared`, `inout`, and `const` that
+may be associated with types.
+
+The `Unqual` template aliases an inputted type with all of its qualifiers
+stripped.
+
++/
+
+unittest{ /// Example
+    static assert(is(Unqual!(const int) == int));
+    static assert(is(Unqual!(shared inout int) == int));
+    static assert(is(Unqual!(int) == int));
+}
+
+/++ Docs
+
+The `isUnqual` template compares two or more types for equality, regardless
+of differing qualifiers.
+
++/
+
+unittest{ /// Example
+    static assert(isUnqual!(const int, immutable int));
+    static assert(isUnqual!(string, shared string));
+    static assert(!isUnqual!(float, double));
+}
+
+/++ Docs
+
+The `Qualify` template takes two types and outputs the second type with
+the same qualifiers as the first type.
+
++/
+
+unittest{ /// Example
+    static assert(is(Qualify!(const int, string) == const string));
+    static assert(is(Qualify!(shared inout int, string) == shared inout string));
+    static assert(is(Qualify!(shared int, immutable string) == shared string));
+    static assert(is(Qualify!(int, shared const string) == string));
+}
 
 public:
 
@@ -55,9 +97,8 @@ template Qualify(Q, T){
 
 
 
-version(unittest){
-    private:
-    import mach.meta : Aliases;
+private version(unittest){
+    import mach.meta.aliases : Aliases;
     class TestClass{}
     struct TestStruct{}
     struct TestTmplStruct(T){}
@@ -69,6 +110,7 @@ version(unittest){
         TestEnum, TestEnumI
     );
 }
+
 unittest{
     foreach(T; TestTypes){
         static assert(is(Unqual!(T) == T));
@@ -82,6 +124,7 @@ unittest{
         static assert(is(Unqual!(const T) == T));
     }
 }
+
 unittest{
     foreach(T; TestTypes){
         static assert(isUnqual!());
@@ -110,14 +153,15 @@ unittest{
         static assert(isUnqual!(T, const T, immutable T));
         static assert(isUnqual!(shared T, shared const T, inout const T, const T));
     }
-    {
-        static assert(!isUnqual!(int, void));
-        static assert(!isUnqual!(int, double));
-        static assert(!isUnqual!(const int, double));
-        static assert(!isUnqual!(const int, const double));
-        static assert(!isUnqual!(int, double, float));
-    }
 }
+unittest{
+    static assert(!isUnqual!(int, void));
+    static assert(!isUnqual!(int, double));
+    static assert(!isUnqual!(const int, double));
+    static assert(!isUnqual!(const int, const double));
+    static assert(!isUnqual!(int, double, float));
+}
+
 unittest{
     static assert(is(Qualify!(void, int) == int));
     static assert(is(Qualify!(void, const int) == int));

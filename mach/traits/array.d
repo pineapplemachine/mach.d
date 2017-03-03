@@ -2,7 +2,43 @@ module mach.traits.array;
 
 private:
 
-//
+/++ Docs
+
+The `isArray` template may be used to determine whether an input type is a
+static or dynamic array.
+
++/
+
+unittest{ /// Example
+    static assert(isArray!(int[4]));
+    static assert(isArray!(string));
+    static assert(!isArray!(float));
+}
+
+/++ Docs
+
+The `isArrayOf` template evaluates true when an input type is an array of
+elements of a given type.
+
++/
+
+unittest{ /// Example
+    static assert(isArrayOf!(int, int[4]));
+    static assert(isArrayOf!(immutable char, string));
+    static assert(!isArrayOf!(int, float[]));
+}
+
+/++ Docs
+
+The `isStaticArray` and `isDynamicArray` templates may be used to determine
+whether a type is a statically-sized or dynamic array, respectively.
+
++/
+
+unittest{ /// Example
+    static assert(isStaticArray!(int[4]));
+    static assert(isDynamicArray!(string));
+}
 
 public:
 
@@ -56,6 +92,7 @@ unittest{
 }
 unittest{
     static assert(isArrayOf!(int, int[]));
+    static assert(isArrayOf!(int, int[2]));
     static assert(isArrayOf!(int[], int[][]));
     static assert(isArrayOf!(const(int), const(int)[]));
     static assert(isArrayOf!(const(int), int[]));

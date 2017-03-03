@@ -2,7 +2,17 @@ module mach.traits.classes;
 
 private:
 
-//
+/++ Docs
+
+The `isClass` template can be used to determine whether some type is implemented
+as a class, as opposed to being a struct or a primitive.
+
++/
+
+unittest{ /// Example
+    static assert(isClass!(Object));
+    static assert(!isClass!(int));
+}
 
 public:
 
