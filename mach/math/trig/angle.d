@@ -508,6 +508,10 @@ struct Angle(T = ulong) if(isUnsignedIntegral!T){
     auto opCast(To: Angle!X, X)() const{
         return To(getangleas!X(this.value));
     }
+    /// Cast this angle to a rotation type.
+    auto opCast(To: Rotation!(AX, RX), AX, RX)() const{
+        return To(this);
+    }
     
     /// Get an angle pointing in the opposite direction.
     auto opUnary(string op: "-")() const{
@@ -785,9 +789,13 @@ unittest{ /// Linear interpolation with special-case inputs
 }
 
 unittest{ /// Casting
+    // To angle
     Angle!uint a0 = Angle!uint.Degrees(90);
     Angle!ulong a1 = cast(Angle!ulong) a0;
     assert(a0 == a1);
+    // To rotation
+    Rotation!(ulong, long) rot = cast(Rotation!(ulong, long)) a0;
+    assert(rot == a0);
 }
 
 unittest{ /// Assign degrees/radians/revolutions
