@@ -345,6 +345,10 @@ struct Rotation(AT = ulong, RT = Signed!AT) if(
     auto opUnary(string op: "-")() const{
         return typeof(this)(~this.angle, -this.wholerevolutions - (this.angle.value != 0));
     }
+    /// Returns the rotation itself.
+    auto opUnary(string op: "+")() const{
+        return this;
+    }
     
     /// Get the next-greatest respresentable rotation.
     auto opUnary(string op: "++")(){
@@ -449,6 +453,10 @@ struct Rotation(AT = ulong, RT = Signed!AT) if(
                 }
             }
         }
+    }
+    /// Ditto
+    auto opBinaryRight(string op: "*", N)(in N rhs) const if(isNumeric!N){
+        return this * rhs;
     }
     /// Ditto
     auto opOpAssign(string op: "*", N)(in N rhs) if(isNumeric!N){
@@ -693,11 +701,13 @@ unittest{ /// Addition and subtraction of rotations and angles
 unittest{ /// Negation and absolute value
     foreach(x; [0.0L, 0.25L, 0.5L, 0.8L, 1.0L, 1.41L, 1.5L, 2.0L, 2.25L, 8.75L]){
         immutable rotp = Rot(+x);
+        assert(+rotp == rotp);
         assert(-rotp == Rot(-x));
         assert(-(-rotp) == rotp);
         assert(rotp.abs == rotp);
         assert((-rotp).abs == rotp);
         immutable rotn = Rot(-x);
+        assert(+rotn == rotn);
         assert(-rotn == Rot(+x));
         assert(-(-rotn) == rotn);
         assert(rotn.abs == rotp);
@@ -769,6 +779,7 @@ unittest{ /// Multiply and divide special cases
     assert((Rot(0.5) /= -double.infinity).revolutions == 0);
     assert((Rot(0.5) /= +double.nan).revolutions == 0);
     assert((Rot(0.5) /= -double.nan).revolutions == 0);
+    assert((2 * Rot(0.5)).revolutions == 1);
 }
 unittest{ /// Multiply and divide by integers
     foreach(T; Aliases!(int, long)){

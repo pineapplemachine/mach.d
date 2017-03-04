@@ -517,6 +517,10 @@ struct Angle(T = ulong) if(isUnsignedIntegral!T){
     auto opUnary(string op: "-")() const{
         return typeof(this)(this.value + T1_2);
     }
+    /// Returns the angle itself.
+    auto opUnary(string op: "+")() const{
+        return this;
+    }
     
     /// Get an angle that is a reflection of this one relative to π radians.
     /// For example: When `this.radians == π/2`, outputs 3/2 π.
@@ -589,6 +593,11 @@ struct Angle(T = ulong) if(isUnsignedIntegral!T){
             }
         }
     }
+    /// Ditto
+    auto opBinaryRight(string op: "*", N)(in N rhs) const if(isNumeric!N){
+        return this * rhs;
+    }
+    
     /// Divide this angle by some amount.
     /// Returns a Rotation.
     /// Division by zero, NaN, or infinity returns a zero rotation.
@@ -704,6 +713,12 @@ unittest{ /// Negation and reflection
     assert((~Angle!().Revolutions(0.125)).revolutions == 0.875);
 }
 
+unittest{ /// Posation
+    immutable x = Angle!ulong.Degrees(50);
+    assert(x == +x);
+    assert(+x == x);
+}
+
 unittest{ /// Multiplication and division by integers and floats
     immutable x = Angle!ulong.Degrees(180);
     assert((x * int(2)).degrees == 360);
@@ -717,6 +732,7 @@ unittest{ /// Multiplication and division by integers and floats
     assert((x / uint(2)).degrees == 90);
     assert((x / double(2)).degrees == 90);
     assert((x / 0.5).degrees == 360);
+    assert((2 * x).degrees == 360);
 }
 unittest{ /// Multiplication and division for arbitrary inputs
     enum inputs = [
