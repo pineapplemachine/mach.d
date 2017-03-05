@@ -851,10 +851,6 @@ struct Vector(size_t valuessize, T) if(canVectorType!T){
 
 
 
-
-
-import mach.io.stdio;
-
 private version(unittest){
     import mach.meta : Aliases, varall;
     import mach.math.floats : fisinf, fisnan, fnearequal;
