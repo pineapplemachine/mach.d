@@ -177,7 +177,7 @@ struct Tuple(X...){
     }
     
     /// Return a tuple which is a concatenation of this and some other tuples.
-    auto ref concat(Args...)(auto ref Args args) if(All!(isTuple!Args)){
+    auto ref concat(Args...)(auto ref Args args) if(All!(isTuple, Args)){
         static if(Args.length == 0){
             return this;
         }else static if(Args.length == 1){
@@ -546,4 +546,16 @@ unittest{ /// Multiple-element tuple
         static assert(is(typeof(f) == Tuple!(float, float)));
         assert(f == i);
     }
+}
+
+unittest{ /// Concatenation
+    assert(tuple().concat() is tuple());
+    assert(tuple().concat(tuple()) is tuple());
+    assert(tuple().concat(tuple(), tuple()) is tuple());
+    assert(tuple().concat(tuple(1)) is tuple(1));
+    assert(tuple(1).concat(tuple()) is tuple(1));
+    assert(tuple().concat(tuple(1, 2)) is tuple(1, 2));
+    assert(tuple(0).concat(tuple(1, 2)) is tuple(0, 1, 2));
+    assert(tuple().concat(tuple(1), tuple(2, 3), tuple(4)) is tuple(1, 2, 3, 4));
+    assert(tuple(0, 0).concat(tuple(1), tuple(2, 3), tuple(4)) is tuple(0, 0, 1, 2, 3, 4));
 }
