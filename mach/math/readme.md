@@ -366,3 +366,155 @@ assert(isqrt(15) == 3);
 This package implements or otherwise exposes various trigonometric functions.
 
 
+## mach.math.vector
+
+
+This module implements a `Vector` template type with signed numeric components
+and arbitrary dimensionality.
+For convenience, several symbols are defined as shortcuts for common uses,
+including `Vector2i` and `Vector2f`, `Vector3i` and `Vector3f`, and
+`Vector4i` and `Vector4f`. Each refers to a template of the specified
+dimensionality, and with a signed integral or floating point component type.
+
+Additionally, the `vector` function may be used to produce a vector having
+the components specified as arguments.
+
+The components of vectors may be accessed with indexes known at compile time.
+(The `vector.index(i)` method may be used for indexes known only at runtime.)
+The first four components of vectors may be referred to as `x`, `y`, `z`, and `w`,
+and [swizzling](https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)#Swizzling)
+may be used to get vectors made up of some specified components.
+
+``` D
+auto vec = Vector3i(0, 1, 2);
+// Components support random access with compile-time indexes,
+assert(vec[0] == 0);
+assert(vec[1] == 1);
+assert(vec[2] == 2);
+// And with runtime indexes,
+assert(vec.index(0) == 0);
+assert(vec.index(1) == 1);
+assert(vec.index(2) == 2);
+// And with the x, y, z, w properties.
+assert(vec.x == 0);
+assert(vec.y == 1);
+assert(vec.z == 2);
+// Also: Swizzling!
+assert(vec.xy == vector(0, 1));
+assert(vec.zyx == vector(2, 1, 0));
+assert(vec.xxyy == vector(0, 0, 1, 1));
+vec.xy = vector(-2, 0);
+assert(vec == vector(-2, 0, 2));
+```
+
+
+Vectors support component-wise binary operations with other vectors of the
+same dimensionality, as well as a dot product.
+They can also be multiplied or divided by scalars.
+Three-dimensional vectors additionally support a cross product operation.
+
+``` D
+assert(vector(1, 2, 3) * 2 == vector(2, 4, 6));
+assert(vector(2, 4, 16) / 2 == vector(1, 2, 8));
+assert(vector(1, 2, 3) + vector(3, 4, 5) == vector(4, 6, 8));
+assert(vector(3, 2, 1) - vector(1, 1, 1) == vector(2, 1, 0));
+assert(vector(1, 2, 3) * vector(-1, -2, -3) == vector(-1, -4, -9));
+assert(vector(8, 9, 10) / vector(2, 3, 5) == vector(4, 3, 2));
+assert(vector(1, 2, 3).dot(vector(4, 5, 6)) == 32);
+assert(vector(1, 2, 3).cross(vector(3, 2, 1)) == vector(-4, 8, -4));
+assert(-vector(1, 2) == vector(-1, -2)); // Vectors also allow component-wise negation
+```
+
+
+The `length` method may be used to get the magnitude of the vector.
+(By contrast, the `size` attribute represents the dimensionality of the vector.)
+A `lengthsq` method is provided to obtain the squared magnitude, which is
+faster than `length`.
+The `distance` and `distancesq` methods may similarly be used to get the
+Euclidean distance between two vectors.
+
+The `normalize` method returns a unit vector pointing in the same direction
+as the input vector.
+
+``` D
+assert(vector(3, 4).length == 5);
+assert(vector(3, 4).lengthsq == 25);
+assert(vector(1, 2, 3).distance(vector(5, 2, 6)) == 5);
+assert(vector(1, 2, 3).distancesq(vector(5, 2, 6)) == 25);
+```
+
+``` D
+import mach.math.floats.compare : fnearequal;
+assert(fnearequal(vector(4, 5).normalize.length, 1, 1e-16));
+```
+
+
+In addition to comparison using the equality operator, Vector types also
+provide an `equals` method which accepts an optional per-component epsilon,
+defining the maximum deviation of any component in one vector from the
+corresponding component in the other vector required before the vectors are
+considered unequal.
+
+``` D
+assert(Vector2!double(1, 2) == Vector2!int(1, 2));
+assert(Vector3!int(1, 2, 3).equals(Vector3!float(1, 2, 3)));
+assert(Vector4!double(1, 2, 3, 4).equals(Vector4!double(1, 2, 3, 4 + 1e-10), 1e-8));
+```
+
+
+The `angle` method may be used to get the angle described by two vectors.
+The result is an Angle object, as defined and documented in
+`mach.math.trig.angle`. It will always be less than or equal to π radians.
+
+The `direction` method may be used to get the direction from the origin to
+a given vector, or from one vector to another, represented as the angular parts
+of spherical coordinates. For two-dimensional vectors it returns a single
+Angle object, and for other vector types it returns a tuple of Angle
+objects. (The `directiontup` method may be used to unconditionally acquire a
+tuple of Angles.)
+The code `auto angles = vector.direction; auto radius = vector.length;` is
+equivalent to converting to n-dimensional spherical coordinates.
+
+To convert spherical coordinates to a Cartesian-coordinate vector, the
+`Vector.unit` static method may be used. It accepts either a tuple of Angles
+or the correct number of Angles as separate arguments, and returns a unit
+vector pointing in the specified direction.
+The condition `vec == vec.unit(vec.direction) * vec.length` will consistently
+hold true, accounting for slight inaccuracies due to floating point errors.
+
+``` D
+import mach.math.trig.angle : Angle;
+assert(vector(0, 1).angle(vector(1, 0)).degrees == 90);
+assert(vector(1, 1).direction.degrees == 45);
+assert(Vector2f.unit(Angle!().Degrees(90)) == vector(0, 1));
+```
+
+``` D
+import mach.math.floats.compare : fnearequal;
+auto dir = vector(0, +2, -2).direction;
+assert(fnearequal(dir[0].degrees, 90, 1e-12));
+assert(fnearequal(dir[1].degrees, 315, 1e-12));
+```
+
+``` D
+auto vec = Vector4f(-2, -1, +1, +2);
+auto dir = vec.direction;
+assert(vec.equals(Vector4f.unit(dir) * vec.length, 1e-8));
+```
+
+
+The `reflect` method may be used to get the reflection of a vector against the
+plane perpendicular to a normal.
+The `project` method gets a projection of the input upon a normal vector;
+it returns a vector the same length as the input, pointing in the direction
+of a given normal.
+
+``` D
+assert(vector(3, 4).reflect(vector(1, -1).normalize).equals(vector(-4, -3), 1e-8));
+```
+
+``` D
+assert(vector(4, 3).project(vector(-1, 0)) == vector(-5, 0));
+```
+
+
