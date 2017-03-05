@@ -458,3 +458,26 @@ static assert(!is(typeof({
 ```
 
 
+## mach.meta.varzip
+
+
+The `varzip` function accepts any number of tuples as arguments and outputs
+a new tuple of tuples where each successive tuple contains the values of the
+inputted tuples at the same indexes.
+This is known as the [convolution, or "zip"]
+(https://en.wikipedia.org/wiki/Convolution_(computer_science)) function.
+
+The length of the outputted tuple is equal to the least length of the inputted
+tuples. (If the function was called with no inputs, then the length of the
+output is zero.)
+The length of each element of the outputted tuple, if it has any elements,
+is equal to the number of inputs.
+
+``` D
+import mach.types : tuple;
+assert(varzip(tuple('a', 'b', 'c'), tuple('x', 'y', 'z')) == tuple(
+    tuple('a', 'x'), tuple('b', 'y'), tuple('c', 'z')
+));
+```
+
+
