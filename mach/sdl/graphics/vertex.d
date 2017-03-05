@@ -5,7 +5,7 @@ private:
 import derelict.opengl3.gl;
 
 import mach.traits : isNumeric;
-import mach.math.vector2 : Vector2;
+import mach.math.vector : Vector, Vector2;
 import mach.math.box : Box;
 import mach.sdl.error : GLError;
 import mach.sdl.glenum : VertexType, getvertextype, validvertextype;
@@ -21,8 +21,8 @@ struct Vertex(Pos = float, Tex = float, Col = float) if(
     Color!Col color;
     
     this(A = Pos, B = Tex, C = Col)(
-        Vector2!A position = Vector2!A.Zero,
-        Vector2!B texcoord = Vector2!B.Zero,
+        Vector!(2, A) position = Vector2!A.zero,
+        Vector!(2, B) texcoord = Vector2!B.zero,
         Color!C color = Color!C.White
     ){
         this.position = cast(Vector2!Pos) position;
@@ -57,22 +57,22 @@ struct Vertexes(Pos = float, Tex = float, Col = float) if(
         return Verts.rect(target.topleft, target.size, color);
     }
     static Verts rect(A, B, C = Tex, D = Col)(
-        in Vector2!A position,
-        in Vector2!B size,
+        in Vector!(2, A) position,
+        in Vector!(2, B) size,
         in Color!D color = Color!D.White
     ){
-        return Verts.rect(position, size, Vector2!Tex.Zero, color);
+        return Verts.rect(position, size, Vector2!Tex.zero, color);
     }
     static Verts rect(A, B, C = Col)(
-        in Vector2!A position,
-        in Vector2!B size,
+        in Vector!(2, A) position,
+        in Vector!(2, B) size,
         in Color!C color = Color!C.White
     ){
         return Verts.rect(position, size, Box!Tex(1, 1), color);
     }
     static Verts rect(A, B, C, D = Col)(
-        in Vector2!A position, // Position on screen
-        in Vector2!B size, // Render target size
+        in Vector!(2, A) position, // Position on screen
+        in Vector!(2, B) size, // Render target size
         in Box!C texsub, // Portion of texture to render (values should generally be 0-1)
         in Color!D color = Color!D.White // Channel multipliers
     ){

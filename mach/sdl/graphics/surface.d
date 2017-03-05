@@ -7,7 +7,7 @@ import derelict.sdl2.image;
 
 import mach.text.cstring : tocstring;
 import mach.math.box : Box;
-import mach.math.vector2 : Vector2;
+import mach.math.vector : Vector2;
 import mach.sdl.error : SDLError;
 import mach.sdl.init.sdl : SDL;
 import mach.sdl.graphics.color : Color;

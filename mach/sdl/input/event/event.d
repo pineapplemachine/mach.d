@@ -7,7 +7,7 @@ import derelict.sdl2.sdl;
 import std.experimental.allocator : make, dispose;
 import std.experimental.allocator.gc_allocator : GCAllocator;
 
-import mach.math : Vector;
+import mach.math : vector;
 import mach.sdl.error : SDLError;
 import mach.sdl.window : Window;
 import mach.sdl.input.joystick : Joystick;
@@ -157,7 +157,7 @@ struct Event{
     /// Get the position of the mouse as a vector.
     /// Throws an error if this event type doesn't include the information.
     @property auto mouseposition() const{
-        return Vector(this.mousex, this.mousey);
+        return vector(this.mousex, this.mousey);
     }
     
     /// Get the x position of a touch.
@@ -187,7 +187,7 @@ struct Event{
         }
     }
     @property auto touchposition() const{
-        return Vector(this.touchx, this.touchy);
+        return vector(this.touchx, this.touchy);
     }
     @property auto touchid() const{
         switch(this.type){

@@ -5,7 +5,7 @@ private:
 import mach.traits : isNumeric, isFloatingPoint, isIntegral, Signed;
 import mach.traits : isSignedIntegral, isUnsignedIntegral, LargestTypeOf;
 import mach.math.abs : abs, uabs;
-import mach.math.constants : tau, quarterpi, threequarterspi;
+import mach.math.constants : tau, pi, quarterpi, threequarterspi;
 import mach.math.round : floor;
 import mach.math.floats.extract : fextractsgn;
 import mach.math.floats.properties : fisnan, fisinf, fiszero;
@@ -640,7 +640,7 @@ struct Angle(T = ulong) if(isUnsignedIntegral!T){
 
 private version(unittest){
     import mach.traits : UnsignedIntegralTypes;
-    import mach.math.constants : pi, halfpi;
+    import mach.math.constants : halfpi;
     import mach.math.floats.compare : fnearequal;
     import mach.math.floats.properties : fisinf;
     auto radsnearequal(in real x, in real y, in real epsilon){
@@ -768,13 +768,13 @@ unittest{ /// Multiplication and division special cases
     assert((x / -double.nan).revolutions == 0);
 }
 
-unittest{ /// Distance and interpolation - same angle
+unittest{ /// Distance and interpolation, same angle
     immutable angle = Angle!().Degrees(180);
     assert(angle.distance(angle) == Angle!()(0));
     assert(angle.lerp(angle, 0.5) == angle);
 }
 
-unittest{ /// Distance and interpolation - different angles
+unittest{ /// Distance and interpolation, different angles
     // Distance
     immutable a0 = Angle!().Degrees(16);
     immutable a1 = Angle!().Degrees(344);

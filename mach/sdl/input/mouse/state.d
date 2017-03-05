@@ -3,7 +3,7 @@ module mach.sdl.input.mouse.state;
 private:
 
 import derelict.sdl2.sdl;
-import mach.math : Vector;
+import mach.math : vector, Vector;
 import mach.sdl.flags;
 import mach.sdl.input.mouse.common;
 
@@ -48,10 +48,10 @@ struct MouseState{
     
     /// Get mouse position as a vector.
     @property auto position() const{
-        return Vector(this.x, this.y);
+        return vector(this.x, this.y);
     }
     /// Set mouse position as a vector.
-    @property void position(T)(T vector) if(isVector2!T){
+    @property void position(T)(Vector!(2, T) vector){
         this.x = vector.x;
         this.y = vector.y;
     }

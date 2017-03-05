@@ -2,7 +2,7 @@ module mach.sdl.graphics.ttf.glyph;
 
 private:
 
-import mach.math : Vector;
+import mach.math : vector;
 
 public:
 
@@ -22,7 +22,7 @@ struct GlyphMetrics{
         return this.maxy - this.miny;
     }
     @property auto size() const{
-        return Vector(this.width, this.height);
+        return vector(this.width, this.height);
     }
     
 }

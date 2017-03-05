@@ -8,7 +8,7 @@ import derelict.sdl2.types;
 import core.stdc.config : c_long;
 
 import mach.text.cstring : tocstring, fromcstring;
-import mach.math : Vector2;
+import mach.math : Vector, Vector2;
 import mach.sdl.graphics.color;
 import mach.sdl.graphics.surface;
 import mach.sdl.graphics.texture;

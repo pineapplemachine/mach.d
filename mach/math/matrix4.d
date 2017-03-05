@@ -4,8 +4,7 @@ private:
 
 static import std.math;
 import mach.traits : isNumeric;
-import mach.math.vector2 : Vector2;
-import mach.math.vector3 : Vector3;
+import mach.math.vector : Vector2, Vector3;
 import mach.math.box : Box;
 import mach.math.cube : Cube;
 

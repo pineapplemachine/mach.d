@@ -5,7 +5,7 @@ private:
 import derelict.opengl3.gl;
 
 import mach.traits : isNumeric;
-import mach.math.vector2 : Vector2;
+import mach.math.vector : Vector, Vector2;
 import mach.math.box : Box;
 import mach.sdl.error : GLError;
 import mach.sdl.glenum : TextureTarget, TextureParam;
@@ -195,12 +195,12 @@ struct Texture{
         this.draw(Vector2!N(x, y));
     }
     /// ditto
-    void draw(T)(in Vector2!T position){
+    void draw(T)(in Vector!(2, T) position){
         this.draw(Vertexesf.rect(position, this.size));
     }
     /// Draw a portion of a texture at a position.
     /// The subrect represents floating-point texture coords from 0.0 to 1.0.
-    void draw(X, Y)(in Vector2!X position, in Box!Y sub){
+    void draw(X, Y)(in Vector!(2, X) position, in Box!Y sub){
         this.draw(Vertexesf.rect(position, sub.size * this.size, sub));
     }
     /// Draw the texture to a rectangular target.
@@ -220,7 +220,7 @@ struct Texture{
     
     /// Draw a portion of the texture to a position.
     /// The subrect represents integral pixel coordinates on the texture.
-    void drawsub(X, Y)(in Vector2!X position, in Box!Y sub){
+    void drawsub(X, Y)(in Vector!(2, X) position, in Box!Y sub){
         this.draw(position, Box!double(sub) / this.size);
     }
     /// Draw a portion of the texture to a rectangular target.

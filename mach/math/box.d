@@ -4,7 +4,7 @@ private:
 
 import mach.meta : min = varmin, max = varmax;
 import mach.traits : isNumeric, isTemplateOf;
-import mach.math.vector2 : Vector2;
+import mach.math.vector : Vector, Vector2;
 
 public:
 
@@ -31,10 +31,10 @@ struct Box(T) if(isNumeric!T){
     this(N)(in N minx, in N miny, in N maxx, in N maxy) if(isNumeric!N && !is(N == T)){
         this(cast(T) minx, cast(T) miny, cast(T) maxx, cast(T) maxy);
     }
-    this(N)(in Vector2!N bottomright){
+    this(N)(in Vector!(2, N) bottomright){
         this(bottomright.x, bottomright.y);
     }
-    this(N)(in Vector2!N topleft, in Vector2!N bottomright){
+    this(N)(in Vector!(2, N) topleft, in Vector!(2, N) bottomright){
         this(topleft.x, topleft.y, bottomright.x, bottomright.y);
     }
     this(N)(in Box!N box) if(isNumeric!N){
@@ -58,7 +58,7 @@ struct Box(T) if(isNumeric!T){
     @property Vector2!T size() const{
         return Vector2!T(this.width, this.height);
     }
-    @property void size(N)(in Vector2!N vector){
+    @property void size(N)(in Vector!(2, N) vector){
         this.size(vector.x, vector.y);
     }
     void size(N)(in N width, in N height) if(isNumeric!N){
@@ -112,7 +112,7 @@ struct Box(T) if(isNumeric!T){
     @property Vector2!T center() const{
         return Vector2!T(this.centerx(), this.centery());
     }
-    @property void center(V)(in Vector2!V center){
+    @property void center(N)(in Vector2!(2, N) center){
         this.centerx = center.x;
         this.centery = center.y;
     }
@@ -155,14 +155,14 @@ struct Box(T) if(isNumeric!T){
         return (this.minx < this.maxx) & (this.miny < this.maxy);
     }
     
-    void translate(N)(in Vector2!N vector){
+    void translate(N)(in Vector!(2, N) vector){
         this.translate(vector.x, vector.y);
     }
     void translate(N)(in N x, in N y) if(isNumeric!N){
         this.minx += x; this.miny += y;
         this.maxx += x; this.maxy += y;
     }
-    Box!T translated(N)(in Vector2!N vector) const{
+    Box!T translated(N)(in Vector!(2, N) vector) const{
         return this.translated(vector.x, vector.y);
     }
     Box!T translated(N)(in N x, in N y) const if(isNumeric!N){
@@ -226,7 +226,7 @@ struct Box(T) if(isNumeric!T){
         );
     }
     
-    bool contains(N)(in Vector2!N vector) const{
+    bool contains(N)(in Vector!(2, N) vector) const{
         return this.contains(cast(T) vector.x, cast(T) vector.y);
     }
     bool contains(N)(in N x, in N y) const if(isNumeric!N){
@@ -257,7 +257,7 @@ struct Box(T) if(isNumeric!T){
         );
     }
     
-    void moveto(N)(in Vector2!N vector){
+    void moveto(N)(in Vector!(2, N) vector){
         this.to(vector.x, vector.y);
     }
     void moveto(N)(in N x, in N y) if(isNumeric!N){
@@ -266,14 +266,14 @@ struct Box(T) if(isNumeric!T){
         this.maxx = x + width; this.maxy = y + height;
     }
     
-    Box!T at(N)(in Vector2!N vector) const{
+    Box!T at(N)(in Vector!(2, N) vector) const{
         return this.at(vector.x, vector.y);
     }
     Box!T at(N)(in N x, in N y) const if(isNumeric!N){
         return Box!T(x, y, x + this.width, y + this.height);
     }
     
-    Box!T centered(N)(in Vector2!N vector) const{
+    Box!T centered(N)(in Vector!(2, N) vector) const{
         return this.centered(vector.x, vector.y);
     }
     Box!T centered(N)(in N x, in N y) const if(isNumeric!N){
@@ -289,7 +289,7 @@ struct Box(T) if(isNumeric!T){
     bool opBinaryRight(string op: "in", N)(in Box!N rhs) const{
         return this.contains(rhs);
     }
-    bool opBinaryRight(string op: "in", N)(in Vector2!N rhs) const{
+    bool opBinaryRight(string op: "in", N)(in Vector!(2, N) rhs) const{
         return this.contains(rhs);
     }
     
@@ -301,7 +301,7 @@ struct Box(T) if(isNumeric!T){
             this.maxy ` ~ op ~ ` value
         );`);
     }
-    Box!T opBinary(string op, N)(in Vector2!N vector) const{
+    Box!T opBinary(string op, N)(in Vector!(2, N) vector) const{
         mixin(`return Box!T(
             this.minx ` ~ op ~ ` vector.x,
             this.miny ` ~ op ~ ` vector.y,
@@ -317,7 +317,7 @@ struct Box(T) if(isNumeric!T){
             value ` ~ op ~ ` this.maxy
         );`);
     }
-    Box!T opBinaryRight(string op, N)(in Vector2!N vector) const if(op != "in"){
+    Box!T opBinaryRight(string op, N)(in Vector!(2, N) vector) const if(op != "in"){
         mixin(`return Box!T(
             vector.x ` ~ op ~ `this.minx,
             vector.y ` ~ op ~ `this.miny,

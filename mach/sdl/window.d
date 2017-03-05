@@ -16,7 +16,7 @@ import mach.sdl.graphics.mask : Mask;
 import mach.sdl.graphics.displaymode : DisplayMode;
 import mach.sdl.graphics.surface : Surface;
 import mach.math.box : Box;
-import mach.math.vector2 : Vector2;
+import mach.math.vector : Vector, Vector2;
 import mach.math.matrix4 : Matrix4;
 
 import mach.io.log;
@@ -183,7 +183,7 @@ class Window{
         }
     }
     
-    @property void projection(N)(in Vector2!N size){
+    @property void projection(N)(in Vector!(2, N) size){
         this.projection(Box!N(size));
     }
     @property void projection(N)(in Box!N screen){

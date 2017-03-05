@@ -6,8 +6,8 @@ import derelict.sdl2.sdl;
 import derelict.opengl3.gl;
 
 import mach.traits : isIntegral;
-import mach.math : Vector2, isVector2, Vector3, isVector3, Box, isBox, tau;
-import std.math : sin, cos; // TODO: !!!
+import mach.math : Vector, Vector2, isVector2, Vector3, isVector3, Box, isBox;
+import mach.math : sin, cos, tau;
 
 import mach.sdl.error : GLError;
 import mach.sdl.window : Window;
@@ -60,7 +60,7 @@ void glset(V)(V vector) if(isVector3!V){
 
 
 
-auto primitives(uint mode, C, T)(Color!C color, Vector2!T[] vectors...){
+auto primitives(uint mode, C, T)(Color!C color, Vector!(2, T)[] vectors...){
     if(vectors && vectors.length){
         scope(exit) GLError.enforce();
         color.glset();
@@ -76,47 +76,47 @@ auto primitives(uint mode, C, T)(Color!C color, Vector2!T[] vectors...){
 // Reference: https://www.opengl.org/sdk/docs/man2/xhtml/glBegin.xml
 // Note: Remember to use glLineWidth somewhere
 
-auto points(C, T)(Color!C color, Vector2!T[] vectors...){
+auto points(C, T)(Color!C color, Vector!(2, T)[] vectors...){
     primitives!GL_POINTS(color, vectors);
 }
 
-auto lines(C, T)(Color!C color, Vector2!T[] vectors...) in{
+auto lines(C, T)(Color!C color, Vector!(2, T)[] vectors...) in{
     assert(vectors.length >= 2 && vectors.length % 2 == 0);
 }body{
     primitives!GL_LINES(color, vectors);
 }
 
-auto linestrip(C, T)(Color!C color, Vector2!T[] vectors...) in{
+auto linestrip(C, T)(Color!C color, Vector!(2, T)[] vectors...) in{
     assert(vectors.length >= 2);
 }body{
     primitives!GL_LINE_STRIP(color, vectors);
 }
 
-auto lineloop(C, T)(Color!C color, Vector2!T[] vectors...) in{
+auto lineloop(C, T)(Color!C color, Vector!(2, T)[] vectors...) in{
     assert(vectors.length >= 2);
 }body{
     primitives!GL_LINE_LOOP(color, vectors);
 }
 
-auto triangles(C, T)(Color!C color, Vector2!T[] vectors...) in{
+auto triangles(C, T)(Color!C color, Vector!(2, T)[] vectors...) in{
     assert(vectors.length >= 3 && vectors.length % 3 == 0);
 }body{
     primitives!GL_TRIANGLES(color, vectors);
 }
 
-auto trianglestrip(C, T)(Color!C color, Vector2!T[] vectors...) in{
+auto trianglestrip(C, T)(Color!C color, Vector!(2, T)[] vectors...) in{
     assert(vectors.length >= 3);
 }body{
     primitives!GL_TRIANGLE_STRIP(color, vectors);
 }
 
-auto trianglefan(C, T)(Color!C color, Vector2!T[] vectors...) in{
+auto trianglefan(C, T)(Color!C color, Vector!(2, T)[] vectors...) in{
     assert(vectors.length >= 3);
 }body{
     primitives!GL_TRIANGLE_FAN(color, vectors);
 }
 
-auto quads(C, T)(Color!C color, Vector2!T[] vectors...) in{
+auto quads(C, T)(Color!C color, Vector!(2, T)[] vectors...) in{
     assert(vectors.length >= 4 && vectors.length % 4 == 0);
 }body{
     primitives!GL_QUADS(color, vectors);
@@ -129,19 +129,19 @@ auto quads(C, T)(Color!C color, Box!T[] quads...){
     quads(color, vectors);
 }
 
-auto quadstrip(C, T)(Color!C color, Vector2!T[] vectors...) in{
+auto quadstrip(C, T)(Color!C color, Vector!(2, T)[] vectors...) in{
     assert(vectors.length >= 4);
 }body{
     primitives!GL_QUAD_STRIP(color, vectors);
 }
 
-auto polygon(C, T)(Color!C color, Vector2!T[] vectors...){
+auto polygon(C, T)(Color!C color, Vector!(2, T)[] vectors...){
     primitives!GL_POLYGON(color, vectors);
 }
 
 /// Credit http://slabode.exofire.net/circle_draw.shtml
 /// TODO: Ellipses
-auto circle(bool fill = true, V, R)(in Vector2!V center, in R radius, in uint segments){
+auto circle(bool fill = true, V, R)(in Vector!(2, V) center, in R radius, in uint segments){
     immutable double theta = tau / cast(double) segments;
     immutable double c = cos(theta);
     immutable double s = sin(theta);
