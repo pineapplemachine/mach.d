@@ -66,9 +66,10 @@ auto varfilter(alias pred, T...)(auto ref T args) if(canVarFilter!(pred, T)){
 
 
 
-version(unittest){
+private version(unittest){
     enum bool isInt(T) = is(T == int);
 }
+
 unittest{
     static assert(canVarFilter!(isInt));
     static assert(canVarFilter!(isInt, int));
