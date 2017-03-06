@@ -3,7 +3,7 @@ module mach.meta.varmap;
 private:
 
 import mach.types : tuple;
-import mach.text.numeric : writeint;
+import mach.meta.ctint : ctint;
 
 /++ Docs
 
@@ -45,7 +45,7 @@ private string VarMapMixin(in size_t args){
     string codegen = ``;
     foreach(i; 0 .. args){
         if(i != 0) codegen ~= `, `;
-        codegen ~= `transform(args[` ~ writeint(i) ~ `])`;
+        codegen ~= `transform(args[` ~ ctint(i) ~ `])`;
     }
     return `return tuple(` ~ codegen ~ `);`;
 }
@@ -54,7 +54,7 @@ private string VarMapIndexMixin(in size_t args){
     string codegen = ``;
     foreach(i; 0 .. args){
         if(i != 0) codegen ~= `, `;
-        immutable istr = writeint(i);
+        immutable istr = ctint(i);
         codegen ~= `transform(` ~ istr ~ `, args[` ~ istr ~ `])`;
     }
     return `return tuple(` ~ codegen ~ `);`;

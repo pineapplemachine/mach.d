@@ -81,6 +81,18 @@ static assert(is(typeof({fn1(ints.init);})));
 ```
 
 
+## mach.meta.ctint
+
+
+This module provides a dead-simple, no-dependency integer stringification
+function intended primarily for use in functions generating mixin strings
+at compile time.
+
+``` D
+static assert(ctint(1234) == "1234");
+```
+
+
 ## mach.meta.filter
 
 
