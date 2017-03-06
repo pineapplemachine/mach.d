@@ -38,63 +38,33 @@ public:
 
 
 
-template canVarLogical(alias pred, T...){
-    static if(T.length == 0){
-        enum bool canVarLogical = true;
-    }else static if(T.length == 1){
-        enum bool canVarLogical = is(typeof({if(pred(T[0].init)){}}));
-    }else{
-        enum bool canVarLogical = (
-            is(typeof({if(pred(T[0].init)){}})) &&
-            canVarLogical!(pred, T[1 .. $])
-        );
-    }
-}
-
-
-
 /// Get whether any passed arguments evaluate true.
 /// When no arguments are passed, the function returns false.
 /// Short-circuits when the first true value is found.
-auto varany(alias pred = (x) => (x), T...)(auto ref T args) if(
-    canVarLogical!(pred, T)
-){
-    static if(T.length == 0){
-        return false;
-    }else{
-        if(pred(args[0])){
-            return true;
-        }else{
-            static if(T.length > 1) return varany!pred(args[1 .. $]);
-            else return false;
-        }
+auto varany(alias pred = (x) => (x), Args...)(auto ref Args args){
+    foreach(i, _; Args){
+        if(pred(args[i])) return true;
     }
+    return false;
 }
 
 /// Get whether all passed arguments evaluate true.
 /// When no arguments are passed, the function returns true.
 /// Short-circuits when the first false value is found.
-auto varall(alias pred = (x) => (x), T...)(auto ref T args) if(
-    canVarLogical!(pred, T)
-){
-    static if(T.length == 0){
-        return true;
-    }else{
-        if(!pred(args[0])){
-            return false;
-        }else{
-            static if(T.length > 1) return varall!pred(args[1 .. $]);
-            else return true;
-        }
+auto varall(alias pred = (x) => (x), Args...)(auto ref Args args){
+    foreach(i, _; Args){
+        if(!pred(args[i])) return false;
     }
+    return true;
 }
 
 /// Get whether no passed arguments evaluate true.
 /// When no arguments are passed, the function returns true.
-auto varnone(alias pred = (x) => (x), T...)(auto ref T args) if(
-    canVarLogical!(pred, T)
-){
-    return !varany!pred(args);
+auto varnone(alias pred = (x) => (x), Args...)(auto ref Args args){
+    foreach(i, _; Args){
+        if(pred(args[i])) return false;
+    }
+    return true;
 }
 
 
