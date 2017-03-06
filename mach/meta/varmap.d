@@ -3,6 +3,7 @@ module mach.meta.varmap;
 private:
 
 import mach.types : tuple;
+import mach.text.numeric : writeint;
 
 /++ Docs
 
@@ -40,57 +41,30 @@ public:
 
 
 
-template canVarMap(alias transform, T...){
-    static if(T.length == 0){
-        enum bool canVarMap = true;
-    }else static if(T.length == 1){
-        enum bool canVarMap = is(typeof({auto x = transform(T.init);}));
-    }else{
-        enum bool canVarMap = (
-            canVarMap!(transform, T[0]) &&
-            canVarMap!(transform, T[1 .. $])
-        );
+private string VarMapMixin(in size_t args){
+    string codegen = ``;
+    foreach(i; 0 .. args){
+        if(i != 0) codegen ~= `, `;
+        codegen ~= `transform(args[` ~ writeint(i) ~ `])`;
     }
+    return `return tuple(` ~ codegen ~ `);`;
 }
 
-template canVarMapIndex(alias transform, T...){
-    static if(T.length == 0){
-        enum bool canVarMapIndex = true;
-    }else static if(T.length == 1){
-        enum bool canVarMapIndex = is(typeof({auto x = transform(0, T.init);}));
-    }else{
-        enum bool canVarMapIndex = (
-            canVarMapIndex!(transform, T[0]) &&
-            canVarMapIndex!(transform, T[1 .. $])
-        );
+private string VarMapIndexMixin(in size_t args){
+    string codegen = ``;
+    foreach(i; 0 .. args){
+        if(i != 0) codegen ~= `, `;
+        immutable istr = writeint(i);
+        codegen ~= `transform(` ~ istr ~ `, args[` ~ istr ~ `])`;
     }
+    return `return tuple(` ~ codegen ~ `);`;
 }
 
-template canVarMapStaticIndex(alias transform, T...){
-    static if(T.length == 0){
-        enum bool canVarMapStaticIndex = true;
-    }else static if(T.length == 1){
-        enum bool canVarMapStaticIndex = is(typeof({auto x = transform!0(T.init);}));
-    }else{
-        enum bool canVarMapStaticIndex = (
-            canVarMapStaticIndex!(transform, T[0]) &&
-            canVarMapStaticIndex!(transform, T[1 .. $])
-        );
-    }
-}
 
 /// Perform a transformation upon each passed argument and return the results
 /// as a tuple.
-auto varmap(alias transform, T...)(auto ref T args) if(canVarMap!(transform, T)){
-    static if(T.length == 0){
-        return tuple();
-    }else static if(T.length == 1){
-        return tuple(transform(args));
-    }else{
-        auto here = transform(args[0]);
-        auto rest = varmap!transform(args[1 .. $]);
-        return tuple(here, rest.expand);
-    }
+auto varmap(alias transform, Args...)(auto ref Args args){
+    mixin(VarMapMixin(Args.length));
 }
 
 /// Perform a transformation upon each passed argument and return the results
@@ -98,43 +72,12 @@ auto varmap(alias transform, T...)(auto ref T args) if(canVarMap!(transform, T))
 /// The tranformation function should accept two arguments for this function,
 /// the first argument will be the index and the second argument will be the
 /// value.
-auto varmapi(alias transform, size_t index = 0, T...)(auto ref T args) if(
-    canVarMapIndex!(transform, T)
-){
-    static if(T.length == 0){
-        return tuple();
-    }else static if(T.length == 1){
-        return tuple(transform(index, args));
-    }else{
-        auto here = transform(index, args[0]);
-        auto rest = varmapi!(transform, index + 1)(args[1 .. $]);
-        return tuple(here, rest.expand);
-    }
-}
-
-auto varmapis(alias transform, size_t index = 0, T...)(auto ref T args) if(
-    canVarMapStaticIndex!(transform, T)
-){
-    static if(T.length == 0){
-        return tuple();
-    }else static if(T.length == 1){
-        return tuple(transform!index(args));
-    }else{
-        auto here = transform!index(args[0]);
-        auto rest = varmapis!(transform, index + 1)(args[1 .. $]);
-        return tuple(here, rest.expand);
-    }
+auto varmapi(alias transform, size_t index = 0, Args...)(auto ref Args args){
+    mixin(VarMapIndexMixin(Args.length));
 }
 
 
 
-unittest{
-    static assert(canVarMap!((e => e)));
-    static assert(canVarMap!((e => e), int));
-    static assert(canVarMap!((e => e), int, string, double));
-    static assert(!canVarMap!((e => e), void));
-    static assert(!canVarMap!((e => e), int, int, void));
-}
 unittest{
     auto values = varmap!(e => e)();
     static assert(values.length == 0);
@@ -163,15 +106,4 @@ unittest{
     static assert(values.length == 2);
     assert(values[0] == 1);
     assert(values[1] == 2);
-}
-
-private version(unittest){
-    auto mapisfn(size_t i)(in int x){return x * i;}
-}
-unittest{
-    auto values = varmapis!mapisfn(2, 3, 4);
-    static assert(values.length == 3);
-    assert(values[0] == 0);
-    assert(values[1] == 3);
-    assert(values[2] == 8);
 }
