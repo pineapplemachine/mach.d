@@ -2,12 +2,11 @@ module mach.math.vector;
 
 private:
 
-import mach.meta : All, Repeat, varzip, varmap, varall, varsum;
+import mach.meta : All, Repeat, varzip, varmap, varall, varsum, ctint;
 import mach.types : tuple, isTuple;
 import mach.traits : isTemplateOf, CommonType, hasCommonType, Unqual;
 import mach.traits : isNumeric, isFloatingPoint, isIntegral, isSignedIntegral;
 import mach.error : IndexOutOfBoundsError;
-import mach.text.numeric : writeint;
 import mach.text.str : str;
 import mach.math.sqrt : sqrt;
 import mach.math.trig : Angle;
@@ -206,15 +205,15 @@ template isVector(size_t size, T){
 
 
 /// Indicates whether a Vector may have this type as its component type.
-template canVectorType(T){
-    enum bool canVectorType = isFloatingPoint!T || isSignedIntegral!T;
+template isVectorComponent(T){
+    enum bool isVectorComponent = isFloatingPoint!T || isSignedIntegral!T;
 }
 
 /// Determine whether a Vector could be created from arguments of the given
 /// types; essentially checks whether they have a common signed numeric type.
 template canVector(T...){
     static if(T.length && hasCommonType!T){
-        enum bool canVector = canVectorType!(CommonType!T);
+        enum bool canVector = isVectorComponent!(CommonType!T);
     }else{
         enum bool canVector = false;
     }
@@ -232,7 +231,7 @@ auto vector(T)(in T tup) if(!canVector!T && isTuple!T){
     return vector(tup.expand);
 }
 /// Get a vector with no components.
-auto vector(T)() if(canVectorType!T){
+auto vector(T)() if(isVectorComponent!T){
     Vector!(0, T) vec;
     return vec;
 }
@@ -298,44 +297,44 @@ private template CommonVectorType(VA: Vector!(size, A), VB: Vector!(size, B), si
 
 
 /// Mixin used to implement the `Vector.directiontup` method.
-string VectorDirectionTupMixin(in size_t size){
-    string squares = `immutable sq` ~ writeint(size - 2) ~ ` = (` ~
+private string VectorDirectionTupMixin(in size_t size){
+    string squares = `immutable sq` ~ ctint(size - 2) ~ ` = (` ~
         `this.values[$-1] * this.values[$-1] + this.values[$-2] * this.values[$-2]` ~
     `); `;
     foreach(i; 1 .. size - 1){
         immutable j = (size - 2) - i;
-        immutable jstr = writeint(j);
-        squares ~= `immutable sq` ~ writeint(j) ~ ` = sq` ~ writeint(j + 1) ~ ` + (` ~
+        immutable jstr = ctint(j);
+        squares ~= `immutable sq` ~ ctint(j) ~ ` = sq` ~ ctint(j + 1) ~ ` + (` ~
             `this.values[` ~ jstr ~ `] * this.values[` ~ jstr ~ `]` ~
         `); `;
     }
     string ret = ``;
     foreach(i; 0 .. size - 2){
         if(ret.length) ret ~= `, `;
-        immutable istr = writeint(i);
+        immutable istr = ctint(i);
         ret ~= `Angle!().acos(this.values[` ~ istr ~ `] / sqrt(sq` ~ istr ~ `))`;
     }
     if(ret.length) ret ~= `, `;
-    immutable lastterm = `Angle!().acos(this.values[$-2] / sqrt(sq` ~ writeint(size - 2) ~ `))`;
+    immutable lastterm = `Angle!().acos(this.values[$-2] / sqrt(sq` ~ ctint(size - 2) ~ `))`;
     ret ~= `this.values[$-1] >= 0 ? ` ~ lastterm ~ ` : ~` ~ lastterm;
     return squares ~ ` return tuple(` ~ ret ~ `);`;
 }
 
 /// Mixin used to implement the `Vector.unit` method.
-string VectorUnitMixin(in size_t size){
+private string VectorUnitMixin(in size_t size){
     string sines = `immutable sin0 = angles[0].sin; `;
     foreach(i; 1 .. size - 1){
-        immutable istr = writeint(i);
+        immutable istr = ctint(i);
         sines ~= (
             `immutable sin` ~ istr~ ` = ` ~
-            `angles[` ~ istr ~ `].sin * sin` ~ writeint(i - 1) ~ `;`
+            `angles[` ~ istr ~ `].sin * sin` ~ ctint(i - 1) ~ `;`
         );
     }
     string ret = "angles[0].cos, ";
     foreach(i; 1 .. size - 1){
-        ret ~= `angles[` ~ writeint(i) ~ `].cos * sin` ~ writeint(i - 1) ~ `, `;
+        ret ~= `angles[` ~ ctint(i) ~ `].cos * sin` ~ ctint(i - 1) ~ `, `;
     }
-    ret ~= `sin` ~ writeint(size - 2);
+    ret ~= `sin` ~ ctint(size - 2);
     return sines ~ ` return vector(` ~ ret ~ `);`;
 }
 
@@ -344,7 +343,7 @@ string VectorUnitMixin(in size_t size){
 /// Arbitrary-dimensionality vector type with signed numeric components.
 /// TODO: It might be a good idea to also support unsigned integers at some
 /// point, but that will complicate promotions and could be generally weird.
-struct Vector(size_t valuessize, T) if(canVectorType!T){
+struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     alias size = valuessize;
     alias opDollar = size;
     
@@ -367,12 +366,14 @@ struct Vector(size_t valuessize, T) if(canVectorType!T){
     alias values this;
     
     /// Initialize with the given components.
-    static if(size > 0) this(Values values){
-        this.values = values;
+    static if(size > 0) this(N...)(in N values) if(
+        All!(isNumeric, N) && values.length == size
+    ){
+        foreach(i, _; this.values) this.values[i] = cast(T) values[i];
     }
     /// Initialize with all components equal to the given value.
-    static if(Values.length != 1) this(T value){
-        foreach(i, _; this.values) this.values[i] = value;
+    static if(Values.length != 1) this(N)(in N value) if(isNumeric!N){
+        foreach(i, _; this.values) this.values[i] = cast(T) value;
     }
     /// Initialize with the components of another vector.
     /// If the input vector is smaller than this one, trailing components
@@ -475,13 +476,9 @@ struct Vector(size_t valuessize, T) if(canVectorType!T){
     
     /// Component-wise equality comparison with optional epsilon.
     /// Epsilon is evaluated per-component.
-    bool equals(X)(in Vector!(size, X) vec, in Magnitude epsilon){
-        assert(epsilon >= 0, "Epsilon must be positive.");
-        static if(isFloatingPoint!T || isFloatingPoint!X){
-            return (this - vec).values.varall!(x => x >= -epsilon && x <= epsilon);
-        }else{
-            return this.equals(vec);
-        }
+    bool equals(X, E)(in Vector!(size, X) vec, in E epsilon) if(isNumeric!E){
+        assert(epsilon >= 0, "Epsilon must be non-negative.");
+        return (this - vec).values.varall!(x => x >= -epsilon && x <= epsilon);
     }
     /// Ditto
     bool equals(X)(in Vector!(size, X) vec) const{
@@ -899,6 +896,7 @@ unittest{ /// isVector templates
 
 unittest{ /// Zero-length vector (Why would you even do this??)
     Vector!(0, int) vec;
+    assert(vec.zero == vec);
     assert(vec.length == 0);
     assert(vec.lengthsq == 0);
     assert(vec.ilengthsq == 0);
@@ -925,6 +923,14 @@ unittest{ /// Zero-length vector (Why would you even do this??)
     vec *= vec;
     assert(vec == vec);
     assert(vec.toString() == `()`);
+}
+
+unittest{ /// Zero vector
+    assert(Vector!(1, int).zero == vector(0));
+    assert(Vector!(2, int).zero == vector(0, 0));
+    assert(Vector!(3, int).zero == vector(0, 0, 0));
+    assert(Vector!(4, int).zero == vector(0, 0, 0, 0));
+    assert(Vector!(6, int).zero == vector(0, 0, 0, 0, 0, 0));
 }
 
 unittest{ /// Equality comparison
