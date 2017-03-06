@@ -2,7 +2,9 @@ module mach.meta.varreduce;
 
 private:
 
-/++ Docs: mach.meta.varreduce
+import mach.meta.ctint : ctint;
+
+/++ Docs
 
 Provides an implementation of the
 [reduce higher-order function](https://en.wikipedia.org/wiki/Fold_(higher-order_function)),
@@ -18,7 +20,7 @@ unittest{ /// Example
     assert(varreduce!summod2(0, 1, 2, 3) == 2);
 }
 
-/++ Docs: mach.meta.varreduce
+/++ Docs
 
 The module also provides some common abstractions of the reduce function.
 
@@ -38,75 +40,88 @@ public:
 
 
 
-template canVarReduce(alias func, T...){
-    static if(T.length == 1){
-        enum bool canVarReduce = true;
-    }else static if(T.length >= 2){
-        static if(is(typeof({
-            auto acc = func(T[0].init, T[1].init);
-        }))){
-            static if(T.length == 2){
-                enum bool canVarReduce = true;
-            }else{
-                enum bool canVarReduce = canVarReduce!(
-                    func, typeof(func(T[0].init, T[1].init)), T[2 .. $]
-                );
-            }
+/// Mixin to generate code for `varreduce`.
+/// e.g. `return func(func(func(args[0], args[1]), args[2]), args[3]);`
+private string VarReduceMixin(in size_t args){
+    string codegen = `args[0]`;
+    foreach(i; 1 .. args){
+        codegen = `func(` ~ codegen ~ `, args[` ~ ctint(i) ~ `])`;
+    }
+    return `return ` ~ codegen ~ `;`;
+}
+
+/// Mixin to generate code for `varmin` and `varmax`.
+/// e.g. `return args[0] < args[1] ? args[0] : args[1];`
+private string VarMinMaxMixin(in string op, in size_t args){
+    string branch(in size_t a, in size_t b){
+        immutable arga = `args[` ~ ctint(a) ~ `]`;
+        immutable argb = `args[` ~ ctint(b) ~ `]`;
+        immutable cond = arga ~ ` ` ~ op ~ ` ` ~ argb;
+        if(b >= args - 1){
+            return cond ~ ` ? ` ~ arga ~ ` : ` ~ argb;
         }else{
-            enum bool canVarReduce = false;
+            return cond ~ ` ? (` ~ branch(a, b + 1) ~ `) : (` ~ branch(b, b + 1) ~ `)`;
         }
-    }else{
-        enum bool canVarReduce = false;
     }
+    return `return ` ~ branch(0, 1) ~ `;`;
+}
+
+/// Mixin to generate code for `varsum` and `varproduct`.
+/// e.g. `return args[0] + args[1] + args[2] + args[3];`
+private string VarSumProductMixin(in string op, in size_t args){
+    string codegen = ``;
+    foreach(i; 0 .. args){
+        if(i != 0) codegen ~= ` ` ~ op ~ ` `;
+        codegen ~= `args[` ~ ctint(i) ~ `]`;
+    }
+    return `return ` ~ codegen ~ `;`;
 }
 
 
 
-auto varreduce(alias func, T...)(auto ref T args) if(canVarReduce!(func, T)){
-    static if(T.length == 1){
-        return args[0];
-    }else static if(T.length == 2){
-        return func(args[0], args[1]);
-    }else{
-        return varreduce!func(func(args[0], args[1]), args[2 .. $]);
-    }
+/// Implements the reduce higher-order function for variadic arguments.
+auto varreduce(alias func, Args...)(auto ref Args args){
+    static assert(Args.length > 0, "Cannot reduce an empty sequence.");
+    mixin(VarReduceMixin(Args.length));
 }
 
 
-
-alias VarReduceMin = (a, b) => (a < b ? a : b);
-alias VarReduceMax = (a, b) => (a > b ? a : b);
-alias VarReduceSum = (a, b) => (a + b);
-alias VarReduceProduct = (a, b) => (a * b);
-alias VarReduceCount = (a, b) => (a + (b ? 1 : 0));
 
 /// Get the least value of the passed arguments.
-auto varmin(T...)(auto ref T args) if(canVarReduce!(VarReduceMin, T)){
-    return varreduce!VarReduceMin(args);
+auto varmin(Args...)(auto ref Args args){
+    static assert(Args.length > 0, "Cannot find the minimum of an empty sequence.");
+    static if(Args.length == 1){
+        return args[0];
+    }else{
+        mixin(VarMinMaxMixin(`<`, Args.length));
+    }
 }
 
 /// Get the greatest value of the passed arguments.
-auto varmax(T...)(auto ref T args) if(canVarReduce!(VarReduceMax, T)){
-    return varreduce!VarReduceMax(args);
+auto varmax(Args...)(auto ref Args args){
+    static assert(Args.length > 0, "Cannot find the maximum of an empty sequence.");
+    static if(Args.length == 1){
+        return args[0];
+    }else{
+        mixin(VarMinMaxMixin(`>=`, Args.length));
+    }
 }
 
 /// Get the sum of the passed arguments.
-auto varsum(T...)(auto ref T args) if(canVarReduce!(VarReduceSum, T)){
-    return varreduce!VarReduceSum(args);
+auto varsum(Args...)(auto ref Args args){
+    mixin(VarSumProductMixin(`+`, Args.length));
 }
 
 /// Get the product of the passed arguments.
-auto varproduct(T...)(auto ref T args) if(canVarReduce!(VarReduceProduct, T)){
-    return varreduce!VarReduceProduct(args);
+auto varproduct(Args...)(auto ref Args args){
+    mixin(VarSumProductMixin(`*`, Args.length));
 }
 
 /// Get the number of arguments which evaluate true.
-auto varcount(T...)(auto ref T args) if(T.length == 0 || canVarReduce!(VarReduceCount, size_t, T)){
-    static if(T.length == 0){
-        return size_t(0);
-    }else{
-        return varreduce!VarReduceCount(size_t(0), args);
-    }
+auto varcount(Args...)(auto ref Args args){
+    size_t count = 0;
+    foreach(i, _; Args) count += cast(bool) args[i];
+    return count;
 }
 
 

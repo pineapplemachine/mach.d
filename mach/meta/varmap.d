@@ -61,6 +61,7 @@ private string VarMapIndexMixin(in size_t args){
 }
 
 
+
 /// Perform a transformation upon each passed argument and return the results
 /// as a tuple.
 auto varmap(alias transform, Args...)(auto ref Args args){
