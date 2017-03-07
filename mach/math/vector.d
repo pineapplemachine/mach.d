@@ -2,7 +2,7 @@ module mach.math.vector;
 
 private:
 
-import mach.meta : All, Repeat, varzip, varmap, varall, varsum, ctint;
+import mach.meta : All, Repeat, Retro, varzip, varmap, varall, varsum, ctint;
 import mach.types : tuple, isTuple;
 import mach.traits : isTemplateOf, CommonType, hasCommonType, Unqual;
 import mach.traits : isNumeric, isFloatingPoint, isIntegral, isSignedIntegral;
@@ -225,15 +225,16 @@ template canVector(T...){
 auto vector(Args...)(in Args args) if(canVector!Args){
     return Vector!(Args.length, CommonType!Args)(args);
 }
+
 /// Get a vector with components represented by the values in some tuple.
-auto vector(T)(in T tup) if(!canVector!T && isTuple!T){
+auto vector(T)(in T tup) if(!canVector!T && !isVector!T && isTuple!T){
     static assert(T.length, "Cannot instantiate with empty tuple.");
     return vector(tup.expand);
 }
+
 /// Get a vector with no components.
 auto vector(T)() if(isVectorComponent!T){
-    Vector!(0, T) vec;
-    return vec;
+    return Vector!(0, T).zero;
 }
 
 
@@ -366,13 +367,13 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     alias values this;
     
     /// Initialize with the given components.
-    static if(size > 0) this(N...)(in N values) if(
+    static if(size > 1) this(N...)(in N values) if(
         All!(isNumeric, N) && values.length == size
     ){
         foreach(i, _; this.values) this.values[i] = cast(T) values[i];
     }
     /// Initialize with all components equal to the given value.
-    static if(Values.length != 1) this(N)(in N value) if(isNumeric!N){
+    this(N)(in N value) if(isNumeric!N){
         foreach(i, _; this.values) this.values[i] = cast(T) value;
     }
     /// Initialize with the components of another vector.
@@ -463,9 +464,7 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     auto opOpAssign(string op, N)(in N value) if(isNumeric!N && (
         op == "*" || op == "/" || op == "^^"
     )){
-        foreach(i, _; this.values){
-            mixin(`this[i] = this[i] ` ~ op ~ ` value;`);
-        }
+        foreach(i, _; this.values) mixin(`this[i] ` ~ op ~ `= value;`);
         return this;
     }
     
@@ -775,6 +774,16 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
         throw error;
     }
     
+    /// Get a vector the same as this one, but with its components in
+    /// reverse-order.
+    auto flip() const{
+        static if(size <= 1){
+            return this;
+        }else{
+            return typeof(this)(Retro!(this.values));
+        }
+    }
+    
     /// Get a readable string representation.
     auto toString() const{
         return str(this.astuple);
@@ -917,6 +926,7 @@ unittest{ /// Zero-length vector (Why would you even do this??)
     assert(vec.slerp(vec, 0.5) == vec);
     assert(vec.reflect(vec) == vec);
     assert(vec.project(vec) == vec);
+    assert(vec.flip == vec);
     assert(vec.astuple is tuple());
     vec = vec;
     vec += vec;
@@ -1160,6 +1170,13 @@ unittest{ /// Projection
     assert(vector(-2).project(vector(1)) == vector(2));
     assert(vector(3, 4).project(vector(-1, 0)) == vector(-5, 0));
     assert(vector(3, 0, 4).project(vector(0, 1, 0)) == vector(0, 5, 0));
+}
+
+unittest{ /// Flip vector
+    assert(vector(1).flip == vector(1));
+    assert(vector(1, 2).flip == vector(2, 1));
+    assert(vector(1, 2, 3).flip == vector(3, 2, 1));
+    assert(vector(1, 2, 3, 4).flip == vector(4, 3, 2, 1));
 }
 
 unittest{ /// Conversion to and from spherical coordinates
