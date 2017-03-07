@@ -2,10 +2,10 @@ module mach.meta.varzip;
 
 private:
 
+import mach.meta.ctint : ctint;
 import mach.meta.logical : All;
 import mach.meta.reduce : Reduce;
 import mach.types : tuple, isTuple;
-import mach.text.numeric : writeint;
 
 /++ Docs
 
@@ -42,7 +42,7 @@ private string ZipMixin(in size_t outputlength, in size_t argslength){
         string term = ``;
         foreach(j; 0 .. argslength){
             if(term.length) term ~= `, `;
-            term ~= `args[` ~ writeint(j) ~ `][` ~ writeint(i) ~ `]`;
+            term ~= `args[` ~ ctint(j) ~ `][` ~ ctint(i) ~ `]`;
         }
         codegen ~= `tuple(` ~ term ~ `)`;
     }
