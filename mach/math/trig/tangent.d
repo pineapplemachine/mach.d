@@ -97,7 +97,7 @@ private auto tanx86impl(in real value){
 
 
 
-/// Calculate the tangent of an input as `cos(x) / sin(x)`.
+/// Calculate the tangent of an input as `sin(x) / cos(x)`.
 private auto tannativeimpl(in real value){
     return sin(value) / cos(value);
 }
@@ -147,7 +147,8 @@ unittest{ /// Tangent of multiples of pi
 }
 
 unittest{ /// Tangent is infinite (or very large in magnitude)
-    // Why isn't tan(pi/2) infinite? See: http://www.website.masmforum.com/tutorials/fptute/fpuchap10.htm
+    // Why isn't tan(pi / 2) infinite?
+    // See: http://www.website.masmforum.com/tutorials/fptute/fpuchap10.htm
     foreach(TanFn; TanFns){
         import mach.io.stdio;
         assert(abs(TanFn(halfpi)) > 1e18);
