@@ -50,6 +50,11 @@ This program prints the lyrics of *99 Bottles* to stdout.
 This program asks the user to input a number via stdin, and then outputs the
 Collatz sequence of that number to stdout.
 
+### jsonio
+
+This program reads json from an input file, modifies it, and then writes the
+modified content to an output file.
+
 ### traversedir
 
 This program traverses this examples directory and its subdirectories and
