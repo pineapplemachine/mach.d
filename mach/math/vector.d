@@ -8,6 +8,7 @@ import mach.traits : isTemplateOf, CommonType, hasCommonType, Unqual;
 import mach.traits : isNumeric, isFloatingPoint, isIntegral, isSignedIntegral;
 import mach.error : IndexOutOfBoundsError;
 import mach.text.str : str;
+import mach.math.abs : abs;
 import mach.math.sqrt : sqrt;
 import mach.math.trig : Angle;
 
@@ -192,7 +193,7 @@ public:
 template isVector(T){
     enum bool isVector = isTemplateOf!(T, Vector);
 }
-/// Determine whether some tyoe is a Vector of the given dimensionality and
+/// Determine whether some type is a Vector of the given dimensionality and
 /// of any component type.
 template isVector(size_t size, T){
     static if(isVector!T){
@@ -355,11 +356,12 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     
     /// Helper template to get whether another type is a Vector with the same
     /// dimensionality as this one.
-    private static enum isSameSizeVector(T) = isVector!(size, T);
+    static enum isSameSizeVector(X) = isVector!(size, X);
     
     /// A vector with all-zero components.
     static enum zero = typeof(this)(0);
     
+    alias Value = T;
     alias Values = Repeat!(size, T);
     
     Values values;
@@ -381,14 +383,14 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     /// are made zero.
     /// If the input vector is larger than this one, trailing components are
     /// truncated.
-    this(Z, X)(in Vector!(Z, X) vec){
+    this(size_t Z, X)(in Vector!(Z, X) vec){
         foreach(i, _; this.values){
-            static if(i < vec.length) this.values[i] = cast(T) vec.values[i];
+            static if(i < vec.size) this.values[i] = cast(T) vec.values[i];
             else this.values[i] = 0;
         }
     }
     /// Initialize with components given by a tuple.
-    this(X)(in X tup) if(isTuple!X){ // TODO: Better template constraints
+    this(X)(in X tup) if(isTuple!X){ // TODO: Better template constraint
         this.values = tup.expand.varmap!(x => cast(T) x).expand;
     }
     
@@ -443,10 +445,10 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
         return this;
     }
     
-    /// Multiply, divide, or exponentiate all components in the vector by some
-    /// scalar value.
+    /// Increment, decrement, multiply, divide, or exponentiate all components
+    /// in the vector by some scalar value.
     auto opBinary(string op, N)(in N value) const if(isNumeric!N && (
-        op == "*" || op == "/" || op == "^^"
+        op == "+" || op == "-" || op == "*" || op == "/" || op == "^^"
     )){
         static if(size == 0){
             mixin(`return vector!(typeof(T.init ` ~ op ~ ` value))();`);
@@ -462,7 +464,7 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     }
     /// Ditto
     auto opOpAssign(string op, N)(in N value) if(isNumeric!N && (
-        op == "*" || op == "/" || op == "^^"
+        op == "+" || op == "-" || op == "*" || op == "/" || op == "^^"
     )){
         foreach(i, _; this.values) mixin(`this[i] ` ~ op ~ `= value;`);
         return this;
@@ -475,7 +477,7 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     
     /// Component-wise equality comparison with optional epsilon.
     /// Epsilon is evaluated per-component.
-    bool equals(X, E)(in Vector!(size, X) vec, in E epsilon) if(isNumeric!E){
+    bool equals(X, E)(in Vector!(size, X) vec, in E epsilon) const if(isNumeric!E){
         assert(epsilon >= 0, "Epsilon must be non-negative.");
         return (this - vec).values.varall!(x => x >= -epsilon && x <= epsilon);
     }
@@ -558,7 +560,7 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
         static if(size == 0){
             return 0;
         }else{
-            return this.expand.varsum;
+            return this.values.varmap!(x => abs(x)).expand.varsum;
         }
     }
     /// Get the Manhattan distance of this vector from another.
@@ -784,6 +786,13 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
         }
     }
     
+    /// Cast to another vector type.
+    /// If the target type is smaller, trailing components are truncated.
+    /// If the target type is larger, trailing components will be zero.
+    auto opCast(To: Vector!(Z, X), size_t Z, X)() const{
+        return To(this);
+    }
+    
     /// Get a readable string representation.
     auto toString() const{
         return str(this.astuple);
@@ -978,6 +987,17 @@ unittest{ /// Indexing
     assert(vec == vector(0, 10, 20, 30, 4));
 }
 
+unittest{ /// Casting
+    Vector2f x = cast(Vector2f) vector!int();
+    assert(x == vector(0, 0));
+    Vector!(0, int) y = cast(Vector!(0, int)) vector(1, 2, 3);
+    assert(y is vector!int());
+    Vector2i z = cast(Vector2i) vector(3.2, 2, 1);
+    assert(z == vector(3, 2));
+    Vector4i w = cast(Vector4i) vector(5, 6);
+    assert(w == vector(5, 6, 0, 0));
+}
+
 unittest{ /// Negation
     assert(-vector(+1) == vector(-1));
     assert(-vector(-1) == vector(+1));
@@ -1034,8 +1054,12 @@ unittest{ /// Length
 }
 
 unittest{ /// Manhattan distance
-    assert(vector(3).manhattan == 3);
-    assert(vector(3, 4).manhattan == 7);
+    assert(vector(+3).manhattan == 3);
+    assert(vector(-3).manhattan == 3);
+    assert(vector(+3, +4).manhattan == 7);
+    assert(vector(+3, -4).manhattan == 7);
+    assert(vector(-3, +4).manhattan == 7);
+    assert(vector(-3, -4).manhattan == 7);
     assert(vector(3, 4, 5).manhattan == 12);
     assert(vector(3, 4).manhattan(vector(1, 2)) == 4);
 }
