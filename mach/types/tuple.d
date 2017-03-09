@@ -63,13 +63,13 @@ public:
 
 /// Determine whether a type is a tuple.
 /// To qualify as a tuple, the type must:
-/// - Have a `length` known at compile time.
+/// - Have a `length` known at compile time of type `size_t`.
 /// - Valid `foreach(i, element; tuple)` such that `i` is known at compile time.
 /// - Must support indexing i.e. `tuple[0]`.
 /// - Accessing an out-of-bounds index via indexing must produce a compile error.
 template isTuple(T...) if(T.length == 1){
     enum bool isTuple = is(typeof({
-        enum length = T[0].init.length;
+        enum size_t length = T[0].init.length;
         auto ex = T[0].init.expand;
         foreach(i, _; T[0].init){
             enum j = i;
