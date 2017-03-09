@@ -294,7 +294,7 @@ struct Path{
     /// Read data from a file path as an array with elements of type T.
     /// The data is consumed all at once and stored in-memory, and then the
     /// file stream is automatically closed.
-    auto readall(T = immutable char)() const{
+    auto readall(T = char)() const{
         auto stream = this.read();
         scope(exit) stream.close;
         return stream.asarray!T;
