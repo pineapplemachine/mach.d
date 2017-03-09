@@ -1,4 +1,4 @@
-# mach.text.json
+# mach.json
 
 This package provides functionality for serializing and deserializing values as json.
 

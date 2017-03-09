@@ -1,4 +1,4 @@
-module mach.text.json.parse;
+module mach.json.parse;
 
 private:
 
@@ -8,10 +8,10 @@ import mach.math.floats : fcomposedec;
 import mach.math.ints : intfmaoverflow;
 import mach.text.numeric : WriteFloatSettings;
 import mach.text.escape : StringUnescapeException;
-import mach.text.json.escape;
-import mach.text.json.exceptions;
-import mach.text.json.literals;
-import mach.text.json.value;
+import mach.json.escape;
+import mach.json.exceptions;
+import mach.json.literals;
+import mach.json.value;
 
 /// Note that this does not include all ASCII whitespace characters,
 /// let alone all unicode ones.

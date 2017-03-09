@@ -1,4 +1,4 @@
-module mach.text.json.serialize;
+module mach.json.serialize;
 
 private:
 
@@ -13,11 +13,11 @@ import mach.range : map, asarray;
 import mach.text.utf : utf8encode, utfdecode;
 import mach.text.numeric : parseint, writeint, parsefloat, writefloat, NumberParseException;
 
-import mach.text.json.attributes;
-import mach.text.json.exceptions;
-import mach.text.json.literals;
-import mach.text.json.parse;
-import mach.text.json.value;
+import mach.json.attributes;
+import mach.json.exceptions;
+import mach.json.literals;
+import mach.json.parse;
+import mach.json.value;
 
 public:
 

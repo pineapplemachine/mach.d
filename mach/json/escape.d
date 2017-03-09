@@ -1,4 +1,4 @@
-module mach.text.json.escape;
+module mach.json.escape;
 
 private:
 

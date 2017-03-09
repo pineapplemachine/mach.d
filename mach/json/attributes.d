@@ -1,4 +1,4 @@
-module mach.text.json.attributes;
+module mach.json.attributes;
 
 private:
 

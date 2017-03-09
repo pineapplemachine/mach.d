@@ -5,6 +5,7 @@ public:
 import mach.collect;
 import mach.error;
 import mach.io;
+import mach.json;
 import mach.math;
 import mach.meta;
 import mach.range;

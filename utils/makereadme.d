@@ -16,10 +16,9 @@ public:
 immutable readmepaths = [
     "readme.d",
     "mach/collect/readme.d",
+    "mach/json/readme.d",
     "mach/math/floats/readme.d",
-    "mach/text/html/namedchar/readme.d",
-    "mach/text/json/readme.d",
-    "mach/text/str/readme.d"
+    "mach/text/html/namedchar/readme.d"
 ];
 
 void main(){

@@ -32,7 +32,7 @@ To generate a string representation of just about anything, [`mach.text.str`] (h
 
 To encode and decode UTF-8, UTF-16, and UTF-32, [`mach.text.utf`] (https://github.com/pineapplemachine/mach.d/tree/master/mach/text/utf).
 
-To parse and encode JSON, [`mach.text.json`] (https://github.com/pineapplemachine/mach.d/tree/master/mach/text/json).
+To parse and encode JSON, [`mach.json`] (https://github.com/pineapplemachine/mach.d/tree/master/mach/text/json).
 
 For collections and related data structures, [`mach.collect`] (https://github.com/pineapplemachine/mach.d/tree/master/mach/collect).
 

@@ -1,4 +1,4 @@
-module mach.text.json.exceptions;
+module mach.json.exceptions;
 
 private:
 
@@ -12,6 +12,9 @@ public:
 class JsonException : Exception{
     this(string message, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
         super(message, file, line, next);
+    }
+    this(Throwable next, size_t line = __LINE__, string file = __FILE__){
+        this("Encountered error during json operation.", next, line, file);
     }
     auto enforce(T)(auto ref T condition) const{
         if(!condition) throw this;

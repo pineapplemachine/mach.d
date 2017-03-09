@@ -1,4 +1,4 @@
-module mach.text.json.literals;
+module mach.json.literals;
 
 private:
 

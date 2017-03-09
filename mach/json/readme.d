@@ -1,12 +1,12 @@
-module mach.text.json.readme;
+module mach.json.readme;
 
 private:
 
-import mach.text.json;
+import mach.json;
 
 /++ md
 
-# mach.text.json
+# mach.json
 
 This package provides functionality for serializing and deserializing values
 as json.

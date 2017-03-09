@@ -1,4 +1,4 @@
-module mach.text.json.value;
+module mach.json.value;
 
 private:
 
@@ -10,9 +10,9 @@ import mach.range : map, join, sum, all, orderstrings, asrange, asarray;
 import mach.range.sort : keysort = mergesort;
 import mach.text.utf : utf8encode;
 
-import mach.text.json.escape;
-import mach.text.json.exceptions;
-import mach.text.json.literals;
+import mach.json.escape;
+import mach.json.exceptions;
+import mach.json.literals;
 
 public:
 
