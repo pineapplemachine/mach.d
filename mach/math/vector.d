@@ -11,6 +11,7 @@ import mach.text.str : str;
 import mach.math.abs : abs;
 import mach.math.sqrt : sqrt;
 import mach.math.trig : Angle;
+import mach.math.matrix : Matrix;
 
 /// Get whether a type is some Angle type.
 template isAngle(T){
@@ -425,7 +426,7 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     /// Component-wise binary operation with a vector having the same number
     /// of components.
     auto opBinary(string op, X)(in Vector!(size, X) vec) const if(
-        op == "+" || op == "-" || op == "*" || op == "/"
+        op == "+" || op == "-" || op == "*" || op == "/" || op == "^^"
     ){
         static if(size == 0){
             mixin(`return vector!(typeof(T.init ` ~ op ~ ` X.init))();`);
@@ -437,9 +438,9 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     }
     /// Ditto
     auto opOpAssign(string op, X)(in Vector!(size, X) vec) if(
-        op == "+" || op == "-" || op == "*" || op == "/"
+        op == "+" || op == "-" || op == "*" || op == "/" || op == "^^"
     ){
-        foreach(i, _; this.values){
+        foreach(i, _; Values){
             mixin(`this[i] = this[i] ` ~ op ~ ` vec[i];`);
         }
         return this;
@@ -466,8 +467,14 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     auto opOpAssign(string op, N)(in N value) if(isNumeric!N && (
         op == "+" || op == "-" || op == "*" || op == "/" || op == "^^"
     )){
-        foreach(i, _; this.values) mixin(`this[i] ` ~ op ~ `= value;`);
+        foreach(i, _; Values) mixin(`this[i] ` ~ op ~ `= value;`);
         return this;
+    }
+    
+    /// Perform a component-wise multiplication of two vectors.
+    /// Currently, this is equivalent to the expression `vec0 * vec1`.
+    auto scale(X)(in Vector!(size, X) vec) const{
+        return this * vec;
     }
     
     /// Perform a component-wise comparison of two vectors.
@@ -483,7 +490,7 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     }
     /// Ditto
     bool equals(X)(in Vector!(size, X) vec) const{
-        foreach(i, _; this.values){
+        foreach(i, _; Values){
             if(this.values[i] != vec.values[i]) return false;
         }
         return true;
@@ -723,6 +730,18 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
             );
             return unit(tup.expand);
         }
+    }
+    
+    /// Get the cross product matrix of a three-dimensional vector.
+    /// The cross-product of two vectors may b defined as
+    /// `a.cross(b) == a.crossmat * b` or as
+    /// `a.cross(b) == b.crossmat.transpose * a`.
+    static if(size == 3) @property auto crossmat() const{
+        return Matrix!(3, 3, T)(
+            0, this.z, -this.y,
+            -this.z, 0, this.x,
+            this.y, -this.x, 0,
+        );
     }
     
     /// Get a concatenation of vectors.
@@ -1183,6 +1202,13 @@ unittest{ /// Cross product of three-dimensional vectors
     assert(vector(-1, 0, 1).cross(vector(8, -9, -10)) == vector(9, -2, 9));
     assert(vector(4, -5, 6).cross(vector(7, -9, 8)) == vector(14, 10, -1));
     assert(vector(10, 9, 8).cross(vector(7, 6, -5)) == vector(-93, 106, -3));
+}
+
+unittest{ /// Cross product matrix of three-dimensional vector
+    auto a = vector(+1, +2, +3);
+    auto b = vector(-5, -6, -7);
+    assert(a.crossmat * b == a.cross(b));
+    assert(b.crossmat.transpose * a == a.cross(b));
 }
 
 unittest{ /// Reflection

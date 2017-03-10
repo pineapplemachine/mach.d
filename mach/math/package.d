@@ -16,7 +16,7 @@ import mach.math.constants;
 import mach.math.cube;
 import mach.math.floats;
 import mach.math.ints;
-import mach.math.matrix4;
+import mach.math.matrix;
 import mach.math.mean;
 import mach.math.median;
 import mach.math.muldiv;

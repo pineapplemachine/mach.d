@@ -90,6 +90,251 @@ primitives.
 This package provides functions for performing operations upon integral types.
 
 
+## mach.math.matrix
+
+
+The `Matrix` template type represents a [matrix]
+(https://en.wikipedia.org/wiki/Matrix_(mathematics)) with arbitrary
+dimensionality and any signed numeric primitive type for its components.
+It is represented as a tuple of column Vectors.
+
+Several convenience symbols are defined including `Matrix2i` and `Matrix2f`,
+`Matrix3i` and `Matrix3f`, and `Matrix4i` and `Matrix4f`, referring to square
+matrixes of different dimensionalities with either integral or floating point
+component types.
+It is recommended to use their `Rows` and `Cols` static methods to initialize
+matrixes because they are maximally explicit in the structure of its arguments.
+Note that Matrix constructors behave similarly to calling `Cols` with various
+argument types.
+
+The `matrix`, `matrixrows`, and `matrixcols` functions are also defined for
+concisely initializing matrixes. Any time that it is not otherwise specified,
+values are interpreted as columns first, rows second, e.g. the inputs
+`1, 2, 3, 4` would produce a matrix where `2` is at X coordinate 0 and Y
+coordinate 1, and `3` at X coordinate 1 and Y coordinate 0.
+This differs from rows first, columns second where the same inputs `1, 2, 3, 4`
+would product a matrix where `2` is at X coordinate 1 and Y coordinate 0,
+and `3` at X coordinate 0 and Y coordinate 1.
+Functions which accept a flat series of values can alternatively accept a series
+of row or column vectors.
+
+``` D
+auto mat = Matrix3i.Rows(
+    1, 2, 3,
+    4, 5, 6,
+    7, 8, 9,
+);
+assert(mat[0][0] == 1); // Column 0, row 0
+assert(mat[2][0] == 3); // Column 2, row 0
+assert(mat[0][2] == 7); // Column 0, row 2
+assert(mat[2][2] == 9); // Column 2, row 2
+```
+
+``` D
+auto mat = Matrix3i.Cols(
+    1, 2, 3,
+    4, 5, 6,
+    7, 8, 9,
+);
+assert(mat[0][0] == 1);
+assert(mat[2][0] == 7);
+assert(mat[0][2] == 3);
+assert(mat[2][2] == 9);
+```
+
+
+The individual components of a matrix may be accessed using indexes known at
+compile time via the `matrix[x][y]` syntax or, alternatively, `matrix.index!(x, y)`.
+If indexes are known only at runtime, `matrix.index(x, y)` may be used.
+
+Attempting to access an out-of-bounds index with compile time values will
+result in a compile error. Attempting to do so with runtime values will cause
+an `IndexOutOfBoundsError` to be thrown.
+
+``` D
+import mach.math.vector : vector;
+import mach.error.mustthrow : mustthrow;
+auto mat = Matrix2i.Rows(
+    vector(1, 2),
+    vector(3, 4),
+);
+// Accessing legal indexes
+assert(mat[0][0] == 1);
+assert(mat.index!(1, 1) == 4);
+assert(mat.index(1, 0) == 2);
+// Accessing out-of-bounds indexes
+static assert(!is(typeof({
+    mat[100][100];
+})));
+mustthrow({
+    auto x = mat.index(200, 200);
+});
+```
+
+
+Matrixes may be compared for equality using the `==` operator, or with the
+`equals` method which accepts an optional per-component epsilon.
+
+``` D
+assert(Matrix2i(1, 2, 3, 4) == Matrix2f(1, 2, 3, 4));
+assert(Matrix2f(5, 6, 7, 8).equals(Matrix2f(5, 6, 7, 8)));
+assert(Matrix2f(5, 6, 7, 8).equals(Matrix2f(5, 6, 7, 8 + 1e-16), 1e-8));
+```
+
+
+The rows and columns of a matrix may be accessed and modified using the
+`row`, `col`, `rows`, and `cols` methods.
+`row` and `col` return vectors and `rows` and `cols` return tuples of vectors.
+The vectors returned by `row` and `rows` have a number of components equal to
+the width of the matrix, and those returned by `col` and `cols` have a number
+of components equal to its height.
+
+``` D
+auto mat = Matrix3i.Rows(
+    vector(1, 2, 3),
+    vector(4, 5, 6),
+    vector(7, 8, 9),
+);
+// Get the row at an index
+assert(mat.row!0 == vector(1, 2, 3));
+// Get the column at an index
+assert(mat.col!0 == vector(1, 4, 7));
+// Get a tuple of row vectors
+auto rows = mat.rows;
+static assert(rows.length == mat.height);
+assert(rows[1] == vector(4, 5, 6));
+// Get a tuple of column vectors
+auto cols = mat.cols;
+static assert(cols.length == mat.width);
+assert(cols[1] == vector(2, 5, 8));
+```
+
+
+A matrix can be multiplied by another matrix or by a column vector using the `*`
+operator.
+Other matrix binary operators are component-wise, meaning that the operation is
+applied to each pair of corresponding components. For component-wise
+multiplication as opposed to normal matrix multiplication, the `matrix.scale`
+method may be used.
+
+Matrixes also support component-wise binary operations with numbers.
+
+``` D
+auto a = Matrix2i.Rows(
+    1, 2,
+    3, 4,
+);
+auto b = Matrix2i.Rows(
+    5, 6,
+    7, 8,
+);
+// Matrix multiplication
+assert(a * b == Matrix2i.Rows(
+    19, 22,
+    43, 50
+));
+// Component-wise addition
+assert(a + b == Matrix2i.Rows(
+    6, 8,
+    10, 12,
+));
+// Component-wise multiplication
+assert(a.scale(b) == Matrix2i.Rows(
+    5, 12,
+    21, 32,
+));
+```
+
+``` D
+import mach.math.vector : Vector2i;
+auto a = Matrix2i.Rows(
+    1, 2,
+    3, 4,
+);
+auto b = Vector2i(5, 6);
+assert(a * b == Vector2i(17, 39));
+```
+
+``` D
+auto mat = Matrix2i.Rows(
+    1, 2,
+    3, 4,
+);
+assert(mat * 3 == Matrix2i.Rows(
+    3, 6,
+    9, 12,
+));
+assert(mat + 1 == Matrix2i.Rows(
+    2, 3,
+    4, 5,
+));
+```
+
+
+Matrixes also provide utilities where applicable for finding their [determinant]
+(https://en.wikipedia.org/wiki/Determinant), a [minor matrix]
+(https://en.wikipedia.org/wiki/Minor_(linear_algebra)), the [cofactor matrix]
+(https://en.wikipedia.org/wiki/Minor_(linear_algebra)#Inverse_of_a_matrix),
+the [adjugate or adjoint](https://en.wikipedia.org/wiki/Adjugate_matrix),
+the [transpose](https://en.wikipedia.org/wiki/Transpose), and the [inverse]
+(https://en.wikipedia.org/wiki/Invertible_matrix).
+
+Additionally, methods such as `flip`, `scroll`, and `rotate` can be used to
+perform simple transformations on the positions of elements in a matrix.
+
+``` D
+auto mat = Matrix2f.Rows(
+    vector(1, 2),
+    vector(3, 4),
+);
+// Get the determinant
+assert(mat.determinant == -2);
+// Get a minor matrix, i.e. a matrix with a column and row omitted.
+assert(mat.minor!(0, 0) == matrixrows(vector(4)));
+// Transpose the matrix
+assert(mat.transpose == matrixrows(
+    vector(1, 3),
+    vector(2, 4),
+));
+// Get the cofactor matrix
+assert(mat.cofactor == matrixrows(
+    vector(4, -3),
+    vector(-2, 1),
+));
+// Get the adjugate
+assert(mat.adjugate == matrixrows(
+    vector(4, -2),
+    vector(-3, 1),
+));
+// Get the inverse: Multiplying by a matrix's inverse produces the identity matrix.
+assert(mat * mat.inverse == Matrix2f.identity);
+```
+
+``` D
+auto mat = matrixrows!(3, 2)(
+    1, 2, 3,
+    4, 5, 6,
+);
+assert(mat.flipv == matrixrows!(3, 2)(
+    4, 5, 6,
+    1, 2, 3,
+));
+assert(mat.fliph == matrixrows!(3, 2)(
+    3, 2, 1,
+    6, 5, 4,
+));
+assert(mat.rotate!1 == matrixrows!(2, 3)(
+    4, 1,
+    5, 2,
+    6, 3,
+));
+assert(mat.scroll!(2, 0) == matrixrows!(3, 2)(
+    2, 3, 1,
+    5, 6, 4,
+));
+```
+
+
 ## mach.math.mean
 
 

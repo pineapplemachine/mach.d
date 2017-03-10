@@ -17,7 +17,7 @@ import mach.sdl.graphics.displaymode : DisplayMode;
 import mach.sdl.graphics.surface : Surface;
 import mach.math.box : Box;
 import mach.math.vector : Vector, Vector2;
-import mach.math.matrix4 : Matrix4;
+import mach.math.matrix : Matrix4;
 
 import mach.io.log;
 
@@ -188,11 +188,13 @@ class Window{
     }
     @property void projection(N)(in Box!N screen){
         glViewport(screen.x, screen.y, screen.width, screen.height);
-        this.projection(Matrix4!float.identity.orthographic(screen));
+        this.projection(Matrix4!float.glortho(
+            screen.minx, screen.maxx, screen.miny, screen.maxy
+        ));
     }
     @property void projection(in Matrix4!float matrix){
         glMatrixMode(GL_PROJECTION);
-        glLoadMatrixf(matrix.aligned.ptr); // TODO: see matrix4.aligned
+        glLoadMatrixf(cast(const(float*)) &matrix);
         glMatrixMode(GL_MODELVIEW);
         // Alternative: Works on Win7 but not OSX:
         //glLoadIdentity();
