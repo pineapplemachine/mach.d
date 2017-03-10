@@ -38,7 +38,7 @@ struct Mouse{
         typeof(this).warpwindow(window.window, x, y);
     }
     /// ditto
-    static void warpwindow(T)(Window window, T vector) if(isVector2!vector){
+    static void warpwindow(T)(Window window, T vector) if(isVector2!T){
         typeof(this).warpwindow(window.window, vector.x, vector.y);
     }
     /// ditto
