@@ -54,6 +54,7 @@ struct SinCosResult{
 /// to `sin` and `cos`.
 SinCosResult sincos(in real value){
     static if(InlineAsm_X86_Any){
+        if(__ctfe) return sincossepimpl(value);
         return sincosx86impl(value);
     }else{
         return sincossepimpl(value);
@@ -177,6 +178,10 @@ unittest{ /// Verify overflow handling, see https://github.com/dlang/phobos/pull
     assert(!x.sin.fisnan && !x.cos.fisnan);
     immutable y = sincos(2.0L^^200);
     assert(!y.sin.fisnan && !y.cos.fisnan);
+}
+
+unittest{ /// Can be evaluated by CTFE?
+    enum x = sincos(1);
 }
 
 unittest{ /// Check sin and cosine for some set cases

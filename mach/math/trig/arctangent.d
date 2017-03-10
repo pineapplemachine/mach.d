@@ -32,6 +32,7 @@ public:
 /// Returns a value that is at least -pi and at most +pi.
 real atan(in real value){
     static if(InlineAsm_X86_Any){
+        if(__ctfe) return atannativeimpl(value);
         return atanx86impl(value);
     }else{
         return atannativeimpl(value);
@@ -41,6 +42,7 @@ real atan(in real value){
 /// Calculate the arctangent of y / x.
 real atan2(in real y, in real x){
     static if(InlineAsm_X86_Any){
+        if(__ctfe) return atan2nativeimpl(y, x);
         return atan2x86impl(y, x);
     }else{
         return atan2nativeimpl(y, x);
@@ -68,7 +70,7 @@ private real atannativeimpl(in real value){
     enum invtanpi8 = 1 / tanpi8;
     
     // MiniMaxApproximation[ArcTan[t], {t, {2^-27,  Tan[Pi / 8]}, 5, 6}]
-    enum real[8] P = [
+    static immutable real[8] P = [
         -1.2413012573967813692492579713841668656360687147411e-27L,
         1.0000000000000000000845328119196165035294658111020L,
         0.29624121585432238342770190161401529036988809666986L,
@@ -78,7 +80,7 @@ private real atannativeimpl(in real value){
         0.064616137475684079915165930073434167864960360580068L,
         0.040912686664602122170082679972588677262703985556105L,
     ];
-    enum real[9] Q = [
+    static immutable real[9] Q = [
         1.0L,
         0.29624121585432247648767498918464122792729581783192L,
         1.7792229178312030167596639250774433100760972589282L,
@@ -226,6 +228,12 @@ unittest{ // NaN for atan2
         assert(fisnan(atan2f(-nan, +nan)));
         assert(fisnan(atan2f(-nan, -nan)));
     }
+}
+
+unittest{ /// Can be evaluated by CTFE?
+    // TODO
+    //enum x = atan(1);
+    //enum y = atan2(1, 1);
 }
 
 unittest{ /// Arctangent is correct (or nearly correct) for some set cases

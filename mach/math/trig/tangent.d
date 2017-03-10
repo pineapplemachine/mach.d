@@ -36,6 +36,7 @@ public:
 /// Calculate the tangent of an angle given in radians.
 auto tan(in real value){
     static if(InlineAsm_X86_Any){
+        if(__ctfe) return tannativeimpl(value);
         return tanx86impl(value);
     }else{
         return tannativeimpl(value);
@@ -161,6 +162,10 @@ unittest{ /// Tangent is infinite (or very large in magnitude)
 unittest{ /// Verify overflow handling, see https://github.com/dlang/phobos/pull/5114
     assert(!tan(2.0L^^64).fisnan);
     assert(!tan(2.0L^^200).fisnan);
+}
+
+unittest{ /// Can be evaluated by CTFE?
+    enum x = tan(1);
 }
 
 unittest{ /// Tangent is correct (or nearly correct) for some set cases
