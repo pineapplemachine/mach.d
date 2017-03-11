@@ -10,7 +10,7 @@ import mach.math.round : floor;
 import mach.math.muldiv : muldiv_xlty_wmax;
 import mach.math.sign : Sign, signof;
 import mach.math.floats.extract : fextractsgn;
-import mach.math.floats.properties : fisnan;
+import mach.math.floats.properties : fisnan, fiszero, fisinf;
 import mach.math.trig.angle : Angle, CommonAngleType;
 import mach.math.trig.rotdirection : RotationDirection;
 
