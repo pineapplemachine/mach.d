@@ -39,28 +39,33 @@ or [here](https://www.libsdl.org/projects/).
 
 ### helloworld
 
-This program prints "Hello, world!" to stdout.
+Prints "Hello, world!" to stdout.
 
 ### bottles
 
-This program prints the lyrics of *99 Bottles* to stdout.
+Prints the lyrics of *99 Bottles* to stdout.
 
 ### collatz
 
-This program asks the user to input a number via stdin, and then outputs the
+Asks the user to input a number via stdin, and then outputs the
 Collatz sequence of that number to stdout.
 
 ### jsonio
 
-This program reads json from an input file, modifies it, and then writes the
+Reads json from an input file, modifies it, and then writes the
 modified content to an output file.
 
 ### traversedir
 
-This program traverses this examples directory and its subdirectories and
+Traverses this examples directory and its subdirectories and
 finds and prints the paths of all the D source files contained in them.
 
 ### movepineapple
 
-This program initializes a window using `mach.sdl` and draws an image to the
+Initializes a window using `mach.sdl` and draws an image to the
 screen which can be moved using the WASD keys.
+
+### wireframe
+
+An example of a very basic software 3D renderer using matrix transformations
+and 2D rendering calls.
