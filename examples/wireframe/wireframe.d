@@ -26,7 +26,7 @@ class Wireframe: Application{
     ];
     
     // Points above transformed to screen coordinates will be stored here.
-    Vector2i[points.length + 1] screenpoints;
+    Vector2i[points.length] screenpoints;
     
     // World coordinates for background particles will go here.
     Vector3f[] particles;
@@ -68,7 +68,7 @@ class Wireframe: Application{
             particles ~= Vector3f.unit(
                 Angle!ulong.Revolutions(rng.random!float),
                 Angle!ulong.Revolutions(rng.random!float),
-            ).xzy * rng.random!double(30, 80);
+            ) * rng.random!double(30, 80);
         }
     }
     
@@ -108,7 +108,6 @@ class Wireframe: Application{
             if(screen.front) screenpoints[i++] = screen.vector;
         }
         if(i > 1){
-            screenpoints[i] = screenpoints[0];
             lineloop(Color!float.Cyan, screenpoints[0..i]);
         }
         
