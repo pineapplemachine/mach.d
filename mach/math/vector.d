@@ -338,7 +338,7 @@ private string VectorUnitMixin(in size_t size){
         ret ~= `angles[` ~ ctint(i) ~ `].cos * sin` ~ ctint(i - 1) ~ `, `;
     }
     ret ~= `sin` ~ ctint(size - 2);
-    return sines ~ ` return vector(` ~ ret ~ `);`;
+    return sines ~ ` return typeof(this)(` ~ ret ~ `);`;
 }
 
 
