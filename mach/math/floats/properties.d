@@ -14,6 +14,7 @@ public:
 /// Also evaluates true for pseudo-infinity.
 @trusted pure nothrow @nogc auto fisinf(T)(T value) if(isFloatingPoint!T){
     enum Format = IEEEFormatOf!T;
+    if(__ctfe) return (value - 1) == value;
     static if(Format is IEEEFormat.Extended){
         return(
             value.fextractexp == Format.expmax &&
@@ -43,6 +44,7 @@ public:
 /// Also evaluates true for pseudo not a number.
 @trusted pure nothrow @nogc auto fisnan(T)(T value) if(isFloatingPoint!T){
     enum Format = IEEEFormatOf!T;
+    if(__ctfe) return value != value;
     static if(Format is IEEEFormat.Extended){
         return(
             value.fextractexp == Format.expmax &&
@@ -111,6 +113,7 @@ public:
 
 /// Get whether a floating point value represents zero.
 @trusted pure nothrow @nogc auto fiszero(T)(T value) if(isFloatingPoint!T){
+    if(__ctfe) return value == 0;
     return value.fextractexp == 0 && value.fextractsig == 0;
 }
 
