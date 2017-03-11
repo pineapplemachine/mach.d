@@ -29,11 +29,20 @@ bool iscontrol(in dchar ch){
     return ch <= 0x1f;
 }
 
+/// Utility used by parser functions to forward position in a string until a
+/// non-whitespace character is encountered.
+void consumews(in string str, ref size_t pos, ref size_t line){
+    while(pos < str.length && str[pos].iswhite){
+        line += str[pos] == '\n';
+        pos++;
+    }
+}
+
 public:
 
 
 
-enum MaxParseDepth = 256; // Try to prevent call stack overflow crashes
+enum MaxJsonParseDepth = 256; // Try to prevent call stack overflow crashes
 
 
 
@@ -62,17 +71,6 @@ auto parsejson(
 
 
 
-/// Utility used by parser functions to forward position in a string until a
-/// non-whitespace character is encountered.
-void consumews(in string str, ref size_t pos, ref size_t line){
-    while(pos < str.length && str[pos].iswhite){
-        line += str[pos] == '\n';
-        pos++;
-    }
-}
-
-
-
 /// Type returned by `parsevalue` method.
 struct ParseValueResult{
     JsonValue value;
@@ -90,7 +88,7 @@ auto parsevalue(
     in size_t depth
 ){
     static const depthexception = new JsonParseDepthException();
-    if(depth > MaxParseDepth) throw depthexception;
+    if(depth > MaxJsonParseDepth) throw depthexception;
     
     size_t pos = initialpos;
     size_t line = initialline;
@@ -205,7 +203,8 @@ auto parsestring(
             }else if(utf.front == '\\'){
                 escape = true;
             }else if(utf.front.iscontrol){
-                throw new JsonParseControlCharException();
+                static const ctrlerror = new JsonParseControlCharException();
+                throw ctrlerror;
             }else if(utf.front == '"'){
                 try{
                     string result = cast(string) jsonunescape(
@@ -267,7 +266,8 @@ auto parsearray(
             );
         }
     }
-    throw new JsonParseEOFException();
+    static const eoferror = new JsonParseEOFException();
+    throw eoferror;
 }
 
 
@@ -288,6 +288,8 @@ auto parseobject(
     in size_t initialline,
     in size_t depth
 ){
+    static const eoferror = new JsonParseEOFException();
+    
     if(str[initialpos] != '{'){
         throw new JsonParseUnexpectedException(
             "object", initialline, initialpos
@@ -304,7 +306,7 @@ auto parseobject(
         }else if(object.length == 0 || (str[pos] == ',' && object.length > 0)){
             // Parse key
             pos += (object.length > 0);
-            if(pos >= str.length) throw new JsonParseEOFException();
+            if(pos >= str.length) throw eoferror;
             consumews(str, pos, line);
             auto key = parsestring(str, pos, line);
             if(key.literal in object){
@@ -315,7 +317,7 @@ auto parseobject(
             line = key.endline;
             consumews(str, pos, line);
             if(pos >= str.length){
-                throw new JsonParseEOFException();
+                throw eoferror;
             }else if(str[pos] != ':'){
                 throw new JsonParseUnexpectedException(
                     "key, value delimiter", line, pos
@@ -332,7 +334,7 @@ auto parseobject(
             );
         }
     }
-    throw new JsonParseEOFException();
+    throw eoferror;
 }
 
 
@@ -536,7 +538,8 @@ auto parsenumber(
         case State.ExponentInitial:
         case State.ExponentSigned:
             if(pos >= str.length){
-                throw new JsonParseEOFException();
+                static const eoferror = new JsonParseEOFException();
+                throw eoferror;
             }else{
                 throw new JsonParseNumberException(line, pos);
             }
