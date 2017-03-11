@@ -47,12 +47,12 @@ struct Mouse{
     }
     
     /// Hide the cursor.
-    void hide(){
-        this.shown = false;
+    static void hide(){
+        typeof(this).shown = false;
     }
     /// Show the cursor.
-    void show(){
-        this.shown = true;
+    static void show(){
+        typeof(this).shown = true;
     }
     /// https://wiki.libsdl.org/SDL_ShowCursor
     static @property bool shown(){
