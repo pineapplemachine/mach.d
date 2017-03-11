@@ -231,9 +231,8 @@ unittest{ // NaN for atan2
 }
 
 unittest{ /// Can be evaluated by CTFE?
-    // TODO
-    //enum x = atan(1);
-    //enum y = atan2(1, 1);
+    enum x = atan(1);
+    enum y = atan2(1, 1);
 }
 
 unittest{ /// Arctangent is correct (or nearly correct) for some set cases
