@@ -1,3 +1,6 @@
+// This program displays a pineapple graphic loaded from an external image
+// file, and the graphic can be moved using the WASD keys.
+
 import mach.sdl;
 import mach.math;
 
