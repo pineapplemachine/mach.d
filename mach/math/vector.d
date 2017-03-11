@@ -1243,7 +1243,9 @@ unittest{ /// Conversion to and from spherical coordinates
         vector(+1, +2, +3), vector(-1, +2, +3), vector(+1, +2, -3),
         vector(+4, +5, +6, +7), vector(+4, +5, +6, -7),
     )){
-        assert(vec.equals(vec.unit(vec.direction) * vec.length, 1e-8));
+        assert(vec.equals(
+            Vector!(vec.size, double).unit(vec.direction) * vec.length, 1e-8
+        ));
     }
 }
 
