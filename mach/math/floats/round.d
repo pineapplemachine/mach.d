@@ -35,6 +35,9 @@ public:
     if(value.fisnan || value.fisinf || value.fiszero){
         return value;
     }else{
+        if(__ctfe){
+            return value >= 0 ? value - (value % 1) : value - (value % 1 + 1);
+        }
         enum Format = IEEEFormatOf!T;
         immutable exp = value.fextractsexp;
         if(exp < 0){
@@ -69,6 +72,9 @@ public:
     if(value.fisnan || value.fisinf || value.fiszero){
         return value;
     }else{
+        if(__ctfe){
+            return value >= 0 ? value + (1 - value % 1) : value - (value % 1);
+        }
         enum Format = IEEEFormatOf!T;
         immutable exp = value.fextractsexp;
         if(exp < 0){
