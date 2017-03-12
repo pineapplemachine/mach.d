@@ -92,23 +92,24 @@ class Wireframe: Application{
         ) * yaw);
         
         // Draw background particles.
+        RenderContext context;
         foreach(particle; particles){
             auto screen = this.transform(view, particle);
             if(screen.front){
-                auto color = Color!float.White / (particle.distance(camerapos) * 0.03);
-                color.alpha = 1;
-                if(color.r > background) .points(color, screen.vector);
+                context.color = Color!float.White / (particle.distance(camerapos) * 0.03);
+                if(context.color.r > background) context.points(screen.vector);
             }
         }
         
         // Draw lines.
         size_t i = 0;
+        context.color = Color!float.Cyan;
         foreach(point; points){
             auto screen = this.transform(view, point);
             if(screen.front) screenpoints[i++] = screen.vector;
         }
         if(i > 1){
-            lineloop(Color!float.Cyan, screenpoints[0..i]);
+            context.lineloop(screenpoints[0..i]);
         }
         
         // Display changes on the render target.
@@ -120,7 +121,8 @@ class Wireframe: Application{
         auto left = keys.down(KeyCode.A);
         auto right = keys.down(KeyCode.D);
         if((forward ^ back) || (left ^ right)){
-            auto dir = Vector4f(left - right, 0, forward - back, 0).normalize * 0.25;
+            double speed = keys.down(KeyCode.LeftShift) ? 0.35 : 0.15;
+            auto dir = Vector4f(left - right, 0, forward - back, 0).normalize * speed;
             camerapos += ((cast(Matrix4f) yaw).transpose * dir).xyz;
         }
         

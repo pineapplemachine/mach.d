@@ -21,11 +21,17 @@ struct RenderContext{
     Color!float rendercolor;
     // TODO: Offset, viewport
     
+    this(C)(Color!C color){
+        this.rendercolor = cast(Color!float) color;
+        this.rendercolor.glset();
+    }
+    
     @property auto color(T = float)() const{
         return cast(Color!T) this.rendercolor;
     }
     @property void color(T)(in Color!T color){
         this.rendercolor = cast(typeof(this.rendercolor)) color;
+        this.rendercolor.glset();
     }
     
     void point(T)(in T x, in T y){
@@ -33,11 +39,11 @@ struct RenderContext{
     }
     void point(T)(in Vector!(2, T) x){
         this.rendercolor.glset();
-        .points(this.rendercolor, x);
+        drawpoints(x);
     }
     void points(T)(in Vector!(2, T)[] p...){
         this.rendercolor.glset();
-        .points(this.rendercolor, p);
+        drawpoints(p);
     }
     
     void line(T)(in T x0, in T y0, in T x1, in T y1){
@@ -45,11 +51,16 @@ struct RenderContext{
     }
     void line(T)(in Vector!(2, T) x, in Vector!(2, T) y){
         this.rendercolor.glset();
-        .lines(this.rendercolor, x, y);
+        drawlines(x, y);
     }
     void lines(T)(in Vector!(2, T)[] v...){
         this.rendercolor.glset();
-        .lines(this.rendercolor, v);
+        drawlines(v);
+    }
+    
+    void lineloop(T)(in Vector!(2, T)[] v...){
+        this.rendercolor.glset();
+        drawlineloop(v);
     }
     
     void rect(T)(in T x, in T y, in T width, in T height){
@@ -57,7 +68,7 @@ struct RenderContext{
     }
     void rect(T)(in Box!T box){
         this.rendercolor.glset();
-        .quads(this.rendercolor, box.corners);
+        drawquads(box.corners);
     }
     
     void circle(T, R)(in T x, in T y, in R radius){
@@ -68,7 +79,7 @@ struct RenderContext{
     }
     void circle(V, R)(in Vector!(2, V) position, in R radius, in uint segments){
         this.rendercolor.glset();
-        .circle(position, radius, segments);
+        drawcircle(position, radius, segments);
     }
     
     void texture(T)(Texture* texture, in Vector!(2, T) pos) const{

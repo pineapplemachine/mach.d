@@ -175,15 +175,15 @@ struct Color(T = float) if(isNumeric!T){
             this.red " ~ op ~ " rhs,
             this.green " ~ op ~ " rhs,
             this.blue " ~ op ~ " rhs,
-            this.alpha " ~ op ~ " rhs
+            this.alpha
         );");
     }
-    Color!T opBinaryRight(string op, N)(in N rhs) const if(isNumeric!N){
+    Color!T opBinaryRight(string op: "*", N)(in N rhs) const if(isNumeric!N){
         mixin("return Color!T(
             rhs " ~ op ~ " this.red,
             rhs " ~ op ~ " this.green,
             rhs " ~ op ~ " this.blue,
-            rhs " ~ op ~ " this.alpha
+            this.alpha
         );");
     }
     void opOpAssign(string op, N)(in N rhs) if(isNumeric!N){
@@ -191,7 +191,6 @@ struct Color(T = float) if(isNumeric!T){
             this.red " ~ op ~ "= rhs;
             this.green " ~ op ~ "= rhs;
             this.blue " ~ op ~ "= rhs;
-            this.alpha " ~ op ~ "= rhs;
         ");
     }
     

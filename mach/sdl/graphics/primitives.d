@@ -11,10 +11,6 @@ import mach.math : sin, cos, tau;
 
 import mach.sdl.error : GLError;
 import mach.sdl.window : Window;
-import mach.sdl.graphics.color : Color;
-
-
-import mach.io.log;
 
 public:
 
@@ -60,10 +56,9 @@ void glset(V)(in V vector) if(isVector3!V){
 
 
 
-auto primitives(uint mode, C, T)(in Color!C color, in Vector!(2, T)[] vectors...){
+auto drawprimitives(uint mode, T)(in Vector!(2, T)[] vectors...){
     if(vectors && vectors.length){
         scope(exit) GLError.enforce();
-        color.glset();
         glBegin(mode);
         foreach(vector; vectors) vector.glset();
         glEnd();
@@ -72,76 +67,75 @@ auto primitives(uint mode, C, T)(in Color!C color, in Vector!(2, T)[] vectors...
 
 
 
-
 // Reference: https://www.opengl.org/sdk/docs/man2/xhtml/glBegin.xml
 // Note: Remember to use glLineWidth somewhere
 
-auto points(C, T)(Color!C color, in Vector!(2, T)[] vectors...){
-    primitives!GL_POINTS(color, vectors);
+auto drawpoints(T)(in Vector!(2, T)[] vectors...){
+    drawprimitives!GL_POINTS(vectors);
 }
 
-auto lines(C, T)(Color!C color, in Vector!(2, T)[] vectors...) in{
+auto drawlines(T)(in Vector!(2, T)[] vectors...) in{
     assert(vectors.length >= 2 && vectors.length % 2 == 0);
 }body{
-    primitives!GL_LINES(color, vectors);
+    drawprimitives!GL_LINES(vectors);
 }
 
-auto linestrip(C, T)(in Color!C color, in Vector!(2, T)[] vectors...) in{
+auto drawlinestrip(T)(in Vector!(2, T)[] vectors...) in{
     assert(vectors.length >= 2);
 }body{
-    primitives!GL_LINE_STRIP(color, vectors);
+    drawprimitives!GL_LINE_STRIP(vectors);
 }
 
-auto lineloop(C, T)(in Color!C color, in Vector!(2, T)[] vectors...) in{
+auto drawlineloop(T)(in Vector!(2, T)[] vectors...) in{
     assert(vectors.length >= 2);
 }body{
-    primitives!GL_LINE_LOOP(color, vectors);
+    drawprimitives!GL_LINE_LOOP(vectors);
 }
 
-auto triangles(C, T)(in Color!C color, in Vector!(2, T)[] vectors...) in{
+auto drawtriangles(T)(in Vector!(2, T)[] vectors...) in{
     assert(vectors.length >= 3 && vectors.length % 3 == 0);
 }body{
-    primitives!GL_TRIANGLES(color, vectors);
+    drawprimitives!GL_TRIANGLES(vectors);
 }
 
-auto trianglestrip(C, T)(in Color!C color, in Vector!(2, T)[] vectors...) in{
+auto drawtrianglestrip(T)(in Vector!(2, T)[] vectors...) in{
     assert(vectors.length >= 3);
 }body{
-    primitives!GL_TRIANGLE_STRIP(color, vectors);
+    drawprimitives!GL_TRIANGLE_STRIP(vectors);
 }
 
-auto trianglefan(C, T)(in Color!C color, in Vector!(2, T)[] vectors...) in{
+auto drawtrianglefan(T)(in Vector!(2, T)[] vectors...) in{
     assert(vectors.length >= 3);
 }body{
-    primitives!GL_TRIANGLE_FAN(color, vectors);
+    drawprimitives!GL_TRIANGLE_FAN(vectors);
 }
 
-auto quads(C, T)(in Color!C color, in Vector!(2, T)[] vectors...) in{
+auto drawquads(T)(in Vector!(2, T)[] vectors...) in{
     assert(vectors.length >= 4 && vectors.length % 4 == 0);
 }body{
-    primitives!GL_QUADS(color, vectors);
+    drawprimitives!GL_QUADS(vectors);
 }
 
-auto quads(C, T)(in Color!C color, in Box!T[] quads...){
+auto drawquads(T)(in Box!T[] quads...){
     Vector2!T[] vectors;
     vectors.reserve(quads.length * 4);
     foreach(quad; quads) vectors ~= quad.corners;
-    quads(color, vectors);
+    quads(vectors);
 }
 
-auto quadstrip(C, T)(in Color!C color, in Vector!(2, T)[] vectors...) in{
+auto drawquadstrip(T)(in Vector!(2, T)[] vectors...) in{
     assert(vectors.length >= 4);
 }body{
-    primitives!GL_QUAD_STRIP(color, vectors);
+    drawprimitives!GL_QUAD_STRIP(vectors);
 }
 
-auto polygon(C, T)(in Color!C color, in Vector!(2, T)[] vectors...){
-    primitives!GL_POLYGON(color, vectors);
+auto drawpolygon(T)(in Vector!(2, T)[] vectors...){
+    drawprimitives!GL_POLYGON(vectors);
 }
 
 /// Credit http://slabode.exofire.net/circle_draw.shtml
 /// TODO: Ellipses
-auto circle(bool fill = true, V, R)(in Vector!(2, V) center, in R radius, in uint segments){
+auto drawcircle(bool fill = true, V, R)(in Vector!(2, V) center, in R radius, in uint segments){
     immutable double theta = tau / cast(double) segments;
     immutable double c = cos(theta);
     immutable double s = sin(theta);
