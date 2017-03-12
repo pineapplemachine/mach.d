@@ -312,12 +312,12 @@ void mkdir(in string path){
         // https://msdn.microsoft.com/en-us/library/windows/desktop/aa363855(v=vs.85).aspx
         import core.sys.windows.winbase : CreateDirectoryW;
         if(!CreateDirectoryW(pathz, null)){
-            throw new FileMakeDirException(path, new SysErrorException);
+            throw new FileCreateDirException(path, new SysErrorException);
         }
     }else{
         import core.sys.posix.sys.stat : cmkdir = mkdir;
         if(cmkdir(pathz, 0x1ff) != 0){
-            throw new FileMakeDirException(path, new ErrnoException);
+            throw new FileCreateDirException(path, new ErrnoException);
         }
     }
 }
@@ -333,7 +333,7 @@ void ensuredir(in string path){
         import core.sys.windows.winerror : ERROR_ALREADY_EXISTS;
         if(!CreateDirectoryW(pathz, null)){
             if(GetLastError() != ERROR_ALREADY_EXISTS){
-                throw new FileMakeDirException(path, new SysErrorException);
+                throw new FileCreateDirException(path, new SysErrorException);
             }
         }
     }else{
@@ -341,12 +341,12 @@ void ensuredir(in string path){
         import core.stdc.errno : errno, EEXIST, EISDIR;
         if(cmkdir(pathz, 0x1ff) != 0){
             if(errno != EEXIST && errno != EISDIR){
-                throw new FileMakeDirException(path, new ErrnoException);
+                throw new FileCreateDirException(path, new ErrnoException);
             }
         }
     }
     if(!isdir(path)){
-        throw new FileMakeDirException(path);
+        throw new FileCreateDirException(path);
     }
 }
 
