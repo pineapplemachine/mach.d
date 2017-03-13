@@ -19,17 +19,34 @@ class SDLException: Exception{
     }
     
     this(string message, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
-        if(SDL_GetError !is null){
-            // Only attempt SDL_GetError if core bindings have been successfully loaded
-            this.error = SDL_GetError().fromcstring;
-            if(this.error !is null && this.error.length > 0){
-                super(message ~ " " ~ this.error, file, line, next);
-                SDL_ClearError();
-            }else{
-                super(message, file, line, next);
-            }
+        auto sdlerror = this.errortext;
+        if(sdlerror !is null){
+            this(sdlerror, message, next, line, file);
         }else{
             super(message, file, line, next);
+        }
+    }
+    
+    this(string sdlerror, string message, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        super(message ~ " " ~ sdlerror, file, line, next);
+        this.error = sdlerror;
+    }
+    
+    static @property string errortext(){
+        // Only attempt SDL_GetError if core bindings were successfully loaded
+        if(SDL_GetError !is null){
+            auto error = SDL_GetError();
+            if(error !is null && error[0] != '\0'){
+                return error.fromcstring;
+            }
+        }
+        return null;
+    }
+    
+    static void clearerror(){
+        // Only attempt SDL_ClearError if core bindings were successfully loaded
+        if(SDL_ClearError !is null){
+            SDL_ClearError();
         }
     }
 }
