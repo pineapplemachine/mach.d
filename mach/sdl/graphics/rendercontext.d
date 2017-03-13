@@ -46,21 +46,43 @@ struct RenderContext{
         drawpoints(p);
     }
     
-    void line(T)(in T x0, in T y0, in T x1, in T y1){
-        this.line(Vector2!T(x0, y0), Vector2!T(x1, y1));
-    }
-    void line(T)(in Vector!(2, T) x, in Vector!(2, T) y){
-        this.rendercolor.glset();
-        drawlines(x, y);
+    void line(T)(
+        in Vector!(2, T)[] x,
+        in Vector!(2, T)[] y
+    ){
+        this.lines(x, y);
     }
     void lines(T)(in Vector!(2, T)[] v...){
         this.rendercolor.glset();
         drawlines(v);
     }
-    
     void lineloop(T)(in Vector!(2, T)[] v...){
         this.rendercolor.glset();
         drawlineloop(v);
+    }
+    void linestrip(T)(in Vector!(2, T)[] v...){
+        this.rendercolor.glset();
+        drawlinestrip(v);
+    }
+    
+    void triangle(T)(
+        in Vector!(2, T)[] x,
+        in Vector!(2, T)[] y,
+        in Vector!(2, T)[] z
+    ){
+        this.trangles(x, y, z);
+    }
+    void triangles(T)(in Vector!(2, T)[] v...){
+        this.rendercolor.glset();
+        drawtriangles(v);
+    }
+    void trianglestrip(T)(in Vector!(2, T)[] v...){
+        this.rendercolor.glset();
+        drawtrianglestrip(v);
+    }
+    void trianglefan(T)(in Vector!(2, T)[] v...){
+        this.rendercolor.glset();
+        drawtrianglefan(v);
     }
     
     void rect(T)(in T x, in T y, in T width, in T height){

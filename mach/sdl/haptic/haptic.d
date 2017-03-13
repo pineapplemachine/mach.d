@@ -5,7 +5,7 @@ private:
 import derelict.sdl2.sdl;
 
 import mach.text.cstring : fromcstring;
-import mach.sdl.error : SDLError;
+import mach.sdl.error : SDLException;
 import mach.sdl.input.joystick;
 import mach.sdl.input.controller;
 import mach.sdl.haptic.effect;
@@ -38,19 +38,19 @@ struct Haptic{
     /// https://wiki.libsdl.org/SDL_HapticOpenFromJoystick
     static auto open(Joystick.Joy joy){
         auto hap = SDL_HapticOpenFromJoystick(joy);
-        if(hap is null) throw new SDLError("Failed to open haptic device.");
+        if(hap is null) throw new SDLException("Failed to open haptic device.");
         return typeof(this)(hap);
     }
     /// https://wiki.libsdl.org/SDL_HapticOpen
     static auto open(DeviceIndex index){
         auto hap = SDL_HapticOpen(index);
-        if(hap is null) throw new SDLError("Failed to open haptic device.");
+        if(hap is null) throw new SDLException("Failed to open haptic device.");
         return typeof(this)(hap);
     }
     /// https://wiki.libsdl.org/SDL_HapticOpenFromMouse
     static auto openmouse(){
         auto hap = SDL_HapticOpenFromMouse();
-        if(hap is null) throw new SDLError("Failed to open haptic device.");
+        if(hap is null) throw new SDLException("Failed to open haptic device.");
         return typeof(this)(hap);
     }
     /// https://wiki.libsdl.org/SDL_HapticOpened
@@ -69,7 +69,7 @@ struct Haptic{
     /// https://wiki.libsdl.org/SDL_HapticIndex
     @property int deviceindex(){
         auto result = SDL_HapticIndex(this.hap);
-        if(result < 0) throw new SDLError("Failed to get index of haptic device.");
+        if(result < 0) throw new SDLException("Failed to get index of haptic device.");
         return result;
     }
     
@@ -77,7 +77,7 @@ struct Haptic{
     /// https://wiki.libsdl.org/SDL_HapticName
     string devicename(DeviceIndex index){
         auto result = SDL_HapticName(index);
-        if(result is null) throw new SDLError("Failed to get haptic device name.");
+        if(result is null) throw new SDLException("Failed to get haptic device name.");
         return result.fromcstring;
     }
     /// ditto
@@ -89,7 +89,7 @@ struct Haptic{
     /// https://wiki.libsdl.org/SDL_HapticNumAxes
     @property int axes(){
         auto result = SDL_HapticNumAxes(this.hap);
-        if(result < 0) throw new SDLError("Failed to get number of haptic axes.");
+        if(result < 0) throw new SDLException("Failed to get number of haptic axes.");
         return result;
     }
     
@@ -102,7 +102,7 @@ struct Haptic{
     /// ditto
     EffectID addeffect(SDL_HapticEffect* effect){
         auto result = SDL_HapticNewEffect(this.hap, effect);
-        if(result < 0) throw new SDLError("Failed to add new haptic effect.");
+        if(result < 0) throw new SDLException("Failed to add new haptic effect.");
         return result;
     }
     /// Will stop the effect if it's running.
@@ -119,27 +119,27 @@ struct Haptic{
     /// ditto
     void updateeffect(EffectID effectid, SDL_HapticEffect* effect){
         auto result = SDL_HapticUpdateEffect(this.hap, effectid, effect);
-        if(result != 0) throw new SDLError("Failed to update haptic effect.");
+        if(result != 0) throw new SDLException("Failed to update haptic effect.");
     }
     /// Runs an effect which has been registered with the device.
     /// https://wiki.libsdl.org/SDL_HapticRunEffect
     void runeffect(EffectID effectid, uint iterations = 1){
         auto result = SDL_HapticRunEffect(this.hap, effectid, iterations);
-        if(result != 0) throw new SDLError("Failed to run haptic effect.");
+        if(result != 0) throw new SDLException("Failed to run haptic effect.");
     }
     /// Get the maximum number of effects the haptic device is able to store.
     /// On some platforms this isn't fully supported but is an approximation.
     /// https://wiki.libsdl.org/SDL_HapticNumEffects
     int maxeffects(){
         auto result = SDL_HapticNumEffects(this.hap);
-        if(result < 0) throw new SDLError("Failed to get haptic supported effect count.");
+        if(result < 0) throw new SDLException("Failed to get haptic supported effect count.");
         return result;
     }
     /// Get the maximum number of effects the device is able to play at the
     /// same time. Not guaranteed to be accurate on all platforms.
     int maxplayingeffects(){
         auto result = SDL_HapticNumEffectsPlaying(this.hap);
-        if(result < 0) throw new SDLError("Failed to get haptic playing effect count.");
+        if(result < 0) throw new SDLException("Failed to get haptic playing effect count.");
         return result;
     }
     /// https://wiki.libsdl.org/SDL_HapticNumEffectsPlaying
@@ -151,14 +151,14 @@ struct Haptic{
     /// ditto
     bool supportseffect(SDL_HapticEffect* effect){
         auto result = SDL_HapticEffectSupported(this.hap, effect);
-        if(result < 0) throw new SDLError("Failed to check haptic effect support.");
+        if(result < 0) throw new SDLException("Failed to check haptic effect support.");
         return cast(bool) result;
     }
     /// Get whether the given effect is currently playing.
     /// https://wiki.libsdl.org/SDL_HapticGetEffectStatus
     bool playingeffect(EffectID effectid){
         auto result = SDL_HapticGetEffectStatus(this.hap, effectid);
-        if(result < 0) throw new SDLError("Failed to get haptic effect status.");
+        if(result < 0) throw new SDLException("Failed to get haptic effect status.");
         return cast(bool) result;
     }
     
@@ -166,7 +166,7 @@ struct Haptic{
     /// SDL_HapticRumbleSupported
     @property bool supportsrumble(){
         auto result = SDL_HapticRumbleSupported(this.hap);
-        if(result < 0) throw new SDLError("Failed to get haptic rumble support.");
+        if(result < 0) throw new SDLException("Failed to get haptic rumble support.");
         return cast(bool) result;
     }
     /// Initialize simple rumble playback.
@@ -174,32 +174,32 @@ struct Haptic{
     /// https://wiki.libsdl.org/SDL_HapticRumbleInit
     void initrumble(){
         auto result = SDL_HapticRumbleInit(this.hap);
-        if(result != 0) throw new SDLError("Failed to initialize haptic device rumble.");
+        if(result != 0) throw new SDLException("Failed to initialize haptic device rumble.");
     }
     /// Run a simple rumble effect with the given strength and duration, the
     /// latter measured in milliseconds.
     /// https://wiki.libsdl.org/SDL_HapticRumblePlay
     void playrumble(float strength, uint length){
         auto result = SDL_HapticRumblePlay(this.hap, strength, length);
-        if(result != 0) throw new SDLError("Failed to play haptic device rumble.");
+        if(result != 0) throw new SDLException("Failed to play haptic device rumble.");
     }
     /// Stop a running rumble effect.
     /// https://wiki.libsdl.org/SDL_HapticRumbleStop
     void stoprumble(){
         auto result = SDL_HapticRumbleStop(this.hap);
-        if(result != 0) throw new SDLError("Failed to stop haptic device rumble.");
+        if(result != 0) throw new SDLException("Failed to stop haptic device rumble.");
     }
     
     /// Adding or modifying effects while the device is paused may cause errors.
     /// https://wiki.libsdl.org/SDL_HapticPause
     void pause(){
         auto result = SDL_HapticPause(this.hap);
-        if(result != 0) throw new SDLError("Failed to pause haptic device.");
+        if(result != 0) throw new SDLException("Failed to pause haptic device.");
     }
     /// https://wiki.libsdl.org/SDL_HapticUnpause
     void unpause(){
         auto result = SDL_HapticUnpause(this.hap);
-        if(result != 0) throw new SDLError("Failed to unpause haptic device.");
+        if(result != 0) throw new SDLException("Failed to unpause haptic device.");
     }
 }
 

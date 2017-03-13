@@ -5,14 +5,14 @@ private:
 import derelict.sdl2.sdl;
 
 import mach.text.cstring : fromcstring;
-import mach.sdl.error : GLError;
+import mach.sdl.error : GLException;
 import mach.sdl.init.gl.versions;
 
 public:
 
 
 
-class GLAttributeError: GLError{
+class GLAttributeException: GLException{
     this(string message, string file = __FILE__, size_t line = __LINE__){
         super("Failed to set OpenGL attribute: " ~ message, line, file);
     }
@@ -60,7 +60,7 @@ struct GLSettings {
     
     static void apply(int attribute, int value){
         if(SDL_GL_SetAttribute(attribute, value) != 0){
-            throw new GLAttributeError(SDL_GetError().fromcstring);
+            throw new GLAttributeException(SDL_GetError().fromcstring);
         }
     }
     void apply() const{

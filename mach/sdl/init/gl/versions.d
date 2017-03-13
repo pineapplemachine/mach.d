@@ -5,7 +5,7 @@ private:
 import derelict.opengl3.gl : DerelictGL, DerelictGLVersion = GLVersion;
 
 import mach.text : text;
-import mach.sdl.error : GLError;
+import mach.sdl.error : GLException;
 
 import mach.io.log;
 
@@ -13,7 +13,7 @@ public:
 
 
 
-class GLVersionError: GLError{
+class GLVersionException: GLException{
     this(
         in GLVersions.Version userversion, in GLVersions.Version requiredversion,
         in string file = __FILE__, in size_t line = __LINE__
@@ -64,10 +64,10 @@ struct GLVersions{
     }
     
     /// Verify that the currently-loaded version is at least a minimum version.
-    /// Throws a GLVersionError if the check fails.
+    /// Throws a GLVersionException if the check fails.
     static void verify(Version minimum = MinimumVersion){
         immutable auto glversion = typeof(this).current;
-        if(glversion < minimum) throw new GLVersionError(glversion, minimum);
+        if(glversion < minimum) throw new GLVersionException(glversion, minimum);
         log("OpenGL version ", glversion);
     }
 }

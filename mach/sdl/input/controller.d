@@ -5,7 +5,7 @@ private:
 import derelict.sdl2.sdl;
 
 import mach.text.cstring : tocstring, fromcstring;
-import mach.sdl.error : SDLError;
+import mach.sdl.error : SDLException;
 import mach.sdl.input.common : EventState;
 import mach.sdl.input.joystick;
 
@@ -73,13 +73,13 @@ struct Controller{
     /// https://wiki.libsdl.org/SDL_GameControllerAddMapping
     auto addmapping(string mapping){
         auto result = SDL_GameControllerAddMapping(mapping.tocstring);
-        if(result == -1) throw new SDLError("Failed to add controller mapping.");
+        if(result == -1) throw new SDLException("Failed to add controller mapping.");
         return result;
     }
     /// https://wiki.libsdl.org/SDL_GameControllerAddMappingsFromFile
     auto addmappings(string path){
         auto result = SDL_GameControllerAddMappingsFromFile(path.tocstring);
-        if(result == -1) throw new SDLError("Failed to add controller mappings.");
+        if(result == -1) throw new SDLException("Failed to add controller mappings.");
         return result;
     }
     
@@ -88,7 +88,7 @@ struct Controller{
     /// state information.
     @property static void events(EventState state){
         auto result = SDL_GameControllerEventState(state);
-        if(result < 0) throw new SDLError("Failed to set controller event state.");
+        if(result < 0) throw new SDLException("Failed to set controller event state.");
     }
     /// Update state information for open controllers. If event polling is enabled
     /// for controllers then it is not necessary to call this function.
@@ -99,13 +99,13 @@ struct Controller{
     /// Get the name of a controller given its device index.
     static string name(DeviceIndex index){
         auto name = SDL_GameControllerNameForIndex(index);
-        if(name is null) throw new SDLError("Failed to get controller name.");
+        if(name is null) throw new SDLException("Failed to get controller name.");
         return name.fromcstring;
     }
     /// Get the name of an opened controller.
     string name(){
         auto name = SDL_GameControllerName(this.ctrl);
-        if(name is null) throw new SDLError("Failed to get controller name.");
+        if(name is null) throw new SDLException("Failed to get controller name.");
         return name.fromcstring;
     }
     
@@ -116,14 +116,14 @@ struct Controller{
     /// Get a controller by its joystick instance ID.
     static typeof(this) byid(ID id){
         auto ctrl = SDL_GameControllerFromInstanceID(id);
-        if(ctrl is null) throw new SDLError("Failed to get controller from instance id.");
+        if(ctrl is null) throw new SDLException("Failed to get controller from instance id.");
         return typeof(this)(ctrl);
     }
     
     /// Get the joystick corresponding to an opened controller.
     static auto ctrljoy(Ctrl ctrl){
         auto joy = SDL_GameControllerGetJoystick(ctrl);
-        if(joy is null) throw new SDLError("Failed to get controller joystick.");
+        if(joy is null) throw new SDLException("Failed to get controller joystick.");
         return joy;
     }
     /// ditto
@@ -135,7 +135,7 @@ struct Controller{
     /// https://wiki.libsdl.org/SDL_GameControllerOpen
     static auto open(DeviceIndex index){
         auto ctrl = SDL_GameControllerOpen(index);
-        if(ctrl is null) throw new SDLError("Failed to open controller.");
+        if(ctrl is null) throw new SDLException("Failed to open controller.");
         return typeof(this)(ctrl);
     }
     /// Whether the controller is open.

@@ -7,7 +7,7 @@ import derelict.opengl3.gl;
 import mach.traits : isNumeric;
 import mach.math.vector : Vector, Vector2;
 import mach.math.box : Box;
-import mach.sdl.error : GLError;
+import mach.sdl.error : GLException;
 import mach.sdl.glenum : VertexType, getvertextype, validvertextype;
 import mach.sdl.graphics.color : Color;
 

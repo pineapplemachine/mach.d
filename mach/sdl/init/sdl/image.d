@@ -3,7 +3,7 @@ module mach.sdl.init.sdl.image;
 private:
 
 import derelict.sdl2.image;
-import mach.sdl.error : SDLError;
+import mach.sdl.error : SDLException;
 import mach.sdl.flags;
 
 public:
@@ -33,7 +33,7 @@ struct Image{
     static void initialize(Formats formats){
         int result = IMG_Init(formats.flags);
         if((result & formats.flags) != formats.flags){
-            throw new SDLError("Failed to initialize image library.");
+            throw new SDLException("Failed to initialize image library.");
         }
     }
     /// Get which formats have so far been successfully initialized.

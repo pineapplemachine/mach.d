@@ -3,7 +3,7 @@ module mach.sdl.init.sdl.ttf;
 private:
 
 import derelict.sdl2.ttf;
-import mach.sdl.error : SDLError;
+import mach.sdl.error : SDLException;
 
 public:
 
@@ -16,7 +16,7 @@ struct TTF{
     
     /// https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_8.html
     static void initialize(){
-        if(TTF_Init() != 0) throw new SDLError("Failed to initialize TTF library.");
+        if(TTF_Init() != 0) throw new SDLException("Failed to initialize TTF library.");
     }
     /// https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_9.html
     static bool initialized(){

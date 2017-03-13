@@ -12,7 +12,7 @@ import mach.math : Vector, Vector2;
 import mach.sdl.graphics.color;
 import mach.sdl.graphics.surface;
 import mach.sdl.graphics.texture;
-import mach.sdl.error : SDLError;
+import mach.sdl.error : SDLException;
 import mach.sdl.graphics.ttf.glyph;
 import mach.sdl.graphics.ttf.style;
 
@@ -45,7 +45,9 @@ struct Font{
     }
     this(string path, int size, c_long index = 0){
         this.font = TTF_OpenFontIndex(path.tocstring, size, index);
-        if(this.font is null) throw new SDLError("Failed to load font from path \"" ~ path ~ "\".");
+        if(this.font is null) throw new SDLException(
+            "Failed to load font from path \"" ~ path ~ "\"."
+        );
     }
     
     /// https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_16.html
@@ -156,7 +158,7 @@ struct Font{
             &glyph.miny, &glyph.maxy,
             &glyph.advance
         );
-        if(result != 0) throw new SDLError("Failed to get glyph metrics.");
+        if(result != 0) throw new SDLException("Failed to get glyph metrics.");
         return glyph;
     }
 
@@ -166,7 +168,7 @@ struct Font{
         if(text !is null){
             int width;
             auto result = TTF_SizeUTF8(this.font, text.tocstring, &width, null);
-            if(result != 0) throw new SDLError("Failed to get text width.");
+            if(result != 0) throw new SDLException("Failed to get text width.");
             return width;
         }else{
             return 0;
@@ -179,7 +181,7 @@ struct Font{
         if(text !is null){
             Vector2!int size;
             auto result = TTF_SizeUTF8(this.font, text.tocstring, &size.x, &size.y);
-            if(result != 0) throw new SDLError("Failed to get text size.");
+            if(result != 0) throw new SDLException("Failed to get text size.");
             return size;
         }else{
             return Vector2!int(0, this.height);
@@ -196,7 +198,7 @@ struct Font{
         auto surface = TTF_RenderUTF8_Solid(
             this.font, text.tocstring, cast(SDL_Color) foreground
         );
-        if(surface is null) throw new SDLError("Failed to render text.");
+        if(surface is null) throw new SDLException("Failed to render text.");
         return Surface(surface);
     }
     /// Returns a surface with the given text drawn onto it.
@@ -212,7 +214,7 @@ struct Font{
             this.font, text.tocstring,
             cast(SDL_Color) foreground, cast(SDL_Color) background
         );
-        if(surface is null) throw new SDLError("Failed to render text.");
+        if(surface is null) throw new SDLException("Failed to render text.");
         return Surface(surface);
     }
     /// Returns a surface with the given text expensively drawn onto it.
@@ -225,7 +227,7 @@ struct Font{
         auto surface = TTF_RenderUTF8_Blended(
             this.font, text.tocstring, cast(SDL_Color) foreground
         );
-        if(surface is null) throw new SDLError("Failed to render text.");
+        if(surface is null) throw new SDLException("Failed to render text.");
         return Surface(surface);
     }
     

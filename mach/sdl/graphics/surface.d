@@ -8,7 +8,7 @@ import derelict.sdl2.image;
 import mach.text.cstring : tocstring;
 import mach.math.box : Box;
 import mach.math.vector : Vector2;
-import mach.sdl.error : SDLError;
+import mach.sdl.error : SDLException;
 import mach.sdl.init.sdl : SDL;
 import mach.sdl.graphics.color : Color;
 import mach.sdl.graphics.pixelformat : PixelFormat;
@@ -36,11 +36,11 @@ Box!int toBox(in SDL_Rect rect){
 
 // TODO: Move this elsewhere?
 private auto loadsurface(in string path){
-    if(!SDL.loaded.image) throw new SDLError(
+    if(!SDL.loaded.image) throw new SDLException(
         "Failed to load image \"" ~ path ~ "\" because image libraries have not been loaded."
     );
     SDL_Surface* image = IMG_Load(path.tocstring);
-    if(image is null) throw new SDLError(
+    if(image is null) throw new SDLException(
         "Failed to load image \"" ~ path ~ "\"."
     );
     return image;
@@ -130,13 +130,13 @@ struct Surface{
     void enforcevalid(size_t line = __LINE__, string file = __FILE__) const{
         this.enforceexists(line, file);
         if(!this.surface.pixels){
-            throw new SDLError("Invalid pixel data for surface.", null, line, file);
+            throw new SDLException("Invalid pixel data for surface.", null, line, file);
         }
     }
     /// Throw an exception if there is no underlying SDL_Surface.
     void enforceexists()(size_t line = __LINE__, string file = __FILE__) const{
         if(!this.surface){
-            throw new SDLError("Invalid surface.", null, line, file);
+            throw new SDLException("Invalid surface.", null, line, file);
         }
     }
     
@@ -160,7 +160,7 @@ struct Surface{
     
     @property void RLEoptimized(bool enabled){
         if(SDL_SetSurfaceRLE(this.surface, enabled) != 0){
-            throw new SDLError("Failed to set surface RLE optimization.");
+            throw new SDLException("Failed to set surface RLE optimization.");
         }
     }
     
@@ -175,13 +175,13 @@ struct Surface{
     /// ditto
     Surface convert(in SDL_PixelFormat* format, uint flags = 0){
         SDL_Surface* result = SDL_ConvertSurface(this.surface, format, flags);
-        if(!result) throw new SDLError("Failed to convert surface to new format.");
+        if(!result) throw new SDLException("Failed to convert surface to new format.");
         return Surface(result);
     }
     /// ditto
     Surface convert(in PixelFormat.Format format, uint flags = 0){
         SDL_Surface* result = SDL_ConvertSurfaceFormat(this.surface, format, flags);
-        if(!result) throw new SDLError("Failed to convert surface to new format.");
+        if(!result) throw new SDLException("Failed to convert surface to new format.");
         return Surface(result);
     }
     
@@ -193,7 +193,7 @@ struct Surface{
     /// Save the surface to an image file.
     void save(in string path, in SaveFormat format = SaveFormat.PNG){
         if(format(this.surface, path.tocstring) != 0){
-            throw new SDLError("Failed to save surface.");
+            throw new SDLException("Failed to save surface.");
         }
     }
     
@@ -229,13 +229,13 @@ struct Surface{
     }
     void fill(in SDL_Rect* rect, in uint color){
         if(SDL_FillRect(this.surface, rect, color) != 0){
-            throw new SDLError("Failed to fill surface.");
+            throw new SDLException("Failed to fill surface.");
         }
     }
     
     void lock(){
         if(SDL_LockSurface(this.surface) != 0){
-            throw new SDLError("Failed to lock surface.");
+            throw new SDLException("Failed to lock surface.");
         }
     }
     void unlock(){
@@ -253,13 +253,13 @@ struct Surface{
     
     @property void blend(in BlendMode mode){
         if(SDL_SetSurfaceBlendMode(this.surface, mode) != 0){
-            throw new SDLError("Failed to set surface blend mode.");
+            throw new SDLException("Failed to set surface blend mode.");
         }
     }
     @property BlendMode blend(){
         SDL_BlendMode mode; // Secretly an int
         if(SDL_GetSurfaceBlendMode(this.surface, &mode) != 0){
-            throw new SDLError("Failed to retrieve surface blend mode.");
+            throw new SDLException("Failed to retrieve surface blend mode.");
         }
         return cast(BlendMode) mode;
     }
@@ -331,7 +331,7 @@ struct Surface{
         ) : (
             SDL_BlitScaled(source.surface, &fromrect, this.surface, &torect) != 0
         );
-        if(result != 0) throw new SDLError("Failed to blit surface.");
+        if(result != 0) throw new SDLException("Failed to blit surface.");
     }
     
     /// Make a copy of this surface.
@@ -343,7 +343,7 @@ struct Surface{
         Surface sub = Surface(box.width, box.height, this.surface.format);
         SDL_Rect rect = box.toSDLrect();
         if(SDL_BlitSurface(this.surface, &rect, sub.surface, null) != 0){
-            throw new SDLError("Failed to blit surface.");
+            throw new SDLException("Failed to blit surface.");
         }
         return sub;
     }

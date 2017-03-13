@@ -4,7 +4,7 @@ private:
 
 import derelict.opengl3.gl;
 
-import mach.sdl.error : GLError;
+import mach.sdl.error : GLException;
 import mach.sdl.init.gl.settings;
 import mach.sdl.init.gl.versions;
 
@@ -43,6 +43,6 @@ struct GL{
         glEnableClientState(GL_COLOR_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         
-        GLError.enforce();
+        GLException.enforce();
     }
 }

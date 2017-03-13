@@ -8,7 +8,7 @@ import derelict.opengl3.gl;
 import mach.traits : isNumeric;
 import mach.range : filter, asarray;
 import mach.text.cstring : tocstring, fromcstring;
-import mach.sdl.error : SDLError, GLError;
+import mach.sdl.error : SDLException, GLException;
 import mach.sdl.init : GLSettings;
 import mach.sdl.glenum : PixelsFormat, PixelsType, ColorBufferMode;
 import mach.sdl.graphics.color : Color;
@@ -136,10 +136,10 @@ class Window{
             view.x, view.y, view.width, view.height,
             style | SDL_WINDOW_OPENGL
         );
-        if(!window) throw new SDLError("Failed to create SDL_Window.");
+        if(!window) throw new SDLException("Failed to create SDL_Window.");
         
         this.context = SDL_GL_CreateContext(window);
-        if(!this.context) throw new SDLError("Failed to create SDL_GLContext.");
+        if(!this.context) throw new SDLException("Failed to create SDL_GLContext.");
         
         this.glsettings(settings);        
         this.projection(Box!int(view.width, view.height));
@@ -151,10 +151,10 @@ class Window{
     this(SDL_Window* window, SDL_GLContext context){
         this.window = window;
         this.context = context;
-        if(!this.window) throw new SDLError("Invalid window.");
-        if(!this.context) throw new SDLError("Invalid GL context.");
+        if(!this.window) throw new SDLException("Invalid window.");
+        if(!this.context) throw new SDLException("Invalid GL context.");
         if(SDL_GL_MakeCurrent(this.window, this.context) != 0){
-            throw new SDLError("Failed to set GLContext for rending to window.");
+            throw new SDLException("Failed to set GLContext for rending to window.");
         }
         this.project();
         this.clearcolor(0, 0, 0, 1);
@@ -207,7 +207,7 @@ class Window{
     
     @property void vsync(VSync sync){
         if(SDL_GL_SetSwapInterval(sync) != 0){
-            throw new SDLError("Failed to set swap interval.");
+            throw new SDLException("Failed to set swap interval.");
         }
     }
     @property VSync vsync() const{
@@ -260,7 +260,7 @@ class Window{
             if(SDL_GL_MakeCurrent(this.window, this.context) == 0){
                 this.currentwindow = this.window;
             }else{
-                throw new SDLError("Failed to make window context current.");
+                throw new SDLException("Failed to make window context current.");
             }
         }
     }
@@ -284,7 +284,7 @@ class Window{
     // TODO: ??? Is this even usable in combination with gl rendering?
     @property SDL_Surface* sdlsurface(){
         SDL_Surface* surface = SDL_GetWindowSurface(this.window);
-        if(!surface) throw new SDLError("Failed to get window surface.");
+        if(!surface) throw new SDLException("Failed to get window surface.");
         return surface;
     }
     @property Surface surface(){
@@ -303,7 +303,7 @@ class Window{
             0, 0, size.x, size.y, format,
             PixelsType.Ubyte, capture.surface.pixels
         );
-        GLError.enforce();
+        GLException.enforce();
         //capture.flip(); // TODO: Why does Dgame do a horizontal flip here?
         return capture;
     }
@@ -412,7 +412,7 @@ class Window{
     }
     @property void displaymode(in SDL_DisplayMode mode){
         if(!SDL_SetWindowDisplayMode(this.window, &mode)){
-            throw new SDLError("Failed to set display mode.");
+            throw new SDLException("Failed to set display mode.");
         }
     }
     @property DisplayMode displaymode(){
@@ -421,7 +421,7 @@ class Window{
     SDL_DisplayMode SDLdisplaymode(){
         SDL_DisplayMode mode;
         if(!SDL_GetWindowDisplayMode(this.window, &mode)){
-            throw new SDLError("Failed to get display mode.");
+            throw new SDLException("Failed to get display mode.");
         }
         return mode;
     }
@@ -430,7 +430,7 @@ class Window{
         if(style & this.style) return true;
         if(style & FullscreenStyles){
             if(!SDL_SetWindowFullscreen(this.window, style)){
-                throw new SDLError("Failed to set fullscreen.");
+                throw new SDLException("Failed to set fullscreen.");
             }
             static if(project) this.project();
             return true;

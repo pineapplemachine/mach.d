@@ -11,7 +11,7 @@ public:
 
 
 /// Class for exceptions which occur interfacing with SDL.
-class SDLError: Exception{
+class SDLException: Exception{
     string error = null;
     
     this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){

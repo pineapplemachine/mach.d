@@ -10,7 +10,7 @@ public:
 
 
 /// Class for errors which occur interfacing with OpenGL.
-class GLError: Exception{
+class GLException: Exception{
     /// An enumeration of possible OpenGL error codes.
     static enum ErrorCode : uint{
         NoError = GL_NO_ERROR,
@@ -94,10 +94,10 @@ class GLError: Exception{
         }
     }
     
-    /// Check if any errors have occurred and, if so, throw a new GLError
+    /// Check if any errors have occurred and, if so, throw a new GLException
     /// reporting them.
     static void enforce(size_t line = __LINE__, string file = __FILE__){
         ErrorCode[] errors = geterrors();
-        if(errors.length) throw new GLError(errors, line, file);
+        if(errors.length) throw new GLException(errors, line, file);
     }
 }

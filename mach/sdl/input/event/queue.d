@@ -3,7 +3,7 @@ module mach.sdl.input.event.queue;
 private:
 
 import derelict.sdl2.sdl;
-import mach.sdl.error : SDLError;
+import mach.sdl.error : SDLException;
 import mach.sdl.input.event.type;
 import mach.sdl.input.event.event;
 
@@ -50,7 +50,7 @@ interface EventQueue{
     /// https://wiki.libsdl.org/SDL_PushEvent
     static bool push(Event event){
         auto result = SDL_PushEvent(event.event);
-        if(result < 0) throw new SDLError("Failed to add event to queue.");
+        if(result < 0) throw new SDLException("Failed to add event to queue.");
         return result == 1;
     }
     /// Remove and return the foremost event from the queue. If the queue is
@@ -65,7 +65,7 @@ interface EventQueue{
     /// https://wiki.libsdl.org/SDL_WaitEvent
     static void wait(){
         auto result = SDL_WaitEvent(null);
-        if(result == 0) throw new SDLError("Error while waiting for events.");
+        if(result == 0) throw new SDLException("Error while waiting for events.");
     }
     /// Wait for an event to be added to the queue for the given number of
     /// milliseconds. Returns true if the wait was terminated because an event

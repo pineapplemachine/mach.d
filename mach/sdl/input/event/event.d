@@ -8,7 +8,7 @@ import std.experimental.allocator : make, dispose;
 import std.experimental.allocator.gc_allocator : GCAllocator;
 
 import mach.math : vector;
-import mach.sdl.error : SDLError;
+import mach.sdl.error : SDLException;
 import mach.sdl.window : Window;
 import mach.sdl.input.joystick : Joystick;
 import mach.sdl.input.controller : Controller;
@@ -74,7 +74,7 @@ struct Event{
     /// https://wiki.libsdl.org/SDL_RegisterEvents
     static UserEvent.Code register(int events = 1){
         auto code = SDL_RegisterEvents(events);
-        if(code == uint.max) throw new SDLError("Failed to register events.");
+        if(code == uint.max) throw new SDLException("Failed to register events.");
         return code;
     }
     

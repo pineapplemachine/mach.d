@@ -5,7 +5,7 @@ private:
 import derelict.sdl2.sdl : SDL_ClearError;
 import derelict.sdl2.types;
 import derelict.sdl2.mixer;
-import mach.sdl.error : SDLError;
+import mach.sdl.error : SDLException;
 import mach.sdl.flags;
 
 public:
@@ -38,7 +38,7 @@ struct Mixer{
     static void initialize(Formats formats){
         int result = Mix_Init(formats.flags);
         if((result & formats.flags) != formats.flags){
-            throw new SDLError("Failed to initialize mixer library.");
+            throw new SDLException("Failed to initialize mixer library.");
         }
     }
     /// Get which formats have so far been successfully initialized.
@@ -84,7 +84,7 @@ struct Mixer{
         /// https://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer_11.html
         void open() const{
             auto result = Mix_OpenAudio(this.frequency, this.format, this.channels, this.chunksize);
-            if(result != 0) throw new SDLError("Failed to open audio.");
+            if(result != 0) throw new SDLException("Failed to open audio.");
             // Clear error "No SoundFonts have been requested"
             // http://stackoverflow.com/questions/26779307/sdl2-mixer-no-soundfonts-have-been-requested
             SDL_ClearError();
@@ -102,7 +102,7 @@ struct Mixer{
                 cast(ushort*) &audio.format,
                 cast(int*) &audio.channels
             );
-            if(result == 0) throw new SDLError("Failed to get audio information.");
+            if(result == 0) throw new SDLException("Failed to get audio information.");
             return audio;
         }
         /// https://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer_12.html

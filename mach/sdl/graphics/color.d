@@ -8,7 +8,7 @@ import derelict.opengl3.gl;
 
 import mach.traits : isNumeric, isIntegral, isFloatingPoint, isTemplateOf;
 import mach.math.round : round;
-import mach.sdl.error : GLError;
+import mach.sdl.error : GLException;
 
 public:
 
@@ -151,13 +151,13 @@ struct Color(T = float) if(isNumeric!T){
     /// Set glColor to the RGB color represented by this object.
     /// Reference: https://www.opengl.org/sdk/docs/man2/xhtml/glColor.xml
     void glset3() const{
-        scope(exit) GLError.enforce();
+        scope(exit) GLException.enforce();
         glColor3f(this.r!float, this.g!float, this.b!float);
     }
     /// Set glColor to the RGBA color represented by this object.
     /// Reference: https://www.opengl.org/sdk/docs/man2/xhtml/glColor.xml
     void glset4() const{
-        scope(exit) GLError.enforce();
+        scope(exit) GLException.enforce();
         // TODO: Why does glColor4ub work on Win7 but not OSX?
         glColor4f(this.r!float, this.g!float, this.b!float, this.a!float);
     }

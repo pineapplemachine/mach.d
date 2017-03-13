@@ -9,7 +9,7 @@ import mach.traits : isIntegral;
 import mach.math : Vector, Vector2, isVector2, Vector3, isVector3, Box, isBox;
 import mach.math : sin, cos, tau;
 
-import mach.sdl.error : GLError;
+import mach.sdl.error : GLException;
 import mach.sdl.window : Window;
 
 public:
@@ -58,7 +58,7 @@ void glset(V)(in V vector) if(isVector3!V){
 
 auto drawprimitives(uint mode, T)(in Vector!(2, T)[] vectors...){
     if(vectors && vectors.length){
-        scope(exit) GLError.enforce();
+        scope(exit) GLException.enforce();
         glBegin(mode);
         foreach(vector; vectors) vector.glset();
         glEnd();
@@ -142,7 +142,7 @@ auto drawcircle(bool fill = true, V, R)(in Vector!(2, V) center, in R radius, in
     immutable dcenter = cast(Vector2!double) center;
     double x = cast(double) radius;
     double y = 0.0;
-    scope(exit) GLError.enforce();
+    scope(exit) GLException.enforce();
     static if(fill){
         glBegin(GL_TRIANGLE_FAN);
         glset(dcenter);

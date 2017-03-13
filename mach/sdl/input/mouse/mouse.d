@@ -6,7 +6,7 @@ import derelict.sdl2.sdl;
 
 import mach.traits : isNumeric;
 import mach.math : isVector2;
-import mach.sdl.error : SDLError;
+import mach.sdl.error : SDLException;
 import mach.sdl.window : Window;
 import mach.sdl.input.mouse.common;
 import mach.sdl.input.mouse.cursor;
@@ -57,12 +57,12 @@ struct Mouse{
     /// https://wiki.libsdl.org/SDL_ShowCursor
     static @property bool shown(){
         auto result = SDL_ShowCursor(-1);
-        if(result < 0) throw new SDLError("Failed to get mouse shown.");
+        if(result < 0) throw new SDLException("Failed to get mouse shown.");
         return cast(bool) result;
     }
     /// https://wiki.libsdl.org/SDL_ShowCursor
     static @property void shown(bool state){
         auto result = SDL_ShowCursor(cast(int) state);
-        if(result < 0) throw new SDLError("Failed to set mouse shown.");
+        if(result < 0) throw new SDLException("Failed to set mouse shown.");
     }
 }

@@ -7,7 +7,7 @@ import derelict.sdl2.sdl;
 import mach.traits : isSigned, isIntegral, isNumeric;
 import mach.math : normalizescalar, denormalizescalar;
 import mach.text.cstring : fromcstring;
-import mach.sdl.error : SDLError;
+import mach.sdl.error : SDLException;
 import mach.sdl.input.common : EventState;
 
 public:
@@ -102,7 +102,7 @@ struct Joystick{
     /// Get the number of attached joystick devices.
     static auto count(){
         auto count = SDL_NumJoysticks();
-        if(count < 0) throw new SDLError("Failed to get number of joysticks.");
+        if(count < 0) throw new SDLException("Failed to get number of joysticks.");
         return count;
     }
     
@@ -111,7 +111,7 @@ struct Joystick{
     /// state information.
     @property static void events(EventState state){
         auto result = SDL_JoystickEventState(state);
-        if(result < 0) throw new SDLError("Failed to set joystick event state.");
+        if(result < 0) throw new SDLException("Failed to set joystick event state.");
     }
     /// Update state information for open joysticks. If event polling is enabled
     /// for joysticks then it is not necessary to call this function.
@@ -122,13 +122,13 @@ struct Joystick{
     /// Get the name of a joystick given its device index.
     static string name(DeviceIndex index){
         auto name = SDL_JoystickNameForIndex(index);
-        if(name is null) throw new SDLError("Failed to get joystick name.");
+        if(name is null) throw new SDLException("Failed to get joystick name.");
         return name.fromcstring;
     }
     /// Get the name of an opened joystick.
     string name(){
         auto name = SDL_JoystickName(this.joy);
-        if(name is null) throw new SDLError("Failed to get joystick name.");
+        if(name is null) throw new SDLException("Failed to get joystick name.");
         return name.fromcstring;
     }
     
@@ -145,20 +145,20 @@ struct Joystick{
     /// Get the instance ID of an open joystick.
     @property ID id(){
         auto id = SDL_JoystickInstanceID(this.joy);
-        if(id < 0) throw new SDLError("Failed to get joystick instance id.");
+        if(id < 0) throw new SDLException("Failed to get joystick instance id.");
         return id;
     }
     /// Get a joystick by its instance ID.
     static typeof(this) byid(ID id){
         auto joy = SDL_JoystickFromInstanceID(id);
-        if(joy is null) throw new SDLError("Failed to get joystick from instance id.");
+        if(joy is null) throw new SDLException("Failed to get joystick from instance id.");
         return typeof(this)(joy);
     }
     
     /// Open a joystick for use given its device index.
     static auto open(DeviceIndex index){
         auto joy = SDL_JoystickOpen(index);
-        if(joy is null) throw new SDLError("Failed to open joystick.");
+        if(joy is null) throw new SDLException("Failed to open joystick.");
         return typeof(this)(joy);
     }
     /// Whether the joystick is open.
@@ -178,25 +178,25 @@ struct Joystick{
     /// Get the number of axes on a joystick.
     @property int axes(){
         auto axes = SDL_JoystickNumAxes(this.joy);
-        if(axes < 0) throw new SDLError("Failed to get number of joystick axes.");
+        if(axes < 0) throw new SDLException("Failed to get number of joystick axes.");
         return axes;
     }
     /// Get the number of buttons on a joystick.
     @property int buttons(){
         auto buttons = SDL_JoystickNumButtons(this.joy);
-        if(buttons < 0) throw new SDLError("Failed to get number of joystick buttons.");
+        if(buttons < 0) throw new SDLException("Failed to get number of joystick buttons.");
         return buttons;
     }
     /// Get the number of hats on a joystick.
     @property int hats(){
         auto hats = SDL_JoystickNumHats(this.joy);
-        if(hats < 0) throw new SDLError("Failed to get number of joystick hats.");
+        if(hats < 0) throw new SDLException("Failed to get number of joystick hats.");
         return hats;
     }
     /// Get the number of trackballs on a joystick.
     @property int balls(){
         auto balls = SDL_JoystickNumBalls(this.joy);
-        if(balls < 0) throw new SDLError("Failed to get number of joystick balls.");
+        if(balls < 0) throw new SDLException("Failed to get number of joystick balls.");
         return balls;
     }
     
@@ -225,7 +225,7 @@ struct Joystick{
     @property Ball ball(int index){
         Ball ball;
         auto result = SDL_JoystickGetBall(this.joy, index, &ball.dx, &ball.dy);
-        if(result != 0) throw new SDLError("Failed to get joystick trackball change.");
+        if(result != 0) throw new SDLException("Failed to get joystick trackball change.");
         ball.index = cast(ball.Index) index;
         return ball;
     }

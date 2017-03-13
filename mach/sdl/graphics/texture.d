@@ -7,7 +7,7 @@ import derelict.opengl3.gl;
 import mach.traits : isNumeric;
 import mach.math.vector : Vector, Vector2;
 import mach.math.box : Box;
-import mach.sdl.error : GLError;
+import mach.sdl.error : GLException;
 import mach.sdl.glenum : TextureTarget, TextureParam;
 import mach.sdl.glenum : PixelsType, PixelsFormat;
 import mach.sdl.glenum : GLPrimitive, VertexType, getvertextype, validvertextype;
@@ -36,7 +36,7 @@ struct Texture{
             this.bind();
             scope(exit){
                 this.unbind();
-                GLError.enforce();
+                GLException.enforce();
             }
         }
     `;

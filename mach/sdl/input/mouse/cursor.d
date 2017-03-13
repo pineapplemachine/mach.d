@@ -6,7 +6,7 @@ import derelict.sdl2.sdl;
 
 import mach.traits : isNumeric;
 import mach.math : isVector2;
-import mach.sdl.error : SDLError;
+import mach.sdl.error : SDLException;
 import mach.sdl.graphics.surface : Surface;
 
 public:
@@ -51,12 +51,12 @@ struct MouseCursor{
     /// https://wiki.libsdl.org/SDL_CreateSystemCursor
     this(System system){
         this.cursor = SDL_CreateSystemCursor(system);
-        if(this.cursor is null) throw new SDLError("Failed to create cursor.");
+        if(this.cursor is null) throw new SDLException("Failed to create cursor.");
     }
     /// https://wiki.libsdl.org/SDL_CreateColorCursor
     this(SDL_Surface* surface, int x = 0, int y = 0){
         this.cursor = SDL_CreateColorCursor(surface, x, y);
-        if(this.cursor is null) throw new SDLError("Failed to create cursor.");
+        if(this.cursor is null) throw new SDLException("Failed to create cursor.");
     }
     this(T)(Surface surface, T vector) if(isVector2!T){
         this(surface, vector.x, vector.y);
@@ -76,13 +76,13 @@ struct MouseCursor{
     /// https://wiki.libsdl.org/SDL_GetDefaultCursor
     @property static typeof(this) defaultcursor(){
         auto cursor = SDL_GetDefaultCursor();
-        if(cursor is null) throw new SDLError("Failed to get default cursor.");
+        if(cursor is null) throw new SDLException("Failed to get default cursor.");
         return typeof(this)(cursor);
     }
     /// https://wiki.libsdl.org/SDL_GetCursor
     @property static typeof(this) current(){
         auto cursor = SDL_GetCursor();
-        if(cursor is null) throw new SDLError("Failed to get active cursor.");
+        if(cursor is null) throw new SDLException("Failed to get active cursor.");
         return typeof(this)(cursor);
     }
     

@@ -5,7 +5,7 @@ private:
 import derelict.util.exception;
 
 import mach.text : text;
-import mach.sdl.error : SDLError;
+import mach.sdl.error : SDLException;
 import mach.sdl.init.sdl.core;
 import mach.sdl.init.sdl.image;
 import mach.sdl.init.sdl.mixer;
@@ -173,32 +173,32 @@ struct SDL{
         /// Attempt to initialize SDL with the given options.
         void initialize() const{
             if(enabledbool(Enable.Yes, loaded.core)){
-                if(!loaded.core) throw new SDLError(
+                if(!loaded.core) throw new SDLException(
                     "Failed to initialize core because it has not been loaded."
                 );
                 Core.initialize(this.coresystems);
             }
             if(enabledbool(this.image, loaded.image)){
-                if(!loaded.image) throw new SDLError(
+                if(!loaded.image) throw new SDLException(
                     "Failed to initialize image library because it has not been loaded."
                 );
                 Image.initialize(this.imageformats);
             }
             if(enabledbool(this.mixer, loaded.mixer)){
-                if(!loaded.mixer) throw new SDLError(
+                if(!loaded.mixer) throw new SDLException(
                     "Failed to initialize mixer library because it has not been loaded."
                 );
                 Mixer.initialize(this.mixerformats);
                 this.audiosettings.open();
             }
             if(enabledbool(this.ttf, loaded.ttf)){
-                if(!loaded.ttf) throw new SDLError(
+                if(!loaded.ttf) throw new SDLException(
                     "Failed to initialize TTF library because it has not been loaded."
                 );
                 TTF.initialize();
             }
             if(enabledbool(this.net, loaded.net)){
-                if(!loaded.net) throw new SDLError(
+                if(!loaded.net) throw new SDLException(
                     "Failed to initialize net library because it has not been loaded."
                 );
                 Net.initialize();

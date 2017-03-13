@@ -3,7 +3,7 @@ module mach.sdl.init.sdl.net;
 private:
 
 import derelict.sdl2.net;
-import mach.sdl.error : SDLError;
+import mach.sdl.error : SDLException;
 
 public:
 
@@ -18,7 +18,7 @@ struct Net{
     /// https://www.libsdl.org/projects/SDL_net/docs/SDL_net_8.html
     static void initialize(){
         scope(exit) initialized = true;
-        if(SDLNet_Init() != 0) throw new SDLError("Failed to initialize network library.");
+        if(SDLNet_Init() != 0) throw new SDLException("Failed to initialize network library.");
     }
     /// https://www.libsdl.org/projects/SDL_net/docs/SDL_net_9.html
     static void quit(){

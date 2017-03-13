@@ -3,7 +3,7 @@ module mach.sdl.init.sdl.core;
 private:
 
 import derelict.sdl2.sdl;
-import mach.sdl.error : SDLError;
+import mach.sdl.error : SDLException;
 import mach.sdl.flags;
 
 public:
@@ -35,7 +35,7 @@ struct Core{
     /// https://wiki.libsdl.org/SDL_InitSubSystem
     static void initialize(Systems systems){
         if(SDL_Init(systems.flags) != 0){
-            throw new SDLError("Failed to initialize system.");
+            throw new SDLException("Failed to initialize system.");
         }
     }
     /// Get which systems have so far been successfully initialized.

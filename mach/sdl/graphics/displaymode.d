@@ -3,7 +3,7 @@ module mach.sdl.graphics.displaymode;
 private:
 
 import derelict.sdl2.sdl;
-import mach.sdl.error : SDLError;
+import mach.sdl.error : SDLException;
 import mach.math : Vector2, Box;
 
 public:
@@ -43,7 +43,7 @@ static struct DisplayMode{
     static DisplayMode desktop(in ubyte display = 0){
         SDL_DisplayMode mode;
         if(SDL_GetDesktopDisplayMode(display, &mode) != 0){
-            throw new SDLError("Failed to retrieve desktop display mode.");
+            throw new SDLException("Failed to retrieve desktop display mode.");
         }
         return DisplayMode(mode);
     }
