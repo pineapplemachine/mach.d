@@ -69,3 +69,8 @@ screen which can be moved using the WASD keys.
 
 An example of a very basic software 3D renderer using matrix transformations
 and 2D rendering calls.
+
+### playmusic
+
+Plays music loaded from an OGG file, and pauses or resumes the music when the
+left mouse button is clicked.
