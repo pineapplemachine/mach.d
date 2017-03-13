@@ -47,8 +47,8 @@ struct RenderContext{
     }
     
     void line(T)(
-        in Vector!(2, T)[] x,
-        in Vector!(2, T)[] y
+        in Vector!(2, T) x,
+        in Vector!(2, T) y
     ){
         this.lines(x, y);
     }
@@ -66,11 +66,11 @@ struct RenderContext{
     }
     
     void triangle(T)(
-        in Vector!(2, T)[] x,
-        in Vector!(2, T)[] y,
-        in Vector!(2, T)[] z
+        in Vector!(2, T) x,
+        in Vector!(2, T) y,
+        in Vector!(2, T) z
     ){
-        this.trangles(x, y, z);
+        this.triangles(x, y, z);
     }
     void triangles(T)(in Vector!(2, T)[] v...){
         this.rendercolor.glset();
@@ -87,6 +87,12 @@ struct RenderContext{
     
     void rect(T)(in T x, in T y, in T width, in T height){
         this.rect(Box!T(x, y).at(x, y));
+    }
+    void rect(T)(
+        in Vector!(2, T) topleft,
+        in Vector!(2, T) bottomright
+    ){
+        this.rect(Box!T(topleft, bottomright));
     }
     void rect(T)(in Box!T box){
         this.rendercolor.glset();
