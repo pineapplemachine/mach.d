@@ -1,32 +1,31 @@
 # Overview
 
-This area is under construction. Please check back later.
-
-https://twitter.com/PineMach/status/772921246912655360  
-https://twitter.com/PineMach/status/810185839951089664
+To see `mach.sdl` in action, take a look at the [examples]
+(https://github.com/pineapplemachine/mach.d/tree/master/examples)
+section of this repository.
 
 ## Functionality
 
 Current:
 
 - [Load and draw images](https://github.com/pineapplemachine/mach.d/tree/master/mach/sdl/graphics)
-- [Keyboard, mouse, and joystick input](https://github.com/pineapplemachine/mach.d/tree/master/mach/sdl/input)
 - [TTF rendering](https://github.com/pineapplemachine/mach.d/tree/master/mach/sdl/graphics/ttf)
+- [Audio playback](https://github.com/pineapplemachine/mach.d/tree/master/mach/sdl/audio)
+- [Keyboard, mouse, and joystick input](https://github.com/pineapplemachine/mach.d/tree/master/mach/sdl/input)
 - [Force feedback](https://github.com/pineapplemachine/mach.d/tree/master/mach/sdl/haptic)
 
 Partially Complete:
 
 - Input helpers for smoother input checking
+- Cleaner interface for primitive rendering
 
 Planned:
 
-- Audio playback using SDL_mixer
 - Spritesheets and other forms of animation
-- Cleaner interface for primitive rendering
 - Bitmap font rendering
-- OpenAL wrapper
+- OpenAL audio support
 - Save images
-- GUI framework
+- GUI widgets
 - Networking via SDL_net
 
 ## Dependencies

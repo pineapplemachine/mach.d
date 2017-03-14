@@ -51,6 +51,8 @@ struct Mixer{
     }
     
     static struct Audio{
+        /// Represents a number of sound channels in output.
+        /// This is unrelated to mixing channels.
         /// https://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer_11.html
         static enum Channels : int {
             Default = MIX_DEFAULT_CHANNELS,

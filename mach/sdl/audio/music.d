@@ -5,8 +5,10 @@ private:
 import derelict.sdl2.mixer;
 import derelict.sdl2.types;
 
+import mach.math.clamp : clamp;
 import mach.text.cstring : tocstring, fromcstring;
 import mach.sdl.error : SDLException;
+import mach.sdl.audio.fading : AudioFading;
 
 /++ Docs
 
@@ -26,6 +28,7 @@ public:
 /// Load and play music audio files.
 /// https://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer_52.html#SEC52
 struct Music{
+    alias Fading = AudioFading;
     static enum Type: Mix_MusicType{
         None = MUS_NONE, /// Indicates that music was not loaded, or wasn't playing.
         CMD = MUS_CMD, /// Music is played via an external command.
@@ -37,11 +40,6 @@ struct Music{
         MP3MAD = MUS_MP3_MAD, /// TODO: What is this?
         FLAC = MUS_FLAC, /// Music was loaded from a flac file.
         MODPlug = MUS_MODPLUG, /// Music was loaded from a MODPlug file.
-    }
-    static enum Fading: Mix_Fading{
-        None = MIX_NO_FADING,
-        In = MIX_FADING_OUT,
-        Out = MIX_FADING_IN,
     }
     
     alias HookCallback = extern(C) void function();
@@ -81,9 +79,9 @@ struct Music{
     /// defaults to zero milliseconds.
     /// May throw an SDLException if the audio failed to start.
     /// https://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer_58.html#SEC58
-    auto play(in int fadeinms = 0, in int repeat = -1){
+    auto play(in int fadems = 0, in int repeat = -1){
         assert(this.music !is null);
-        auto result = Mix_FadeInMusic(this.music, repeat, fadeinms);
+        auto result = Mix_FadeInMusic(this.music, repeat, fadems);
         if(result == -1) throw new SDLException("Failed to play music.");
     }
     
@@ -99,8 +97,9 @@ struct Music{
     /// music player is being used.
     /// If it's important to detect and handle such an error, check whether the
     /// result of `SDLException.errortext` is non-null after a call to this.
+    /// https://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer_61.html#SEC61
     static @property void volume(in double volume){
-        Mix_VolumeMusic(cast(int)(volume * MIX_MAX_VOLUME));
+        Mix_VolumeMusic(cast(int)(clamp(volume, 0, 1) * MIX_MAX_VOLUME));
     }
     
     /// Get the encoding type of some loaded music.
@@ -154,7 +153,7 @@ struct Music{
         return cast(Fading) Mix_FadingMusic();
     }
     
-    /// Immediately stop the currently-playing music.
+    /// Immediately halt the currently-playing music.
     /// https://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer_67.html#SEC67
     static void stop(){
         Mix_HaltMusic();
@@ -162,17 +161,17 @@ struct Music{
     /// Fade out the currently-playing music, becoming silent and stopping
     /// some given number of milliseconds from the call.
     /// https://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer_68.html#SEC68
-    static void fadeout(in int fadeoutms){
-        auto result = Mix_FadeOutMusic(fadeoutms);
+    static void fadeout(in int fadems){
+        auto result = Mix_FadeOutMusic(fadems);
         if(result == 0) throw new SDLException("Failed to fade out music.");
     }
     
     /// https://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer_69.html#SEC69
-    static @property void hook(HookCallback callback){
+    static @property void onfinished(HookCallback callback){
         Mix_HookMusicFinished(callback);
     }
     /// https://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer_74.html#SEC74
-    static @property auto hook(){
+    static @property auto onfinished(){
         return cast(HookCallback) Mix_GetMusicHookData();
     }
 }
