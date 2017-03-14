@@ -74,3 +74,8 @@ and 2D rendering calls.
 
 Plays music loaded from an OGG file, and pauses or resumes the music when the
 left mouse button is clicked.
+
+### playsamples
+
+Plays audio samples loaded from WAV files when the left and right mouse buttons
+are pressed.
