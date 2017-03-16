@@ -34,20 +34,34 @@ class Window{
     static enum Style FullscreenStyles = StyleFlag.Fullscreen | StyleFlag.Desktop;
     
     static enum StyleFlag : uint {
-        Default = Shown, /// Default is Shown
-        Fullscreen = SDL_WINDOW_FULLSCREEN, /// Window is fullscreen
-        Desktop = SDL_WINDOW_FULLSCREEN_DESKTOP,    /// Window has Desktop Fullscreen
-        Shown = SDL_WINDOW_SHOWN,   /// Show the Window immediately
-        Hidden = SDL_WINDOW_HIDDEN, /// Hide the Window immediately
-        Borderless = SDL_WINDOW_BORDERLESS, /// The Window has no border
-        Resizeable = SDL_WINDOW_RESIZABLE,  /// Window is resizeable
-        Maximized = SDL_WINDOW_MAXIMIZED,   /// Maximize the Window immediately
-        Minimized = SDL_WINDOW_MINIMIZED,   /// Minimize the Window immediately
-        InputGrabbed = SDL_WINDOW_INPUT_GRABBED,    /// Grab the input inside the window
-        InputFocus = SDL_WINDOW_INPUT_FOCUS,    /// The Window has input (keyboard) focus
-        MouseFocus = SDL_WINDOW_MOUSE_FOCUS,    /// The Window has mouse focus
-        MouseCapture = SDL_WINDOW_MOUSE_CAPTURE, /// window has mouse captured (unrelated to InputGrabbed)
-        AllowHighDPI = SDL_WINDOW_ALLOW_HIGHDPI, /// Window should be created in high-DPI mode if supported
+        /// Default is Shown
+        Default = Shown,
+        /// Window is fullscreen
+        Fullscreen = SDL_WINDOW_FULLSCREEN,
+        /// Window has Desktop Fullscreen
+        Desktop = SDL_WINDOW_FULLSCREEN_DESKTOP,
+        /// Show the Window immediately
+        Shown = SDL_WINDOW_SHOWN,
+        /// Hide the Window immediately
+        Hidden = SDL_WINDOW_HIDDEN,
+        /// The Window has no border
+        Borderless = SDL_WINDOW_BORDERLESS,
+        /// Window is resizable
+        Resizable = SDL_WINDOW_RESIZABLE,
+        /// Maximize the Window immediately
+        Maximized = SDL_WINDOW_MAXIMIZED,
+        /// Minimize the Window immediately
+        Minimized = SDL_WINDOW_MINIMIZED,
+        /// Grab the input inside the window
+        InputGrabbed = SDL_WINDOW_INPUT_GRABBED,
+        /// The Window has input (keyboard) focus
+        InputFocus = SDL_WINDOW_INPUT_FOCUS,
+        /// The Window has mouse focus
+        MouseFocus = SDL_WINDOW_MOUSE_FOCUS,
+        /// window has mouse captured (unrelated to InputGrabbed)
+        MouseCapture = SDL_WINDOW_MOUSE_CAPTURE,
+        /// Window should be created in high-DPI mode if supported
+        AllowHighDPI = SDL_WINDOW_ALLOW_HIGHDPI,
     }
     
     static enum VSync : byte {
@@ -342,35 +356,6 @@ class Window{
         SDL_SetWindowBordered(this.window, enabled ? SDL_TRUE : SDL_FALSE);
     }
     
-    static string VectorPropertyMixin(string name, string SDLgetter, string SDLsetter){
-        return `
-            @property Vector2!int ` ~ name ~ `(){
-                int x, y;
-                ` ~ SDLgetter ~ `(this.window, &x, &y);
-                return Vector2!int(x, y);
-            }
-            @property void ` ~ name ~ `(in Vector2!int vector){
-                this.set` ~ name ~ `(vector.x, vector.y);
-            }
-            void set` ~ name ~ `(in int x, in int y){
-                ` ~ SDLsetter ~ `(this.window, x, y);
-            }
-        `;
-    }
-    
-    mixin(VectorPropertyMixin(
-        "size", "SDL_GetWindowSize", "SDL_SetWindowSize"
-    ));
-    mixin(VectorPropertyMixin(
-        "minsize", "SDL_GetWindowMinimumSize", "SDL_SetWindowMinimumSize"
-    ));
-    mixin(VectorPropertyMixin(
-        "maxsize", "SDL_GetWindowMaximumSize", "SDL_SetWindowMaximumSize"
-    ));
-    mixin(VectorPropertyMixin(
-        "position", "SDL_GetWindowPosition", "SDL_SetWindowPosition"
-    ));
-    
     @property int width(){
         int width;
         SDL_GetWindowSize(this.window, &width, cast(int*) null);
@@ -391,6 +376,42 @@ class Window{
         int y;
         SDL_GetWindowPosition(this.window, cast(int*) null, &y);
         return y;
+    }
+    
+    @property auto position(){
+        int x, y;
+        SDL_GetWindowPosition(this.window, &x, &y);
+        return Vector2!int(x, y);
+    }
+    @property void position(T)(in Vector!(2, T) position){
+        SDL_SetWindowPosition(this.window, cast(int) position.x, cast(int) position.y);
+    }
+    
+    @property auto size(){
+        int x, y;
+        SDL_GetWindowSize(this.window, &x, &y);
+        return Vector2!int(x, y);
+    }
+    @property void size(T)(in Vector!(2, T) size){
+        SDL_SetWindowSize(this.window, cast(int) size.x, cast(int) size.y);
+        this.projection(Box!int(size.x, size.y));
+    }
+    
+    @property auto minsize(){
+        int x, y;
+        SDL_GetWindowMinimumSize(this.window, &x, &y);
+        return Vector2!int(x, y);
+    }
+    @property void minsize(T)(in Vector!(2, T) size){
+        SDL_SetWindowMinimumSize(this.window, cast(int) size.x, cast(int) size.y);
+    }
+   @property auto maxsize(){
+        int x, y;
+        SDL_GetWindowMaximumSize(this.window, &x, &y);
+        return Vector2!int(x, y);
+    }
+    @property void maxsize(T)(in Vector!(2, T) size){
+        SDL_SetWindowMaximumSize(this.window, cast(int) size.x, cast(int) size.y);
     }
     
     @property void dimensions(in Box!int box){
