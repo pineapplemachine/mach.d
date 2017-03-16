@@ -486,7 +486,11 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     /// Epsilon is evaluated per-component.
     bool equals(X, E)(in Vector!(size, X) vec, in E epsilon) const if(isNumeric!E){
         assert(epsilon >= 0, "Epsilon must be non-negative.");
-        return (this - vec).values.varall!(x => x >= -epsilon && x <= epsilon);
+        foreach(i, _; Values){
+            immutable delta = this[i] - vec[i];
+            if(delta < -epsilon || delta > epsilon) return false;
+        }
+        return true;
     }
     /// Ditto
     bool equals(X)(in Vector!(size, X) vec) const{
