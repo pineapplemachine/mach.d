@@ -65,6 +65,11 @@ finds and prints the paths of all the D source files contained in them.
 Initializes a window using `mach.sdl` and draws an image to the
 screen which can be moved using the WASD keys.
 
+### resizewindow
+
+Creates a resizable window which renders as text its current resolution,
+updating when the window is resized.
+
 ### wireframe
 
 An example of a very basic software 3D renderer using matrix transformations
