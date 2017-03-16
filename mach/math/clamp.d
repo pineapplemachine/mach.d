@@ -25,7 +25,7 @@ public:
 
 
 
-auto clamp(T)(in T value, in T min, in T max) if(isNumeric!T){
+auto clamp(T)(in T value, in T min, in T max){
     if(value < min) return min;
     if(value > max) return max;
     return value;

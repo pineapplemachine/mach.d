@@ -3,6 +3,7 @@ module mach.sdl.application;
 private:
 
 import mach.traits : isNumeric;
+import mach.math : vector;
 import mach.error : ThrowableMixin;
 import mach.sdl.init : SDL, GL;
 import mach.sdl.window : Window;
@@ -85,12 +86,12 @@ abstract class Application{
         this.window.clear();
     }
     /// ditto
-    void clear(T)(in Color!T color) in{assert(this.window);}body{
+    void clear(in Color color) in{assert(this.window);}body{
         this.window.clear(color);
     }
     /// ditto
     void clear(T)(in T r, in T g, in T b, in T a = 1) if(isNumeric!T) in{
-        assert(this.window);
+        assert(this.window !is null);
     }body{
         this.window.clear(r, g, b, a);
     }
@@ -121,6 +122,10 @@ abstract class Application{
     /// present in the queue.
     /// By default, does nothing.
     void onnoevent(){}
+    /// Called after the application and its window and rendering context have
+    /// been initialized.
+    /// By default, does nothing.
+    void postinitialize(){}
     
     /// Call this method when an unhandled error occurs in the application's
     /// main loop.
@@ -147,8 +152,6 @@ abstract class Application{
     void onexposed(Event event){}
     /// Call this method when the window is moved.
     void onmove(Event event){}
-    /// Call this method when the window is resized.
-    void onresize(Event event){}
     /// Call this method when the window size is changed.
     void onsizechange(Event event){}
     /// Call this method when the window is maximized.
@@ -174,6 +177,12 @@ abstract class Application{
     /// Call this method when a file is dropped on the window.
     void ondropfile(Event event){}
     
+    /// Call this method when the window is resized.
+    /// The default implementation updates the window's projection.
+    void onresize(Event event){
+        this.window.projection = this.window.size;
+    }
+    
     /// Entry point for the application.
     /// Returns the reason for having quit.
     auto begin(){
@@ -184,7 +193,7 @@ abstract class Application{
     }
     
     /// Loads and initializes SDL and OpenGL, and makes a window.
-    /// Also calls the subclass' initialize method.
+    /// Also calls the subclass' initialize and postinitialize methods.
     void metainitialize(){
         GL.load();
         SDL.load();
@@ -195,6 +204,7 @@ abstract class Application{
         }
         this.window.raise();
         GL.initialize();
+        this.postinitialize();
     }
     /// Quits and unloads SDL and OpenGL.
     /// Also calls the subclass' conclude method.

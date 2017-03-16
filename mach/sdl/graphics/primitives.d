@@ -1,4 +1,4 @@
-module mach.sdl.graphics.primitives;
+deprecated module mach.sdl.graphics.primitives;
 
 private:
 

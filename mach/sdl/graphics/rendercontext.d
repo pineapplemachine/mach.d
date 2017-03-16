@@ -17,20 +17,20 @@ public:
 
 
 
-struct RenderContext{
-    Color!float rendercolor;
+deprecated struct RenderContext{
+    Color rendercolor;
     // TODO: Offset, viewport
     
-    this(C)(Color!C color){
-        this.rendercolor = cast(Color!float) color;
+    this(Color color){
+        this.rendercolor = color;
         this.rendercolor.glset();
     }
     
-    @property auto color(T = float)() const{
-        return cast(Color!T) this.rendercolor;
+    @property auto color() const{
+        return this.rendercolor;
     }
-    @property void color(T)(in Color!T color){
-        this.rendercolor = cast(typeof(this.rendercolor)) color;
+    @property void color(in Color color){
+        this.rendercolor = color;
         this.rendercolor.glset();
     }
     

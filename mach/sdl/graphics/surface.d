@@ -7,7 +7,7 @@ import derelict.sdl2.image;
 
 import mach.text.cstring : tocstring;
 import mach.math.box : Box;
-import mach.math.vector : Vector2;
+import mach.math.vector : Vector, Vector2;
 import mach.sdl.error : SDLException;
 import mach.sdl.init.sdl : SDL;
 import mach.sdl.graphics.color : Color;
@@ -207,7 +207,7 @@ struct Surface{
         SDL_Rect rect = this.boundsrect();
         this.fill(&rect, color);
     }
-    void fill(T)(in Color!T color){
+    void fill(in Color color){
         SDL_Rect rect = this.boundsrect();
         this.fill(&rect, color.format(this.surface.format));
     }
@@ -219,7 +219,7 @@ struct Surface{
         SDL_Rect rect = box.toSDLrect();
         this.fill(&rect, color);
     }
-    void fill(T)(in Box!int box, in Color!T color){
+    void fill(in Box!int box, in Color color){
         SDL_Rect rect = box.toSDLrect();
         this.fill(&rect, color.format(this.surface.format));
     }
@@ -404,33 +404,33 @@ struct Surface{
     void putpixelvalue()(in int x, in int y, in uint value){
         this.putpixelatptr(this.surface.format.BytesPerPixel, this.pixelptr(x, y), value);
     }
-    Color!T getpixel(T = ubyte)(in int x, in int y) const{
-        return Color!T(this.getpixelvalue(x, y), this.surface.format);
+    auto getpixel(in int x, in int y) const{
+        return Color(this.getpixelvalue(x, y), this.surface.format);
     }
-    void putpixel(T)(in int x, in int y, in Color!T color){
+    void putpixel(in int x, in int y, in Color color){
         this.putpixelvalue(x, y, color.format(this.surface.format));
     }
     
     Surface opIndex(T)(in Box!T box){
         return this.sub(cast(Box!int) box);
     }
-    Color!ubyte opIndex(in int x, in int y){
-        return this.getpixel!ubyte(x, y);
+    Color opIndex(in int x, in int y){
+        return this.getpixel(x, y);
     }
-    Color!ubyte opIndex(T)(in Vector2!T vector){
-        return this.getpixel!ubyte(cast(int) vector.x, cast(int) vector.y);
+    Color opIndex(T)(in Vector2!T vector){
+        return this.getpixel(cast(int) vector.x, cast(int) vector.y);
     }
     
-    void opIndexAssign(T)(in Color!T color, in int x, in int y){
+    void opIndexAssign(in Color color, in int x, in int y){
         this.putpixel(x, y, color);
     }
-    void opIndexAssign(T1, T2)(in Color!T1 color, in Vector2!T2 vector){
+    void opIndexAssign(T)(in Color color, in Vector!(2, T) vector){
         this.putpixel(cast(int) vector.x, cast(int) vector.y, color);
     }
     void opIndexAssign(in uint value, in int x, in int y){
         this.putpixelvalue(x, y, value);
     }
-    void opIndexAssign(T)(in uint value, in Vector2!T vector){
+    void opIndexAssign(T)(in uint value, in Vector!(2, T) vector){
         this.putpixelvalue(cast(int) vector.x, cast(int) vector.y, value);
     }
     
@@ -442,9 +442,8 @@ struct Surface{
 
 
 
-version(unittest){
-    private:
-    import mach.test;
+private version(unittest){
+    // TODO
 }
 unittest{
     
@@ -453,13 +452,13 @@ unittest{
     DerelictSDL2.load(); // Not necessary to fully initialize SDL for this test
     
     Surface surface = Surface(10, 10);
-    surface.fill(Color!float(1, 0, 0));
+    surface.fill(Color(1, 0, 0));
     foreach(x; 0 .. surface.width){
         foreach(y; 0 .. surface.height){
             testeq(surface[x, y], Color!ubyte(255, 0, 0));
         }
     }
-    surface[2, 2] = Color!float(0, 1, 1, 0.5);
+    surface[2, 2] = Color(0, 1, 1, 0.5);
     testeq(surface[2, 2], Color!ubyte(0, 255, 255, 128));
     +/
 }

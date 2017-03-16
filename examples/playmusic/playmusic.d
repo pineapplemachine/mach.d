@@ -27,17 +27,16 @@ class PlayMusic: Application{
         // Draw a white triangle when music is playing, and a red square when
         // the music is paused.
         clear();
-        RenderContext context;
         if(music.playing){
-            context.color = Color!float.White;
-            context.triangle(
+            Render.color = Color.White;
+            Render.triangle(
                 Vector2i(window.width - 50, window.height / 2),
                 Vector2i(50, window.height - 50),
                 Vector2i(50, 50),
             );
         }else{
-            context.color = Color!float.Red;
-            context.rect(
+            Render.color = Color.Red;
+            Render.rect(
                 Vector2i(75, 75),
                 Vector2i(window.width - 75, window.height - 75)
             );

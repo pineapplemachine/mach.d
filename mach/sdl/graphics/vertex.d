@@ -18,16 +18,16 @@ struct Vertex(Pos = float, Tex = float, Col = float) if(
 ){
     Vector2!Pos position;
     Vector2!Tex texcoord;
-    Color!Col color;
+    Color color;
     
-    this(A = Pos, B = Tex, C = Col)(
+    this(A = Pos, B = Tex)(
         Vector!(2, A) position = Vector2!A.zero,
         Vector!(2, B) texcoord = Vector2!B.zero,
-        Color!C color = Color!C.White
+        Color color = Color.White
     ){
         this.position = cast(Vector2!Pos) position;
         this.texcoord = cast(Vector2!Tex) texcoord;
-        this.color = cast(Color!Col) color;
+        this.color = color;
     }
     
     string toString() const{
@@ -50,31 +50,31 @@ struct Vertexes(Pos = float, Tex = float, Col = float) if(
         this.verts = verts;
     }
     
-    static Verts rect(A, B = Col)(
+    static Verts rect(A)(
         in Box!A target,
-        in Color!B color = Color!B.White
+        in Color color = Color.White
     ){
         return Verts.rect(target.topleft, target.size, color);
     }
-    static Verts rect(A, B, C = Tex, D = Col)(
+    static Verts rect(A, B, C = Tex)(
         in Vector!(2, A) position,
         in Vector!(2, B) size,
-        in Color!D color = Color!D.White
+        in Color color = Color.White
     ){
         return Verts.rect(position, size, Vector2!Tex.zero, color);
     }
-    static Verts rect(A, B, C = Col)(
+    static Verts rect(A, B)(
         in Vector!(2, A) position,
         in Vector!(2, B) size,
-        in Color!C color = Color!C.White
+        in Color color = Color.White
     ){
         return Verts.rect(position, size, Box!Tex(1, 1), color);
     }
-    static Verts rect(A, B, C, D = Col)(
+    static Verts rect(A, B, C)(
         in Vector!(2, A) position, // Position on screen
         in Vector!(2, B) size, // Render target size
         in Box!C texsub, // Portion of texture to render (values should generally be 0-1)
-        in Color!D color = Color!D.White // Channel multipliers
+        in Color color = Color.White // Channel multipliers
     ){
         return Verts([
             Vert(

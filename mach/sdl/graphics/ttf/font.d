@@ -38,6 +38,8 @@ struct Font{
         Blended, /// Drawn expensively, with blended edges
     }
     
+    @disable this(this);
+    
     TTF_Font* font;
     
     this(TTF_Font* font){
@@ -50,13 +52,18 @@ struct Font{
         );
     }
     
+    ~this(){
+        if(this.font !is null) this.free();
+    }
+    
     /// https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_16.html
     static typeof(this) open(string path, int size, c_long index = 0){
         return typeof(this)(path, size, index);
     }
     /// https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_18.html
-    void close(){
+    void free(){
         TTF_CloseFont(this.font);
+        this.font = null;
     }
     
     /// Get font style.
@@ -191,7 +198,7 @@ struct Font{
     /// Returns a surface with the given text cheaply drawn onto it.
     /// The background of the surface will be transparent.
     /// https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_44.html
-    auto rendertextsolid(C)(C foreground, in string text) if(isColor!C) in{
+    auto rendersolid(Color foreground, in string text) in{
         assert(this.font !is null);
         assert(text !is null, "Can't render null string.");
     }body{
@@ -204,9 +211,7 @@ struct Font{
     /// Returns a surface with the given text drawn onto it.
     /// The background will be of the given color.
     /// https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_48.html
-    auto rendertextshaded(C0, C1)(C0 foreground, C1 background, in string text) if(
-        isColor!C0 && isColor!C1
-    )in{
+    auto rendershaded(Color foreground, Color background, in string text) in{
         assert(this.font !is null);
         assert(text !is null, "Can't render null string.");
     }body{
@@ -220,7 +225,7 @@ struct Font{
     /// Returns a surface with the given text expensively drawn onto it.
     /// The background of the surface will be transparent.
     /// https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_52.html
-    auto rendertextblended(C)(C foreground, in string text) if(isColor!C) in{
+    auto renderblended(Color foreground, in string text) in{
         assert(this.font !is null);
         assert(text !is null, "Can't render null string.");
     }body{
@@ -233,15 +238,15 @@ struct Font{
     
     /// Returns a surface with the given text drawn onto it.
     /// The background of the surface will be transparent.
-    auto surface(C)(C foreground, string text, RenderMode mode = RenderMode.Solid) if(isColor!C){
+    auto surface(Color foreground, string text, RenderMode mode = RenderMode.Solid){
         final switch(mode){
-            case RenderMode.Solid: return this.rendertextsolid(foreground, text);
-            case RenderMode.Blended: return this.rendertextblended(foreground, text);
+            case RenderMode.Solid: return this.rendersolid(foreground, text);
+            case RenderMode.Blended: return this.renderblended(foreground, text);
         }
     }
     
     /// Returns a texture with the given text drawn onto it.
-    auto texture(C)(C foreground, string text, RenderMode mode = RenderMode.Solid) if(isColor!C){
+    auto texture(Color foreground, string text, RenderMode mode = RenderMode.Solid){
         return Texture(this.surface(foreground, text, mode));
     }
 }

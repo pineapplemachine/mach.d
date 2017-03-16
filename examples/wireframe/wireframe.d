@@ -92,24 +92,23 @@ class Wireframe: Application{
         ) * yaw);
         
         // Draw background particles.
-        RenderContext context;
         foreach(particle; particles){
             auto screen = this.transform(view, particle);
             if(screen.front){
-                context.color = Color!float.White / (particle.distance(camerapos) * 0.03);
-                if(context.color.r > background) context.points(screen.vector);
+                Render.color = Color.White / (particle.distance(camerapos) * 0.03);
+                if(Render.color.r > background) Render.point(screen.vector);
             }
         }
         
         // Draw lines.
         size_t i = 0;
-        context.color = Color!float.Cyan;
+        Render.color = Color.Cyan;
         foreach(point; points){
             auto screen = this.transform(view, point);
             if(screen.front) screenpoints[i++] = screen.vector;
         }
         if(i > 1){
-            context.lineloop(screenpoints[0..i]);
+            Render.lineloop(screenpoints[0..i]);
         }
         
         // Display changes on the render target.
