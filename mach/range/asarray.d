@@ -172,7 +172,7 @@ auto asarray(Element, bool enforce = false, Iter)(auto ref Iter iter, size_t max
                 );
                 else break;
             }
-            array ~= item;
+            array ~= cast(Element) item;
         }
         return array;
     }
@@ -216,7 +216,7 @@ auto asknownlengtharray(Element, Iter)(auto ref Iter iter, size_t length) if(
         assert(array.length < length,
             text("Iterable is longer than assumed length ", length, ".")
         );
-        array ~= item;
+        array ~= cast(Element) item;
     }
     assert(array.length == length,
         text("Iterable is shorter than assumed length ", length, ".")
