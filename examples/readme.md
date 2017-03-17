@@ -84,3 +84,8 @@ left mouse button is clicked.
 
 Plays audio samples loaded from WAV files when the left and right mouse buttons
 are pressed.
+
+### fragshader
+
+An example of using an OpenGL fragment shader with mach. A shader loaded from an
+external GLSL file is used to draw to the displayed window.
