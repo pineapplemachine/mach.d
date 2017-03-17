@@ -289,6 +289,31 @@ template canMatrix(T...){
 
 
 
+/// Determine whether some type is a Matrix of any dimensionality and
+/// component type.
+template isMatrix(T){
+    enum bool isMatrix = false;
+}
+/// Ditto
+template isMatrix(T: Matrix!(width, height, X), size_t width, size_t height, X){
+    enum bool isMatrix = true;
+}
+/// Determine whether some type is a Vector of the given width and height and
+/// of any component type.
+template isMatrix(size_t size, T){
+    enum bool isMatrix = isMatrix!(size, size, T);
+}
+/// Ditto
+template isMatrix(size_t width, size_t height, T){
+    static if(isMatrix!T){
+        enum bool isMatrix = T.width == width && T.height == height;
+    }else{
+        enum bool isMatrix = false;
+    }
+}
+
+
+
 /// Get a matrix using vectors to represent its columns.
 auto matrixcols(V...)(in V vectors) if(All!(isVector, V) && V.length > 0){
     foreach(i, _; V[0 .. $ - 1]) static assert(V[i].size == V[i + 1].size,
@@ -1240,6 +1265,31 @@ private version(unittest){
     import mach.error.mustthrow : mustthrow;
     // Sequence of types that a Matrix can legally be made from.
     alias Types = Aliases!(byte, short, int, long, float, double, real);
+}
+
+unittest{ /// isMatrix template
+    static assert(isMatrix!(Matrix2f));
+    static assert(isMatrix!(Matrix2i));
+    static assert(isMatrix!(Matrix3f));
+    static assert(isMatrix!(Matrix3i));
+    static assert(isMatrix!(Matrix4f));
+    static assert(isMatrix!(Matrix4i));
+    static assert(isMatrix!(Matrix!(1, 2, int)));
+    static assert(isMatrix!(2, Matrix2i));
+    static assert(isMatrix!(3, Matrix3i));
+    static assert(isMatrix!(4, Matrix4i));
+    static assert(isMatrix!(2, 2, Matrix2i));
+    static assert(isMatrix!(3, 4, Matrix!(3, 4, int)));
+    static assert(!isMatrix!(int));
+    static assert(!isMatrix!(void));
+    static assert(!isMatrix!(Vector!(2, int)));
+    static assert(!isMatrix!(2, int));
+    static assert(!isMatrix!(2, void));
+    static assert(!isMatrix!(2, Matrix3i));
+    static assert(!isMatrix!(2, Matrix!(1, 2, int)));
+    static assert(!isMatrix!(2, Matrix!(2, 1, int)));
+    static assert(!isMatrix!(2, 2, Matrix3i));
+    static assert(!isMatrix!(3, 4, Matrix!(4, 3, int)));
 }
 
 unittest{ /// Initialization and equality
