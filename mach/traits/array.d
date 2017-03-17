@@ -61,6 +61,15 @@ template isArrayOf(E, T){
     }));
 }
 
+/// Determine whether some type is an array of a type satisfying a predicate.
+template isArrayOf(alias pred, T){
+    static if(isArray!T){
+        enum bool isArrayOf = pred!(typeof(T.init[0]));
+    }else{
+        enum bool isArrayOf = false;
+    }
+}
+
 
 
 /// Determine if a type is a static array.
@@ -104,6 +113,12 @@ unittest{
     static assert(!isArrayOf!(int, double[]));
     static assert(!isArrayOf!(int[], int));
     static assert(!isArrayOf!(int, int[][]));
+}
+unittest{
+    static assert(isArrayOf!(isArray, int[][]));
+    static assert(!isArrayOf!(isArray, int[]));
+    static assert(!isArrayOf!(isArray, int));
+    static assert(!isArrayOf!(isArray, void));
 }
 unittest{
     static assert(isStaticArray!(int[0]));
