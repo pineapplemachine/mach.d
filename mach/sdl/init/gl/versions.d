@@ -22,7 +22,7 @@ class GLVersionException: GLException{
             text(
                 "Incompatible OpenGL version ", GLVersions.name(userversion), ". ",
                 "At least ", GLVersions.name(requiredversion), " is required."
-            ), line, file
+            ), null, line, file
         );
     }
 }

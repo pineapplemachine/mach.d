@@ -14,7 +14,7 @@ public:
 
 class GLAttributeException: GLException{
     this(string message, string file = __FILE__, size_t line = __LINE__){
-        super("Failed to set OpenGL attribute: " ~ message, line, file);
+        super("Failed to set OpenGL attribute: " ~ message, null, line, file);
     }
 }
 

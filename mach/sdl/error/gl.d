@@ -27,7 +27,7 @@ class GLException: Exception{
     
     ErrorCode[] errors;
     
-    this(size_t line = __LINE__, string file = __FILE__){
+    nothrow this(size_t line = __LINE__, string file = __FILE__){
         this(geterrors(), line, file);
     }
     nothrow this(ErrorCode error, size_t line = __LINE__, string file = __FILE__){
@@ -35,11 +35,14 @@ class GLException: Exception{
     }
     nothrow this(ErrorCode[] errors, size_t line = __LINE__, string file = __FILE__){
         this.errors = errors;
-        super(errorstring(errors), file, line, next);
+        super(errorstring(errors), file, line, null);
     }
-    nothrow this(string message, size_t line = __LINE__, string file = __FILE__){
-        this.errors = null;
-        super(message, file, line, next);
+    nothrow this(string message, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        this(message, geterrors(), next, line, file);
+    }
+    nothrow this(string message, ErrorCode[] errors, Throwable next = null, size_t line = __LINE__, string file = __FILE__){
+        this.errors = errors;
+        super(errors.length ? message ~ " " ~ errorstring(errors) : message, file, line, next);
     }
     
     /// Get a list of errors which have occurred and so far gone unhandled.
@@ -99,5 +102,10 @@ class GLException: Exception{
     static void enforce(size_t line = __LINE__, string file = __FILE__){
         ErrorCode[] errors = geterrors();
         if(errors.length) throw new GLException(errors, line, file);
+    }
+    /// Ditto
+    static void enforce(string message, size_t line = __LINE__, string file = __FILE__){
+        ErrorCode[] errors = geterrors();
+        if(errors.length) throw new GLException(message, errors, null, line, file);
     }
 }
