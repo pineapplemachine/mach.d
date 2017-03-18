@@ -41,9 +41,6 @@ struct Texture{
         }
     `;
     
-    /// Necessary to keep ownership of texture names sane.
-    @disable this(this);
-    
     /// Load a texture from a path.
     this(in string path, in bool mipmap = false){
         auto surface = Surface(path);
@@ -82,32 +79,9 @@ struct Texture{
         if(mipmap) this.mipmap!false();
     }
     
-    /// Free the texture when it's no longer needed.
-    ~this(){
-        this.free();
-    }
-    
     /// Immediately free the texture data, if it hasn't already been freed.
     void free(){
-        if(this.name != 0){
-            this.freenames(this.name);
-        }
-    }
-    /// Free many textures at once.
-    /// Resets the `name` attribute of the inputted textures to 0 to indicate
-    /// that they have been freed.
-    static void freemany(Texture*[] textures...){
-        Name[] names;
-        names.reserve(textures.length);
-        foreach(Texture* tex; textures){
-            names ~= tex.name;
-            tex.name = 0;
-        }
-        typeof(this).freenames(names);
-    }
-    /// Free some textures by name.
-    static void freenames(in Name[] names...){
-        if(names.length > 0) glDeleteTextures(cast(int) names.length, names.ptr);
+        glDeleteTextures(1, &this.name);
     }
     
     /// Bind this texture; subsequent OpenGL calls will apply to this texture name.

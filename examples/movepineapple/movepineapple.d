@@ -23,7 +23,7 @@ class Pineapple: Application{
     
     // This happens when the program quits.
     override void conclude(){
-        // Free the texture from memory, now that we're done with it.
+        // Free the texture from memory, now that it's no longer needed.
         pineapple.free();
     }
     

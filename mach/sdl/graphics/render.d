@@ -243,13 +243,13 @@ struct Render{
     /// Draw a texture tinted the current rendering settings.
     /// Drawing the texture independently with its own draw call will not
     /// respect the rendering settings.
-    static void texture(T)(Texture* texture, in Vector!(2, T) pos) const{
+    static void texture(T)(Texture texture, in Vector!(2, T) pos) const{
         this.texture(texture, pos.x, pos.y);
     }
-    static void texture(T)(Texture* texture, in T x, in T y) const if(isNumeric!T){
+    static void texture(T)(Texture texture, in T x, in T y) const if(isNumeric!T){
         this.texture(texture, Box!T(x, y, x + texture.width, y + texture.height));
     }
-    static void texture(T)(Texture* texture, in Box!T target) const{
+    static void texture(T)(Texture texture, in Box!T target) const{
         texture.draw(Vertexesf.rect(
             target.topleft, target.size,
             Box!double(0, 0, 1, 1),
