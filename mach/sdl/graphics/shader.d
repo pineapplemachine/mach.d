@@ -14,6 +14,7 @@ import mach.range.asarray : asarray;
 import mach.io.file.path : Path;
 
 import mach.sdl.error : GLException;
+import mach.sdl.graphics.texture : Texture;
 
 public:
 
@@ -53,20 +54,17 @@ struct GLProgram{
         }
     }
     
-    @disable this(this);
-    
     GLuint program;
     
+    this(GLuint program){
+        this.program = program;
+    }
     /// Create a new program with the given shaders attached to it, and then
     /// link the program.
-    this(GLShader*[] shaders...){
+    this(GLShader[] shaders...){
         this.initialize();
         foreach(shader; shaders) this.add(shader);
         this.link();
-    }
-    
-    ~this(){
-        if(this.program != 0) this.free();
     }
     
     /// Create a new, empty program.
@@ -109,13 +107,14 @@ struct GLProgram{
     }
     
     /// Get attached shaders.
-    /// Returns an array of identifiers. (Not an array of GLShader objects!)
     /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGetAttachedShaders.xhtml
     @property auto shaders(){
         assert(this.program != 0);
         auto length = this.shaderslength;
-        GLuint[] result = new GLuint[length];
-        glGetAttachedShaders(this.program, length, null, result.ptr);
+        GLShader[] result = new GLShader[length];
+        // This works because the GLShader struct contains only a GLuint field
+        // and nothing else. (If that changes, this will need to be revised.)
+        glGetAttachedShaders(this.program, length, null, cast(GLuint*) result.ptr);
         return result;
     }
     
@@ -166,7 +165,7 @@ struct GLProgram{
         glAttachShader(this.program, shader);
     }
     /// Ditto
-    void add(in GLShader* shader){
+    void add(in GLShader shader){
         this.add(shader.shader);
     }
     /// Detach a shader from this program.
@@ -175,7 +174,7 @@ struct GLProgram{
         glDetachShader(this.program, shader);
     }
     /// Ditto
-    void remove(in GLShader* shader){
+    void remove(in GLShader shader){
         this.remove(shader.shader);
     }
     /// Deatch all attached shaders from this program.
@@ -301,11 +300,12 @@ struct GLShader{
         }
     }
     
-    @disable this(this);
-    
     /// Stores a shader ID assigned upon creation.
     GLuint shader;
     
+    this(in GLuint shader){
+        this.shader = shader;
+    }
     /// Load a shader from a string literal.
     this(in Type type, in string source){
         this.shader = glCreateShader(type);
@@ -316,12 +316,7 @@ struct GLShader{
     
     /// Load a shader from a file path.
     static auto load(S)(in Type type, in S path) if(isString!S){
-        return new typeof(this)(type, cast(string) Path(path).readall);
-    }
-    
-    /// Delete the shader from memory when the object is destroyed.
-    ~this(){
-        if(this.shader != 0) this.free();
+        return typeof(this)(type, cast(string) Path(path).readall);
     }
     
     /// Free a previously-created shader.

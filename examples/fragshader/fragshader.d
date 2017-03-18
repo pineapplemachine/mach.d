@@ -5,8 +5,8 @@ import mach.sdl;
 import mach.math;
 
 class FragShader: Application{
-    GLShader* fragshader;
-    GLProgram* program;
+    GLShader fragshader;
+    GLProgram program;
     
     // Initialize the window.
     override void initialize(){
@@ -18,7 +18,7 @@ class FragShader: Application{
         // Load and compile a shader from an external file.
         fragshader = GLShader.load(GLShader.Type.Fragment, "shader.glsl");
         // Create, link, and use a program with that shader attached.
-        program = new GLProgram(fragshader);
+        program = GLProgram(fragshader);
         program.use();
         // Set the value of the "resolution" uniform vec2 referred to in the shader.
         program.setuniformf("resolution", window.size);
