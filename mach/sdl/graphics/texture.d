@@ -77,6 +77,11 @@ struct Texture{
     /// Immediately free the texture data, if it hasn't already been freed.
     void free(){
         glDeleteTextures(1, &this.name);
+        this.name = 0;
+    }
+    /// Free multiple textures at once.
+    static void free(in Texture[] textures...){
+        glDeleteTextures(textures.length, cast(GLuint*) textures.ptr);
     }
     
     /// Bind this texture; subsequent OpenGL calls will apply to this texture name.
