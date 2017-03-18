@@ -23,13 +23,8 @@ import mach.sdl.glenum : TextureMinFilter, TextureMagFilter;
 
 
 struct Texture{
-    alias Name = uint;
-    
+    alias Name = GLuint;
     Name name;
-    uint width;
-    uint height;
-    PixelsFormat format;
-    bool owned = true;
     
     static enum string AtomicMethodMixin = `
         static if(atomic){
@@ -40,6 +35,10 @@ struct Texture{
             }
         }
     `;
+    
+    this(in Name name){
+        this.name = name;
+    }
     
     /// Load a texture from a path.
     this(in string path, in bool mipmap = false){
@@ -61,10 +60,6 @@ struct Texture{
     )in{
         assert(width > 0 && height > 0, "Invalid texture size.");
     }body{
-        this.width = width;
-        this.height = height;
-        this.format = format;
-        
         glGenTextures(1, &this.name);
         
         mixin(AtomicMethodMixin); // Binds the texture
@@ -92,15 +87,34 @@ struct Texture{
     void unbind() const nothrow{
         glBindTexture(TextureTarget.Texture2D, 0);
     }
-    /// True if this texture's name is currently bound.
-    @property bool bound() const{
-        return Texture.boundname() == this.name;
-    }
-    /// Get the currently bound texture name.
-    static Name boundname(){
-        int name; // Texture names are uints but glGetIntegerv expects a signed int
+    /// Get the currently bound texture.
+    static auto bound(){
+        GLint name; // Texture names are uints but glGetIntegerv expects a signed int
         glGetIntegerv(GL_TEXTURE_BINDING_2D, &name);
-        return cast(Name) name;
+        return Texture(cast(Name) name);
+    }
+    /// True if this texture's name is currently bound.
+    @property bool isbound() const{
+        return Texture.bound().name == this.name;
+    }
+    
+    /// Get the width of the texture.
+    @property auto width() const{
+        this.bind();
+        GLint width;
+        glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+        return width;
+    }
+    /// Get the height of the texture.
+    @property auto height() const{
+        this.bind();
+        GLint height;
+        glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+        return height;
+    }
+    /// Get the size of the texture as a vector.
+    @property Vector2!int size() const{
+        return Vector2!int(this.width, this.height);
     }
     
     /// Set filter used when scaling the image.
@@ -133,11 +147,6 @@ struct Texture{
         //glGenerateMipmapEXT(TextureTarget.Texture2D);
         // Not sure if this works or not honestly, but at least it doesn't crash
         glTexParameteri(TextureTarget.Texture2D, GL_GENERATE_MIPMAP, true);
-    }
-    
-    /// Get the size of the texture as a vector.
-    @property Vector2!int size() const{
-        return Vector2!int(this.width, this.height);
     }
     
     void update(bool atomic = true)(
