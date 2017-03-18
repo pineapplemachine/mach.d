@@ -17,9 +17,7 @@ public:
 /// Samples are played on Channels. Each Channel may play one sample at a time.
 /// Samples may be loaded from external audio files.
 /// https://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer_16.html#SEC16
-struct Sample{
-    @disable this(this);
-    
+struct MixSample{
     Mix_Chunk* sample;
     
     this(Mix_Chunk* sample){
@@ -44,15 +42,11 @@ struct Sample{
             "Failed to load audio sample from memory."
         );
     }
-    
-    /// Audio data is freed from memory upon destruction of the Sample object.
-    ~this(){
-        if(this.sample !is null) this.free();
-    }
-    
+
     /// https://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer_24.html#SEC24
     void free(){
         Mix_FreeChunk(this.sample);
+        this.sample = null;
     }
 
     /// Get the volume that the sample will be played at, in the range [0, 1].

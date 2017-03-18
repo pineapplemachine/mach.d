@@ -27,7 +27,7 @@ public:
 
 /// Load and play music audio files.
 /// https://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer_52.html#SEC52
-struct Music{
+struct MixMusic{
     alias Fading = AudioFading;
     static enum Type: Mix_MusicType{
         None = MUS_NONE, /// Indicates that music was not loaded, or wasn't playing.
@@ -44,8 +44,6 @@ struct Music{
     
     alias HookCallback = extern(C) void function();
     
-    @disable this(this);
-    
     Mix_Music* music;
     
     /// Create an instance given a pointer to some Mix_Music data.
@@ -60,10 +58,6 @@ struct Music{
         if(this.music is null) throw new SDLException(
             "Failed to load music from path \"" ~ path ~ "\"."
         );
-    }
-    
-    ~this(){
-        if(this.music !is null) this.free();
     }
     
     /// Free memory used for music.
@@ -109,7 +103,7 @@ struct Music{
         else return cast(Type) Mix_GetMusicType(this.music);
     }
     /// Get the encoding type of the music that is currently being played.
-    /// Returns `Music.Type.None` if no music was playing.
+    /// Returns `MixMusic.Type.None` if no music was playing.
     /// https://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer_70.html#SEC70
     static @property auto currenttype(){
         return cast(Type) Mix_GetMusicType(null);

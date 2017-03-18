@@ -5,14 +5,14 @@ import mach.sdl;
 import mach.math;
 
 class PlayMusic: Application{
-    Music* music;
+    MixMusic music;
     
     // This happens when the program starts.
     override void initialize(){
         // Create a window,
         window = new Window("PlayMusic", 256, 256);
         // Load the music,
-        music = new Music("music.ogg");
+        music = MixMusic("music.ogg");
         // And play that music with a fade-in lasting 2000 milliseconds.
         music.play(2000);
     }

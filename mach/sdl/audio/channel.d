@@ -9,7 +9,7 @@ import mach.math.clamp : clamp;
 import mach.text.cstring : tocstring, fromcstring;
 import mach.sdl.error : SDLException;
 import mach.sdl.audio.fading : AudioFading;
-import mach.sdl.audio.sample : Sample;
+import mach.sdl.audio.sample : MixSample;
 
 public:
 
@@ -18,7 +18,7 @@ public:
 /// Samples are played on Channels. Each Channel may play one sample at a time.
 /// Channels must be allocated ahead of time using e.g. `Channel.count = 16;`.
 /// https://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer_25.html#SEC25
-struct Channel{
+struct MixChannel{
     alias Fading = AudioFading;
     alias FinishedCallback = extern(C) void function(int channel);
     
@@ -29,7 +29,7 @@ struct Channel{
         this.channel = channel;
     }
     
-    static Channel opIndex(in int channel){
+    static typeof(this) opIndex(in int channel){
         return typeof(this)(channel);
     }
     
@@ -76,7 +76,7 @@ struct Channel{
         if(result == -1) throw new SDLException("Failed to play audio sample.");
     }
     /// Ditto
-    auto play(Sample* sample, in int fadeinms = 0, in int repeat = 0, in int timeoutms = -1){
+    auto play(MixSample sample, in int fadeinms = 0, in int repeat = 0, in int timeoutms = -1){
         this.play(sample.sample, fadeinms, repeat, timeoutms);
     }
     
@@ -156,12 +156,9 @@ struct Channel{
     /// Get the sample that was most recently played on this channel.
     /// Will return null if the channel hasn't been allocated, or if the
     /// channel has not yet played any samples.
-    /// Returns a `Mix_Chunk*` rather than a Sample; note that Sample objects
-    /// assume ownership of their respective Mix_Chunk pointers and it is not
-    /// necessarily safe to construct one from the return value of this call.
     /// https://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer_41.html#SEC41
-    @property Mix_Chunk* lastplayed() const{
-        return Mix_GetChunk(this.channel);
+    @property MixSample lastplayed() const{
+        return MixSample(Mix_GetChunk(this.channel));
     }
     
     /// https://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer_37.html#SEC37
