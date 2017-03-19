@@ -14,7 +14,10 @@ import mach.range.asarray : asarray;
 import mach.io.file.path : Path;
 
 import mach.sdl.error : GLException;
+import mach.sdl.graphics.color : Color;
 import mach.sdl.graphics.texture : Texture;
+import mach.sdl.glenum : TextureWrap, TextureFilter;
+import mach.sdl.glenum : TextureMinFilter, TextureMagFilter;
 
 public:
 
@@ -24,7 +27,7 @@ public:
 /// TODO: More exhaustive support of program features
 struct GLProgram{
     /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGetProgram.xhtml
-    static enum Parameter: uint{
+    static enum Parameter: GLuint{
         Deleting = GL_DELETE_STATUS,
         Linked = GL_LINK_STATUS,
         Valid = GL_VALIDATE_STATUS,
@@ -282,7 +285,7 @@ struct GLProgram{
 struct GLShader{
     /// An enumeration of the different types of shaders.
     /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glCreateShader.xhtml
-    static enum Type: uint{
+    static enum Type: GLuint{
         Compute = GL_COMPUTE_SHADER,
         Vertex = GL_VERTEX_SHADER,
         TessControl = GL_TESS_CONTROL_SHADER,
@@ -291,7 +294,7 @@ struct GLShader{
         Fragment = GL_FRAGMENT_SHADER,
     }
     /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGetShader.xhtml
-    static enum Parameter: uint{
+    static enum Parameter: GLuint{
         Type = GL_SHADER_TYPE,
         Deleting = GL_DELETE_STATUS,
         Compiled = GL_COMPILE_STATUS,
@@ -411,10 +414,64 @@ struct GLShader{
 
 /// https://www.khronos.org/opengl/wiki/Sampler_Object
 struct GLSampler{
+    /// Enumeration of wrapping modes.
+    alias Wrap = TextureWrap;
+    /// Enumeration of filter modes available for both min and mag filters.
+    alias Filter = TextureFilter;
+    /// Enumeration of filter modes available when an image is scaled down.
+    alias MinFilter = TextureMinFilter;
+    /// Enumeration of filter modes available when an image is scaled up.
+    alias MagFilter = TextureMagFilter;
+    
+    /// https://www.khronos.org/opengl/wiki/GLAPI/glGetSamplerParameter
+    /// https://www.khronos.org/opengl/wiki/GLAPI/glSamplerParameter
+    static enum Parameter: GLuint{
+        WrapS = GL_TEXTURE_WRAP_S, WrapX = WrapS,
+        WrapT = GL_TEXTURE_WRAP_T, WrapY = WrapT,
+        WrapR = GL_TEXTURE_WRAP_R, WrapZ = WrapR,
+        MinFilter = GL_TEXTURE_MIN_FILTER,
+        MagFilter = GL_TEXTURE_MAG_FILTER,
+        BorderColor = GL_TEXTURE_BORDER_COLOR,
+        MinLOD = GL_TEXTURE_MIN_LOD,
+        MaxLOD = GL_TEXTURE_MAX_LOD,
+        LODBias = GL_TEXTURE_LOD_BIAS,
+        // TODO: What do these do?
+        CompareMode = GL_TEXTURE_COMPARE_MODE,
+        CompareFunc = GL_TEXTURE_COMPARE_FUNC,
+    }
+    
+    /// https://www.khronos.org/opengl/wiki/GLAPI/glSamplerParameter
+    static enum CompareMode: GLuint{
+        Ref = GL_COMPARE_REF_TO_TEXTURE,
+        // https://github.com/DerelictOrg/DerelictGL3/issues/52
+        None = 0, //GL_NONE,
+    }
+    /// https://www.khronos.org/opengl/wiki/GLAPI/glSamplerParameter
+    static enum CompareFunc: GLuint{
+        Less = GL_LESS,
+        Greater = GL_GREATER,
+        Equal = GL_EQUAL,
+        NotEqual = GL_NOTEQUAL,
+        LessOrEqual = GL_LEQUAL,
+        GreaterOrEqual = GL_GEQUAL,
+        Always = GL_ALWAYS,
+        Never = GL_NEVER,
+    }
+    
     GLuint sampler;
     
+    this(GLuint sampler){
+        this.sampler = sampler;
+    }
     /// Create a sampler and bind a texture to it.
-    this(in Texture* texture){
+    this(T)(in Texture texture, in T texunit = GLuint(0)) if(isNumeric!T){
+        this.initialize();
+        this.bind(texture, texunit);
+    }
+    
+    /// Create a new, empty program.
+    void initialize(){
+        glGenSamplers(1, &this.sampler);
     }
     
     /// Delete the sampler.
@@ -424,13 +481,142 @@ struct GLSampler{
         this.sampler = 0;
     }
     
-    /// Bind a texture to this sampler.
-    void bind(in Texture* texture){
-        this.bind(texture.name);
+    /// True when the object refers to an existing sampler.
+    /// https://www.khronos.org/opengl/wiki/GLAPI/glIsSampler
+    bool opCast(To: bool)() const{
+        return cast(bool) glIsSampler(this.sampler);
+    }
+    
+    /// Bind a texture to this sampler. When binding multiple textures,
+    /// differing values of `texunit` must be used.
+    /// `texunit` must be at least zero and less than the value returned
+    /// by `GLSampler.texunits`. Defaults to zero.
+    /// https://www.khronos.org/opengl/wiki/Sampler_(GLSL)#Binding_textures_to_samplers
+    /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindSampler.xhtml
+    void bind(T)(in Texture texture, in T texunit = GLuint(0)) if(isNumeric!T){
+        this.bind(texture.name, cast(GLuint) texunit);
     }
     /// Ditto
-    void bind(in GLuint texture){
+    void bind(in GLuint texture, in GLuint texunit){
         assert(this.sampler != 0);
+        glActiveTexture(GL_TEXTURE0 + texunit);
+        glBindTexture(GL_TEXTURE_2D, texture);
         glBindSampler(texture, this.sampler);
+    }
+    
+    /// Get the number of available texture units. The number varies widely
+    /// by platform.
+    /// https://www.khronos.org/opengl/wiki/Common_Mistakes#Texture_Unit
+    /// https://www.opengl.org/discussion_boards/showthread.php/174926-when-to-use-glActiveTexture
+    /// https://www.khronos.org/registry/OpenGL-Refpages/es3.0/html/glGet.xhtml
+    static @property auto texunits(){
+        GLint value = void;
+        glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &value);
+        GLException.enforce("Failed to get number of texture units.");
+        return value;
+    }
+    
+    /// https://www.khronos.org/opengl/wiki/GLAPI/glGetSamplerParameter
+    auto parameter(in Parameter parameter) const{
+        assert(this.sampler != 0);
+        assert(parameter != Parameter.BorderColor,
+            "Parameter unsupported by this method; use bordercolor instead."
+        );
+        GLint result = void;
+        glGetSamplerParameteriv(this.sampler, parameter, &result);
+        return result;
+    }
+    /// https://www.khronos.org/opengl/wiki/GLAPI/glSamplerParameter
+    auto parameter(in Parameter parameter, in GLint value){
+        assert(this.sampler != 0);
+        assert(parameter != Parameter.BorderColor,
+            "Parameter unsupported by this method; use bordercolor instead."
+        );
+        glSamplerParameteri(this.sampler, parameter, value);
+    }
+    
+    /// Get the sampler border color.
+    /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGetSamplerParameter.xhtml
+    @property auto bordercolor() const{
+        assert(this.sampler != 0);
+        Color color;
+        glGetSamplerParameterfv(this.sampler, Parameter.BorderColor, cast(GLfloat*) &color);
+        return color;
+    }
+    /// Set the sampler border color.
+    /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glSamplerParameter.xhtml
+    @property void bordercolor(in Color color){
+        assert(this.sampler != 0);
+        glSamplerParameterfv(this.sampler, Parameter.BorderColor, cast(const(GLfloat)*) &color);
+    }
+    
+    /// Get minification filter.
+    @property auto minfilter() const{
+        return cast(MinFilter) this.parameter(Parameter.MinFilter);
+    }
+    /// Set minification filter.
+    @property void minfilter(in MinFilter filter){
+        this.parameter(Parameter.MinFilter, cast(GLint) filter);
+    }
+    /// Get magnification filter.
+    @property auto magfilter() const{
+        return cast(MagFilter) this.parameter(Parameter.MagFilter);
+    }
+    /// Set magnification filter.
+    @property void magfilter(in MagFilter filter){
+        this.parameter(Parameter.MagFilter, cast(GLint) filter);
+    }
+    /// Set both min and mag filter settings at once.
+    @property void filter(in Filter filter){
+        this.minfilter = cast(MinFilter) filter;
+        this.magfilter = cast(MagFilter) filter;
+    }
+    
+    /// Get the minimum level of detail value.
+    @property auto minlod() const{
+        return this.parameter(Parameter.MinLOD);
+    }
+    /// Set the minimum level of detail value.
+    @property void minlod(T)(in T value) if(isNumeric!T){
+        this.parameter(Parameter.MinLOD, cast(GLint) value);
+    }
+    /// Get the maximum level of detail value.
+    @property auto maxlod() const{
+        return this.parameter(Parameter.MaxLOD);
+    }
+    /// Set the maximum level of detail value.
+    @property void maxlod(T)(in T value) if(isNumeric!T){
+        this.parameter(Parameter.MaxLOD, cast(GLint) value);
+    }
+    
+    /// Get texture wrap setting on the X axis.
+    @property auto wrapx() const{
+        return cast(Wrap) this.parameter(Parameter.WrapX);
+    }
+    /// Set texture wrap setting on the X axis.
+    @property void wrapx(in Wrap wrap){
+        this.parameter(Parameter.WrapX, cast(GLint) wrap);
+    }
+    /// Get texture wrap setting on the Y axis.
+    @property auto wrapy() const{
+        return cast(Wrap) this.parameter(Parameter.WrapY);
+    }
+    /// Set texture wrap setting on the Y axis.
+    @property void wrapy(in Wrap wrap){
+        this.parameter(Parameter.WrapY, cast(GLint) wrap);
+    }
+    /// Get texture wrap setting on the Z axis.
+    @property auto wrapz() const{
+        return cast(Wrap) this.parameter(Parameter.WrapZ);
+    }
+    /// Set texture wrap setting on the Z axis.
+    @property void wrapz(in Wrap wrap){
+        this.parameter(Parameter.WrapZ, cast(GLint) wrap);
+    }
+    /// Set X, Y, and Z wrap settings all at once.
+    @property void wrap(in Wrap wrap){
+        this.wrapx = wrap;
+        this.wrapy = wrap;
+        this.wrapz = wrap;
     }
 }
