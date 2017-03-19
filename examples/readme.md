@@ -89,3 +89,8 @@ are pressed.
 
 An example of using an OpenGL fragment shader with mach. A shader loaded from an
 external GLSL file is used to draw to the displayed window.
+
+### sampler
+
+Renders an image using a fragment shader and a sampler uniform, where the
+sampled texture is loaded from an external file.
