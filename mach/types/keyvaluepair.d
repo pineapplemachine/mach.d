@@ -2,7 +2,20 @@ module mach.types.keyvaluepair;
 
 private:
 
-import mach.types.tuple : tuple;
+import mach.meta : Aliases;
+
+/++ Docs
+
+This module defines the `KeyValuePair` type, which behaves similarly to a tuple
+containing two elements, a key and a value.
+
++/
+
+unittest{ /// Example
+    auto pair = KeyValuePair!(string, int)("hello", 1);
+    assert(pair.key == "hello");
+    assert(pair.value == 1);
+}
 
 public:
 
@@ -11,14 +24,13 @@ public:
 /// Key, value pair type. Intended primarily to store a key, value pair
 /// belonging to the built-in associative array type.
 struct KeyValuePair(K, V){
-    K key;
-    V value;
+    alias KeyValue = Aliases!(K, V);
     
-    alias astuple this;
+    KeyValue expand;
+    alias expand this;
     
-    @property auto astuple() const{
-        return tuple(this.key, this.value);
-    }
+    alias key = expand[0];
+    alias value = expand[1];
 }
 
 
