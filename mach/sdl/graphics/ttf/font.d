@@ -38,8 +38,6 @@ struct Font{
         Blended, /// Drawn expensively, with blended edges
     }
     
-    @disable this(this);
-    
     TTF_Font* font;
     
     this(TTF_Font* font){
@@ -52,8 +50,11 @@ struct Font{
         );
     }
     
-    ~this(){
-        if(this.font !is null) this.free();
+    /// True when the object refers to an existing font.
+    /// Assumes that the font was not closed externally, and that the object
+    /// was not initialized with an invalid reference.
+    bool opCast(To: bool)(){
+        return this.font !is null;
     }
     
     /// https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_16.html

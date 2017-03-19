@@ -8,8 +8,8 @@ import mach.math;
 import mach.text;
 
 class Resize: Application{
-    Font* font;
-    Texture* sizetext;
+    Font font;
+    Texture sizetext;
     
     // This happens when the program starts.
     override void initialize(){
@@ -18,7 +18,7 @@ class Resize: Application{
             Window.StyleFlag.Shown | Window.StyleFlag.Resizable
         );
         // Load a TTF from an external file. This will be used to render text.
-        font = new Font("Tuffy_Bold.ttf", 24);
+        font = Font("Tuffy_Bold.ttf", 24);
     }
     
     // This happens after the application has been fully otherwise initialized.
@@ -57,7 +57,8 @@ class Resize: Application{
         // Render text to pixel data in RAM.
         auto surface = font.rendersolid(Color.White, restext);
         // Load it to VRAM, courtesy of OpenGL.
-        sizetext = new Texture(surface);
+        if(sizetext) sizetext.free();
+        sizetext = Texture(surface);
         // Clear the previous contents of the window,
         clear();
         // Draw the text that was just rendered,
