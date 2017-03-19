@@ -239,12 +239,15 @@ enum TextureMinFilter : glenum {
 }
 alias TextureFilter = TextureMagFilter;
 
-// https://open.gl/textures
+/// Enumeration of meaningful texture wrapping modes.
+/// https://open.gl/textures
+/// https://www.khronos.org/opengl/wiki/GLAPI/glSamplerParameter
 enum TextureWrap : glenum {
-    Repeat = GL_REPEAT,
-    MirroredRepeat = GL_MIRRORED_REPEAT,
     ClampEdge = GL_CLAMP_TO_EDGE,
     ClampBorder = GL_CLAMP_TO_BORDER,
+    Repeat = GL_REPEAT,
+    MirrorRepeat = GL_MIRRORED_REPEAT,
+    MirrorClampEdge = GL_MIRROR_CLAMP_TO_EDGE,
 }
 
 // https://www.opengl.org/sdk/docs/man/html/glTexParameter.xhtml

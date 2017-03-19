@@ -11,18 +11,26 @@ import mach.sdl.error : GLException;
 import mach.sdl.glenum : TextureTarget, TextureParam;
 import mach.sdl.glenum : PixelsType, PixelsFormat;
 import mach.sdl.glenum : GLPrimitive, VertexType, getvertextype, validvertextype;
+import mach.sdl.glenum : TextureWrap, TextureFilter;
+import mach.sdl.glenum : TextureMinFilter, TextureMagFilter;
 import mach.sdl.graphics.surface : Surface;
 import mach.sdl.graphics.pixelformat : SDLPixelFormat = PixelFormat;
 import mach.sdl.graphics.vertex : Vertex, Vertexes, Vertexesf;
 
 public:
 
-import mach.sdl.glenum : TextureWrap, TextureFilter;
-import mach.sdl.glenum : TextureMinFilter, TextureMagFilter;
-
 
 
 struct Texture{
+    /// Enumeration of wrapping modes.
+    alias Wrap = TextureWrap;
+    /// Enumeration of filter modes available for both min and mag filters.
+    alias Filter = TextureFilter;
+    /// Enumeration of filter modes available when an image is scaled down.
+    alias MinFilter = TextureMinFilter;
+    /// Enumeration of filter modes available when an image is scaled up.
+    alias MagFilter = TextureMagFilter;
+    
     alias Name = GLuint;
     Name name;
     
@@ -64,8 +72,8 @@ struct Texture{
         
         mixin(AtomicMethodMixin); // Binds the texture
         
-        this.wrap!false(TextureWrap.Repeat);
-        this.filter!false(TextureFilter.Nearest);
+        this.wrap!false(Wrap.Repeat);
+        this.filter!false(Filter.Nearest);
         glTexImage2D(
             TextureTarget.Texture2D, 0, format,
             width, height, 0, format, GL_UNSIGNED_INT_8_8_8_8, pixels
@@ -130,24 +138,24 @@ struct Texture{
     }
     
     /// Set filter used when scaling the image.
-    @property void filter(bool atomic = true)(in TextureFilter filter){
+    @property void filter(bool atomic = true)(in Filter filter){
         mixin(AtomicMethodMixin);
         this.minfilter!false(cast(TextureMinFilter) filter);
         this.magfilter!false(cast(TextureMagFilter) filter);
     }
     /// Set filter used when scaling the image down.
-    @property void minfilter(bool atomic = true)(in TextureMinFilter filter){
+    @property void minfilter(bool atomic = true)(in MinFilter filter){
         mixin(AtomicMethodMixin);
         glTexParameteri(TextureTarget.Texture2D, TextureParam.MinFilter, filter);
     }
     /// Set filter used when scaling the image up.
-    @property void magfilter(bool atomic = true)(in TextureMagFilter filter){
+    @property void magfilter(bool atomic = true)(in MagFilter filter){
         mixin(AtomicMethodMixin);
         glTexParameteri(TextureTarget.Texture2D, TextureParam.MagFilter, filter);
     }
     
     /// Set how the texture wraps.
-    @property void wrap(bool atomic = true)(in TextureWrap wrap){
+    @property void wrap(bool atomic = true)(in Wrap wrap){
         mixin(AtomicMethodMixin);
         glTexParameteri(TextureTarget.Texture2D, TextureParam.WrapS, wrap);
         glTexParameteri(TextureTarget.Texture2D, TextureParam.WrapT, wrap);
