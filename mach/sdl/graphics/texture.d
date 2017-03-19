@@ -80,8 +80,15 @@ struct Texture{
         this.name = 0;
     }
     /// Free multiple textures at once.
-    static void free(in Texture[] textures...){
+    static void free(Texture[] textures...){
         glDeleteTextures(textures.length, cast(GLuint*) textures.ptr);
+        foreach(texture; textures) texture.name = 0;
+    }
+    
+    /// True when the object refers to an existing texture.
+    /// https://www.khronos.org/registry/OpenGL-Refpages/es1.1/xhtml/glIsTexture.xml
+    bool opCast(To: bool)() const{
+        return cast(bool) glIsTexture(this.name);
     }
     
     /// Bind this texture; subsequent OpenGL calls will apply to this texture name.

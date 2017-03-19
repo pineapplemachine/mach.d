@@ -67,6 +67,13 @@ struct MixMusic{
         this.music = null;
     }
     
+    /// True when the object refers to existing audio.
+    /// Assumes that the music was not closed externally, and that the object
+    /// was not initialized with an invalid reference.
+    bool opCast(To: bool)(){
+        return this.music !is null;
+    }
+    
     /// Play the audio, looping the given number of times.
     /// (Or looping indefinitely, if no such number is provided.)
     /// Accepts an optional number of milliseconds to have a fade-in effect;

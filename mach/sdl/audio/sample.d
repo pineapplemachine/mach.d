@@ -42,11 +42,19 @@ struct MixSample{
             "Failed to load audio sample from memory."
         );
     }
-
+    
+    /// Free the memory used by this sample.
     /// https://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer_24.html#SEC24
     void free(){
         Mix_FreeChunk(this.sample);
         this.sample = null;
+    }
+    
+    /// True when the object refers to existing audio.
+    /// Assumes that the sample was not closed externally, and that the object
+    /// was not initialized with an invalid reference.
+    bool opCast(To: bool)(){
+        return this.sample !is null;
     }
 
     /// Get the volume that the sample will be played at, in the range [0, 1].

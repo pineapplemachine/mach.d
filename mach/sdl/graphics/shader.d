@@ -80,6 +80,12 @@ struct GLProgram{
         this.program = 0;
     }
     
+    /// True when the object refers to an existing program.
+    /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glIsProgram.xhtml
+    bool opCast(To: bool)() const{
+        return cast(bool) glIsProgram(this.program);
+    }
+    
     /// Link the program. Throws a LinkException if linking fails.
     /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glLinkProgram.xhtml
     void link(){
@@ -325,6 +331,12 @@ struct GLShader{
         this.shader = 0;
     }
     
+    /// True when the object refers to an existing shader.
+    /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glIsShader.xhtml
+    bool opCast(To: bool)() const{
+        return cast(bool) glIsShader(this.shader);
+    }
+    
     /// Set the shader's source code as a string.
     /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glShaderSource.xhtml
     @property void source(in string source){
@@ -392,5 +404,33 @@ struct GLShader{
     /// Get whether the shader has been flagged for deletion.
     @property bool deleting() const{
         return cast(bool) this.parameter(Parameter.Deleting);
+    }
+}
+
+
+
+/// https://www.khronos.org/opengl/wiki/Sampler_Object
+struct GLSampler{
+    GLuint sampler;
+    
+    /// Create a sampler and bind a texture to it.
+    this(in Texture* texture){
+    }
+    
+    /// Delete the sampler.
+    /// https://www.khronos.org/opengl/wiki/GLAPI/glDeleteSamplers
+    void free(){
+        glDeleteSamplers(1, &this.sampler);
+        this.sampler = 0;
+    }
+    
+    /// Bind a texture to this sampler.
+    void bind(in Texture* texture){
+        this.bind(texture.name);
+    }
+    /// Ditto
+    void bind(in GLuint texture){
+        assert(this.sampler != 0);
+        glBindSampler(texture, this.sampler);
     }
 }
