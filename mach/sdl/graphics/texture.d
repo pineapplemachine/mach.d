@@ -34,52 +34,38 @@ struct Texture{
     alias Name = GLuint;
     Name name;
     
-    static enum string AtomicMethodMixin = `
-        static if(atomic){
-            this.bind();
-            scope(exit){
-                this.unbind();
-                GLException.enforce();
-            }
-        }
-    `;
-    
     this(in Name name){
         this.name = name;
     }
     
     /// Load a texture from a path.
-    this(in string path, in bool mipmap = false){
+    this(in string path){
         auto surface = Surface(path);
-        this(surface, mipmap);
+        this(surface);
     }
     
     /// Create a texture from a surface.
-    this(Surface surface, in bool mipmap = false){
+    this(Surface surface){
         auto converted = surface.convert(SDLPixelFormat.Format.RGBA8888); // TODO: only convert when necessary
-        this(converted.pixels, converted.width, converted.height, mipmap, PixelsFormat.RGBA);
+        this(converted.pixels, converted.width, converted.height, PixelsFormat.RGBA);
     }
     
     /// Create a texture given width, height, and raw pixel data.
     /// (You probably won't be calling this one directly.)
-    this(bool atomic = true, bool expire = true)(
+    this(
         in void* pixels, int width, int height,
-        in bool mipmap = false, PixelsFormat format = PixelsFormat.RGBA
-    )in{
+        PixelsFormat format = PixelsFormat.RGBA
+    ){
         assert(width > 0 && height > 0, "Invalid texture size.");
-    }body{
         glGenTextures(1, &this.name);
-        
-        mixin(AtomicMethodMixin); // Binds the texture
-        
-        this.wrap!false(Wrap.Repeat);
-        this.filter!false(Filter.Nearest);
+        this.bind();
+        this.wrap(Wrap.Repeat);
+        this.filter(Filter.Nearest);
         glTexImage2D(
             TextureTarget.Texture2D, 0, format,
             width, height, 0, format, GL_UNSIGNED_INT_8_8_8_8, pixels
         );
-        
-        if(mipmap) this.mipmap!false();
+        GLException.enforce("Failed to create texture.");
     }
     
     /// Immediately free the texture data, if it hasn't already been freed.
@@ -138,59 +124,56 @@ struct Texture{
     }
     
     /// Set filter used when scaling the image.
-    @property void filter(bool atomic = true)(in Filter filter){
-        mixin(AtomicMethodMixin);
-        this.minfilter!false(cast(TextureMinFilter) filter);
-        this.magfilter!false(cast(TextureMagFilter) filter);
+    @property void filter(in Filter filter){
+        this.bind();
+        this.minfilter(cast(TextureMinFilter) filter);
+        this.magfilter(cast(TextureMagFilter) filter);
     }
     /// Set filter used when scaling the image down.
-    @property void minfilter(bool atomic = true)(in MinFilter filter){
-        mixin(AtomicMethodMixin);
+    @property void minfilter(in MinFilter filter){
+        this.bind();
         glTexParameteri(TextureTarget.Texture2D, TextureParam.MinFilter, filter);
     }
     /// Set filter used when scaling the image up.
-    @property void magfilter(bool atomic = true)(in MagFilter filter){
-        mixin(AtomicMethodMixin);
+    @property void magfilter(in MagFilter filter){
+        this.bind();
         glTexParameteri(TextureTarget.Texture2D, TextureParam.MagFilter, filter);
     }
     
     /// Set how the texture wraps.
-    @property void wrap(bool atomic = true)(in Wrap wrap){
-        mixin(AtomicMethodMixin);
+    @property void wrap(in Wrap wrap){
+        this.bind();
         glTexParameteri(TextureTarget.Texture2D, TextureParam.WrapS, wrap);
         glTexParameteri(TextureTarget.Texture2D, TextureParam.WrapT, wrap);
     }
     
-    void mipmap(bool atomic = true)(){
-        mixin(AtomicMethodMixin);
+    void mipmap(){
+        this.bind();
         // Doesn't work (Crashes because glGenerateMipmap isn't loaded)
         //glGenerateMipmapEXT(TextureTarget.Texture2D);
         // Not sure if this works or not honestly, but at least it doesn't crash
         glTexParameteri(TextureTarget.Texture2D, GL_GENERATE_MIPMAP, true);
     }
     
-    void update(bool atomic = true)(
-    ){
-        auto formatted = FormattedSurface.make!convert(surface);
-        scope(exit) formatted.conclude();
-        this.update(
-            formatted.pixels, Box!int(offset, offset + formatted.size),
-            formatted.format
-        );
-    }
-    void update(bool atomic = true)(
+    //void update(){
+    //    auto formatted = FormattedSurface.make!convert(surface);
+    //    scope(exit) formatted.conclude();
+    //    this.update(
+    //        formatted.pixels, Box!int(offset, offset + formatted.size),
+    //        formatted.format
+    //    );
+    //}
+    void update(
         in void* pixels, Box!int box, PixelsFormat format = PixelsFormat.RGBA
-    )in{
+    ){
         assert(pixels, "Invalid pixel data.");
-        assert((width > 0) & (height > 0), "Invalid texture size.");
-        assert(box in Box!int(this.size), "Box not contained by texture bounds.");
-    }body{
-        mixin(AtomicMethodMixin);
+        this.bind();
         glTexSubImage2D(
             TextureTarget.Texture2D, 0,
             box.x, box.y, box.width, box.height,
             format, PixelsType.Ubyte, pixels
         );
+        GLException.enforce("Failed to update texture.");
     }
     
     /// Draw the texture at a position.
@@ -207,18 +190,19 @@ struct Texture{
         this.draw(Vertexesf.rect(position, sub.size * this.size, sub));
     }
     /// Draw the texture to a rectangular target.
-    void draw(bool atomic = true, T)(in Box!T target){
-        this.draw!atomic(Vertexesf.rect(target));
+    void draw(T)(in Box!T target){
+        this.draw(Vertexesf.rect(target));
     }
     /// Draw a portion of the texture to a rectangular target.
     /// The subrect represents floating-point texture coords from 0.0 to 1.0.
-    void draw(bool atomic = true, X, Y)(in Box!X target, in Box!Y sub){
-        this.draw!atomic(Vertexesf.rect(target.topleft, target.size, sub));
+    void draw(X, Y)(in Box!X target, in Box!Y sub){
+        this.draw(Vertexesf.rect(target.topleft, target.size, sub));
     }
-    void draw(bool atomic = true, A, B, C)(in Vertexes!(A, B, C) verts){
-        mixin(AtomicMethodMixin);
+    void draw(A, B, C)(in Vertexes!(A, B, C) verts){
+        this.bind();
         verts.setglpointers();
         glDrawArrays(GLPrimitive.TriangleStrip, 0, cast(uint) verts.length);
+        GLException.enforce("Error drawing texture.");
     }
     
     /// Draw a portion of the texture to a position.
