@@ -12,6 +12,11 @@ This package provides tools for common error-handling and reporting tasks.
 
 Provides ways to speak and listen to the world outside the program's own memory.
 
+### mach.json
+
+Parse and encode json strings, and serialize and deserialize arbitrary D objects
+as json.
+
 ### mach.math
 
 Implements a variety of mathematical functionalities.
@@ -22,11 +27,13 @@ Provides templates to be used for various compile-time computations.
 
 ### mach.range
 
-All sorts of ranges, higher-order functions, and related algorithms for dealing with data elegantly.
+All sorts of ranges, higher-order functions, and related algorithms for dealing
+with data elegantly.
 
 ### mach.sdl
 
-Wraps SDL2 and OpenGL, providing a cleaner way to develop games and other graphical applications. WIP.
+Wraps SDL2 and OpenGL, providing a cleaner way to develop games and other
+graphical applications. WIP.
 
 ### mach.sys
 
