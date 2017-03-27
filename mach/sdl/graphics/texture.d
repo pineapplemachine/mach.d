@@ -75,7 +75,7 @@ struct Texture{
     }
     /// Free multiple textures at once.
     static void free(Texture[] textures...){
-        glDeleteTextures(textures.length, cast(GLuint*) textures.ptr);
+        glDeleteTextures(cast(GLint) textures.length, cast(GLuint*) textures.ptr);
         foreach(texture; textures) texture.name = 0;
     }
     

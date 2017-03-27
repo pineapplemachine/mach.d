@@ -78,6 +78,7 @@ struct GLProgram{
     
     /// Detach shaders then delete the program from memory.
     void free(){
+        if(this.program == 0) return;
         this.removeall();
         glDeleteProgram(program);
         this.program = 0;
@@ -102,6 +103,14 @@ struct GLProgram{
         assert(this.program != 0);
         glUseProgram(this.program);
         GLException.enforce("Failed to use program.");
+    }
+    
+    /// Bind an attribute index to an `in` variable name.
+    /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindAttribLocation.xhtml
+    void bind(T)(in T index, in string name) if(isNumeric!T){
+        assert(this.program != 0);
+        glBindAttribLocation(this.program, cast(GLuint) index, name.tocstring);
+        GLException.enforce("Failed to bind vertex attribute index.");
     }
     
     /// Get the program's info log, generated upon linking.
@@ -254,6 +263,8 @@ struct GLProgram{
             assert(uniform !is null, "Matrix type unsupported by OpenGL version.");
             immutable mats = value.asarray!(Matrix!(T.width, T.height, GLfloat));
             uniform(loc, 1, false, mats.ptr);
+        }else static if(is(T == Color)){
+            this.SetUniformGeneric!(GLtype, glchar)(name, value.rgba);
         }else{
             static assert(false, "Unsupported argument type.");
         }
