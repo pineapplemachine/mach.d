@@ -36,15 +36,7 @@ struct GLVersions{
     /// The currently loaded OpenGL version.
     static Version current = Version.None;
     
-    /// Determine default OpenGL version.
-    /// TODO: Why these versions, and why the difference between platforms?
-    version(OSX){
-        static enum Version MinimumVersion = Version.GL21;
-        static enum Version DefaultVersion = Version.GL21;
-    }else{
-        static enum Version MinimumVersion = Version.GL30;
-        static enum Version DefaultVersion = Version.GL30;
-    }
+    static enum Version DefaultVersion = Version.GL32;
     
     /// Given a gl version number, get the major version.
     static int major(in Version glversion){
@@ -61,14 +53,6 @@ struct GLVersions{
     
     static void reload(){
         typeof(this).current = DerelictGL.reload();
-    }
-    
-    /// Verify that the currently-loaded version is at least a minimum version.
-    /// Throws a GLVersionException if the check fails.
-    static void verify(Version minimum = MinimumVersion){
-        immutable auto glversion = typeof(this).current;
-        if(glversion < minimum) throw new GLVersionException(glversion, minimum);
-        log("OpenGL version ", glversion);
     }
 }
 

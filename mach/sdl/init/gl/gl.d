@@ -8,6 +8,8 @@ import mach.sdl.error : GLException;
 import mach.sdl.init.gl.settings;
 import mach.sdl.init.gl.versions;
 
+import mach.io : log;
+
 public:
 
 
@@ -20,28 +22,34 @@ struct GL{
     alias Version = GLVersions;
     
     static void initialize(){
+        log("Reloading bindings");
         Version.reload();
-        Version.verify();
         
-        glDisable(GL_DITHER);
-        glDisable(GL_LIGHTING); // Deprecated
-        glDisable(GL_DEPTH_TEST);
-        glDisable(GL_ALPHA_TEST); // Deprecated
-
-        glEnable(GL_TEXTURE_2D);
+        log("Setting OpenGL flags and options");
+        
+        //glDisable(GL_DITHER);
+        //glDisable(GL_LIGHTING); // Deprecated
+        //glDisable(GL_DEPTH_TEST);
+        //glDisable(GL_ALPHA_TEST); // Deprecated
+        GLException.enforce();
+        
+        //glEnable(GL_TEXTURE_2D);
+        GLException.enforce();
         
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // TODO: Does this work?
+        GLException.enforce();
         
         glEnable(GL_CULL_FACE);
         glCullFace(GL_FRONT);
-
-        glEnable(GL_MULTISAMPLE);
+        GLException.enforce();
         
+        glEnable(GL_MULTISAMPLE);
+        GLException.enforce();
         // http://stackoverflow.com/questions/11806823/glenableclientstate-deprecated
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glEnableClientState(GL_COLOR_ARRAY);
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        //glEnableClientState(GL_VERTEX_ARRAY);
+        //glEnableClientState(GL_COLOR_ARRAY);
+        //glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         
         GLException.enforce();
     }

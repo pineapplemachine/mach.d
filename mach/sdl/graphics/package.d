@@ -11,4 +11,5 @@ import mach.sdl.graphics.shader;
 import mach.sdl.graphics.surface;
 import mach.sdl.graphics.texture;
 import mach.sdl.graphics.ttf;
+import mach.sdl.graphics.vao;
 import mach.sdl.graphics.vertex;

@@ -8,6 +8,8 @@ import mach.text.cstring : fromcstring;
 import mach.sdl.error : GLException;
 import mach.sdl.init.gl.versions;
 
+import mach.io.log;
+
 public:
 
 
@@ -20,7 +22,7 @@ class GLAttributeException: GLException{
 
 
 
-struct GLSettings {
+struct GLSettings{
     static immutable GLSettings Default = GLSettings(GLVersions.DefaultVersion);
 
     static enum Profile{
@@ -46,12 +48,12 @@ struct GLSettings {
     
     Version glversion;
     Antialias antialias = Antialias.None;
-    Profile profile = Profile.Compatibility;
+    Profile profile = Profile.Core;
     
     this(
         Version glversion,
         Antialias antialias = Antialias.None,
-        Profile profile = Profile.Compatibility
+        Profile profile = Profile.Core
     ){
         this.antialias = antialias;
         this.glversion = glversion;
@@ -64,14 +66,7 @@ struct GLSettings {
         }
     }
     void apply() const{
-        int major = GLVersions.major(this.glversion);
-        int minor = GLVersions.minor(this.glversion);
-        
-        if(major != 0){
-            apply(SDL_GL_CONTEXT_MAJOR_VERSION, major);
-            apply(SDL_GL_CONTEXT_MINOR_VERSION, minor);
-        }
-        
+        log("Applying OpenGL profile ", this.profile);
         final switch(this.profile){
             case Profile.Core:
                 apply(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -85,6 +80,14 @@ struct GLSettings {
                 break;
             case Profile.Default:
                 break;
+        }
+        
+        int major = GLVersions.major(this.glversion);
+        int minor = GLVersions.minor(this.glversion);
+        if(major != 0){
+            log("Applying OpenGL context version ", major, ".", minor);
+            apply(SDL_GL_CONTEXT_MAJOR_VERSION, major);
+            apply(SDL_GL_CONTEXT_MINOR_VERSION, minor);
         }
         
         if(this.antialias > 0){

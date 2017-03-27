@@ -144,6 +144,8 @@ class Window{
         in VSync vsync = VSync.Disabled,
         in GLSettings settings = GLSettings.Default
     ){
+        this.glsettings(settings);
+        
         // Actually create the window
         this.window = SDL_CreateWindow(
             title.tocstring,
@@ -155,7 +157,6 @@ class Window{
         this.context = SDL_GL_CreateContext(window);
         if(!this.context) throw new SDLException("Failed to create SDL_GLContext.");
         
-        this.glsettings(settings);        
         this.projection(Box!int(view.width, view.height));
         this.clearcolor(0, 0, 0, 1);
         this.vsync(vsync);
@@ -207,13 +208,16 @@ class Window{
         ));
     }
     @property void projection(in Matrix4!float matrix){
-        glMatrixMode(GL_PROJECTION);
-        glLoadMatrixf(cast(const(float*)) &matrix);
-        glMatrixMode(GL_MODELVIEW);
+        //glMatrixMode(GL_PROJECTION);
+        //glLoadMatrixf(cast(const(float*)) &matrix);
+        //glMatrixMode(GL_MODELVIEW);
+        
         // Alternative: Works on Win7 but not OSX:
         //glLoadIdentity();
         //glOrtho(0, this.width, this.height, 0, -1f, 1f);
         //glTranslatef(this.x, this.y, 0f);
+        
+        GLException.enforce("Failed to set projection.");
     }
     void project(){
         this.projection = this.size;
@@ -265,7 +269,6 @@ class Window{
     
     /// Set OpenGL context settings.
     @property void glsettings(GLSettings settings){
-        this.use();
         settings.apply();
     }
     
