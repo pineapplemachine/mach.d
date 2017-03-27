@@ -23,6 +23,12 @@ __dummy.html
 *.sublime-project
 *.sublime-workspace
 
+# Testing VMs
+test/ubuntu/.vagrant/
+
+# Code coverage
+*.lst
+
 test.d
 test.py
 wip_*.d
