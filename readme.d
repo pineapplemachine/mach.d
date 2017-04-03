@@ -46,26 +46,19 @@ for example programs showing how to use mach's functionality.
 
 ## Places of interest
 
-To output to the console and read user input, [`mach.io.stdio`]
-(https://github.com/pineapplemachine/mach.d/blob/master/mach/io/stdio.d).
+To output to the console and read user input, [`mach.io.stdio`](https://github.com/pineapplemachine/mach.d/blob/master/mach/io/stdio.d).
 
-To read and write files, and to perform other file system operations,
-[`mach.io.file.path`](https://github.com/pineapplemachine/mach.d/blob/master/mach/io/file/path.d).
+To read and write files, and to perform other file system operations,[`mach.io.file.path`](https://github.com/pineapplemachine/mach.d/blob/master/mach/io/file/path.d).
 
-For higher-order functions and other functional programming tools, [`mach.range`]
-(https://github.com/pineapplemachine/mach.d/tree/master/mach/range).
+For higher-order functions and other functional programming tools, [`mach.range`](https://github.com/pineapplemachine/mach.d/tree/master/mach/range).
 
-To generate a string representation of just about anything, [`mach.text.str`]
-(https://github.com/pineapplemachine/mach.d/tree/master/mach/text/str).
+To generate a string representation of just about anything, [`mach.text.str`](https://github.com/pineapplemachine/mach.d/tree/master/mach/text/str).
 
-To encode and decode UTF-8, UTF-16, and UTF-32, [`mach.text.utf`]
-(https://github.com/pineapplemachine/mach.d/tree/master/mach/text/utf).
+To encode and decode UTF-8, UTF-16, and UTF-32, [`mach.text.utf`](https://github.com/pineapplemachine/mach.d/tree/master/mach/text/utf).
 
-To parse and encode JSON, [`mach.json`]
-(https://github.com/pineapplemachine/mach.d/tree/master/mach/text/json).
+To parse and encode JSON, [`mach.json`](https://github.com/pineapplemachine/mach.d/tree/master/mach/text/json).
 
-For collections and related data structures, [`mach.collect`]
-(https://github.com/pineapplemachine/mach.d/tree/master/mach/collect).
+For collections and related data structures, [`mach.collect`](https://github.com/pineapplemachine/mach.d/tree/master/mach/collect).
 
 +/
 
