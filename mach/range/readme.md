@@ -62,7 +62,7 @@ assert(range.empty); // Empty!
 ```
 
 ``` D
-// A range whose `empty` property is known at compile time to be `true`
+// A range whose `empty` property is known at compile time to be `false`
 // is considered to be an infinite range.
 import mach.traits : isInfiniteRange;
 import mach.range.rangeof : infrangeof;
@@ -72,7 +72,7 @@ static assert(infrange.empty == false); // Value known at compile time
 ```
 
 ``` D
-// When the `empty` property is known at compile time but is false,
+// When the `empty` property is known at compile time but is true,
 // the range is always and completely empty.
 import mach.range.rangeof : emptyrangeof;
 auto emptyrange = emptyrangeof!int;
