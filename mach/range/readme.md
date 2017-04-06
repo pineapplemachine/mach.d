@@ -747,8 +747,8 @@ assert(range.front == 0); // Repeated access ok!
 ## mach.range.cartpower
 
 
-The `cartpower` function produces a range that is the [n-ary Cartesian product]
-(https://en.wikipedia.org/wiki/Cartesian_product#n-ary_product)
+The `cartpower` function produces a range that is the
+[n-ary Cartesian product](https://en.wikipedia.org/wiki/Cartesian_product#n-ary_product)
 of an input iterable with itself.
 It accepts a single input iterable that is valid as a saving range to perform
 the operation upon, and an unsigned integer representing the dimensionality of
