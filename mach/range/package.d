@@ -67,7 +67,7 @@ unittest{ /// Example
 }
 
 unittest{ /// Example
-    // A range whose `empty` property is known at compile time to be `true`
+    // A range whose `empty` property is known at compile time to be `false`
     // is considered to be an infinite range.
     import mach.traits : isInfiniteRange;
     import mach.range.rangeof : infrangeof;
@@ -77,7 +77,7 @@ unittest{ /// Example
 }
 
 unittest{ /// Example
-    // When the `empty` property is known at compile time but is false,
+    // When the `empty` property is known at compile time but is true,
     // the range is always and completely empty.
     import mach.range.rangeof : emptyrangeof;
     auto emptyrange = emptyrangeof!int;
