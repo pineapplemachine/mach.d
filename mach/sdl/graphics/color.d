@@ -153,6 +153,12 @@ struct Color{
         return true;
     }
     
+    /// Get a copy of this color with the same RGB values but a perfectly
+    /// opaque alpha value of 1.0.
+    auto opaque() const{
+        return typeof(this)(this.r, this.g, this.b, 1.0);
+    }
+    
     auto opBinary(string op, N)(in N rhs) const if(isNumeric!N){
         mixin(`return typeof(this)(
             this.r ` ~ op ~ ` rhs,
@@ -219,6 +225,13 @@ struct Color{
             this[2] ` ~ op ~ `= rhs;
             this[3] ` ~ op ~ `= rhs;
         `);
+    }
+    
+    auto opBinary(string op)(in Color rhs) const{
+        return this.opBinary!op(rhs.rgba);
+    }
+    auto opOpAssign(string op)(in Color rhs) const{
+        return this.opBinary!op(rhs.rgba);
     }
     
     string toString() const{
