@@ -6,7 +6,7 @@ import mach.text.numeric : writeint, writefloat, WriteFloatSettings;
 import mach.traits : isNull, isBoolean, isNumeric, isIntegral, isFloatingPoint;
 import mach.traits : isCharacter, isString, isArray, isAssociativeArray;
 import mach.traits : ArrayElementType, ArrayKeyType, ArrayValueType;
-import mach.range : map, join, sum, all, orderstrings, asrange, asarray;
+import mach.range : map, join, sum, all, lexorder, asrange, asarray;
 import mach.range.sort : keysort = mergesort;
 import mach.text.utf : utf8encode;
 
@@ -246,7 +246,7 @@ static struct JsonValue{
                     return keyprefix() ~ "{}";
                 }else{
                     auto values = this.store.objectval.keys.keysort!(
-                        (a, b) => orderstrings(a, b) == -1
+                        (a, b) => lexorder(a, b) == -1
                     ).map!(
                         key => this[key].pretty!(indent, floatsettings, newline, width)(
                             prefix ~ indent, key

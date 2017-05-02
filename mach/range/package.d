@@ -600,7 +600,7 @@ import mach.range.map : map;
 import mach.range.mutate : mutate;
 import mach.range.next : next, nextfront, nextback;
 import mach.range.ngrams : ngrams;
-import mach.range.orderstrings : orderstrings;
+import mach.range.lexorder : lexorder;
 import mach.range.pad : pad, padfront, padback, padfrontcount, padbackcount;
 import mach.range.pluck : pluck;
 import mach.range.random : lcong, mersenne, xorshift, shuffle;

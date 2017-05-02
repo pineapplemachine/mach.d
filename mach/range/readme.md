@@ -1334,6 +1334,44 @@ assert(["abc", "xyz"].join!(true, true)('.').equals(".abc.xyz."));
 ```
 
 
+## mach.range.lexorder
+
+
+The `lexorder` function implements a generalized
+[lexicographical ordering](https://en.wikipedia.org/wiki/Lexicographical_order)
+algorithm that, given any two input iterables, will return a value indicating
+the correct ordering.
+
+``` D
+assert(lexorder("hello", "hello") == 0); // Both inputs are equal
+assert(lexorder("apple", "zed") == -1); // "apple" precedes "zed"
+assert(lexorder("watch", "bear") == +1); // "watch" follows "bear"
+```
+
+``` D
+assert(lexorder([3, 2, 1], [3, 2, 1]) == 0);
+assert(lexorder([3, 2, 1], [3, 2, 2]) == -1);
+assert(lexorder([3, 2, 1], [3, 2, 0]) == +1);
+assert(lexorder([3, 2, 1, 0], [3, 2, 1]) == +1);
+```
+
+
+`lexorder` optionally accepts an ordering function that is applied to each
+element. It should return 0 when the elements are equal, -1 when the first
+element precedes the second, and +1 when the first element follows the second.
+
+``` D
+import mach.text.ascii;
+alias order = (a, b){ // Case-insensitive ASCII character comparison
+    if(a.tolower() > b.tolower()) return 1;
+    else if(a.tolower() < b.tolower()) return -1;
+    return 0;
+};
+assert(lexorder!order("HELLO", "hello") == 0);
+assert(lexorder!order("apple", "Zed") == -1);
+```
+
+
 ## mach.range.logical
 
 

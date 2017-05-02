@@ -163,7 +163,7 @@ void reportstats(ref ParseResult[] stats){
 dstring makecontent(ref dstring[][dstring] docs){
     dstring content = ""d;
     dstring[] sections = docs.byKey().asarray;
-    sections.mergesort!((a, b) => orderstrings(a, b) == -1);
+    sections.mergesort!((a, b) => lexorder(a, b) == -1);
     uint mindots = cast(uint) sections.map!(s => s.count('.').total).top;
     foreach(section; sections){
         uint hashes = cast(uint)(1 + section.count('.') - mindots);
