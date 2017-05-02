@@ -42,7 +42,24 @@ unittest{ /// Example
     assert(range.equals("hello"));
 }
 
+/++ Docs
+
+When `filter` does not receive an explicit predicate argument, it enumerates
+only the truthy values of the input iterable.
+
++/
+
+unittest{ /// Example
+    import mach.range.compare : equals;
+    auto range = [1, 0, 2, 3, 0];
+    assert(range.filter().equals([1, 2, 3]));
+}
+
 public:
+
+
+
+alias DefaultFilterPredicate = a => a;
 
 
 
@@ -62,7 +79,9 @@ template canFilterRange(T, alias pred){
 
 /// Given an object that can be taken as a range, create a new range which
 /// enumerates only those values of the original range matching some predicate.
-auto filter(alias pred, Iter)(auto ref Iter iter) if(canFilter!(Iter, pred)){
+auto filter(alias pred = DefaultFilterPredicate, Iter)(
+    auto ref Iter iter
+) if(canFilter!(Iter, pred)){
     auto range = iter.asrange;
     return FilterRange!(pred, typeof(range))(range);
 }
@@ -173,10 +192,18 @@ unittest{
         alias even = (n) => (n % 2 == 0);
         tests("Iteration", {
             auto empty = new int[0];
-            test(empty.filter!even.equals(empty));
-            test([0].filter!even.equals([0]));
-            test([1].filter!even.equals(empty));
-            test([1, 2, 3, 4, 5, 6].filter!even.equals([2, 4, 6]));
+            test!equals(empty.filter!even, empty);
+            test!equals([0].filter!even, [0]);
+            test!equals([1].filter!even, empty);
+            test!equals([1, 2, 3, 4, 5, 6].filter!even, [2, 4, 6]);
+        });
+        tests("Default predicate", {
+            auto empty = new int[0];
+            test(empty.filter().empty);
+            test([0].filter().empty);
+            test!equals([1].filter(), [1]);
+            test!equals([0, 1, 0, 0, 2].filter(), [1, 2]);
+            test!equals([1, 2, 3].filter(), [1, 2, 3]);
         });
         tests("Bidirectionality", {
             test([2, 4, 5].filter!even.retro.equals([4, 2]));

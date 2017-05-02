@@ -1189,6 +1189,16 @@ assert(range.equals("hello"));
 ```
 
 
+When `filter` does not receive an explicit predicate argument, it enumerates
+only the truthy values of the input iterable.
+
+``` D
+import mach.range.compare : equals;
+auto range = [1, 0, 2, 3, 0];
+assert(range.filter().equals([1, 2, 3]));
+```
+
+
 ## mach.range.first
 
 
