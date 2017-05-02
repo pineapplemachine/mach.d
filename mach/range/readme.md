@@ -1357,8 +1357,9 @@ assert(lexorder([3, 2, 1, 0], [3, 2, 1]) == +1);
 
 
 `lexorder` optionally accepts an ordering function that is applied to each
-element. It should return 0 when the elements are equal, -1 when the first
-element precedes the second, and +1 when the first element follows the second.
+pair of correlating elements. It should return 0 when the elements are equal,
+-1 when the first element precedes the second, and +1 when the first element
+follows the second.
 
 ``` D
 import mach.text.ascii;
