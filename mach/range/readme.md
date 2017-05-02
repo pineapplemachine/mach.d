@@ -1141,6 +1141,20 @@ static assert(!is(typeof({
 ```
 
 
+## mach.range.fill
+
+
+The `fill` function is an abstraction of the `mutate` function in
+`mach.range.mutate` which assigns every element in a mutable input iterable
+to a given value.
+
+``` D
+int[] array = [0, 1, 2, 3];
+array.fill(10);
+assert(array == [10, 10, 10, 10]);
+```
+
+
 ## mach.range.filter
 
 
