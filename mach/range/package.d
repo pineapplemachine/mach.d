@@ -607,7 +607,7 @@ import mach.range.random : lcong, mersenne, xorshift, shuffle;
 import mach.range.rangeof : rangeof, infrangeof, finiterangeof;
 import mach.range.recur : recur;
 import mach.range.reduce : reduce, reduceeager, reducelazy;
-import mach.range.reduction : sum, product;
+import mach.range.reduction : product;
 import mach.range.repeat : repeat;
 import mach.range.retro : retro;
 import mach.range.rotate : rotate;
@@ -650,12 +650,6 @@ unittest{
             testeq(distro['o'], 2);
             testeq(distro['_'], 2);
             foreach(key, value; distro) testeq(padded.count(key), value);
-        });
-        tests("lerp, tap, sum", {
-            real counter = 0;
-            real summed = lerp(0, 1, 32).tap!((e){counter += e;}).sum;
-            testeq(counter, 16.0);
-            testeq(counter, summed);
         });
         tests("chain, tap, consume", {
             auto range = ["abc", "def", "", "ghi"].chain;

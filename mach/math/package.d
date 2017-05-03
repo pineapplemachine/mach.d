@@ -26,5 +26,6 @@ import mach.math.polynomial;
 import mach.math.round;
 import mach.math.sign;
 import mach.math.sqrt;
+import mach.math.sum;
 import mach.math.trig;
 import mach.math.vector;
