@@ -626,6 +626,37 @@ assert(sum([0.25, 0.5, 0.75]) == 1.5);
 ```
 
 
+The `fsum` (or `shewsum`) function can additionally be used to sum floats using
+[https://people.eecs.berkeley.edu/~jrs/papers/robustr.pdf](Shewchuck's algorithm).
+It is less efficient than the Kahan summation algorith, but its output is more
+correct.
+
+``` D
+assert(fsum([0.25, 0.5, 0.75]) == 1.5);
+```
+
+
+Note that the floating-point summation implementations — both `kahansum` and
+`shewsum` and their aliases — have consistent behavior for NaN and infinite
+inputs, and for intermediate overflow during summation.
+
+``` D
+import mach.math.floats.properties : fisnan, fisposinf, fisneginf;
+// When there is any NaN, returns the first NaN.
+assert(sum([1.0, +real.nan]).fisnan);
+// When there is any +inf but no NaN or -inf, returns +inf.
+assert(sum([1.0, +real.infinity]).fisposinf);
+// When there is any -inf but no NaN or +inf, returns -inf.
+assert(sum([1.0, -real.infinity]).fisneginf);
+// When there's both +inf and -inf but no NaN, returns NaN.
+assert(sum([+real.infinity, -real.infinity]).fisnan);
+// When there's intermediate positive overflow but no +inf, -inf, or NaN, returns +inf.
+assert(sum([+real.max, +real.max]).fisposinf);
+// When there's intermediate negative overflow but no +inf, -inf, or NaN, returns -inf.
+assert(sum([-real.max, -real.max]).fisneginf);
+```
+
+
 ## mach.math.trig
 
 
