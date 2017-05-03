@@ -5,6 +5,7 @@ private:
 import mach.types : Rebindable, rebindable;
 import mach.traits : ElementType, hasNumericLength, hasNumericRemaining;
 import mach.traits : isIterable, isFiniteIterable, isRange, isSavingRange;
+import mach.traits : isFiniteRange;
 import mach.range.asrange : asrange, validAsRange;
 
 /++ Docs
@@ -28,7 +29,7 @@ for the accumulator. The `reduce` function operates by repeatedly applying this
 function, sequentially updating the accumulator value with the elements of the
 input.
 
-For example, a `sum` function can be implemented using `reduce`.
+For example, a simple `sum` function can be implemented using `reduce`.
 
 +/
 
@@ -172,74 +173,95 @@ auto reducelazy(alias func, Acc, Iter)(auto ref Iter iter, Acc initial) if(
 
 
 /// Range for lazily evaluating a reduce function.
-struct ReduceRange(Range, Acc, alias func, bool seeded = true) if(
+struct ReduceRange(Range, Acc, alias func, bool seeded) if(
     canReduceLazyRange!(Range, Acc, func) &&
     (seeded || is(typeof({Acc x = ElementType!Range.init;})))
 ){
     alias Accumulator = Rebindable!Acc;
     
+    /// The input range that is being reduced.
     Range source;
+    /// The current value of the accumulator.
     Accumulator accumulator;
-    bool isempty;
+    /// Whether this range is currently empty.
+    static if(isFiniteRange!Range) bool isempty;
     
-    this(Range source, Acc acc, bool isempty = false){
+    static if(isFiniteRange!Range) this(Range source, Acc acc, bool isempty = false){
         this.source = source;
         this.accumulator = acc;
         this.isempty = isempty;
     }
-    
-    @property bool empty() const{
-        return this.isempty;
+    static if(!isFiniteRange!Range) this(Range source, Acc acc){
+        this.source = source;
+        this.accumulator = acc;
     }
     
-    static if(!seeded){
-        this(Range source){
-            version(assert){
-                static const error = new ReduceEmptyError();
-                if(source.empty) throw error;
-            }
-            this.source = source;
-            this.accumulator = this.source.front;
-            this.isempty = false;
-            this.source.popFront();
+    static if(!seeded) this(Range source) in{
+        // Disallow inputting an empty range.
+        static const error = new ReduceEmptyError();
+        if(source.empty) throw error;
+    }body{
+        this.source = source;
+        this.accumulator = this.source.front;
+        static if(isFiniteRange!Range) this.isempty = false;
+        this.source.popFront();
+    }
+    
+    /// Get whether the range is empty.
+    static if(isFiniteRange!Range){
+        @property bool empty() const{
+            return this.isempty;
         }
+    }else{
+        static enum bool empty = false;
     }
     
+    /// Get the element at the front of the range.
     @property auto front() const in{assert(!this.empty);} body{
         return this.accumulator;
     }
+    /// Pop the element at the front of the range.
     void popFront() in{assert(!this.empty);} body{
-        if(!this.source.empty){
-            this.accumulator = func(cast(Acc) this.accumulator, this.source.front);
-            this.source.popFront();
-        }else{
-            this.isempty = true;
+        static if(isFiniteRange!Range){
+            if(this.source.empty){
+                this.isempty = true;
+                return;
+            }
         }
+        this.accumulator = func(cast(Acc) this.accumulator, this.source.front);
+        this.source.popFront();
     }
     
     static if(hasNumericLength!Range){
+        /// Get the total number of elements in the range.
         @property auto length(){
             return this.source.length + seeded;
         }
+        /// Ditto
         alias opDollar = length;
     }
-    static if(hasNumericRemaining!Range){
+    static if(hasNumericRemaining!Range && isFiniteRange!Range){
+        /// Get the number of elements remaining before the range is fully consumed.
         @property auto remaining(){
             return cast(size_t) this.source.remaining + !this.isempty;
         }
     }
     
     static if(isSavingRange!Range){
+        /// Produce a copy of this range.
         @property typeof(this) save(){
-            return typeof(this)(this.source.save, this.accumulator, this.isempty);
+            static if(isFiniteRange!Range){
+                return typeof(this)(this.source.save, this.accumulator, this.isempty);
+            }else{
+                return typeof(this)(this.source.save, this.accumulator);
+            }
         }
     }
 }
 
 
 
-version(unittest){
-    private:
+private version(unittest){
     import mach.test;
     import mach.range.compare : equals;
 }
