@@ -605,6 +605,27 @@ assert(isqrt(15) == 3);
 ```
 
 
+## mach.math.sum
+
+
+The `sum` function accepts an finite input iterable and returns the sum of its
+elements. The only condition imposed upon element types is that they must allow
+addition via the binary `+` operator; i.e. user-defined types may be used as
+input in addition to primitive numeric types.
+
+When the input is an iterable of floating point primitives, the
+[Kahan summation algorithm](https://en.wikipedia.org/wiki/Kahan_summation_algorithm)
+is used to reduce error.
+In all other cases, a linear summation algorithm is used.
+These separate summation algorithms may be called individually via the
+`kahansum` and `linearsum` methods that are also implemented in this module.
+
+``` D
+assert(sum([1, 2, 3, 4]) == 10);
+assert(sum([0.25, 0.5, 0.75]) == 1.5);
+```
+
+
 ## mach.math.trig
 
 

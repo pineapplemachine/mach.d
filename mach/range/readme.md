@@ -1720,7 +1720,7 @@ for the accumulator. The `reduce` function operates by repeatedly applying this
 function, sequentially updating the accumulator value with the elements of the
 input.
 
-For example, a `sum` function can be implemented using `reduce`.
+For example, a simple `sum` function can be implemented using `reduce`.
 
 ``` D
 alias sum = (acc, next) => (acc + next);
