@@ -628,7 +628,7 @@ assert(sum([0.25, 0.5, 0.75]) == 1.5);
 
 The `fsum` (or `shewsum`) function can additionally be used to sum floats using
 [https://people.eecs.berkeley.edu/~jrs/papers/robustr.pdf](Shewchuck's algorithm).
-It is less efficient than the Kahan summation algorith, but its output is more
+It is less efficient than the Kahan summation algorithm, but its output is more
 correct.
 
 ``` D
