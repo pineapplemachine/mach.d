@@ -619,7 +619,6 @@ import mach.range.strip : strip, stripfront, stripback, stripboth;
 import mach.range.stripends : striphead, striptail;
 import mach.range.tap : tap;
 import mach.range.top : top, bottom;
-import mach.range.unique : unique;
 import mach.range.walk : walklength, walkindex, walkslice;
 import mach.range.zip : zip;
 
