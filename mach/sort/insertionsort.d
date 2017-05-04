@@ -1,10 +1,10 @@
-module mach.range.sort.insertionsort;
+module mach.sort.insertionsort;
 
 private:
 
 import mach.types : Rebindable;
 import mach.traits : ElementType, hasNumericLength, isFiniteIterable;
-import mach.range.sort.common;
+import mach.sort.common;
 
 public:
 

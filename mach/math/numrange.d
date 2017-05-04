@@ -299,7 +299,7 @@ private version(unittest){
     import mach.meta : Aliases;
     import mach.error.mustthrow : mustthrow;
     import mach.range.compare : equals;
-    import mach.range.sort : issorted;
+    import mach.sort : issorted;
 }
 
 unittest{ /// Empty ranges

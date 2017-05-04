@@ -1,4 +1,4 @@
-module mach.range.sort.common;
+module mach.sort.common;
 
 private:
 
@@ -65,7 +65,7 @@ version(unittest){
     import mach.test;
     import mach.range.asrange : asrange;
     import mach.range.compare : equals;
-    import mach.range.sort.issorted : issorted;
+    import mach.sort.issorted : issorted;
     public:
     /// Verify basic sorting test cases.
     void testsort(alias sort)(){

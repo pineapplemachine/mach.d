@@ -1,10 +1,10 @@
-module mach.range.sort.issorted;
+module mach.sort.issorted;
 
 private:
 
 import mach.traits : ElementType, isFiniteIterable;
 import mach.range.asrange : asrange, validAsRange;
-import mach.range.sort.common : DefaultSortCompare;
+import mach.sort.common : DefaultSortCompare;
 
 public:
 

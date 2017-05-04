@@ -7,7 +7,7 @@ import mach.traits : isNull, isBoolean, isNumeric, isIntegral, isFloatingPoint;
 import mach.traits : isCharacter, isString, isArray, isAssociativeArray;
 import mach.traits : ArrayElementType, ArrayKeyType, ArrayValueType;
 import mach.range : map, join, all, lexorder, asrange, asarray;
-import mach.range.sort : keysort = mergesort;
+import mach.sort : keysort = mergesort;
 import mach.text.utf : utf8encode;
 import mach.math : sum;
 

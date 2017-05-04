@@ -1,11 +1,11 @@
-module mach.range.sort.selectionsort;
+module mach.sort.selectionsort;
 
 private:
 
 import mach.traits : ElementType, isSavingRange, isFiniteIterable;
 import mach.traits : hasRemaining, hasNumericLength;
 import mach.range.asrange : asrange, validAsSavingRange;
-import mach.range.sort.common;
+import mach.sort.common;
 
 public:
 

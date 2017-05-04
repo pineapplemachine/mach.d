@@ -2012,7 +2012,7 @@ element according to a comparison function. With the default comparison
 function, `top` can be used to find a minimum value in an iterable input
 and `bottom` used to find the maximum.
 
-Note that the `mach.range.sort` package provides functions for fully or
+Note that the `mach.sort` package provides functions for fully or
 partially sorting inputs, rather than simply acquiring a minimum or maximum.
 
 ``` D

@@ -1,9 +1,9 @@
-module mach.range.sort.heapsort;
+module mach.sort.heapsort;
 
 private:
 
 //import mach.traits : ElementType, hasNumericLength, isFiniteIterable;
-import mach.range.sort.common;
+import mach.sort.common;
 
 public:
 

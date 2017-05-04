@@ -612,7 +612,7 @@ import mach.range.repeat : repeat;
 import mach.range.retro : retro;
 import mach.range.rotate : rotate;
 import mach.range.select : select, from, until;
-import mach.range.sort;
+import mach.sort;
 import mach.range.split : split;
 import mach.range.stride : stride;
 import mach.range.strip : strip, stripfront, stripback, stripboth;

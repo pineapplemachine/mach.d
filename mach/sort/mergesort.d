@@ -1,9 +1,9 @@
-module mach.range.sort.mergesort;
+module mach.sort.mergesort;
 
 private:
 
 import mach.traits : ElementType;
-import mach.range.sort.common;
+import mach.sort.common;
 
 public:
 

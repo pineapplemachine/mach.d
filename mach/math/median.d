@@ -3,7 +3,7 @@ module mach.math.median;
 private:
 
 import mach.traits : Unqual, ElementType, isFiniteIterable, isNumeric;
-import mach.range.sort : copyinsertionsort;
+import mach.sort : copyinsertionsort;
 import mach.math.mean : mean;
 
 /++ Docs

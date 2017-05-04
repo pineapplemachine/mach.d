@@ -1,8 +1,8 @@
-module mach.range.sort.shellsort;
+module mach.sort.shellsort;
 
 private:
 
-import mach.range.sort.common;
+import mach.sort.common;
 
 public:
 
