@@ -90,6 +90,23 @@ primitives.
 This package provides functions for performing operations upon integral types.
 
 
+## mach.math.lcm
+
+
+This module makes available the `gcd` and `lcm` functions for determining the
+greatest common divisor and least common multiple of two numbers, respectively.
+When both inputs to `gcd` are 0, 0 is returned. When any input to `lcm` is 0,
+0 is returned. In all other cases (except, potentially, for overflow in the case
+of least common multiple) the outputs of `gcd` and `lcm` are positive integers.
+
+``` D
+// The greatest common divisor of 100 and 24 is 4.
+assert(gcd(100, 24) == 4);
+// The least common multiple of 100 and 24 is 600.
+assert(lcm(100, 24) == 600);
+```
+
+
 ## mach.math.matrix
 
 
