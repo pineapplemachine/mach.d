@@ -32,6 +32,7 @@ immutable readmepaths = [
     "mach/text/utf",
     "mach/text/utf/utf8",
     "mach/text/utf/utf16",
+    "mach/types",
 ];
 
 void main(){
