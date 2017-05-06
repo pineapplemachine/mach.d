@@ -5,6 +5,13 @@ private:
 import mach.range : asarray;
 import mach.text.escape : Escaper;
 
+/++ Docs
+
+This module defines an object that is used to handle escape sequences
+in json.
+
++/
+
 public:
 
 

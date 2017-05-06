@@ -4,6 +4,13 @@ private:
 
 import mach.text.text : text;
 
+/++  Docs
+
+This module ipmlements various json-related exception classes, all of which
+inherit from the base `JsonException` class.
+
++/
+
 public:
 
 

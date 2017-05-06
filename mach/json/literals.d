@@ -2,7 +2,12 @@ module mach.json.literals;
 
 private:
 
-//
+/++ Docs
+
+This module defines what strings are to be used to represent json literals such
+as `null`, `true`, or `false`.
+
++/
 
 public:
 

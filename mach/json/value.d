@@ -15,6 +15,16 @@ import mach.json.escape;
 import mach.json.exceptions;
 import mach.json.literals;
 
+/++ Docs
+
+The `JsonValue` type is used to represent information in a format that can be
+readily manipulated and exactly serialized to and deserialized from json.
+`JsonValue` objects can represent booleans, integers, floating point numbers,
+UTF-8 encoded character strings, arrays of other `JsonValue` objects, and
+associative arrays mapping UTF-8 encoded strings to `JsonValue` objects.
+
++/
+
 public:
 
 
