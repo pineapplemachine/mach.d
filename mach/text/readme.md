@@ -1,4 +1,10 @@
-# mach.text.ascii
+# mach.text
+
+
+This package provides functionality for manipulating text.
+
+
+## mach.text.ascii
 
 
 This module implements various functions for operating upon ASCII-encoded
@@ -28,7 +34,7 @@ assert('!'.isprintable); // Is a printable (non-control) character
 ```
 
 
-# mach.text.cstring
+## mach.text.cstring
 
 
 This package contains functions for working with cstrings, or null-terminated
@@ -43,7 +49,7 @@ assert("world\0".ptr.fromcstring == "world");
 ```
 
 
-# mach.text.english
+## mach.text.english
 
 
 This package provides functions for performing common operations with
@@ -60,7 +66,7 @@ assert("island".aan == "an");
 ```
 
 
-# mach.text.numeric
+## mach.text.numeric
 
 
 This package provides functions for parsing and serializing numbers.
@@ -80,7 +86,7 @@ assert(double(456.789).writenumber == "456.789");
 ```
 
 
-# mach.text.str
+## mach.text.str
 
 
 This package implements the `str` function, which may be used to generate a
@@ -92,7 +98,7 @@ assert(str(1234) == "1234");
 ```
 
 
-# mach.text.text
+## mach.text.text
 
 
 This module implements the `text` function, which converts all of its arguments
@@ -104,7 +110,7 @@ assert(text("I would walk ", 1000, " miles") == "I would walk 1000 miles");
 ```
 
 
-# mach.text.utf
+## mach.text.utf
 
 
 This package implements encoding and decoding of UTF-8, UTF-16, and UTF-32

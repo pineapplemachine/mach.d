@@ -1,5 +1,13 @@
 module mach.text;
 
+private:
+
+/++ Docs
+
+This package provides functionality for manipulating text.
+
++/
+
 public:
 
 import mach.text.ascii;
