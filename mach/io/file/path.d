@@ -511,6 +511,7 @@ unittest{ /// Get/set current directory
     assert(!Path.currentdir.isfile);
     assert(!Path.currentdir.islink);
     immutable dir = Path(__FILE_FULL_PATH__).directory;
+    Path.currentdir = dir;
     assert(Path.currentdir == dir);
 }
 
