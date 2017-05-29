@@ -60,7 +60,9 @@ static struct JsonValue{
     /// Exception object thrown for operations upon invalid types.
     static const OpException = new JsonInvalidOperationException();
     
+    /// Indicates the type of the value stored by this object.
     Type valuetype = Type.Null;
+    /// Holds the value of this ovject.
     Store store;
     
     this(Type type){
@@ -70,9 +72,43 @@ static struct JsonValue{
         this.value = value;
     }
     
-    @property auto type() const{
+    /// True when this value represents null.
+    @property bool isnull() const{
+        return this.valuetype is Type.Null;
+    }
+    /// True when this value represents a boolean.
+    @property bool isboolean() const{
+        return this.valuetype is Type.Boolean;
+    }
+    /// True when this value represents an integer.
+    @property bool isinteger() const{
+        return this.valuetype is Type.Integer;
+    }
+    /// True when this value represents a floating point number.
+    @property bool isfloat() const{
+        return this.valuetype is Type.Float;
+    }
+    /// True when this value represents a UTF-8 encoded string.
+    @property bool isstring() const{
+        return this.valuetype is Type.String;
+    }
+    /// True when this value represents an array of values.
+    @property bool isarray() const{
+        return this.valuetype is Type.Array;
+    }
+    /// True when this value represents an object made of key, value pairs.
+    @property bool isobject() const{
+        return this.valuetype is Type.Object;
+    }
+    
+    /// Get the type of this value.
+    /// Returns a member of the JsonValue.Type enum.
+    @property Type type() const{
         return this.valuetype;
     }
+    /// Set the type of this value.
+    /// Also erases the current stored value and replaces it with a default
+    /// value of the assigned type.
     @property void type(Type type){
         this.valuetype = type;
         final switch(this.type){
@@ -131,6 +167,7 @@ static struct JsonValue{
         }
     }
     
+    /// Assign this object's value.
     @property void value(T)(auto ref T value) if(canAssign!T){
         static if(is(T : JsonValue)){
             this.type = value.type;
@@ -176,6 +213,8 @@ static struct JsonValue{
         }
     }
     
+    /// Encode the json object as a compact string without using any
+    /// unnecessary characters.
     string encode(
         WriteFloatSettings floatsettings = EncodeFloatSettingsDefault
     )() const{
@@ -203,6 +242,7 @@ static struct JsonValue{
         }
     }
     
+    /// Encode the json object as a human-readable string.
     string pretty(
         string indent = "  ",
         WriteFloatSettings floatsettings = EncodeFloatSettingsDefault,
@@ -1126,4 +1166,63 @@ unittest{
             });
         });
     });
+}
+
+unittest{ /// isnull, isboolean, etc properties
+    auto nullval = JsonValue(null);
+    assert(nullval.isnull);
+    assert(!nullval.isboolean);
+    assert(!nullval.isinteger);
+    assert(!nullval.isfloat);
+    assert(!nullval.isstring);
+    assert(!nullval.isarray);
+    assert(!nullval.isobject);
+    auto boolval = JsonValue(true);
+    assert(!boolval.isnull);
+    assert(boolval.isboolean);
+    assert(!boolval.isinteger);
+    assert(!boolval.isfloat);
+    assert(!boolval.isstring);
+    assert(!boolval.isarray);
+    assert(!boolval.isobject);
+    auto intval = JsonValue(1);
+    assert(!intval.isnull);
+    assert(!intval.isboolean);
+    assert(intval.isinteger);
+    assert(!intval.isfloat);
+    assert(!intval.isstring);
+    assert(!intval.isarray);
+    assert(!intval.isobject);
+    auto floatval = JsonValue(0.5);
+    assert(!floatval.isnull);
+    assert(!floatval.isboolean);
+    assert(!floatval.isinteger);
+    assert(floatval.isfloat);
+    assert(!floatval.isstring);
+    assert(!floatval.isarray);
+    assert(!floatval.isobject);
+    auto strval = JsonValue("hello");
+    assert(!strval.isnull);
+    assert(!strval.isboolean);
+    assert(!strval.isinteger);
+    assert(!strval.isfloat);
+    assert(strval.isstring);
+    assert(!strval.isarray);
+    assert(!strval.isobject);
+    auto arrval = JsonValue(["h", "i"]);
+    assert(!arrval.isnull);
+    assert(!arrval.isboolean);
+    assert(!arrval.isinteger);
+    assert(!arrval.isfloat);
+    assert(!arrval.isstring);
+    assert(arrval.isarray);
+    assert(!arrval.isobject);
+    auto objval = JsonValue(["a": 0, "b": 1]);
+    assert(!objval.isnull);
+    assert(!objval.isboolean);
+    assert(!objval.isinteger);
+    assert(!objval.isfloat);
+    assert(!objval.isstring);
+    assert(!objval.isarray);
+    assert(objval.isobject);
 }
