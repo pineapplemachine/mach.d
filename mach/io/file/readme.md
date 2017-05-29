@@ -14,7 +14,7 @@ This module is deprecated. Please use `mach.io.file.path` instead.
 
 
 The `Path` type may be used to perform actions and manipulations with file paths.
-An instance should be created simply by calling the constructor with some string
+An instance should be created by calling the constructor with some string
 representing a file path.
 
 ``` D

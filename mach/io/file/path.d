@@ -16,7 +16,7 @@ import mach.io.file.traverse;
 /++ Docs
 
 The `Path` type may be used to perform actions and manipulations with file paths.
-An instance should be created simply by calling the constructor with some string
+An instance should be created by calling the constructor with some string
 representing a file path.
 
 +/
@@ -373,7 +373,7 @@ struct Path{
 }
 
 
-import mach.io.stdio;
+
 private version(unittest){
     import mach.range : headis, equals;
     import mach.io.stream : read;
@@ -511,7 +511,6 @@ unittest{ /// Get/set current directory
     assert(!Path.currentdir.isfile);
     assert(!Path.currentdir.islink);
     immutable dir = Path(__FILE_FULL_PATH__).directory;
-    Path.currentdir = dir;
     assert(Path.currentdir == dir);
 }
 
