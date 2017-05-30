@@ -3,6 +3,7 @@ module mach.json.value;
 private:
 
 import mach.text.numeric : writeint, writefloat, WriteFloatSettings;
+import mach.text.numeric : parsefloat, NumberParseException;
 import mach.traits : isNull, isBoolean, isNumeric, isIntegral, isFloatingPoint;
 import mach.traits : isCharacter, isString, isArray, isAssociativeArray;
 import mach.traits : ArrayElementType, ArrayKeyType, ArrayValueType;
@@ -358,15 +359,158 @@ static struct JsonValue{
         }
     }
     
-    auto ref array(){
-        if(this.type !is Type.Array) throw this.OpException;
-        return this.store.arrayval;
+    /// Get this value as a boolean.
+    /// Returns the boolean data if the object represents a boolean.
+    /// Returns true when the value != 0 if the object represents a number.
+    /// Returns false when the object represents null.
+    /// Returns true when the value isn't empty and false otherwise when
+    /// the object represents a string, an array, or an object,
+    /// except for the case where the value is the string "false" or "False",
+    /// in which case false is returned.
+    @property auto ref asboolean(){
+        if(this.type is Type.Boolean){
+            return this.store.booleanval;
+        }else if(this.type is Type.Integer){
+            return this.store.integerval != 0;
+        }else if(this.type is Type.Float){
+            return this.store.floatval != 0;
+        }else if(this.type is Type.Null){
+            return false;
+        }else if(this.type is Type.String){
+            return (
+                this.store.stringval != "" &&
+                this.store.stringval != "false" &&
+                this.store.stringval != "False"
+            );
+        }else{
+            return !this.empty;
+        }
     }
-    auto ref object(){
-        if(this.type !is Type.Object) throw this.OpException;
-        return this.store.objectval;
+    /// Get this value as an integer.
+    /// Returns integer data if the object represents an integer.
+    /// Returns float data cast to an integer if it represents a float.
+    /// Returns 0 or 1 if the object represents a boolean.
+    /// Returns 0 if the object represents null.
+    /// Returns string data parsed as a number if the object represents a string
+    /// which can be successfully parsed, otherwise returns the length of the
+    /// string, or 0 if the string is "false" or "False".
+    /// Returns the length of the data if it represents an array or object.
+    @property auto ref asinteger(){
+        if(this.type is Type.Integer){
+            return this.store.integerval;
+        }else if(this.type is Type.Float){
+            return cast(Integer) this.store.floatval;
+        }else if(this.type is Type.Boolean){
+            return this.store.booleanval ? 1 : 0;
+        }else if(this.type is Type.Null){
+            return 0;
+        }else if(this.type is Type.String){
+            if(this.store.stringval == "false" || this.store.stringval == "False"){
+                return cast(Integer) 0;
+            }
+            try{
+                return cast(Integer) parsefloat!Float(this.store.stringval);
+            }catch(NumberParseException){
+                return cast(Integer) this.store.stringval.length;
+            }
+        }else{
+            return cast(Integer) this.length;
+        }
+    }
+    /// Get this value as a floating point number.
+    /// Returns the float data for this object if it already represents a float.
+    /// Returns integer data cast to float if the object represents an integer.
+    /// Returns 0 or 1 if the object represents a boolean.
+    /// Returns NaN if the object represents null.
+    /// Returns string data parsed as a number if the object represents a string
+    /// which can be successfully parsed, otherwise returns the length of the
+    /// string, or 0 if the string is "false" or "False".
+    /// Returns the length of the data if it represents an array or object.
+    @property auto ref asfloat(){
+        if(this.type is Type.Float){
+            return this.store.floatval;
+        }else if(this.type is Type.Integer){
+            return cast(Float) this.store.integerval;
+        }else if(this.type is Type.Boolean){
+            return this.store.booleanval ? 1.0 : 0.0;
+        }else if(this.type is Type.Null){
+            return Float.nan;
+        }else if(this.type is Type.String){
+            if(this.store.stringval == "false" || this.store.stringval == "False"){
+                return cast(Float) 0;
+            }
+            try{
+                return parsefloat!Float(this.store.stringval);
+            }catch(NumberParseException){
+                return cast(Float) this.store.stringval.length;
+            }
+        }else{
+            return cast(Float) this.length;
+        }
+    }
+    /// Get this value as a string.
+    /// Returns the string data for this object if it represents a string.
+    /// Returns an empty string if this value is null.
+    /// Returns the value encoded as a json string otherwise.
+    @property auto ref asstring(
+        WriteFloatSettings floatsettings = EncodeFloatSettingsDefault
+    )(){
+        if(this.type is Type.String) return this.store.stringval;
+        else if(this.type is Type.Null) return "";
+        else return this.encode!floatsettings();
+    }
+    /// Get this value as an array of JsonValue objects.
+    /// Returns the array data for this object if it represents an array.
+    /// Returns an array of key, value pairs if it represents an object.
+    /// Returns an empty array otherwise.
+    @property auto ref asarray(){
+        if(this.type is Type.Array) return this.store.arrayval;
+        else if(this.type is Type.Object) return this.keyvaluepairarray();
+        else return Array.init;
+    }
+    /// Get this value as an object storing string key and JsonValue pairs.
+    /// Returns the object data for this object if it represents an object.
+    /// Returns an associative array with string-encoded numeric keys
+    /// corresponding to elements in the array if the object represents an array.
+    /// Returns an empty object otherwise.
+    @property auto ref asobject(){
+        if(this.type is Type.Object) return this.store.objectval;
+        else if(this.type is Type.Array) return this.indexedarrayobject();
+        else return Object.init;
     }
     
+    /// Where this represents a json object, get an array where each element
+    /// is a key, value pair itself represented by an array containing two
+    /// elements. Used by the `asarray` method to produce an array from an
+    /// object value.
+    private auto keyvaluepairarray() const{
+        if(this.type !is Type.Object) throw this.OpException;
+        JsonValue[] array;
+        foreach(key, value; this.store.objectval){
+            JsonValue item;
+            item.type = Type.Array;
+            item.append(key);
+            item.append(value);
+            array ~= item;
+        }
+        return array;
+    }
+    /// Where this represents a json array, get an object where each key,
+    /// value pair is comprised of an index in the original array and the
+    /// value that was contained in the array.
+    private auto indexedarrayobject() const{
+        if(this.type !is Type.Array) throw this.OpException;
+        JsonValue[string] object;
+        size_t index = 0;
+        foreach(value; this.store.arrayval){
+            object[writeint(index)] = value;
+            index++;
+        }
+        return object;
+    }
+    
+    /// Get the length of the object if it represents a string, array, or
+    /// object. Throws an OpException exception otherwise.
     @property auto length() const{
         if(this.type is Type.String){
             return this.store.stringval.length;
@@ -379,10 +523,13 @@ static struct JsonValue{
         }
     }
     
+    /// Get whether the object has zero length if it represents a string,
+    /// array, or object. Throws an OpException otherwise.
     @property bool empty() const{
         return this.length == 0;
     }
     
+    /// Get this value encoded as a json string.
     string toString(
         WriteFloatSettings floatsettings = EncodeFloatSettingsDefault
     )() const{
@@ -815,6 +962,12 @@ static struct JsonValue{
         }
     }
     
+    /// Cast to a boolean, integer, float, or string, or an array of JsonValue
+    /// objects or an object containing string key and JsonValue pairs.
+    /// Throws an OpException if the cast was illegal.
+    /// For more lenient conversions that will give any valid output rather than
+    /// produce an exception, use the `getboolean`, `getinteger`, etc. methods
+    /// instead of casting.
     auto opCast(T)() const{
         final switch(this.type){
             case Type.Boolean:
@@ -863,8 +1016,7 @@ static struct JsonValue{
 
 
 
-version(unittest){
-    private:
+private version(unittest){
     import mach.test;
     alias Type = JsonValue.Type;
     
@@ -1168,7 +1320,7 @@ unittest{
     });
 }
 
-unittest{ /// isnull, isboolean, etc properties
+unittest{ /// isnull, isboolean, etc.
     auto nullval = JsonValue(null);
     assert(nullval.isnull);
     assert(!nullval.isboolean);
@@ -1225,4 +1377,113 @@ unittest{ /// isnull, isboolean, etc properties
     assert(!objval.isstring);
     assert(!objval.isarray);
     assert(objval.isobject);
+}
+
+unittest{ /// asboolean, asinteger, etc.
+    import mach.math.floats.properties : fisnan;
+    auto nullval = JsonValue(null);
+    assert(nullval.asboolean == false);
+    assert(nullval.asinteger == 0);
+    assert(nullval.asfloat.fisnan);
+    assert(nullval.asstring == "");
+    assert(nullval.asarray.length == 0);
+    assert(nullval.asobject.length == 0);
+    auto trueval = JsonValue(true);
+    assert(trueval.asboolean == true);
+    assert(trueval.asinteger == 1);
+    assert(trueval.asfloat == 1);
+    assert(trueval.asstring == "true");
+    assert(trueval.asarray.length == 0);
+    assert(trueval.asobject.length == 0);
+    auto falseval = JsonValue(false);
+    assert(falseval.asboolean == false);
+    assert(falseval.asinteger == 0);
+    assert(falseval.asfloat == 0);
+    assert(falseval.asstring == "false");
+    assert(falseval.asarray.length == 0);
+    assert(falseval.asobject.length == 0);
+    auto int0val = JsonValue(0);
+    assert(int0val.asboolean == false);
+    assert(int0val.asinteger == 0);
+    assert(int0val.asfloat == 0);
+    assert(int0val.asstring == "0");
+    assert(int0val.asarray.length == 0);
+    assert(int0val.asobject.length == 0);
+    auto int1val = JsonValue(1);
+    assert(int1val.asboolean == true);
+    assert(int1val.asinteger == 1);
+    assert(int1val.asfloat == 1);
+    assert(int1val.asstring == "1");
+    assert(int1val.asarray.length == 0);
+    assert(int1val.asobject.length == 0);
+    auto floatval = JsonValue(0.5);
+    assert(floatval.asboolean == true);
+    assert(floatval.asinteger == 0);
+    assert(floatval.asfloat == 0.5);
+    assert(floatval.asstring == "0.5");
+    assert(floatval.asarray.length == 0);
+    assert(floatval.asobject.length == 0);
+    auto strhelloval = JsonValue("hello");
+    assert(strhelloval.asboolean == true);
+    assert(strhelloval.asinteger == 5);
+    assert(strhelloval.asfloat == 5);
+    assert(strhelloval.asstring == "hello");
+    assert(strhelloval.asarray.length == 0);
+    assert(strhelloval.asobject.length == 0);
+    auto strnumval = JsonValue("10.5");
+    assert(strnumval.asboolean == true);
+    assert(strnumval.asinteger == 10);
+    assert(strnumval.asfloat == 10.5);
+    assert(strnumval.asstring == "10.5");
+    assert(strnumval.asarray.length == 0);
+    assert(strnumval.asobject.length == 0);
+    auto strfalseval = JsonValue("false");
+    assert(strfalseval.asboolean == false);
+    assert(strfalseval.asinteger == 0);
+    assert(strfalseval.asfloat == 0);
+    assert(strfalseval.asstring == "false");
+    assert(strfalseval.asarray.length == 0);
+    assert(strfalseval.asobject.length == 0);
+    auto emptyarrval = JsonValue(JsonValue.Type.Array);
+    assert(emptyarrval.asboolean == false);
+    assert(emptyarrval.asinteger == 0);
+    assert(emptyarrval.asfloat == 0);
+    assert(emptyarrval.asstring == `[]`);
+    assert(emptyarrval.asarray == JsonValue.Array.init);
+    assert(emptyarrval.asobject == JsonValue.Object.init);
+    auto arrval = JsonValue(["h", "i"]);
+    assert(arrval.asboolean == true);
+    assert(arrval.asinteger == 2);
+    assert(arrval.asfloat == 2);
+    assert(arrval.asstring == `["h","i"]`);
+    assert(arrval.asarray == [JsonValue("h"), JsonValue("i")]);
+    assert(arrval.asobject == ["0": JsonValue("h"), "1": JsonValue("i")]);
+    auto emptyobjval = JsonValue(JsonValue.Type.Object);
+    assert(emptyobjval.asboolean == false);
+    assert(emptyobjval.asinteger == 0);
+    assert(emptyobjval.asfloat == 0);
+    assert(emptyobjval.asstring == `{}`);
+    assert(emptyobjval.asarray == JsonValue.Array.init);
+    assert(emptyobjval.asobject == JsonValue.Object.init);
+    auto objval = JsonValue(["a": 0, "b": 1]);
+    assert(objval.asboolean == true);
+    assert(objval.asinteger == 2);
+    assert(objval.asfloat == 2);
+    assert(objval.asstring == `{"a":0,"b":1}` || objval.asstring == `{"b":1,"a":0}`);
+    assert(objval.asobject == ["a": JsonValue(0), "b": JsonValue(1)]);
+    auto objarr = objval.asarray;
+    assert(objarr.length == 2);
+    assert(objarr[0].length == 2);
+    assert(objarr[1].length == 2);
+    if(objarr[0][0] == "a"){
+        assert(objarr[0][1] == 0);
+        assert(objarr[1][0] == "b");
+        assert(objarr[1][1] == 1);
+    }else if(objarr[0][0] == "b"){
+        assert(objarr[0][1] == 1);
+        assert(objarr[1][0] == "a");
+        assert(objarr[1][1] == 0);
+    }else{
+        assert(false);
+    }
 }
