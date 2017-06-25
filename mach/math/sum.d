@@ -192,9 +192,7 @@ auto shewsum(Values)(auto ref Values values) if(
             partials.length = i;
             
             if(x != 0){
-                if(fisinf(value)){
-                    infsum = value;
-                }else if(fisinf(x)){
+                if(fisinf(x)){
                     overflow = x;
                 }else{
                     partials ~= x;
