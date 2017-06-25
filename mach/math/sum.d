@@ -157,7 +157,7 @@ auto kahansum(Values)(auto ref Values values) if(
 /// In case of intermediate negative overflow, returns -inf.
 /// http://stackoverflow.com/a/2704565/3478907
 /// http://code.activestate.com/recipes/393090-binary-floating-point-summation-accurate-to-full-p/
-/// http://svn.python.org/view/python/trunk/Modules/mathmodule.c?view=markup
+/// https://github.com/python/cpython/blob/master/Modules/mathmodule.c#L1301
 auto shewsum(Values)(auto ref Values values) if(
     isFiniteIterable!Values && isIterableOf!(Values, isFloatingPoint)
 ){
@@ -212,7 +212,7 @@ auto shewsum(Values)(auto ref Values values) if(
         size_t n = partials.length;
         high = partials[--n];
         Value low;
-        while(n < 0){
+        while(n > 0){
             auto x = high;
             auto y = partials[--n];
             assert(abs(y) < abs(x));
