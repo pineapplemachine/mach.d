@@ -7,14 +7,15 @@ import mach.math.bits.extract : extractbit, extractbits;
 import mach.math.bits.pow2 : pow2;
 import mach.math.floats.properties : fissubnormal, fiszero;
 
+import core.stdc.math : signbit;
+
 public:
 
 
 
 /// Extract the sign bit of a floating point value.
-auto fextractsgn(T)(T value) if(isFloatingPoint!T){
-    enum uint offset = IEEEFormatOf!T.sgnoffset;
-    return value.extractbit!(offset);
+bool fextractsgn(T)(T value) if(isFloatingPoint!T){
+    return cast(bool) signbit(value);
 }
 
 
