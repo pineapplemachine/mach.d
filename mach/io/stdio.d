@@ -93,7 +93,7 @@ struct stdio{
     }
     /// Return a string containing the content of stdin up to the next
     /// newline character.
-    static string readln(){
-        return this.read.until!(ch => ch == '\n').asarray!(immutable(char));
+    static string readln(T = immutable char)(){
+        return this.read.until!(ch => ch == '\n').asarray!T;
     }
 }
