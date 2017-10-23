@@ -3,6 +3,7 @@ module mach.sys.memory;
 private:
 
 import core.stdc.stdlib : cmalloc = malloc;
+import core.stdc.stdlib : crealloc = realloc;
 import core.stdc.stdlib : cfree = free;
 import core.stdc.string : cmemcpy = memcpy;
 import core.stdc.string : cmemmove = memmove;
@@ -77,6 +78,13 @@ class MemoryInvalidPointerError: MemoryError{
     auto ptr = cmalloc(T.sizeof * count);
     if(ptr is null) throw error;
     return cast(T*) ptr;
+}
+
+@system @nogc nothrow T* realloc(T)(T* ptr, in size_t count){
+    static const error = new MemoryAllocationError();
+    auto newPtr = crealloc(ptr, T.sizeof * count);
+    if(newPtr is null) throw error;
+    return cast(T*) newPtr;
 }
 
 @system @nogc nothrow void memfree(T)(T* ptr) in{
