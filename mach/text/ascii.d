@@ -53,6 +53,11 @@ bool isalpha(T)(in T ch) if(isCharacter!T){
     return ch >= 'A' && ch <= 'z' && (ch <= 'Z' || ch >= 'a');
 }
 
+/// Determine whether an ASCII character is alphanumeric.
+bool isalphanum(T)(in T ch) if(isCharacter!T){
+    return isalpha(ch) || isdigit(ch);
+}
+
 /// Determine whether an ASCII character is a upper-case letter.
 bool isupper(T)(in T ch) if(isCharacter!T){
     return ch >= 'A' && ch <= 'Z';
@@ -187,9 +192,23 @@ unittest{
                 test(T('A').isalpha);
                 test(T('Z').isalpha);
                 testf(T(0).isalpha);
+                testf(T('1').isalpha);
                 testf(T('@').isalpha);
                 testf(T('`').isalpha);
                 testf(T('{').isalpha);
+            });
+            tests("isalphanum", {
+                test(T('a').isalphanum);
+                test(T('z').isalphanum);
+                test(T('A').isalphanum);
+                test(T('Z').isalphanum);
+                test(T('1').isalphanum);
+                test(T('9').isalphanum);
+                test(T('0').isalphanum);
+                testf(T(0).isalphanum);
+                testf(T('@').isalphanum);
+                testf(T('`').isalphanum);
+                testf(T('{').isalphanum);
             });
             tests("isupper", {
                 test(T('A').isupper);
