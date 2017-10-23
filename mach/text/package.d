@@ -10,6 +10,7 @@ This package provides functionality for manipulating text.
 
 public:
 
+import mach.text.ansi;
 import mach.text.ascii;
 import mach.text.cstring;
 import mach.text.english;
