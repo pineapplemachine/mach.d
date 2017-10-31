@@ -228,19 +228,18 @@ auto ParseBaseGeneric(
 /// returned string, of the same type as the negation and zero symbol inputs.
 /// You probably want it to return a char of some sort, but whatever floats
 /// your boat.
-@safe pure nothrow auto WriteBaseGeneric(
-    size_t base, alias neg, alias zero, alias digit, T
+@safe pure nothrow immutable(C)[] WriteBaseGeneric(
+    size_t base, alias neg, alias zero, alias digit, C = char, T
 )(T number) if(
-    isIntOrChar!T && is(typeof({
-        auto ch = digit(0);
-        typeof(ch) x = neg;
-        typeof(ch) y = zero;
+    isCharacter!C && isIntOrChar!T && is(typeof({
+        C ch = cast(C) digit(0);
+        typeof(ch) x = cast(C) neg;
+        typeof(ch) y = cast(C) zero;
     }))
 ){
-    alias Digit = typeof(zero);
-    alias Digits = immutable(Digit)[];
+    alias Digits = immutable(C)[];
     if(number == 0){
-        string str = [zero];
+        Digits str = [cast(C) zero];
         return str;
     }else{
         Digits str;
@@ -249,19 +248,21 @@ auto ParseBaseGeneric(
             bool negative = number < 0;
             if(number > 0){
                 while(n > 0){
-                    str = digit(n % base) ~ str; n /= base;
+                    str = (cast(C) digit(n % base)) ~ str;
+                    n /= base;
                 }
             }else{
                 enum sbase = cast(typeof(n)) base;
                 while(n < 0){
-                    str = digit(-(n % sbase)) ~ str;
+                    str = (cast(C) digit(-(n % sbase))) ~ str;
                     n /= sbase;
                 }
             }
-            return negative ? neg ~ str : str;
+            return negative ? (cast(C) neg) ~ str : str;
         }else{
             while(n > 0){
-                str = digit(n % base) ~ str; n /= base;
+                str = (cast(C) digit(n % base)) ~ str;
+                n /= base;
             }
             return str;
         }
@@ -270,10 +271,10 @@ auto ParseBaseGeneric(
 
 /// Same as the prior method by the same name, but provides default inputs for
 /// some template arguments.
-@safe pure nothrow auto WriteBaseGeneric(size_t base, alias digit, T)(T number) if(
-    isIntOrChar!T && is(typeof({auto ch = digit(0);}))
+@safe pure nothrow auto WriteBaseGeneric(size_t base, alias digit, C = char, T)(T number) if(
+    isCharacter!C && isIntOrChar!T && is(typeof({auto ch = digit(0);}))
 ){
-    return WriteBaseGeneric!(base, '-', '0', digit, T)(number);
+    return WriteBaseGeneric!(base, '-', '0', digit, C, T)(number);
 }
 
 
@@ -318,12 +319,12 @@ template ParseBase(size_t base) if(base == 1){
 /// Write a number as a string in unary. Concatenates a number of symbols
 /// equivalent to the input number. By default the symbol is the character '1'.
 template WriteBase(size_t base, alias digit = '1') if(base == 1){
-    @safe pure nothrow auto WriteBase(T)(T n) if(isIntOrChar!T){
-        immutable(typeof(digit))[] str;
+    @safe pure nothrow auto WriteBase(C = char, T)(T n) if(isCharacter!C && isIntOrChar!T){
+        immutable(C)[] str;
         auto len = uabs(n);
         str.reserve(cast(size_t) len);
-        foreach(i; 0 .. len) str ~= digit;
-        static if(isSigned!T) return n < 0 ? '-' ~ str : str;
+        foreach(i; 0 .. len) str ~= cast(C) digit;
+        static if(isSigned!T) return n < 0 ? (cast(C) '-') ~ str : str;
         else return str;
     }
 }
@@ -365,10 +366,10 @@ template ParseBase(size_t base) if(base >= 3 && base <= 10){
 /// Write a number as a string in a base that requires only numeric characters,
 /// and that is not unary.
 template WriteBase(size_t base) if(base >= 2 && base <= 10){
-    @safe pure nothrow auto WriteBase(T)(T number) if(isIntOrChar!T){
+    @safe pure nothrow auto WriteBase(C = char, T)(T number) if(isCharacter!C && isIntOrChar!T){
         return WriteBaseGeneric!(base, (ch){
             return cast(char)('0' + ch);
-        })(number);
+        }, C)(number);
     }
 }
 
@@ -400,7 +401,9 @@ template ParseBase(size_t base) if(base > 10 && base <= 36 && base != 32){
 template WriteBase(size_t base, bool uppercase = true) if(
     base > 10 && base <= 36 && base != 32
 ){
-    @safe pure nothrow auto WriteBase(T)(T number) if(isIntOrChar!T){
+    @safe pure nothrow auto WriteBase(C = char, T)(T number) if(
+        isCharacter!C && isIntOrChar!T
+    ){
         return WriteBaseGeneric!(base, (ch){
             if(ch < 10){
                 return cast(char)('0' + ch);
@@ -408,7 +411,7 @@ template WriteBase(size_t base, bool uppercase = true) if(
                 static if(uppercase) return cast(char)('A' + ch - 10);
                 else return cast(char)('a' + ch - 10);
             }
-        })(number);
+        }, C)(number);
     }
 }
 
@@ -443,7 +446,9 @@ template ParseBase(size_t base) if(base == 32){
 /// written in upper- or lower-case. The flag defaults to uppercase.
 /// https://en.wikipedia.org/wiki/Base32#RFC_4648_Base32_alphabet
 template WriteBase(size_t base, bool uppercase = true) if(base == 32){
-    @safe auto WriteBase(T)(T number) if(isIntOrChar!T) in{
+    @safe auto WriteBase(C = char, T)(T number) if(
+        isCharacter!C && isIntOrChar!T
+    )in{
         static if(isSigned!T){
             static const error = new NumberWriteError("Cannot write negative number.");
             error.enforce(number >= 0);
@@ -456,7 +461,7 @@ template WriteBase(size_t base, bool uppercase = true) if(base == 32){
             }else{
                 return cast(char)('2' + ch - 26);
             }
-        })(number);
+        }, C)(number);
     }
 }
 
@@ -488,7 +493,9 @@ template ParseBase(size_t base) if(base == 64){
 /// The input must be unsigned.
 /// https://en.wikipedia.org/wiki/Base64#Examples
 template WriteBase(size_t base) if(base == 64){
-    auto WriteBase(T)(T number) if(isIntOrChar!T) in{
+    auto WriteBase(C = char, T)(T number) if(
+        isCharacter!C && isIntOrChar!T
+    )in{
         static if(isSigned!T){
             static const error = new NumberWriteError("Cannot write negative number.");
             error.enforce(number >= 0);
@@ -500,7 +507,7 @@ template WriteBase(size_t base) if(base == 64){
             else if(ch == 62) return '+';
             else if(ch == 63) return '/';
             else return cast(char)('0' + ch - 52);
-        })(number);
+        }, C)(number);
     }
 }
 
@@ -509,16 +516,15 @@ template WriteBase(size_t base) if(base == 64){
 /// Write a number as a string in a given base, left-padded with zeroes.
 /// The amount of padding depends on the size of the input type.
 /// The input must be unsigned.
-@safe auto WriteBasePaddedGeneric(size_t base, alias digit, T)(T number) if(
-    base > 1 && isIntOrChar!T && is(typeof({auto ch = digit(0);}))
+@safe immutable(C)[] WriteBasePaddedGeneric(size_t base, alias digit, C = char, T)(T number) if(
+    base > 1 && isCharacter!C && isIntOrChar!T && is(typeof({C ch = cast(C) digit(0);}))
 )in{
     static if(isSigned!T){
         static const error = new NumberWriteError("Cannot write negative number.");
         error.enforce(number >= 0);
     }
 }body{
-    alias Digit = typeof(digit(0));
-    alias Digits = immutable(Digit)[];
+    alias Digits = immutable(C)[];
     Digits str;
     static if(isIntOrChar!T && ispow2(base)){
         static if(!isSigned!T) alias n = number;
@@ -531,13 +537,13 @@ template WriteBase(size_t base) if(base == 64){
         enum size_t shiftinit1 = shiftinit0 - (shiftinit0 == size ? inc : 0);
         size_t shift = shiftinit1;
         str.reserve(len);
-        str ~= digit(n >> shift);
+        str ~= cast(C) digit(n >> shift);
         shift -= inc;
         while(shift >= inc){
-            str ~= digit((n >> shift) & mask);
+            str ~= cast(C) digit((n >> shift) & mask);
             shift -= inc;
         }
-        str ~= digit(n & mask);
+        str ~= cast(C) digit(n & mask);
         return str;
     }else{
         alias N = Unqual!(Unsigned!T);
@@ -545,7 +551,7 @@ template WriteBase(size_t base) if(base == 64){
         str.reserve(cast(size_t) len);
         N div = 1;
         foreach(i; 0 .. len){
-            str = digit((number / div) % base) ~ str;
+            str = (cast(C) digit((number / div) % base)) ~ str;
             div *= base;
         }
         return str;
@@ -555,10 +561,12 @@ template WriteBase(size_t base) if(base == 64){
 /// Write a number as a string in a base that requires only numeric characters,
 /// and that is not unary.
 template WriteBasePadded(size_t base) if(base >= 2 && base <= 10){
-    @safe auto WriteBasePadded(T)(T number) if(isIntOrChar!T){
+    @safe immutable(C)[] WriteBasePadded(C = char, T)(T number) if(
+        isCharacter!C && isIntOrChar!T
+    ){
         return WriteBasePaddedGeneric!(base, (ch){
             return cast(char)('0' + ch);
-        })(number);
+        }, C, T)(number);
     }
 }
 /// Write a number as a string in a base that requires both numeric and
@@ -568,7 +576,9 @@ template WriteBasePadded(size_t base) if(base >= 2 && base <= 10){
 template WriteBasePadded(size_t base, bool uppercase = true) if(
     base > 10 && base <= 36
 ){
-    @safe auto WriteBasePadded(T)(T number) if(isIntOrChar!T){
+    @safe immutable(C)[] WriteBasePadded(C = char, T)(T number) if(
+        isCharacter!C && isIntOrChar!T
+    ){
         return WriteBasePaddedGeneric!(base, (ch){
             if(ch < 10){
                 return cast(char)('0' + ch);
@@ -576,7 +586,7 @@ template WriteBasePadded(size_t base, bool uppercase = true) if(
                 static if(uppercase) return cast(char)('A' + ch - 10);
                 else return cast(char)('a' + ch - 10);
             }
-        })(number);
+        }, C, T)(number);
     }
 }
 
@@ -782,5 +792,28 @@ unittest{
             IntsTest(int.min);
             IntsTest(long.min);
         });
+    });
+    tests("With character type specified", {
+        // char
+        string cbin = writebin!char(ubyte(7));
+        testeq(cbin, "00000111");
+        string cdec = writeint!char(10);
+        testeq(cdec, "10");
+        string chex = writehex!char(uint(0x34F));
+        testeq(chex, "0000034F");
+        // wchar
+        wstring wbin = writebin!wchar(ubyte(7));
+        testeq(wbin, "00000111"w);
+        wstring wdec = writeint!wchar(10);
+        testeq(wdec, "10"w);
+        wstring whex = writehex!wchar(uint(0x34F));
+        testeq(whex, "0000034F"w);
+        // dchar
+        dstring dbin = writebin!dchar(ubyte(7));
+        testeq(dbin, "00000111"d);
+        dstring ddec = writeint!dchar(10);
+        testeq(ddec, "10"d);
+        dstring dhex = writehex!dchar(uint(0x34F));
+        testeq(dhex, "0000034F"d);
     });
 }
