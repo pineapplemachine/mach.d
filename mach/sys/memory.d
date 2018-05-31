@@ -120,8 +120,8 @@ unittest{
 unittest{
     int[] a = [1, 2, 3];
     int[] b = [0, 0, 0];
-    memcopy(b.ptr, a.ptr, int.sizeof * a.length);
+    memcopy(b.ptr, a.ptr, a.length);
     assert(b == a);
-    memmove(a.ptr + 1, a.ptr, int.sizeof * 2);
+    memmove(a.ptr + 1, a.ptr, 2);
     assert(a == [1, 1, 2]);
 }
