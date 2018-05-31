@@ -98,14 +98,14 @@ class MemoryInvalidPointerError: MemoryError{
     static const nullerror = new MemoryInvalidPointerError("Cannot copy memory to or from a null pointer.");
     if(src is null || dest is null) throw nullerror;
 }body{
-    return cast(A*) cmemcpy(dest, src, T.sizeof * count);
+    return cast(A*) cmemcpy(dest, src, B.sizeof * count);
 }
 
 @system @nogc nothrow auto memmove(A, B)(A* dest, in B* src, in size_t count) in{
     static const error = new MemoryInvalidPointerError("Cannot copy memory to or from a null pointer.");
     if(src is null || dest is null) throw error;
 }body{
-    return cast(A*) cmemmove(dest, src, T.sizeof * count);
+    return cast(A*) cmemmove(dest, src, B.sizeof * count);
 }
 
 
