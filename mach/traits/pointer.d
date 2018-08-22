@@ -2,8 +2,6 @@ module mach.traits.pointer;
 
 private:
 
-import mach.traits.primitives : isPointer;
-
 /++ Docs
 
 The `PointerType` template accepts a pointer type as input and aliases to
@@ -33,6 +31,11 @@ public:
 /// Get the type of the value that a pointer refers to.
 template PointerType(T : T*){
     alias PointerType = T;
+}
+
+/// Get whether a type is a pointer.
+template isPointer(T){
+    enum bool isPointer = is(T == U*, U);
 }
 
 /// Get whether a type is a pointer, pointing to a value of a type which
@@ -69,9 +72,13 @@ unittest{ /// PointerType
 }
 
 unittest{ /// isPointer with type
+    static assert(isPointer!(int*));
+    static assert(isPointer!(void*));
     static assert(isPointer!(const(int*)));
     static assert(isPointer!(const(void*)));
+    static assert(!isPointer!(int));
 }
+
 unittest{ /// isPointer with type and predicate
     static assert(isPointer!(isBoolean, bool*));
     static assert(isPointer!(isIntegral, int*));

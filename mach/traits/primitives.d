@@ -163,11 +163,6 @@ enum isScalar(T) = (
     isBoolean!T || isNumeric!T || isCharacter!T
 );
 
-/// Get whether a type is a pointer.
-template isPointer(T){
-    enum bool isPointer = is(T == U*, U);
-}
-
 
 
 /// Get whether a type is a primitive.
@@ -323,9 +318,6 @@ unittest{
     // isCharacter
     static assert(All!(isCharacter, Chars));
     static assert(None!(isCharacter, Nulls, Bools, UInts, SInts, Floats, Imag, Complex, Ptrs, Chaff));
-    // isPointer
-    static assert(All!(isPointer, Ptrs));
-    static assert(None!(isPointer, Nulls, Bools, SInts, UInts, Floats, Imag, Complex, Chars, Chaff));
     // isPrimitive
     static assert(All!(isPrimitive, Nulls, Bools, UInts, SInts, Floats, Imag, Complex, Chars));
     static assert(None!(isPrimitive, Ptrs, Chaff));
