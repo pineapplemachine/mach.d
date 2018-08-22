@@ -740,7 +740,7 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     /// The cross-product of two vectors may b defined as
     /// `a.cross(b) == a.crossmat * b` or as
     /// `a.cross(b) == b.crossmat.transpose * a`.
-    static if(size == 3) @property auto crossmat() const{
+    static if(size == 3 && isSignedIntegral!T) @property auto crossmat() const{
         return Matrix!(3, 3, T)(
             0, this.z, -this.y,
             -this.z, 0, this.x,

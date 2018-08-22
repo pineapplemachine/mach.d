@@ -109,7 +109,7 @@ auto injectbit(uint offset, bool assumezero = false, T)(
     static if(assumezero){
         *ptr |= cast(ubyte) bit << bitoffset;
     }else{
-        *ptr ^= (-(cast(ubyte) bit) ^ *ptr) & (1 << bitoffset);
+        *ptr ^= (-(cast(int) bit) ^ *ptr) & (1 << bitoffset);
     }
     return target;
 }
@@ -168,7 +168,7 @@ auto injectbit(bool assumezero = false, T)(
     static if(assumezero){
         *ptr |= cast(ubyte) bit << bitoffset;
     }else{
-        *ptr ^= (-(cast(ubyte) bit) ^ *ptr) & (1 << bitoffset);
+        *ptr ^= (-(cast(int) bit) ^ *ptr) & (1 << bitoffset);
     }
     return target;
 }
