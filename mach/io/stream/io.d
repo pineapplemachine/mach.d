@@ -55,14 +55,14 @@ size_t readbuffer(T, Stream)(auto ref Stream stream, T[] buffer) if(
 }
 
 
-
 /// Read a single value of an arbitrary type from an input stream.
 /// Not an especially meaningful operation for anything other than primitives
 /// and structs.
 auto read(T, Stream)(auto ref Stream stream) if(isInputStream!Stream){
+    static const error = new StreamReadException();
     T value = void;
     auto result = stream.readbuffer!T(&value, 1);
-    if(result != T.sizeof) throw new StreamReadException();
+    if(result != T.sizeof) throw error;
     return value;
 }
 
@@ -116,8 +116,9 @@ size_t writebuffer(T, Stream)(auto ref Stream stream, in T[] buffer) if(
 void write(T, Stream)(auto ref Stream stream, auto ref T value) if(
     isOutputStream!Stream && !isIterable!T
 ){
+    static const error = new StreamWriteException();
     auto result = stream.writebuffer(&value, 1);
-    if(result != T.sizeof) throw new StreamWriteException();
+    if(result != T.sizeof) throw error;
 }
 
 void write(Iter, Stream)(auto ref Stream stream, auto ref Iter values) if(
