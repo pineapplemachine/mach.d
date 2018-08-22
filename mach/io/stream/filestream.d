@@ -4,7 +4,8 @@ private:
 
 import mach.error : ErrnoException;
 import mach.io.file.sys : FileHandle, Seek;
-import mach.io.file.sys : fopen, fclose, fread, fwrite, fflush, fsync, fseek, ftell, feof, tmpfile, rewind;
+import mach.io.file.sys : fopen, fclose, fread, fwrite, fflush;
+import mach.io.file.sys : fsync, fseek, ftell, feof, tmpfile, rewind;
 import mach.io.file.stat : Stat;
 import mach.io.stream.exceptions;
 import mach.io.file.exceptions : FileSeekException;
@@ -41,12 +42,12 @@ struct FileStream{
     size_t readbufferv(void* buffer, size_t size, size_t count) in{
         assert(this.active);
     }body{
-        return fread(buffer, size, count, this.target);
+        return size * fread(buffer, size, count, this.target);
     }
     size_t writebufferv(void* buffer, size_t size, size_t count) in{
         assert(this.active);
     }body{
-        return fwrite(buffer, size, count, this.target);
+        return size * fwrite(buffer, size, count, this.target);
     }
     
     void flush() @trusted in{assert(this.active);} body{
@@ -150,6 +151,7 @@ unittest{
             stream.writebuffer(writebuffer);
             stream.write('X');
             stream.write("XX");
+            stream.write(int(0x12345678));
             stream.reset();
             stream.readbuffer(readbuffer);
             testeq(readbuffer, "Hello");
@@ -161,6 +163,7 @@ unittest{
             stream.readbuffer(readbuffer);
             testeq(readbuffer, "rldXX");
             testeq(stream.read!char, 'X');
+            testeq(stream.read!int, 0x12345678);
             testfail({stream.read!char;});
             stream.close();
         });
