@@ -5,10 +5,12 @@ private:
 import mach.error : ErrnoException;
 import mach.io.file.sys : FileHandle, Seek;
 import mach.io.file.sys : fopen, fclose, fread, fwrite, fflush;
-import mach.io.file.sys : fsync, fseek, ftell, feof, tmpfile, rewind;
+import mach.io.file.sys : fsync, fseek, ftell, tmpfile, rewind;
 import mach.io.file.stat : Stat;
 import mach.io.stream.exceptions;
 import mach.io.file.exceptions : FileSeekException;
+
+import core.stdc.stdio : fgetc, ungetc, EOF;
 
 public:
 
@@ -70,7 +72,11 @@ struct FileStream{
     }
     
     @property bool eof() in{assert(this.active);} body{
-        return cast(bool) feof(this.target);
+        // https://stackoverflow.com/a/2082772/4099022
+        // https://stackoverflow.com/a/6283787/4099022
+        auto const c = fgetc(this.target);
+        ungetc(c, this.target);
+        return c == EOF;
     }
     
     @property size_t position() in{assert(this.active);} body{
@@ -164,6 +170,7 @@ unittest{
             testeq(readbuffer, "rldXX");
             testeq(stream.read!char, 'X');
             testeq(stream.read!int, 0x12345678);
+            testeq(true, stream.eof);
             testfail({stream.read!char;});
             stream.close();
         });
