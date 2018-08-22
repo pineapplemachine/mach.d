@@ -50,7 +50,7 @@ string typetostring(StrSettings settings = StrSettings.Default, T)(
 
 /// Determine whether a type has a toString method other than the one
 /// that comes with the Object interface, because that one is stupid.
-private template hasCustomToString(T){
+template hasCustomToString(T){
     static if(is(typeof({string x = T.init.toString();}))){
         static if(is(typeof({enum x = &T.toString !is &Object.toString;}))){
             enum bool hasCustomToString = &T.toString !is &Object.toString;
@@ -62,7 +62,7 @@ private template hasCustomToString(T){
     }
 }
 
-private template hasToString(T){
+template hasToString(T){
     enum bool hasToString = is(typeof({string x = T.init.toString();}));
 }
 

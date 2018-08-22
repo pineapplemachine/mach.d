@@ -401,13 +401,13 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     }
     
     /// Refers to the first component, if present.
-    static if(size >= 1) alias x = this.values[0];
+    static if(size >= 1) alias x = typeof(this).values[0];
     /// Refers to the second component, if present.
-    static if(size >= 2) alias y = this.values[1];
+    static if(size >= 2) alias y = typeof(this).values[1];
     /// Refers to the third component, if present.
-    static if(size >= 3) alias z = this.values[2];
+    static if(size >= 3) alias z = typeof(this).values[2];
     /// Refers to the fourth component, if present.
-    static if(size >= 4) alias w = this.values[3];
+    static if(size >= 4) alias w = typeof(this).values[3];
     
     /// Get a vector whose components are equal to the negations of this
     /// vector's components.

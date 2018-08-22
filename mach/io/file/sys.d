@@ -9,10 +9,10 @@ import mach.error : ErrnoException, SysErrorException;
 import mach.text.cstring : tocstring;
 import mach.io.file.attributes : Attributes;
 import mach.io.file.stat : Stat;
-import mach.io.file.common;
 import mach.io.file.exceptions;
 
 version(Windows){
+    import mach.io.file.common : winhandle;
     extern (C) nothrow @nogc FILE* _wfopen(in wchar* filename, in wchar* mode);
 }
 version(CRuntime_Microsoft){
@@ -20,6 +20,8 @@ version(CRuntime_Microsoft){
 }
 
 public:
+    
+import mach.io.file.common : FileHandle, FSChar;
 
 
 

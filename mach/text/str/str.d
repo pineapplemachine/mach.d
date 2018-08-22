@@ -12,7 +12,8 @@ import mach.range.asrange : validAsRange;
 
 import mach.text.str.arrays : iterabletostring, arraytostring;
 import mach.text.str.tuples : tupletostring;
-import mach.text.str.types : typetostring, typetostringtostring, hasToString, hasCustomToString;
+import mach.text.str.types : typetostring, typetostringtostring;
+import mach.text.str.types : hasToString, hasCustomToString;
 
 import mach.text.str.primitives;
 import mach.text.str.settings;

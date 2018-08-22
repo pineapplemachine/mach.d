@@ -1,6 +1,6 @@
 module mach.range.cache;
 
-public:
+private:
 
 import mach.types : Rebindable;
 import mach.traits : ElementType, isRange, isSlicingRange, isSavingRange;
@@ -52,7 +52,7 @@ unittest{ /// Example
     assert(range.front == 0); // Repeated access ok!
 }
 
-private:
+public:
 
 
 
