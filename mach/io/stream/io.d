@@ -2,7 +2,7 @@ module mach.io.stream.io;
 
 private:
 
-import mach.traits : isIterable;
+import mach.traits.iter : isIterable;
 import mach.io.stream.exceptions;
 import mach.io.stream.templates;
 

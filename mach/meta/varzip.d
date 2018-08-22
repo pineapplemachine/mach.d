@@ -5,7 +5,7 @@ private:
 import mach.meta.ctint : ctint;
 import mach.meta.logical : All;
 import mach.meta.reduce : Reduce;
-import mach.types : tuple, isTuple;
+import mach.types.tuple : tuple, isTuple;
 
 /++ Docs
 
@@ -24,7 +24,7 @@ is equal to the number of inputs.
 +/
 
 unittest{ /// Example
-    import mach.types : tuple;
+    import mach.types.tuple : tuple;
     assert(varzip(tuple('a', 'b', 'c'), tuple('x', 'y', 'z')) == tuple(
         tuple('a', 'x'), tuple('b', 'y'), tuple('c', 'z')
     ));

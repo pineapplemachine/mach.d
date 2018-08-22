@@ -2,8 +2,6 @@ module mach.math.clamp;
 
 private:
 
-import mach.traits : isNumeric;
-
 /++ Docs
 
 The `clamp` function can be used to ensure a value is within some bounds.

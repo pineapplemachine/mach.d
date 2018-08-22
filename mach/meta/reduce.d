@@ -2,7 +2,7 @@ module mach.meta.reduce;
 
 private:
 
-import mach.meta.aliases;
+import mach.meta.aliases : Alias;
 
 /++ Docs: mach.meta.reduce
 

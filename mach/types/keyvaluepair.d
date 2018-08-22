@@ -2,7 +2,7 @@ module mach.types.keyvaluepair;
 
 private:
 
-import mach.meta : Aliases;
+import mach.meta.aliases : Aliases;
 
 /++ Docs
 

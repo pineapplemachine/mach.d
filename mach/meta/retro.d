@@ -35,7 +35,6 @@ template Retro(T...){
 
 
 unittest{
-    import mach.meta : Aliases;
     static assert(is(Retro!() == Aliases!()));
     static assert(is(Retro!(int) == Aliases!(int)));
     static assert(is(Retro!(int, int) == Aliases!(int, int)));

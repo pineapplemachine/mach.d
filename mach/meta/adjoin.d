@@ -2,7 +2,7 @@ module mach.meta.adjoin;
 
 private:
 
-import mach.types : Types;
+import mach.types.types : Types;
 
 /++ Docs: mach.meta.adjoin
 
@@ -125,4 +125,3 @@ unittest{
     alias fn2 = AdjoinFlat!(e => e, e => e);
     static assert(fn2(0).length == 2);
 }
-
