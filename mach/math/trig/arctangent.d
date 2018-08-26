@@ -123,11 +123,23 @@ private real atannativeimpl(in real value){
 /// Calculate the arctangent of y / x.
 /// Leverages the `fpatan` x86 instruction.
 private real atan2x86impl(in real y, in real x){
-    static if(InlineAsm_X86_Any){
-        // http://x86.renejeschke.de/html/file_module_x86_id_106.html
+    // http://x86.renejeschke.de/html/file_module_x86_id_106.html
+    version(D_InlineAsm_X86){
         asm pure nothrow @nogc{
             fld y[EBP];
             fld x[EBP];
+            fpatan;
+        }
+    }else version(Win64){
+        asm pure nothrow @nogc{
+            fld real ptr [RDX]; // y
+            fld real ptr [RCX]; // x
+            fpatan;
+        }
+    }else version(D_InlineAsm_X86_64){
+        asm pure nothrow @nogc{
+            fld y[RBP];
+            fld x[RBP];
             fpatan;
         }
     }else{

@@ -47,9 +47,9 @@ auto tan(in real value){
 
 /// Calculate the tangent of an input using the `fptan` x86 instruction.
 private auto tanx86impl(in real value){
-    static if(InlineAsm_X86_Any){
-        // http://x86.renejeschke.de/html/file_module_x86_id_109.html
-        // https://courses.engr.illinois.edu/ece390/books/artofasm/CH14/CH14-5.html#HEADING5-1
+    // http://x86.renejeschke.de/html/file_module_x86_id_109.html
+    // https://courses.engr.illinois.edu/ece390/books/artofasm/CH14/CH14-5.html#HEADING5-1
+    version(D_InlineAsm_X86){ // Use sahf and jc/jp/jnp to respond to float flags
         asm pure nothrow @nogc{
             // Push value onto FPU register stack
             fld value[EBP];
@@ -73,11 +73,59 @@ private auto tanx86impl(in real value){
             fxch;
         REM:
             // Calculate x % pi
-            fprem;
+            fprem1;
             // Evaluate fprem repeatedly until C2 isn't set
             fstsw AX;
             sahf;
             jp REM;
+            // Pop pi which was previously pushed onto the stack
+            fstp ST(1);
+            // x is in range now; calculate the tangent
+            fptan;
+            jmp DONE;
+        NAN:
+            fstp ST(0); // Pop input from the FPU stack
+        }
+        return real.nan;
+        DONE: asm pure nothrow @nogc{
+            // Pop 1.0 from FPU stack after a successful fptan calculation
+            fstp ST(0);
+        }
+    }else version(D_InlineAsm_X86_64){ // Use test and jz/jnz to respond to float flags
+        version(Win64) asm pure nothrow @nogc{
+            // Push value onto FPU register stack
+            fld real ptr [RCX];
+        }
+        else asm pure nothrow @nogc{
+            // Push value onto FPU register stack
+            fld value[RBP];
+        }
+        asm pure nothrow @nogc{
+            // Fiddle with FPU status word and EFLAGS to act on float properties
+            fxam;
+            fstsw AX;
+            test AH, 1;
+            // Jump if x is NaN, infinity, or empty, otherwise proceed to fptan
+            jnz NAN;
+            // Calculate tan(ST(0)), store in ST(0), push 1.0 onto FPU stack
+            // Value may be out of range (-2^63, +2^63), in which case C2 is set
+            fptan;
+            // If C2 was not set (value wasn't out of range) then jump to DONE
+            fstsw AX;
+            test AH, 4;
+            jz DONE;
+            // Otherwise, bring it into range by calculating x % pi and try again
+            // Push pi onto the FPU register stack
+            fldpi;
+            // Swap the places of pi and x on the stack for fprem
+            fxch;
+        REM:
+            // Calculate x % pi
+            fprem1;
+            // Evaluate fprem repeatedly until C2 isn't set
+            fstsw AX;
+            test AH, 4;
+            jnz REM;
             // Pop pi which was previously pushed onto the stack
             fstp ST(1);
             // x is in range now; calculate the tangent
