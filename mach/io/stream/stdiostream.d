@@ -4,7 +4,7 @@ private:
 
 import core.stdc.stdio : stdin, stdout, stderr;
 import mach.io.file.sys : fread, fwrite, fflush;
-import mach.error : enforceerrno;
+import mach.error.enforce.errno : enforceerrno;
 
 public:
 
@@ -21,17 +21,28 @@ struct StdInStream{
     }
 }
 
-alias StdOutStream = StdOutputStreamTemplate!stdout;
-alias StdErrStream = StdOutputStreamTemplate!stderr;
-
-struct StdOutputStreamTemplate(alias handle){
+struct StdOutStream{
     static enum bool active = true;
     static enum bool eof = false;
     static size_t writebufferv(void* buffer, size_t size, size_t count){
-        return fwrite(buffer, size, count, handle);
+        return fwrite(buffer, size, count, stdout);
     }
     static void flush(){
-        enforceerrno(fflush(stdin) == 0);
+        enforceerrno(fflush(stdout) == 0);
+    }
+    static typeof(this) opCall(){
+        typeof(this) stream; return stream;
+    }
+}
+
+struct StdErrStream{
+    static enum bool active = true;
+    static enum bool eof = false;
+    static size_t writebufferv(void* buffer, size_t size, size_t count){
+        return fwrite(buffer, size, count, stderr);
+    }
+    static void flush(){
+        enforceerrno(fflush(stderr) == 0);
     }
     static typeof(this) opCall(){
         typeof(this) stream; return stream;
@@ -40,8 +51,7 @@ struct StdOutputStreamTemplate(alias handle){
 
 
 
-version(unittest){
-    private:
+private version(unittest){
     import mach.io.stream.templates;
 }
 unittest{
