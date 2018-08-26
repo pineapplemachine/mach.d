@@ -119,8 +119,7 @@ public:
 
 
 
-version(unittest){
-    private:
+private version(unittest){
     import mach.test;
     import mach.meta : Aliases;
 }

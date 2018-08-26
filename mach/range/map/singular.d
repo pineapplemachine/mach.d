@@ -79,8 +79,7 @@ struct MapSingularRange(alias transform, Range) if(canMapSingularRange!(transfor
 
 
 
-version(unittest){
-    private:
+private version(unittest){
     import mach.test;
     import mach.range.compare : equals;
 }

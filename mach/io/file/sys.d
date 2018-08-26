@@ -4,8 +4,9 @@ private:
 
 import core.stdc.stdio : FILE;
 import core.stdc.stdio : SEEK_CUR, SEEK_END, SEEK_SET;
-import mach.traits : isString;
-import mach.error : ErrnoException, SysErrorException;
+import mach.traits.string : isString;
+import mach.error.enforce.errno : ErrnoException;
+import mach.error.enforce.syserror : SysErrorException;
 import mach.text.cstring : tocstring;
 import mach.io.file.attributes : Attributes;
 import mach.io.file.stat : Stat;

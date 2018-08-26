@@ -2,7 +2,7 @@ module mach.math.floats;
 
 private:
 
-import mach.math.floats.readme;
+version(unittest) import mach.math.floats.readme;
 
 /++ Docs
 

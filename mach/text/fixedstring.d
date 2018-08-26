@@ -7,7 +7,8 @@ import mach.traits.qualifiers : Unqual;
 /++ Docs
 
 This module implements a fixed-length null-terminated string type.
-It supports pretty much any of the operations you would expect from a string.
+It supports pretty much any of the operations that you would expect from
+a string type.
 
 +/
 

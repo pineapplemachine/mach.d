@@ -2,7 +2,7 @@ module mach.io.log;
 
 private:
 
-import mach.traits : hash;
+import mach.traits.hash : hash;
 import mach.io.stdio : stdio;
 import mach.io.file.path : Path;
 

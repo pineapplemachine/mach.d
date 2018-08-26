@@ -2,7 +2,8 @@ module mach.io.stdio;
 
 private:
 
-import mach.range : until, asarray;
+import mach.range.asarray : asarray;
+import mach.range.select : until;
 import mach.text.text : text;
 import mach.io.stream : write, asrange, StdOutStream, StdErrStream, StdInStream;
 

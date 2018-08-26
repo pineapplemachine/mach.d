@@ -4,7 +4,7 @@ private:
 
 import mach.traits : isFloatingPoint, isIntegral, isUnsignedIntegral;
 import mach.traits : IEEEFormat, IEEEFormatOf;
-import mach.math.abs : uabs;
+import mach.math.abs.ints : uabs;
 import mach.math.bits.inject : injectbit, injectbits;
 import mach.math.floats.extract : fextractsgn;
 

@@ -2,7 +2,8 @@ module mach.error.enforce.syserror;
 
 private:
 
-version(Windows) import std.windows.syserror : GetLastError, sysErrorString;
+version(Windows) import std.windows.syserror : sysErrorString;
+version(Windows) import core.sys.windows.windows : GetLastError;
 import mach.text : text;
 
 public:
