@@ -73,10 +73,10 @@ import mach.io.stdio;
 /// Calculate sine and cosine simultaneously using the `fsincos` x86 instruction.
 /// More efficient than calculating the values separately.
 private SinCosResult sincosx86impl(in real value){
-    static if(InlineAsm_X86_Any){
-        // TODO: How to not wrap in a function returning creal?
-        static creal impl(in real value){
-            // http://x86.renejeschke.de/html/file_module_x86_id_115.html
+    // http://x86.renejeschke.de/html/file_module_x86_id_115.html
+    // TODO: How to not wrap in a function returning creal?
+    static creal impl(in real value){
+        version(D_InlineAsm_X86){ // Use sahf and jc/jp/jnp to respond to float flags
             asm pure nothrow @nogc{
                 // Push value onto FPU register stack
                 fld value[EBP];
@@ -102,7 +102,7 @@ private SinCosResult sincosx86impl(in real value){
                 fxch;
             REM:
                 // Calculate x % 2pi
-                fprem;
+                fprem1;
                 // Evaluate fprem repeatedly until C2 isn't set
                 fstsw AX;
                 sahf;
@@ -117,12 +117,59 @@ private SinCosResult sincosx86impl(in real value){
             }
             return creal.init;
             DONE: {}
+        }else version(D_InlineAsm_X86_64){ // Use test and jz/jnz to respond to float flags
+            version(Win64) asm pure nothrow @nogc{
+                // Push value onto FPU register stack
+                fld real ptr [RCX];
+            }
+            else asm pure nothrow @nogc{
+                // Push value onto FPU register stack
+                fld value[RBP];
+            }
+            asm pure nothrow @nogc{
+                // Fiddle with FPU status word and EFLAGS to act on float properties
+                fxam;
+                fstsw AX;
+                test AH, 1;
+                // Jump if x is NaN, infinity, or empty, otherwise proceed to fptan
+                jnz NAN;
+                // Replace ST(0) with sine and push cosine onto the stack
+                // Value may be out of range (-2^63, +2^63), in which case C2 is set
+                fsincos;
+                // If C2 was not set (value wasn't out of range) then jump to DONE
+                fstsw AX;
+                test AH, 4;
+                jz DONE;
+                // Otherwise, bring it into range by calculating x % 2pi and try again
+                // Push 2pi onto the stack
+                fldpi;
+                fldpi;
+                faddp;
+                // Swap places of 2pi and x on the stack for fprem
+                fxch;
+            REM:
+                // Calculate x % 2pi
+                fprem1;
+                // Evaluate fprem repeatedly until C2 isn't set
+                fstsw AX;
+                test AH, 4;
+                jnz REM;
+                // Pop 2*pi which was previously pushed onto the stack
+                fstp ST(1);
+                // x is in range now; calculate sin and cos
+                fsincos;
+                jmp DONE;
+            NAN:
+                fstp ST(0); // Pop input from the FPU stack
+            }
+            return creal.init;
+            DONE: {}
+        }else{
+            assert(false);
         }
-        immutable c = impl(value);
-        return SinCosResult(c.re, c.im);
-    }else{
-        assert(false);
     }
+    immutable c = impl(value);
+    return SinCosResult(c.re, c.im);
 }
 
 
