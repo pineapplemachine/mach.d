@@ -9,11 +9,11 @@ public:
 
 
 /// Get the absolute value of a given number.
-T abs(T)(in T value) if(isUnsignedIntegral!T){
+T iabs(T)(in T value) if(isUnsignedIntegral!T){
     return value;
 }
 /// ditto
-T abs(T)(in T value) if(isSignedIntegral!T){
+T iabs(T)(in T value) if(isSignedIntegral!T){
     return value >= 0 ? value : cast(T) -value;
 }
 
@@ -40,13 +40,13 @@ private version(unittest){
 }
 unittest{
     foreach(T; Aliases!(ubyte, ushort, uint, ulong)){
-        assert(abs(T(0)) == 0);
-        assert(abs(T(1)) == 1);
+        assert(iabs(T(0)) == 0);
+        assert(iabs(T(1)) == 1);
     }
     foreach(T; Aliases!(byte, short, int, long)){
-        assert(abs(T(0)) == 0);
-        assert(abs(T(1)) == 1);
-        assert(abs(T(-1)) == 1);
+        assert(iabs(T(0)) == 0);
+        assert(iabs(T(1)) == 1);
+        assert(iabs(T(-1)) == 1);
     }
 }
 unittest{

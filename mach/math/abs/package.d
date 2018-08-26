@@ -2,6 +2,8 @@ module mach.math.abs;
 
 private:
 
+import mach.traits.primitives : isIntegral, isFloatingPoint, isImaginary;
+
 /++ Docs
 
 This module implements the `abs` function, as well as a `uabs` function.
@@ -50,3 +52,13 @@ public:
 
 import mach.math.abs.floats;
 import mach.math.abs.ints;
+
+T abs(T)(in T value) if(isIntegral!T){
+    return iabs(value);
+}
+T abs(T)(in T value) if(isFloatingPoint!T){
+    return fabs(value);
+}
+T abs(T)(in T value) if(isImaginary!T){
+    return imabs(value);
+}

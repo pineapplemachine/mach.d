@@ -216,10 +216,9 @@ struct SortedList(T, alias compare = DefaultSortedListCompare) if(is(typeof({
 
 
 
-version(unittest){
-    private:
+private version(unittest){
     import mach.test;
-    import mach.math : abs;
+    import mach.math.abs : abs;
     import mach.range : walklength, equals, map;
     import mach.range.asrange : validAsRange;
     alias List = DoublyLinkedList;
