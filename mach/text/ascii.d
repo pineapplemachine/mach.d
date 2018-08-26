@@ -2,8 +2,11 @@ module mach.text.ascii;
 
 private:
 
-import mach.traits : isCharacter, validAsStringRange;
-import mach.range : map, asrange, asarray;
+import mach.traits.primitives : isCharacter;
+import mach.traits.string : validAsStringRange;
+import mach.range.map : map;
+import mach.range.asrange : asrange;
+import mach.range.asarray : asarray;
 
 /++ Docs
 
@@ -149,12 +152,12 @@ auto tolowerlazy(T)(in T str) if(validAsStringRange!T){
     return str.map!tolower;
 }
 
-/// Convert an ASCII string to upper case. Returns an array.
+/// Eagerly convert an ASCII string to upper case. Returns an array.
 string touppereager(T)(in T str) if(validAsStringRange!T){
     return cast(string) str.toupperlazy.asarray;
 }
 
-/// Convert an ASCII string to lower case. Returns an array.
+/// Eagerly convert an ASCII string to lower case. Returns an array.
 string tolowereager(T)(in T str) if(validAsStringRange!T){
     return cast(string) str.tolowerlazy.asarray;
 }
@@ -171,10 +174,9 @@ string tolower(T)(in T str) if(validAsStringRange!T){
 
 
 
-version(unittest){
-    private:
+private version(unittest){
     import mach.test;
-    import mach.meta : Aliases;
+    import mach.meta.aliases : Aliases;
 }
 unittest{
     tests("ASCII", {
