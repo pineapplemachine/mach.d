@@ -169,6 +169,16 @@ struct FixedString(size_t BufferSize){
         assert(thisLength + otherLength <= size, "Not enough space.");
         this.data[thisLength .. thisLength + otherLength] = other.data[0 .. otherLength];
     }
+    
+    bool opCast(T: bool)(){
+        return this.length > 0;
+    }
+    T opCast(T: inout char[size])(){
+        return this.data;
+    }
+    T opCast(T: inout char[])(){
+        return cast(T) this.data[0 .. this.length];
+    }
 }
 
 
@@ -259,4 +269,17 @@ unittest{
     assert(str == "Hello World");
     str ~= FixedString!1("!");
     assert(str == "Hello World!");
+}
+
+// Test opCast(T: bool)
+unittest{
+    assert(cast(bool) FixedString!8("") == false);
+    assert(cast(bool) FixedString!8("yes") == true);
+}
+
+// Test opCast(T: char[])
+unittest{
+    assert(cast(string) FixedString!8("test") == "test");
+    assert(cast(char[]) FixedString!8("test") == "test");
+    assert(cast(char[8]) FixedString!8("test") == "test\0\0\0\0");
 }
