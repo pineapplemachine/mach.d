@@ -4,8 +4,8 @@ private:
 
 import mach.error : ErrnoException;
 import mach.io.file.sys : FileHandle, Seek;
-import mach.io.file.sys : fopen, fclose, fread, fwrite, fflush;
-import mach.io.file.sys : fsync, fseek, ftell, tmpfile, rewind;
+import mach.io.file.sys : fopen, fclose, fread, fwrite, fflush, feof;
+import mach.io.file.sys : ferror, fsync, fseek, ftell, tmpfile, rewind;
 import mach.io.file.stat : Stat;
 import mach.io.stream.exceptions;
 import mach.io.file.exceptions : FileSeekException;
@@ -13,8 +13,6 @@ import mach.io.file.exceptions : FileSeekException;
 import core.stdc.stdio : fgetc, ungetc, EOF;
 
 public:
-
-
 
 struct FileStream{
     alias Seek = .Seek;
@@ -60,6 +58,7 @@ struct FileStream{
         fsync(this.target);
     }
     
+    /// Get the length of the file stream in bytes.
     @property size_t length() in{assert(this.active);} body{
         try{
             auto pos = this.position;
@@ -71,12 +70,24 @@ struct FileStream{
         }
     }
     
+    /// True when all bytes in the file have been read.
+    /// This happens RIGHT BEFORE attempting to read past the end of the file.
     @property bool eof() in{assert(this.active);} body{
         // https://stackoverflow.com/a/2082772/4099022
         // https://stackoverflow.com/a/6283787/4099022
         auto const c = fgetc(this.target);
         ungetc(c, this.target);
         return c == EOF;
+    }
+    
+    /// True when the file's EOF flag has been set.
+    /// This normally happens AFTER attempting to read past the end of the file.
+    @property bool feof() in{assert(this.active);} body{
+        return cast(bool) .feof(this.target);
+    }
+    
+    @property bool ferror() in{assert(this.active);} body{
+        return cast(bool) .ferror(this.target);
     }
     
     @property size_t position() in{assert(this.active);} body{
@@ -128,8 +139,7 @@ struct FileStream{
 
 
 
-version(unittest){
-    private:
+private version(unittest){
     import std.path;
     import mach.test;
     import mach.io.stream.io;

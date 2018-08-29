@@ -38,7 +38,8 @@ version(CRuntime_Microsoft){
 
 
 
-public import core.stdc.stdio : fclose, fread, fwrite, fflush, ftell, feof;
+public import core.stdc.stdio : fclose, fread, fwrite, fflush;
+public import core.stdc.stdio : ftell, feof, ferror;
 public import core.stdc.stdio : fileno, tmpfile, rewind;
 
 
