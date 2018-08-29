@@ -2,7 +2,7 @@ module mach.traits.enums;
 
 private:
 
-import mach.meta : Filter;
+import mach.meta.filter : Filter;
 
 public:
 
@@ -145,10 +145,29 @@ string enummembername(T)(in T value) if(isEnum!T){
     assert(false, "Failed to get enum member name."); // Shouldn't happen
 }
 
+/// Get whether a value has a name in an enum.
+bool isenummember(T)(in T value) if(isEnum!T){
+    foreach(member; __traits(allMembers, T)){
+        mixin(`if(value is T.` ~ member ~ `) return true;`);
+    }
+    return false;
+}
 
 
-version(unittest){
-    private:
+
+/// Get the data type for an enum type.
+/// For example, returns `int` for an `enum : int {...}` input type.
+template EnumType(T){
+    static if(is(T U == enum)){
+        alias EnumType = U;
+    }else{
+        alias EnumType = T;
+    }
+}
+
+
+
+private version(unittest){
     enum int X = 0;
     enum Ints: int{A = 1, B = 2}
     enum Doubles: double{A = 0.1, B = 1.5, C = 2.0}
@@ -254,4 +273,20 @@ unittest{
     assert(enummembername(Enum.A) == "A");
     assert(enummembername(Enum.B) == "B");
     assert(enummembername(Enum.C) == "C");
+}
+unittest{
+    assert(isenummember!Ints(Ints.A));
+    assert(isenummember!Ints(Ints.B));
+    assert(!isenummember!Ints(cast(Ints) 100));
+}
+
+unittest{
+    enum Int : int {A = 0}
+    enum Float : float {A = 0}
+    enum String : string {A = ""}
+    enum ConstInt : const(int) {A = 0}
+    static assert(is(EnumType!Int == int));
+    static assert(is(EnumType!Float == float));
+    static assert(is(EnumType!String == string));
+    static assert(is(EnumType!ConstInt == const(int)));
 }
