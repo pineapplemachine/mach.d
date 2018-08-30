@@ -138,15 +138,15 @@ template EnumMemberName(alias value) if(isEnumValue!value){
 }
 
 /// ditto
-string enummembername(T)(in T value) if(isEnum!T){
+string enummembername(T)(in T value) pure nothrow @safe @nogc if(isEnum!T){
     foreach(member; __traits(allMembers, T)){
         mixin(`if(value is T.` ~ member ~ `) return member;`);
     }
-    assert(false, "Failed to get enum member name."); // Shouldn't happen
+    return null;
 }
 
 /// Get whether a value has a name in an enum.
-bool isenummember(T)(in T value) if(isEnum!T){
+bool isenummember(T)(in T value) pure nothrow @safe @nogc if(isEnum!T){
     foreach(member; __traits(allMembers, T)){
         mixin(`if(value is T.` ~ member ~ `) return true;`);
     }

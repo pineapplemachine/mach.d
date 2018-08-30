@@ -2,14 +2,20 @@ module mach.text.str.primitives;
 
 private:
 
-import mach.traits : isIntegral, isFloatingPoint, isCharacter;
-import mach.traits : isImaginary, isComplex, isPointer;
-import mach.traits : isFiniteIterable, isString, isCharString;
-import mach.traits : isWString, isDString, Unqual, isArray, hasNumericLength;
-import mach.traits : isEnumType, enummembername, PointerType;
+import mach.traits.array : isArray;
+import mach.traits.enums : isEnumType, EnumType, enummembername;
+import mach.traits.iter : isFiniteIterable;
+import mach.traits.length : hasNumericLength;
+import mach.traits.pointer: isPointer, PointerType;
+import mach.traits.primitives : isIntegral, isFloatingPoint, isCharacter;
+import mach.traits.primitives : isImaginary, isComplex;
+import mach.traits.qualifiers : Unqual;
+import mach.traits.string : isString, isCharString, isWString, isDString;
 import mach.text.numeric : writeint, WriteBase, writefloat;
 import mach.text.utf : utf8encode;
+
 import mach.text.str.settings;
+import mach.text.str.str : str;
 
 alias writeptr = WriteBase!16;
 
@@ -177,10 +183,19 @@ string enumtostring(StrSettings settings = StrSettings.Default, T)(
     in T value
 ) if(isEnumType!T){
     enum showtype = settings.showenumtype;
-    static if(showtype){
-        return settings.typeprefix!(showtype, T) ~ "." ~ value.enummembername;
+    const name = value.enummembername;
+    if(name){
+        static if(showtype){
+            return settings.typeprefix!(showtype, T) ~ "." ~ name;
+        }else{
+            return name;
+        }
     }else{
-        return value.enummembername;
+        enum showenumtype = showtype ? showtype : settings.TypeDetail.Unqual;
+        return (
+            settings.typeprefix!(showenumtype, T) ~
+            "(" ~ str!settings(cast(EnumType!T) value) ~ ")"
+        );
     }
 }
 
@@ -305,6 +320,7 @@ unittest{
 unittest{
     enum Hello{What, Is, Up}
     enum X{A, B, C}
+    enum Ints : int {One = 1, Two = 2}
     alias Y = X;
     assert(Hello.What.enumtostring == "What");
     assert(Hello.Is.enumtostring == "Is");
@@ -314,4 +330,8 @@ unittest{
     assert(Hello.Up.enumtostring!Verbose == "Hello.Up");
     assert(X.A.enumtostring!Verbose == "X.A");
     assert(Y.A.enumtostring!Verbose == "X.A");
+    assert(Ints.One.enumtostring == "One");
+    assert((cast(Ints) 1).enumtostring == "One");
+    assert((cast(Ints) 2).enumtostring == "Two");
+    assert((cast(Ints) 3).enumtostring == "Ints(3)");
 }
