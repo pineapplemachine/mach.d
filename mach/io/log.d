@@ -53,14 +53,14 @@ void logv(
 /// As the log function, but will output only once even if the same statement
 /// is evaluated multiple times. (Per thread. Probably.)
 void logonce(
-    size_t line = __LINE__, string file = __FILE__, string func = __FUNCTION__
+    size_t line = __LINE__, string file = __FILE__
 )(){
     logonce!(line, file, func)("log");
 }
 
 /// ditto
 void logonce(
-    size_t line = __LINE__, string file = __FILE__, string func = __FUNCTION__, Args...
+    size_t line = __LINE__, string file = __FILE__, Args...
 )(
     auto ref Args args
 ){
@@ -74,7 +74,7 @@ void logonce(
     
     auto thislogged = logged(line, file);
     if(thislogged !in logrecord){
-        log!(line, file, func)(args);
+        log!(line, file)(args);
         logrecord[thislogged] = 1;
     }
 }
