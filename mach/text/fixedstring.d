@@ -25,7 +25,9 @@ public:
 struct FixedString(size_t BufferSize){
     enum size = BufferSize;
     
-    char[size] data = void;
+    // Initializes data to all null chars, unlike the default char[N]
+    // initializer. Which is weird but whatever.
+    char[size] data = cast(char[size]) (ubyte[size]).init;
     
     this(size_t otherSize)(in FixedString!otherSize other){
         this = other;
@@ -182,6 +184,14 @@ struct FixedString(size_t BufferSize){
 }
 
 
+
+// Test buffer initialization to all null chars
+unittest{
+    FixedString!8 str;
+    for(size_t i = 0; i < 8; i++){
+        assert(str[i] == 0);
+    }
+}
 
 // Test basic assignment and length
 unittest{
