@@ -166,7 +166,7 @@ struct CString(Char) if(isCharacter!Char){
     
     auto opIndex(in size_t index) const in{
         static const error = new IndexOutOfBoundsError();
-        error.enforce(index, this);
+        const checked = error.enforce(index, this);
     }body{
         return this.payload[index];
     }

@@ -340,7 +340,7 @@ struct Escaper{
     static string xescape(in dchar ch, in char esc){
         version(assert){
             static const error = new IndexOutOfBoundsError("Character out of bounds.");
-            error.enforcei(cast(uint) ch, 0, 0xff);
+            const checked = error.enforcei(cast(uint) ch, 0, 0xff);
         }
         return cast(string)([esc, 'x'] ~ writehex(cast(ubyte) ch));
     }
@@ -349,7 +349,7 @@ struct Escaper{
     static string u16escape(in dchar ch, in char esc){
         version(assert){
             static const error = new IndexOutOfBoundsError("Character out of bounds.");
-            error.enforcei(cast(uint) ch, 0, 0xffff);
+            const checked = error.enforcei(cast(uint) ch, 0, 0xffff);
         }
         return cast(string)([esc, 'u'] ~ writehex(cast(ushort) ch));
     }
@@ -358,7 +358,7 @@ struct Escaper{
     static string u32escape(in dchar ch, in char esc){
         version(assert){
             static const error = new IndexOutOfBoundsError("Character out of bounds.");
-            error.enforcei(cast(uint) ch, 0, 0xffffffff);
+            const checked = error.enforcei(cast(uint) ch, 0, 0xffffffff);
         }
         return cast(string)([esc, 'U'] ~ writehex(cast(uint) ch));
     }

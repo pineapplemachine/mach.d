@@ -479,7 +479,7 @@ auto parsenumber(
                     break;
                 case State.IntegralZero:
                     throw new JsonParseNumberException(line, pos);
-                    goto case;
+                    //goto case;
                 case State.FractionInitial:
                     state = State.Fraction;
                     goto case;

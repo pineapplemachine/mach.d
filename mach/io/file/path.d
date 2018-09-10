@@ -2,10 +2,10 @@ module mach.io.file.path;
 
 private:
 
-import mach.meta : All;
+import mach.meta.logical : All;
 import mach.traits : isIterable, isString;
 import mach.io.stream : FileStream, write, asrange, asarray;
-import mach.range : asarray;
+import mach.range.asarray : asarray;
 import mach.text.utf : utf8encode;
 import mach.io.file.exceptions;
 import mach.io.file.sys;
@@ -58,13 +58,13 @@ struct Path{
     version(Windows){
         enum CaseInsensitive = true;
         enum DefaultSeparator = '/';
-        static bool issep(in dchar ch){
+        static bool issep(in dchar ch) pure nothrow @safe {
             return ch == '/' || ch == '\\';
         }
     }else{
         enum CaseInsensitive = false;
         enum DefaultSeparator = '/';
-        static bool issep(in dchar ch){
+        static bool issep(in dchar ch) pure nothrow @safe {
             return ch == '/';
         }
     }
@@ -350,7 +350,7 @@ struct Path{
     
     /// Get a hash of the file path.
     /// Paths which are equal according to opEquals will have identical hashes.
-    size_t toHash() const{
+    size_t toHash() const nothrow @safe {
         // Based on the djb2 hashing algorithm http://www.cse.yorku.ca/~oz/hash.html
         size_t hash = 0;
         int i = cast(int) this.path.length;
