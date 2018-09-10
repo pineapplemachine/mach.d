@@ -5,9 +5,10 @@
 /// and is permitted to either accept or reject input files beginning with 'i',
 /// but should at the very least not crash while trying to parse them.
 
-import mach.text : Json, text;
+import mach.json : Json;
+import mach.text : text;
 import mach.io.stream : asarray, StdOutStream, write;
-import mach.io.file : File;
+import mach.io.file.path : Path;
 import mach.io.file.traverse : listdir; // TODO: Currently only implemented for windows
 
 void log(Args...)(Args args){
@@ -20,7 +21,7 @@ void main(){
     size_t failure_on_valid = 0;
     size_t accepted_invalid = 0;
     foreach(file; listdir("inputs")){
-        auto json = cast(string) File.readall(file.path);
+        auto json = cast(string) Path(file.path).readall();
         Throwable exception = null;
         Json.ParseException jsonexception = null;
         log("Testing: ", file.name);
