@@ -1,0 +1,18 @@
+{
+    "name": "mach",
+    "version": "0.1.0",
+    "authors": ["Sophie Kirschner"],
+    "homepage": "https://github.com/pineapplemachine/mach.d",
+    "description": "Library for the D programming language.",
+    "copyright": "Copyright © 2018, Sophie Kirschner",
+    "license": "Zlib",
+    "sourcePaths": ["mach"],
+    "excludedSourceFiles": [
+        "**/test.d",
+        "**/wip_*.d",
+        "**/old_*.d",
+        "**/reject_*.d",
+        "**/sdl/**",
+        "**/json/test/**"
+    ]
+}
