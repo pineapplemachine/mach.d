@@ -9,7 +9,7 @@ import mach.json : Json;
 import mach.text : text;
 import mach.io.stream : asarray, StdOutStream, write;
 import mach.io.file.path : Path;
-import mach.io.file.traverse : listdir; // TODO: Currently only implemented for windows
+import mach.io.file.traverse : listdir;
 
 void log(Args...)(Args args){
     StdOutStream().write(text(args, "\n"));
