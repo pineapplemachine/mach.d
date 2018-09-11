@@ -13,7 +13,7 @@ public:
 struct StdInStream{
     static enum bool active = true;
     static enum bool eof = false;
-    static size_t readbufferv(void* buffer, size_t size, size_t count){
+    static size_t readbufferv(void* buffer, in size_t size, in size_t count){
         return fread(buffer, size, count, stdin);
     }
     static typeof(this) opCall(){
@@ -24,7 +24,7 @@ struct StdInStream{
 struct StdOutStream{
     static enum bool active = true;
     static enum bool eof = false;
-    static size_t writebufferv(void* buffer, size_t size, size_t count){
+    static size_t writebufferv(const(void)* buffer, in size_t size, in size_t count){
         return fwrite(buffer, size, count, stdout);
     }
     static void flush(){
@@ -38,7 +38,7 @@ struct StdOutStream{
 struct StdErrStream{
     static enum bool active = true;
     static enum bool eof = false;
-    static size_t writebufferv(void* buffer, size_t size, size_t count){
+    static size_t writebufferv(const(void)* buffer, in size_t size, in size_t count){
         return fwrite(buffer, size, count, stderr);
     }
     static void flush(){

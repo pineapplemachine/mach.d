@@ -109,7 +109,7 @@ struct MemoryStream(bool mutable){
     }
     
     // TODO: Endianness?
-    size_t readbufferv(void* buffer, size_t size, size_t count) in{
+    size_t readbufferv(void* buffer, in size_t size, in size_t count) in{
         this.assertactive();
     }body{
         immutable goal = count * size;
@@ -119,7 +119,9 @@ struct MemoryStream(bool mutable){
         this.pos += actual;
         return actual;
     }
-    static if(mutable) size_t writebufferv(void* buffer, size_t size, size_t count) in{
+    static if(mutable) size_t writebufferv(
+        const(void)* buffer, in size_t size, in size_t count
+    ) in{
         this.assertactive();
     }body{
         immutable goal = count * size;

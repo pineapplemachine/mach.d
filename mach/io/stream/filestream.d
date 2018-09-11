@@ -39,12 +39,12 @@ struct FileStream{
         return this.target !is null;
     }
     
-    size_t readbufferv(void* buffer, size_t size, size_t count) in{
+    size_t readbufferv(void* buffer, in size_t size, in size_t count) in{
         assert(this.active);
     }body{
         return size * fread(buffer, size, count, this.target);
     }
-    size_t writebufferv(void* buffer, size_t size, size_t count) in{
+    size_t writebufferv(const(void*) buffer, in size_t size, in size_t count) in{
         assert(this.active);
     }body{
         return size * fwrite(buffer, size, count, this.target);
