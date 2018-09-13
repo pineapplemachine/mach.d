@@ -4,6 +4,12 @@
 This package provides functionality for manipulating text.
 
 
+## mach.text.ansi
+
+
+This module implements a tool for parsing ANSI escape sequences.
+
+
 ## mach.text.ascii
 
 
@@ -63,6 +69,21 @@ assert("hello".plural == "hellos");
 // Get whether a noun would be preceded by "a" or "an"
 assert("world".aan == "a");
 assert("island".aan == "an");
+```
+
+
+## mach.text.fixedstring
+
+
+This module implements a fixed-length null-terminated string type.
+It supports pretty much any of the operations that you would expect from
+a string type.
+
+``` D
+FixedString!16 hello = "Hello World";
+static assert(hello.size == 16);
+assert(hello.length == 11);
+assert(hello == "Hello World");
 ```
 
 

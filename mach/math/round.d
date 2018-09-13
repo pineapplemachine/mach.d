@@ -65,7 +65,7 @@ T round(T)(in T value) if(isNumeric!T){
     }
 }
 
-/// Get the ceiling of one number divided by another.
+/// Get the ceiling of one number divided by another, i.e. (x / y).
 /// TODO: There's probably a better place for this functionality than here.
 R divceil(R = int, N)(in N x, in N y) if(isNumeric!N && isNumeric!R){
     static if(isIntegral!N){

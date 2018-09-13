@@ -51,8 +51,6 @@ auto asdoublylinkedlist(Values)(auto ref Values values) if(isIterable!Values){
     }
 }
 
-
-
 /// Represents a cyclic doubly-linked list.
 @safe pure nothrow struct DoublyLinkedList(T){
     alias Node = DoublyLinkedListNode!T;

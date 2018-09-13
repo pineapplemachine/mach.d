@@ -486,7 +486,7 @@ The length of each element of the outputted tuple, if it has any elements,
 is equal to the number of inputs.
 
 ``` D
-import mach.types : tuple;
+import mach.types.tuple : tuple;
 assert(varzip(tuple('a', 'b', 'c'), tuple('x', 'y', 'z')) == tuple(
     tuple('a', 'x'), tuple('b', 'y'), tuple('c', 'z')
 ));

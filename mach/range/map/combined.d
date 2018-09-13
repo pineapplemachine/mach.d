@@ -2,7 +2,7 @@ module mach.range.map.combined;
 
 private:
 
-import mach.meta : AdjoinFlat;
+import mach.meta.adjoin : AdjoinFlat;
 import mach.range.map.plural;
 import mach.range.map.singular;
 
