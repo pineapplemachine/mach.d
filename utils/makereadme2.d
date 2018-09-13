@@ -24,6 +24,7 @@ immutable readmepaths = [
     "mach/meta",
     "mach/range",
     "mach/sys",
+    "mach/test",
     "mach/text",
     "mach/text/cstring",
     "mach/text/english",
