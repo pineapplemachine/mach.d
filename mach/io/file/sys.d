@@ -418,10 +418,9 @@ string currentdir(){
 
 
 private version(unittest){
-    import std.path;
-    import mach.test;
-    import mach.error.mustthrow : mustthrow;
-    enum string CurrentPath = __FILE_FULL_PATH__.dirName;
+    import mach.io.file.path : Path;
+    import mach.test.assertthrows : assertthrows;
+    enum string CurrentPath = Path(__FILE_FULL_PATH__).directory;
     enum string TestPath = CurrentPath ~ "/sys.txt";
     enum string FakePath1 = CurrentPath ~ "/nope_not_a_real_file";
     enum string FakePath2 = CurrentPath ~ "/nope_not_a_real_file.txt";
@@ -452,20 +451,20 @@ unittest{ /// Sync
     assert(!file.feof);
     assert(file.ftell == 85);
     file.fclose;
-    mustthrow!FileSyncException({
+    assertthrows!FileSyncException({
         fsync(file); // Attempt to sync closed file
     });
-    mustthrow!FileSyncException({
+    assertthrows!FileSyncException({
         fsync(null); // Attempt to sync invalid file
     });
 }
 
 unittest{ /// File size
     assert(filesize(TestPath) == 85);
-    mustthrow!FileSizeException({
+    assertthrows!FileSizeException({
         filesize(FakePath1);
     });
-    mustthrow!FileSizeException({
+    assertthrows!FileSizeException({
         filesize(FakePath2);
     });
 }

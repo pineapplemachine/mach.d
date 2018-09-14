@@ -2,9 +2,10 @@ module mach.math.box;
 
 private:
 
-import mach.meta : min = varmin, max = varmax;
+import mach.meta.varreduce : min = varmin, max = varmax;
 import mach.traits : isNumeric, isTemplateOf;
 import mach.math.vector : Vector, Vector2;
+import mach.text.numeric : writenumber;
 
 public:
 
@@ -15,7 +16,7 @@ enum isBox(T) = isTemplateOf!(T, Box);
 
 
 struct Box(T) if(isNumeric!T){
-    
+    /// Positions of each side of the box
     T minx, miny, maxx, maxy;
     
     alias x = minx;
@@ -343,64 +344,72 @@ struct Box(T) if(isNumeric!T){
     }
     
     string toString() const{
-        import std.format;
-        return format("(%s, %s), (%s, %s)", this.minx, this.miny, this.maxx, this.maxy);
+        return (
+            "(" ~ writenumber(this.minx) ~ ", " ~ writenumber(this.miny) ~ "), " ~
+            "(" ~ writenumber(this.maxx) ~ ", " ~ writenumber(this.maxy) ~ ")"
+        );
     }
     
 }
 
 
 
-version(unittest){
-    private:
-    import mach.test;
+// TODO: More tests
+
+/// Equality
+unittest {
+    assert(Box!int(1, 1) == Box!int(1, 1));
+    assert(Box!int(1, 1) == Box!real(1, 1));
+    assert(Box!int(1, 1) != Box!int(0, 0));
+    assert(Box!int(1, 1) != Box!real(1.5, 1.5));
 }
-unittest{
-    // TODO: More tests
-    tests("Box", {
-        tests("Equality", {
-            testeq(Box!int(1, 1), Box!int(1, 1));
-            testeq(Box!int(1, 1), Box!real(1, 1));
-            testneq(Box!int(1, 1), Box!int(0, 0));
-            testneq(Box!int(1, 1), Box!real(1.5, 1.5));
-        });
-        tests("Scalar math", {
-            Box!int box = Box!int(1, 2, 3, 4);
-            testeq(box - 1, Box!int(0, 1, 2, 3));
-            testeq(box + 1, Box!int(2, 3, 4, 5));
-            testeq(box / 2, Box!int(0, 1, 1, 2));
-            testeq(box * 2, Box!int(2, 4, 6, 8));
-        });
-        tests("Intersection", {
-            testeq(
-                Box!int(0, 0, 2, 4).intersection(Box!int(0, 0, 4, 2)),
-                Box!int(0, 0, 2, 2)
-            );
-            testeq(
-                Box!int(-2, -2, 1, 1) & Box!int(-1, -1, 2, 2),
-                Box!int(-1, -1, 1, 1)
-            );
-            testf(
-                Box!int(0, 0, 4, 4).intersection(Box!int(-4, -4, 0, 0)).exists
-            ); 
-        });
-        tests("Merge", {
-            testeq(
-                Box!int(0, 0, 1, 1).merged(Box!int(-1, -1, 0, 0)),
-                Box!int(-1, -1, 1, 1)
-            );
-            testeq(
-                Box!int(2, 5) | Box!int(5, 2), Box!int(5, 5)
-            );
-        });
-        tests("Contains", {
-            test(Box!int(10, 10).contains(Box!int(2, 2, 5, 5)));
-            testf(Box!int(10, 10).contains(Box!int(2, 2, 5, 12)));
-            test(Box!int(10, 10).contains(Vector2!int(5, 5)));
-            testf(Box!int(10, 10).contains(Vector2!int(5, 12)));
-            test(Box!int(2, 2, 5, 5) in Box!int(10, 10));
-            test(Vector2!int(2, 2) in Box!int(10, 10));
-            test(Vector2!int(-1, -1) !in Box!int(10, 10));
-        });
-    });
+
+/// Binary operators with scalar operands
+unittest {
+    Box!int box = Box!int(1, 2, 3, 4);
+    assert(box - 1 == Box!int(0, 1, 2, 3));
+    assert(box + 1 == Box!int(2, 3, 4, 5));
+    assert(box / 2 == Box!int(0, 1, 1, 2));
+    assert(box * 2 == Box!int(2, 4, 6, 8));
+}
+
+/// Box intersection
+unittest {
+    // Method call
+    auto x1 = Box!int(0, 0, 2, 4).intersection(Box!int(0, 0, 4, 2));
+    assert(x1 == Box!int(0, 0, 2, 2));
+    // Binary '&' operator
+    auto x2 = (Box!int(-2, -2, 1, 1) & Box!int(-1, -1, 2, 2));
+    assert(x2 == Box!int(-1, -1, 1, 1));
+    // Nonexistent intersection
+    auto x3 = Box!int(0, 0, 4, 4).intersection(Box!int(-4, -4, 0, 0));
+    assert(!x3.exists); 
+}
+
+/// Box merging
+unittest {
+    // Method call
+    auto merged1 = Box!int(0, 0, 1, 1).merged(Box!int(-1, -1, 0, 0));
+    assert(merged1 == Box!int(-1, -1, 1, 1));
+    // Binary '|' operator
+    auto merged2 = (Box!int(2, 5) | Box!int(5, 2));
+    assert(merged2 == Box!int(5, 5));
+}
+
+/// Containment
+unittest {
+    // Method call
+    assert(Box!int(10, 10).contains(Box!int(2, 2, 5, 5)));
+    assert(!Box!int(10, 10).contains(Box!int(2, 2, 5, 12)));
+    assert(Box!int(10, 10).contains(Vector2!int(5, 5)));
+    assert(!Box!int(10, 10).contains(Vector2!int(5, 12)));
+    // Binary "in" and "!in" operators
+    assert(Box!int(2, 2, 5, 5) in Box!int(10, 10));
+    assert(Vector2!int(2, 2) in Box!int(10, 10));
+    assert(Vector2!int(-1, -1) !in Box!int(10, 10));
+}
+
+/// toString
+unittest {
+    assert(Box!int(1, 2, 3, 4).toString() == "(1, 2), (3, 4)");
 }

@@ -297,7 +297,7 @@ struct NumberRangeRange(T) if(isNumeric!T){
 
 private version(unittest){
     import mach.meta : Aliases;
-    import mach.error.mustthrow : mustthrow;
+    import mach.test.assertthrows : assertthrows;
     import mach.range.compare : equals;
     import mach.sort : issorted;
 }
@@ -412,10 +412,10 @@ unittest{ /// Number range as range bidirectionality
     range.popFront();
     assert(range.empty);
     assert(range.remaining == 0);
-    mustthrow({range.front;});
-    mustthrow({range.popFront();});
-    mustthrow({range.back;});
-    mustthrow({range.popBack();});
+    assertthrows({range.front;});
+    assertthrows({range.popFront();});
+    assertthrows({range.back;});
+    assertthrows({range.popBack();});
 }
 
 unittest{ /// Number range as range random access and slicing
@@ -426,7 +426,7 @@ unittest{ /// Number range as range random access and slicing
     assert(range[1] == 2);
     assert(range[2] == 4);
     assert(range[$-1] == 6);
-    mustthrow!IndexOutOfBoundsError({range[$];});
+    assertthrows!IndexOutOfBoundsError({range[$];});
     // Slicing
     assert(range[0 .. 0].empty);
     assert(range[$ .. $].empty);
@@ -437,7 +437,7 @@ unittest{ /// Number range as range random access and slicing
     assert(range[1 .. $].equals([2, 4, 6]));
     assert(range[2 .. $].equals([4, 6]));
     assert(range[3 .. $].equals([6]));
-    mustthrow!InvalidSliceBoundsError({range[0 .. $+1];});
+    assertthrows!InvalidSliceBoundsError({range[0 .. $+1];});
 }
 
 unittest{ /// Number range as range saving

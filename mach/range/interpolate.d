@@ -2,7 +2,9 @@ module mach.range.interpolate;
 
 private:
 
-import mach.traits : isNumeric, isIntegral, isFloatingPoint;
+import mach.traits.primitives : isNumeric, isIntegral, isFloatingPoint;
+import mach.math.constants : pi;
+import mach.math.trig : cos;
 
 public:
 
@@ -28,8 +30,7 @@ alias LinearInterpolation = (start, end, t){
 
 /// Cosine interpolation function, used by coslerp
 alias CosineInterpolation = (start, end, t){
-    import std.math : PI, cos;
-    auto f = (1 - cos(t * PI)) * .5;
+    auto f = (1 - cos(t * pi)) * .5;
     return start + (end - start) * f;
 };
 
@@ -181,15 +182,12 @@ struct InterpolationRange(
 
 
 
-version(unittest){
-    private:
-    import mach.test;
+private version(unittest) {
     import mach.range.compare : equals;
 }
-unittest{
-    tests("Interpolation", {
-        test(lerp!true(0, 4, 5).equals([0, 1, 2, 3, 4]));
-        test(lerp!false(0, 4, 4).equals([0, 1, 2, 3]));
-        test(lerp!true(0, 1, 5).equals([0, 0.25, 0.5, 0.75, 1]));
-    });
+
+unittest {
+    assert(lerp!true(0, 4, 5).equals([0, 1, 2, 3, 4]));
+    assert(lerp!false(0, 4, 4).equals([0, 1, 2, 3]));
+    assert(lerp!true(0, 1, 5).equals([0, 0.25, 0.5, 0.75, 1]));
 }

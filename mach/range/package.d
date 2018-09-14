@@ -169,11 +169,11 @@ unittest{ /// Example
     range.popFront(); // And consume that one, too.
     assert(range.empty);
     // Now that the range has been fully consumed...
-    import mach.error.mustthrow : mustthrow;
-    mustthrow({
+    import mach.test.assertthrows : assertthrows;
+    assertthrows({
         range.front; // Accessing its front produces an error,
     });
-    mustthrow({
+    assertthrows({
         range.popFront(); // And so does calling `popFront`.
     });
 }
@@ -205,11 +205,11 @@ unittest{ /// Example
     assert(range.empty);
     // Like `front` and `popFront`, `back` and `popBack` also fail for
     // ranges that have already been fully consumed.
-    import mach.error.mustthrow : mustthrow;
-    mustthrow({
+    import mach.test.assertthrows : assertthrows;
+    assertthrows({
         range.back;
     });
-    mustthrow({
+    assertthrows({
         range.popBack();
     });
 }
@@ -418,8 +418,9 @@ unittest{ /// Examples
     assert(range[2] == 2);
     // Like many range types, those produced by `rangeof` throw a `IndexOutOfBoundsError`
     // when an index is out of bounds.
-    import mach.error : mustthrow, IndexOutOfBoundsError;
-    mustthrow!IndexOutOfBoundsError({
+    import mach.test.assertthrows : assertthrows;
+    import mach.error : IndexOutOfBoundsError;
+    assertthrows!IndexOutOfBoundsError({
         auto nope = range[3]; // Index out of bounds!
     });
 }

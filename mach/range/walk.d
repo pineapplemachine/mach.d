@@ -46,12 +46,12 @@ input, the fallback is returned for the missing elements instead.
 +/
 
 unittest{ /// Example
-    import mach.error.mustthrow : mustthrow;
+    import mach.test.assertthrows : assertthrows;
     import mach.range.consume : consume;
-    mustthrow({
+    assertthrows({
         "hello".walkindex(100);
     });
-    mustthrow({
+    assertthrows({
         // The error is thrown upon the invalid index being encountered,
         // not upon creation of the `walkslice` range.
         "hello".walkslice(0, 100).consume;

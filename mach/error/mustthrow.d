@@ -1,8 +1,12 @@
-module mach.error.mustthrow;
+deprecated module mach.error.mustthrow;
 
 private:
 
-//
+/++ Docs
+
+This module is deprecated. Please use `mach.test.asserttthrows` instead.
+
++/
 
 public:
 
@@ -56,8 +60,7 @@ auto mustthrow(alias pred, Fn)(
 
 
 
-version(unittest){
-    private:
+private version(unittest){
     import core.exception : AssertError;
 }
 

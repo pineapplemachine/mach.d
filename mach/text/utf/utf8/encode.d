@@ -82,12 +82,13 @@ struct UTF8EncodePoint{
 
 
 private version(unittest){
-    import mach.error.mustthrow : mustthrow;
+    import mach.test.assertthrows : assertthrows;
     import mach.range.compare : equals;
     import mach.range.consume : consume;
 }
 
-unittest{
+/// isUTF8Encoded template tests
+unittest {
     static assert(isUTF8Encoded!(string));
     static assert(isUTF8Encoded!(char[]));
     static assert(isUTF8Encoded!(ubyte[]));
@@ -98,7 +99,8 @@ unittest{
     static assert(!isUTF8Encoded!(uint[]));
 }
 
-unittest{
+/// Encode UTF-32 strings as UTF-8 strings
+unittest {
     assert(""d.utf8encodestring.equals(""));
     assert("test"d.utf8encodestring.equals("test"));
     assert("hello"d.utf8encodestring.equals("hello"));
@@ -111,13 +113,16 @@ unittest{
     assert("?😃?"d.utf8encodestring.equals("?😃?"));
     assert("!אツ😃"d.utf8encodestring.equals("!אツ😃"));
 }
-unittest{
+
+/// Encode UTF-32 strings represented as types other than `dstring`
+unittest {
     assert("test"d.asrange.utf8encodestring.equals("test"));
     assert([cast(uint) 'x', cast(uint) 'ツ'].utf8encodestring.equals("xツ"));
 }
+
+/// Code point outside unicode planes
 unittest{
-    mustthrow!UTFEncodeException({
-        // Code point outside unicode planes.
+    assertthrows!UTFEncodeException({
         [cast(dchar) 0x110000].utf8encodestring.consume;
     });
 }

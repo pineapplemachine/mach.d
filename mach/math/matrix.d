@@ -77,7 +77,7 @@ an `IndexOutOfBoundsError` to be thrown.
 
 unittest{ /// Example
     import mach.math.vector : vector;
-    import mach.error.mustthrow : mustthrow;
+    import mach.test.assertthrows : assertthrows;
     auto mat = Matrix2i.Rows(
         vector(1, 2),
         vector(3, 4),
@@ -90,7 +90,7 @@ unittest{ /// Example
     static assert(!is(typeof({
         mat[100][100];
     })));
-    mustthrow({
+    assertthrows({
         auto x = mat.index(200, 200);
     });
 }
@@ -1262,7 +1262,7 @@ struct Matrix(size_t valueswidth, size_t valuesheight, T) if(isMatrixComponent!T
 
 private version(unittest){
     import mach.meta : Aliases;
-    import mach.error.mustthrow : mustthrow;
+    import mach.test.assertthrows : assertthrows;
     // Sequence of types that a Matrix can legally be made from.
     alias Types = Aliases!(byte, short, int, long, float, double, real);
 }
@@ -1699,7 +1699,7 @@ unittest{ /// Indexing
     static assert(!is(typeof({
         mat.index!(2, 2);
     })));
-    mustthrow!IndexOutOfBoundsError({
+    assertthrows!IndexOutOfBoundsError({
         mat.index(2, 2);
     });
 }

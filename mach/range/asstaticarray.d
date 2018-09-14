@@ -37,9 +37,9 @@ this error reporting are ommitted.
 
 unittest{ /// Example
     import mach.range.rangeof : rangeof;
-    import mach.error.mustthrow : mustthrow;
+    import mach.test.assertthrows : assertthrows;
     auto range = rangeof!int(0, 1, 2, 3);
-    mustthrow!AsStaticArrayError({
+    assertthrows!AsStaticArrayError({
         range.asstaticarray!10; // Fails because of incorrect length.
     });
 }
@@ -122,8 +122,7 @@ auto asstaticarray(Element, size_t length, Iter)(auto ref Iter iter) if(
 
 
 
-version(unittest){
-    private:
+private version(unittest) {
     import mach.test;
     struct TestRange{
         int low, high;
@@ -133,7 +132,8 @@ version(unittest){
         void popFront(){this.index++;}
     }
 }
-unittest{
+
+unittest {
     tests("As static array", {
         tests("Variadic args", {
             tests("Explicit type", {

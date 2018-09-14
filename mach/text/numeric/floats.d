@@ -51,8 +51,8 @@ unittest{ /// Example
 }
 
 unittest{ /// Example
-    import mach.error.mustthrow : mustthrow;
-    mustthrow!NumberParseException({
+    import mach.test.assertthrows : assertthrows;
+    assertthrows!NumberParseException({
         "malformed input".parsefloat!double;
     });
 }
@@ -362,7 +362,7 @@ version(unittest){
     import mach.test;
     import mach.meta : Aliases;
     import mach.math.floats.compare : fidentical;
-    import mach.error.mustthrow : mustthrow;
+    import mach.test.assertthrows : assertthrows;
 }
 
 unittest{ // TODO: rewrite without using mach.test
@@ -518,13 +518,13 @@ unittest{ /// Parse floats with no digits after decimal
 
 unittest{ /// Malformed parse inputs
     void bad(string str){
-        mustthrow!NumberParseException({
+        assertthrows!NumberParseException({
             parsefloat!float(str);
         });
-        mustthrow!NumberParseException({
+        assertthrows!NumberParseException({
             parsefloat!double(str);
         });
-        mustthrow!NumberParseException({
+        assertthrows!NumberParseException({
             parsefloat!real(str);
         });
     }

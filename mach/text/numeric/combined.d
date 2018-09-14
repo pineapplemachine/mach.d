@@ -44,8 +44,8 @@ The `parsenumber` method, like `parseint` and `parsefloat`, throws a
 +/
 
 unittest{ /// Example
-    import mach.error.mustthrow : mustthrow;
-    mustthrow!NumberParseException({
+    import mach.test.assertthrows : assertthrows;
+    assertthrows!NumberParseException({
         "some malformed input".parsenumber!int;
     });
 }
@@ -89,8 +89,8 @@ auto writenumber(T)(in T number) if(isNumeric!T){
 
 
 
-private version(unittest){
-    import mach.error.mustthrow : mustthrow;
+private version(unittest) {
+    import mach.test.assertthrows : assertthrows;
     import mach.text.numeric.exceptions : NumberParseException;
     import mach.math.floats.extract : fextractsgn;
     import mach.math.floats.properties;
@@ -123,10 +123,10 @@ unittest{
 }
 
 unittest{
-    mustthrow!NumberParseException({
+    assertthrows!NumberParseException({
         "".parsenumber!int;
     });
-    mustthrow!NumberParseException({
+    assertthrows!NumberParseException({
         "".parsenumber!double;
     });
 }

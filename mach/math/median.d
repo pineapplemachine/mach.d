@@ -23,8 +23,8 @@ unittest{ /// Example
 }
 
 unittest{ /// Example
-    import mach.error.mustthrow : mustthrow;
-    mustthrow!MedianEmptyInputError({
+    import mach.test.assertthrows : assertthrows;
+    assertthrows!MedianEmptyInputError({
         new int[0].median; // Can't calculate median with an empty input!
     });
 }
@@ -74,15 +74,19 @@ auto median(T)(auto ref T values) if(canGetMedian!T){
 
 
 
-private version(unittest){
-    import mach.error.mustthrow : mustthrow;
+private version(unittest) {
+    import mach.test.assertthrows : assertthrows;
 }
-unittest{
-    mustthrow!MedianEmptyInputError({
+
+/// Empty input
+unittest {
+    assertthrows!MedianEmptyInputError({
         new int[0].median;
     });
 }
-unittest{
+
+/// Various array inputs
+unittest {
     assert([0].median == 0);
     assert([0, 2].median == 1);
     assert([0, 1].median == 0);

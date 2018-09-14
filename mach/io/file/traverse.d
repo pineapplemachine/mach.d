@@ -347,61 +347,59 @@ struct TraverseDirRange(TraverseDirMode mode = TraverseDirMode.DepthFirst){
 
 
 
-version(unittest){
-    import std.path;
-    import mach.test;
+private version(unittest){
     import mach.range : filter, asarray;
-    enum string TestPath = __FILE_FULL_PATH__.dirName ~ "/traverse";
+    enum string TestPath = Path(__FILE_FULL_PATH__).directory ~ "/traverse";
     struct Entry{
         string path;
         bool isdir = false;
     }
 }
-unittest{
-    tests("Directory listing", {
-        auto expected = [
-            Entry(TestPath ~ "/dir", true),
-            Entry(TestPath ~ "/a.txt"),
-            Entry(TestPath ~ "/b.txt"),
-            Entry(TestPath ~ "/c"),
-            Entry(TestPath ~ "/readme.txt"),
-            Entry(TestPath ~ "/unicodeツ.txt"),
-        ];
-        auto files = listdir(TestPath).asarray;
-        testeq(files.length, expected.length);
+
+/// Directory listing
+unittest {
+    auto expected = [
+        Entry(TestPath ~ "/dir", true),
+        Entry(TestPath ~ "/a.txt"),
+        Entry(TestPath ~ "/b.txt"),
+        Entry(TestPath ~ "/c"),
+        Entry(TestPath ~ "/readme.txt"),
+        Entry(TestPath ~ "/unicodeツ.txt"),
+    ];
+    auto files = listdir(TestPath).asarray;
+    assert(files.length == expected.length);
+    foreach(entry; expected){
+        auto file = files.filter!(f => f.path == entry.path).asarray;
+        assert(file.length == 1);
+        assert(file[0].isdir == entry.isdir);
+    }
+}
+
+/// Directory traversal
+unittest {
+    auto expected = [
+        Entry(TestPath ~ "/dir", true),
+        Entry(TestPath ~ "/a.txt"),
+        Entry(TestPath ~ "/b.txt"),
+        Entry(TestPath ~ "/c"),
+        Entry(TestPath ~ "/readme.txt"),
+        Entry(TestPath ~ "/unicodeツ.txt"),
+        Entry(TestPath ~ "/dir/d.txt"),
+        Entry(TestPath ~ "/dir/nesteddir", true),
+        Entry(TestPath ~ "/dir/nesteddir/deep.txt", true),
+        Entry(TestPath ~ "/dir/nesteddir/deep.txt/deeper.txt", false),
+    ];
+    void TestTraverse(TraverseDirMode mode)(){
+        auto files = traversedir!mode(TestPath).asarray;
+        assert(files.length == expected.length);
         foreach(entry; expected){
             auto file = files.filter!(f => f.path == entry.path).asarray;
-            testeq(file.length, 1);
-            testeq(file[0].isdir, entry.isdir);
+            assert(file.length == 1);
+            assert(file[0].isdir == entry.isdir);
         }
-    });
-    tests("Directory traversal", {
-        auto expected = [
-            Entry(TestPath ~ "/dir", true),
-            Entry(TestPath ~ "/a.txt"),
-            Entry(TestPath ~ "/b.txt"),
-            Entry(TestPath ~ "/c"),
-            Entry(TestPath ~ "/readme.txt"),
-            Entry(TestPath ~ "/unicodeツ.txt"),
-            Entry(TestPath ~ "/dir/d.txt"),
-            Entry(TestPath ~ "/dir/nesteddir", true),
-            Entry(TestPath ~ "/dir/nesteddir/deep.txt", true),
-            Entry(TestPath ~ "/dir/nesteddir/deep.txt/deeper.txt", false),
-        ];
-        void TestTraverse(TraverseDirMode mode)(){
-            auto files = traversedir!mode(TestPath).asarray;
-            testeq(files.length, expected.length);
-            foreach(entry; expected){
-                auto file = files.filter!(f => f.path == entry.path).asarray;
-                testeq(file.length, 1);
-                testeq(file[0].isdir, entry.isdir);
-            }
-        }
-        tests("Depth-first", {
-            TestTraverse!(TraverseDirMode.DepthFirst)();
-        });
-        tests("Breadth-first", {
-            TestTraverse!(TraverseDirMode.BreadthFirst)();
-        });
-    });
+    }
+    // Depth-first
+    TestTraverse!(TraverseDirMode.DepthFirst)();
+    // Breadth-first
+    TestTraverse!(TraverseDirMode.BreadthFirst)();
 }

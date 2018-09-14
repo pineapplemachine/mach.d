@@ -25,8 +25,10 @@ standard, accessing `front` or `back` also consumes that element.
 +/
 
 unittest{ /// Example
-    import mach.error.mustthrow : mustthrow;
-    // A range which causes an error when `front` is accessed more than once.
+    import mach.test.assertthrows : assertthrows;
+    import core.exception : AssertError;
+    // A range which causes an error when `front`
+    // is accessed more than once.
     struct Test{
         enum bool empty = false;
         int element = 0;
@@ -41,12 +43,12 @@ unittest{ /// Example
         }
     }
     // For example:
-    mustthrow({
+    assertthrows!AssertError({
         Test test;
-        test.front;
-        test.front;
+        test.front; // Ok
+        test.front; // Not ok
     });
-    // But, using `cache`:
+    // But, using `cache`...
     auto range = Test(0).cache;
     assert(range.front == 0);
     assert(range.front == 0); // Repeated access ok!

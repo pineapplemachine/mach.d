@@ -74,7 +74,7 @@ struct UTF16EncodePoint{
 
 
 private version(unittest){
-    import mach.error.mustthrow : mustthrow;
+    import mach.test.assertthrows : assertthrows;
     import mach.range.compare : equals;
     import mach.range.consume : consume;
 }
@@ -110,7 +110,7 @@ unittest{
     assert([cast(uint) 'x', cast(uint) 'ツ'].utf16encodestring.equals("xツ"w));
 }
 unittest{
-    mustthrow!UTFEncodeException({
+    assertthrows!UTFEncodeException({
         // Code point outside unicode planes.
         [cast(dchar) 0x110000].utf16encodestring.consume;
     });

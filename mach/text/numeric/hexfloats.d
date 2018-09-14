@@ -38,8 +38,8 @@ input string.
 +/
 
 unittest{ /// Example
-    import mach.error.mustthrow : mustthrow;
-    mustthrow!NumberParseException({
+    import mach.test.assertthrows : assertthrows;
+    assertthrows!NumberParseException({
         "malformed input".parsehexfloat;
     });
 }
@@ -285,7 +285,7 @@ T parsehexfloat(T = double, S)(auto ref S str) if(isFloatingPoint!T && isString!
 private version(unittest){
     import mach.meta : Aliases;
     import mach.math.floats : fidentical;
-    import mach.error.mustthrow : mustthrow;
+    import mach.test.assertthrows : assertthrows;
 }
 
 unittest{ /// Write and parse normal floats
@@ -388,13 +388,13 @@ unittest{ /// Parse very large/small inputs
 
 unittest{ /// Malformed parse inputs
     void bad(string str){
-        mustthrow!NumberParseException({
+        assertthrows!NumberParseException({
             parsehexfloat!float(str);
         });
-        mustthrow!NumberParseException({
+        assertthrows!NumberParseException({
             parsehexfloat!double(str);
         });
-        mustthrow!NumberParseException({
+        assertthrows!NumberParseException({
             parsehexfloat!real(str);
         });
     }

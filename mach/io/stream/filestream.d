@@ -41,11 +41,13 @@ struct FileStream{
     
     size_t readbufferv(void* buffer, in size_t size, in size_t count) in{
         assert(this.active);
+        assert(buffer !is null);
     }body{
         return size * fread(buffer, size, count, this.target);
     }
     size_t writebufferv(const(void*) buffer, in size_t size, in size_t count) in{
         assert(this.active);
+        assert(buffer !is null);
     }body{
         return size * fwrite(buffer, size, count, this.target);
     }
@@ -99,7 +101,7 @@ struct FileStream{
         this.seek(index, Seek.Set);
     }
     
-    void seek(in size_t offset, in Seek origin = Seek.Set) in{
+    void seek(in ptrdiff_t offset, in Seek origin = Seek.Set) in{
         assert(this.active);
     }body{
         try{
@@ -140,49 +142,53 @@ struct FileStream{
 
 
 private version(unittest){
-    import std.path;
-    import mach.test;
+    import mach.io.file.path : Path;
+    import mach.test.assertthrows : assertthrows;
     import mach.io.stream.io;
     import mach.io.stream.templates;
-    enum string TestPath = __FILE_FULL_PATH__.dirName ~ "/filestream.txt";
+    enum string TestPath = Path(__FILE_FULL_PATH__).directory ~ "/filestream.txt";
 }
-unittest{
-    tests("File stream", {
-        static assert(isIOStream!FileStream);
-        tests("Read", {
-            auto stream = FileStream(TestPath, "rb");
-            string header = "I am used to validate unittests.";
-            char[] buffer = new char[header.length];
-            stream.readbuffer(buffer);
-            testeq(header, buffer);
-            testf(stream.eof);
-            testeq(stream.position, header.length);
-            testeq(stream.length, 85);
-            stream.close();
-        });
-        tests("Write", {
-            auto stream = FileStream.temp();
-            char[] writebuffer = cast(char[]) "HelloWorld";
-            char[5] readbuffer;
-            stream.writebuffer(writebuffer);
-            stream.write('X');
-            stream.write("XX");
-            stream.write(int(0x12345678));
-            stream.reset();
-            stream.readbuffer(readbuffer);
-            testeq(readbuffer, "Hello");
-            stream.readbuffer(readbuffer);
-            testeq(readbuffer, "World");
-            stream.position = 2;
-            stream.readbuffer(readbuffer);
-            testeq(readbuffer, "lloWo");
-            stream.readbuffer(readbuffer);
-            testeq(readbuffer, "rldXX");
-            testeq(stream.read!char, 'X');
-            testeq(stream.read!int, 0x12345678);
-            testeq(true, stream.eof);
-            testfail({stream.read!char;});
-            stream.close();
-        });
-    });
+
+/// Test template things
+unittest {
+    static assert(isIOStream!FileStream);
+}
+
+/// Read from file
+unittest {
+    auto stream = FileStream(TestPath, "rb");
+    string header = "I am used to validate unittests.";
+    char[] buffer = new char[header.length];
+    stream.readbuffer(buffer);
+    assert(header == buffer);
+    assert(!stream.eof);
+    assert(stream.position == header.length);
+    assert(stream.length == 85);
+    stream.close();
+}
+
+/// Write to temporary file
+unittest {
+    auto stream = FileStream.temp();
+    char[] writebuffer = cast(char[]) "HelloWorld";
+    char[5] readbuffer;
+    stream.writebuffer(writebuffer);
+    stream.write('X');
+    stream.write("XX");
+    stream.write(int(0x12345678));
+    stream.reset();
+    stream.readbuffer(readbuffer);
+    assert(readbuffer == "Hello");
+    stream.readbuffer(readbuffer);
+    assert(readbuffer == "World");
+    stream.position = 2;
+    stream.readbuffer(readbuffer);
+    assert(readbuffer == "lloWo");
+    stream.readbuffer(readbuffer);
+    assert(readbuffer == "rldXX");
+    assert(stream.read!char == 'X');
+    assert(stream.read!int == 0x12345678);
+    assert(stream.eof);
+    assertthrows!StreamException({stream.read!char;});
+    stream.close();
 }

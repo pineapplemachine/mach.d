@@ -2,7 +2,7 @@ module mach.io.stream.asrange;
 
 private:
 
-import mach.traits : hasNumericLength;
+import mach.traits.length : hasNumericLength;
 import mach.io.stream.io;
 import mach.io.stream.templates;
 
@@ -12,14 +12,16 @@ public:
 
 /// Get a range for iterating over the data in a stream, where each unit is of
 /// the given type.
-auto asrange(Element = char, Stream)(auto ref Stream source) if(isInputStream!Stream){
+auto asrange(Element = char, Stream)(
+    auto ref Stream source
+) if(isInputStream!Stream) {
     return StreamRange!(Stream, Element)(source);
 }
 
 
 
 /// Range for iterating over the contents of a stream.
-struct StreamRange(Stream, Element) if(isInputStream!Stream){
+struct StreamRange(Stream, Element) if(isInputStream!Stream) {
     enum bool isOutput = isOutputStream!Stream;
     enum bool isFinite = isFiniteInputStream!Stream;
     
@@ -64,7 +66,9 @@ struct StreamRange(Stream, Element) if(isInputStream!Stream){
     static if(isOutput && isSeekStream!Stream && isTellStream!Stream){
         static enum bool mutable = true;
         @property void front(Element value){
-            this.source.position = cast(size_t)(this.source.position - Element.sizeof);
+            this.source.position = cast(size_t) (
+                this.source.position - Element.sizeof
+            );
             this.source.writebuffer(&value);
         }
     }
@@ -85,41 +89,41 @@ struct StreamRange(Stream, Element) if(isInputStream!Stream){
 
 
 
-version(unittest){
-    private:
-    import std.path;
-    import mach.test;
+private version(unittest) {
     import mach.range : headis;
+    import mach.io.file.path : Path;
     import mach.io.stream.filestream : FileStream;
-    enum string TestPath = __FILE_FULL_PATH__.dirName ~ "/range.txt";
+    import mach.io.stream.memorystream : ReadOnlyMemoryStream;
+    enum string TestPath = Path(__FILE_FULL_PATH__).directory ~ "/range.txt";
 }
-unittest{
-    // TODO: Use an ArrayStream or something instead of a FileStream for tests
-    tests("Stream as range", {
-        tests("Single-byte elements", {
-            auto stream = FileStream(TestPath, "rb");
-            auto range = stream.asrange!char;
-            testeq(range.front, 'I');
-            testeq(range.length, 85);
-            test(range.headis("I am used to validate unittests."));
-            range.close;
-        });
-        tests("Multi-byte elements", {
-            auto stream = FileStream(TestPath, "rb");
-            auto range = stream.asrange!ushort;
-            // TODO: The success of this test is likely endianness-dependent
-            // But I haven't currently got the means to verify that assumption.
-            // If this unittest inexplicably fails, it's probably because you
-            // need to just unconditionally do the little endian test and trash
-            // the big endian version.
-            version(LittleEndian){
-                testeq(range.front & 0x00ff, 'I');
-                testeq((range.front & 0xff00) >> 8, ' ');
-            }else{
-                testeq(range.front & 0x00ff, ' ');
-                testeq((range.front & 0xff00) >> 8, 'I');
-            }
-            range.close;
-        });
-    });
+
+/// File stream as range (single-byte elements)
+unittest {
+    auto stream = FileStream(TestPath, "rb");
+    auto range = stream.asrange!char;
+    assert(range.front == 'I');
+    assert(range.length == 85);
+    assert(range.headis("I am used to validate unittests."));
+    range.close();
+}
+
+/// Memory stream as range (single-byte elements)
+unittest {
+    char[] data = ['h', 'e', 'l', 'l', 'o'];
+    auto stream = ReadOnlyMemoryStream(data);
+    auto range = stream.asrange!char;
+    assert(range.front == 'h');
+    assert(range.length == 5);
+    assert(range.headis("hello"));
+}
+
+/// File stream as range (multi-byte elements)
+unittest {
+    auto stream = FileStream(TestPath, "rb");
+    auto range = stream.asrange!ushort;
+    // TODO: Will this test still pass on a big-endian system?
+    // ...And is anyone ever actually going to run this code on one?
+    assert((range.front & 0x00ff) == 'I');
+    assert((range.front & 0xff00) >> 8 == ' ');
+    range.close();
 }

@@ -1,4 +1,4 @@
-module mach.io.file.file;
+deprecated module mach.io.file.file;
 
 private:
 
@@ -19,7 +19,7 @@ public:
 
 
 /// Provides clean syntax for initializing file streams.
-deprecated abstract class File{
+abstract class File{
     /// Open the file at a path.
     static auto open(string path, in char[] mode = "rb"){
         return FileStream(path, mode);

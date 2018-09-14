@@ -136,7 +136,7 @@ struct UTF8DecodeRange(Range) if(canUTF8DecodeRange!Range){
 
 
 private version(unittest){
-    import mach.error.mustthrow : mustthrow;
+    import mach.test.assertthrows : assertthrows;
     import mach.range.compare : equals;
     import mach.range.consume : consume;
 }
@@ -178,13 +178,13 @@ unittest{
 }
 
 unittest{
-    mustthrow!UTFDecodeException({
+    assertthrows!UTFDecodeException({
         "\xD7".utf8decode.consume;
     });
-    mustthrow!UTFDecodeException({
+    assertthrows!UTFDecodeException({
         "\xF0".utf8decode.consume;
     });
-    mustthrow!UTFDecodeException({
+    assertthrows!UTFDecodeException({
         "\xF0\x9F".utf8decode.consume;
     });
 }
@@ -205,8 +205,8 @@ unittest{
     assert(utf.pointlength == 4);
     utf.popFront();
     assert(utf.empty());
-    mustthrow({utf.front;});
-    mustthrow({utf.popFront;});
-    mustthrow({utf.pointindex;});
-    mustthrow({utf.pointlength;});
+    assertthrows({utf.front;});
+    assertthrows({utf.popFront;});
+    assertthrows({utf.pointindex;});
+    assertthrows({utf.pointlength;});
 }

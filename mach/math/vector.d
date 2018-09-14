@@ -892,7 +892,7 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
 private version(unittest){
     import mach.meta : Aliases, varall;
     import mach.math.floats : fisinf, fisnan, fnearequal;
-    import mach.error : mustthrow;
+    import mach.test.assertthrows : assertthrows;
     // Sequence of types that a Vector can legally be made from.
     alias Types = Aliases!(byte, short, int, long, float, double, real);
 }
@@ -1001,7 +1001,7 @@ unittest{ /// Indexing
     assert(vec.index!4 == 4);
     static assert(!is(typeof({vec.index!5;})));
     foreach(i; 0 .. vec.size) assert(vec.index(i) == i);
-    mustthrow!IndexOutOfBoundsError({vec.index(5);});
+    assertthrows!IndexOutOfBoundsError({vec.index(5);});
     vec[1] = 10;
     assert(vec == vector(0, 10, 2, 3, 4));
     vec.index!2 = 20;

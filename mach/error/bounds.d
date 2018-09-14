@@ -2,7 +2,8 @@ module mach.error.bounds;
 
 private:
 
-import mach.traits : isIntegral, isNumeric, hasNumericLength;
+import mach.traits.primitives : isIntegral, isNumeric;
+import mach.traits.length : hasNumericLength;
 
 /++ Docs
 
@@ -13,21 +14,28 @@ static singletons, rather than created and thrown anew.
 +/
 
 unittest{ /// Example
-    import mach.error.mustthrow : mustthrow;
-    static const error = new IndexOutOfBoundsError();
-    error.enforce(5, 0, 10); // High-exclusive check: enforce 0 <= 5 < 10.
-    error.enforcei(6, 0, 10); // High-exclusive check: enforce 0 <= 6 <= 10.
-    mustthrow!(e => e is error)({
-        error.enforce(100, 0, 10); // Index out of bounds.
+    import mach.test.assertthrows : assertthrows;
+    static const boundserror = new IndexOutOfBoundsError();
+    // High-exclusive check: enforce 0 <= 5 < 10.
+    boundserror.enforce(5, 0, 10);
+    // High-exclusive check: enforce 0 <= 6 <= 10.
+    boundserror.enforcei(6, 0, 10);
+    // Index out of bounds!
+    auto thrownerror = assertthrows({
+        boundserror.enforce(100, 0, 10);
     });
+    // Enforced error throws itself
+    assert(thrownerror is boundserror);
 }
 
 unittest{ /// Example
-    import mach.error.mustthrow : mustthrow;
+    import mach.test.assertthrows : assertthrows;
     static const error = new InvalidSliceBoundsError();
-    error.enforce(1, 2, 0, 10); // Slice 1 .. 2 is contained within 0 .. 10.
-    mustthrow!(e => e is error)({
-        error.enforce(100, 200, 0, 10); // Slice 100 .. 200 isn't contained within 0 .. 10.
+    // Slice 1 .. 2 is contained within 0 .. 10.
+    error.enforce(1, 2, 0, 10);
+    // Slice 100 .. 200 isn't contained within 0 .. 10.
+    assertthrows({
+        error.enforce(100, 200, 0, 10);
     });
 }
 
@@ -138,23 +146,23 @@ class InvalidSliceBoundsError: IndexOutOfBoundsError{
 
 
 /// TODO: Remove this
-auto enforcebounds(A...)(A args){
+deprecated auto enforcebounds(A...)(A args){
     static const error = new IndexOutOfBoundsError();
     error.enforce(args);
 }
 /// ditto
-auto enforceboundsincl(A...)(A args){
+deprecated auto enforceboundsincl(A...)(A args){
     static const error = new IndexOutOfBoundsError();
     error.enforcei(args);
 }
 
 
 
-version(unittest){
-    private:
+private version(unittest) {
     import mach.test;
 }
-unittest{
+
+unittest {
     tests("Index bounds", {
         tests("High-exclusive", {
             static const error = new IndexOutOfBoundsError();

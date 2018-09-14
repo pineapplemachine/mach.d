@@ -68,8 +68,8 @@ omitted and a nastier error may occur instead.
 +/
 
 unittest{ /// Example
-    import mach.error.mustthrow : mustthrow;
-    mustthrow!InfiniteRepeatEmptyError({
+    import mach.test.assertthrows : assertthrows;
+    assertthrows!InfiniteRepeatEmptyError({
         "".repeat; // Can't infinitely repeat an empty input.
     });
 }

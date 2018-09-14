@@ -2,8 +2,7 @@ module mach.io.file.stat;
 
 private:
 
-import std.datetime : SysTime; // TODO: Ewww, this.st module. I should write my own
-import mach.error : ErrnoException;
+import mach.error.enforce.errno : ErrnoException;
 import mach.text.cstring : tocstring;
 import mach.io.file.common;
 
@@ -118,24 +117,27 @@ struct Stat{
         return this.st.st_gid;
     }
     /// Get the most recent time that the file was accessed.
+    /// Returns the number of seconds since UTC epoch.
     @property auto accessedtime() const{
-        return SysTime.fromUnixTime(this.st.st_atime);
+        return this.st.st_atime;
     }
     
     /// Get ctime.
     /// On Unix, represents time of the most recent metadata change.
     /// On Windows, represents file creation time.
     /// Not valid on FAT-formatted drives.
+    /// Returns the number of seconds since UTC epoch.
     @property auto ctime() const{
-        return SysTime.fromUnixTime(this.st.st_ctime);
+        return this.st.st_ctime;
     }
     
     version(Windows) alias creationtime = ctime;
     else version(Posix) alias changetime = ctime;
     
     /// Get the most recent time that the file's contents were modified.
+    /// Returns the number of seconds since UTC epoch.
     @property auto modifiedtime() const{
-        return SysTime.fromUnixTime(this.st.st_mtime);
+        return this.st.st_mtime;
     }
     /// Get the number of links to the file.
     @property auto links() const{
@@ -153,38 +155,40 @@ struct Stat{
 
 
 
-version(unittest){
-    private:
-    import std.path;
-    import mach.test;
-    enum string TestPath = __FILE_FULL_PATH__.dirName ~ "/stat.txt";
+private version(unittest){
+    import mach.io.file.path : Path;
+    enum string TestPath = Path(__FILE_FULL_PATH__).directory ~ "/stat.txt";
 }
-unittest{
-    tests("Stat", {
-        tests("File path", {
-            auto st = Stat(TestPath);
-            st.permissions;
-            st.inode;
-            st.device;
-            st.userid;
-            st.groupid;
-            st.accessedtime;
-            st.ctime;
-            st.modifiedtime;
-            st.links;
-            version(CRuntime_Microsoft){} else{
-                // MSVC libc doesn't correctly support these operations
-                testeq(st.size, 85);
-                test(st.mode.isfile);
-            }
-        });
-        version(CRuntime_Microsoft){} else tests("Directory path", {
-            // MSVC libc doesn't correctly support mode
-            auto st = Stat(".");
-            test(st.mode.isdir);
-        });
-        tests("Nonexistent path", {
-            testf(Stat("not a real file path").valid);
-        });
-    });
+
+/// Existing file path
+unittest {
+    auto st = Stat(TestPath);
+    st.permissions;
+    st.inode;
+    st.device;
+    st.userid;
+    st.groupid;
+    st.accessedtime;
+    st.ctime;
+    st.modifiedtime;
+    st.links;
+    version(CRuntime_Microsoft){} else{
+        // MSVC libc doesn't correctly support these operations
+        assert(st.size == 85);
+        assert(st.mode.isfile);
+    }
+}
+
+/// Existing directory path
+unittest {
+    version(CRuntime_Microsoft){} else {
+        // MSVC libc doesn't correctly support mode
+        auto st = Stat(".");
+        assert(st.mode.isdir);
+    }
+}
+
+/// Non-existent file path
+unittest {
+    assert(!Stat("not a real file path").valid);
 }

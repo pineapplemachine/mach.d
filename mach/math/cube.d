@@ -3,14 +3,15 @@ module mach.math.cube;
 private:
 
 import mach.meta : min = varmin, max = varmax;
-import mach.traits : isNumeric;
+import mach.traits.primitives : isNumeric;
+import mach.text.numeric : writenumber;
 
 public:
 
 // TODO: More methods
 
 struct Cube(T) if(isNumeric!T){
-    
+    /// Bounds of this cube
     T minx, miny, minz, maxx, maxy, maxz;
     
     this(N)(in Cube!N cube){
@@ -68,16 +69,18 @@ struct Cube(T) if(isNumeric!T){
     }
     
     string toString() const{
-        import std.format : format;
-        return format(
-            "(%s, %s, %s), (%s, %s, %s)",
-            this.minx, this.miny, this.minz,
-            this.maxx, this.maxy, this.maxz
-        );
+        return ("(" ~
+            writenumber(this.minx) ~ ", " ~
+            writenumber(this.miny) ~ ", " ~
+            writenumber(this.minz) ~ "), (" ~
+            writenumber(this.maxx) ~ ", " ~
+            writenumber(this.maxy) ~ ", " ~
+            writenumber(this.maxz) ~
+        ")");
     }
     
 }
 
-unittest{
+unittest {
     // TODO: Unit tests
 }

@@ -122,7 +122,7 @@ struct UTF16DecodeRange(Range) if(canUTF16DecodeRange!Range){
 
 
 private version(unittest){
-    import mach.error.mustthrow : mustthrow;
+    import mach.test.assertthrows : assertthrows;
     import mach.range.compare : equals;
     import mach.range.consume : consume;
 }
@@ -162,11 +162,11 @@ unittest{
 }
 
 unittest{
-    mustthrow!UTFDecodeException({
+    assertthrows!UTFDecodeException({
         // Invalid start unit
         [ushort(0xd800)].utf16decode.consume;
     });
-    mustthrow!UTFDecodeException({
+    assertthrows!UTFDecodeException({
         // Invalid continuation unit
         [ushort(0xdbfe), ushort(0xe001)].utf16decode.consume;
     });

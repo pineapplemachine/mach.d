@@ -2,7 +2,8 @@ module mach.math.bits.inject;
 
 private:
 
-import mach.traits : PointerType, isPointer, isIntegral;
+import mach.traits.pointer : PointerType, isPointer;
+import mach.traits.primitives : isIntegral;
 import mach.math.bits.pow2 : pow2d;
 
 /++ Docs
@@ -76,11 +77,12 @@ but outside debug mode the function will simply behave incorrectly.
 
 +/
 
-unittest{ /// Example
-    import mach.error.mustthrow : mustthrow;
-    debug mustthrow({
-        // Because the value 0xFF has bits set outside its four low bits,
-        // which are the ones being injected, this is an illegal operation.
+unittest { /// Example
+    import mach.test.assertthrows : assertthrows;
+    import core.exception : AssertError;
+    // Because the value 0xFF has bits set outside its four low bits,
+    // which are the ones being injected, this is an illegal operation.
+    debug assertthrows!AssertError({
         0.injectbits!(0, 4)(0xFF);
     });
 }
@@ -99,7 +101,7 @@ public:
 /// to be optimized by assuming the targeted bits are all initialized to 0.
 auto injectbit(uint offset, bool assumezero = false, T)(
     T value, in bool bit
-) if(
+) @system @nogc nothrow if(
     offset < T.sizeof * 8
 ){
     enum byteoffset = offset / 8;
@@ -120,7 +122,7 @@ auto injectbit(uint offset, bool assumezero = false, T)(
 /// to be optimized by assuming the targeted bits are all initialized to 0.
 auto injectbits(uint offset, uint length, bool assumezero = false, T, B)(
     T value, in B bits
-) if(
+) @system @nogc nothrow if(
     isIntegral!B && (offset + length) < (T.sizeof * 8)
 ){
     debug{
@@ -158,7 +160,7 @@ auto injectbits(uint offset, uint length, bool assumezero = false, T, B)(
 /// to be optimized by assuming the targeted bits are all initialized to 0.
 auto injectbit(bool assumezero = false, T)(
     T value, in uint offset, in bool bit
-) in{
+) @system @nogc nothrow in{
     assert(offset < T.sizeof * 8, "Bit offset exceeds size of parameter.");
 }body{
     immutable byteoffset = offset / 8;
@@ -179,7 +181,7 @@ auto injectbit(bool assumezero = false, T)(
 /// to be optimized by assuming the targeted bits are all initialized to 0.
 auto injectbits(bool assumezero = false, T, B)(
     T value, in uint offset, in uint length, in B bits
-) if(
+) @system @nogc nothrow if(
     isIntegral!B
 ) in{
     assert(offset + length <= T.sizeof * 8, "Bit offset exceeds size of parameter.");
@@ -214,12 +216,11 @@ auto injectbits(bool assumezero = false, T, B)(
 
 
 
-version(unittest){
-    private:
+private version(unittest) {
     import mach.test;
     import mach.meta : Aliases, NumericSequence;
     import mach.math.bits.extract;
-    
+    // Unit test helpers (extract or inject a single bit)
     void SingularTests(alias func)(){
         func!(0)(uint(0), 0, 0);
         func!(1)(uint(0), 0, 0);
@@ -271,7 +272,7 @@ version(unittest){
         }
         return value;
     }
-    
+    // Unit test helpers (extract or inject multiple bits)
     void PluralTests(alias func)(){
         func!(0, 4)(0x00, 0x00, 0x00);
         func!(0, 4)(0x0f, 0x00, 0x00);
@@ -309,7 +310,7 @@ version(unittest){
     }
 }
 
-unittest{
+unittest {
     tests("Bit injection", {
         tests("Singular", {
             tests("Compile time", {

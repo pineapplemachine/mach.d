@@ -31,8 +31,8 @@ unittest{ /// Example
 
 unittest{ /// Example
     // Bad inputs provoke a `NumberParseException`.
-    import mach.error.mustthrow : mustthrow;
-    mustthrow!NumberParseException({
+    import mach.test.assertthrows : assertthrows;
+    assertthrows!NumberParseException({
         "Not really a number".parseint;
     });
 }
@@ -45,9 +45,9 @@ optional template parameter specifying the storage type.
 +/
 
 unittest{ /// Example
-    import mach.error.mustthrow : mustthrow;
+    import mach.test.assertthrows : assertthrows;
     assert("100".parseint!ulong == 100);
-    mustthrow!NumberParseException({
+    assertthrows!NumberParseException({
         "-100".parseint!ulong; // Can't store a negative number in a ulong!
     });
 }
@@ -114,9 +114,9 @@ the function may produce nonsense data.)
 +/
 
 unittest{ /// Example
-    import mach.error.mustthrow : mustthrow;
+    import mach.test.assertthrows : assertthrows;
     assert(byte(16).writehex == "10"); // Positive signed inputs ok.
-    mustthrow!NumberWriteError({
+    assertthrows!NumberWriteError({
         byte(-16).writehex; // Negative inputs not ok.
     });
 }

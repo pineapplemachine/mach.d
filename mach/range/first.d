@@ -58,8 +58,8 @@ If in these cases a fallback is not provided, an error is produced:
 +/
 
 unittest{ /// Example
-    import mach.error.mustthrow : mustthrow;
-    mustthrow!NoFirstElementError({
+    import mach.test.assertthrows : assertthrows;
+    assertthrows!NoFirstElementError({
         [0, 1, 2].first!(n => n > 10); // No elements satisfy the predicate.
     });
 }

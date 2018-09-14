@@ -53,12 +53,12 @@ release mode, for which this check is ommitted.
 +/
 
 unittest{ /// Example
-    import mach.error.mustthrow : mustthrow;
+    import mach.test.assertthrows : assertthrows;
     alias sum = (acc, next) => (acc + next);
-    mustthrow!ReduceEmptyError({
+    assertthrows!ReduceEmptyError({
         new int[0].reduceeager!sum;
     });
-    mustthrow!ReduceEmptyError({
+    assertthrows!ReduceEmptyError({
         new int[0].reducelazy!sum;
     });
 }

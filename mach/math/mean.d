@@ -24,8 +24,8 @@ the input iterable was empty. In release mode, this error reporting is omitted.
 +/
 
 unittest{ /// Example
-    import mach.error.mustthrow : mustthrow;
-    mustthrow!MeanEmptyInputError({
+    import mach.test.assertthrows : assertthrows;
+    assertthrows!MeanEmptyInputError({
         new int[0].mean; // Can't calculate mean with an empty input!
     });
 }
@@ -117,22 +117,27 @@ T mean(T)(in T a, in T b) if(isNumeric!T){
 
 
 
-private version(unittest){
-    import mach.error.mustthrow : mustthrow;
+private version(unittest) {
+    import mach.test.assertthrows : assertthrows;
 }
 
-unittest{
-    mustthrow!MeanEmptyInputError({
+/// Empty array input
+unittest {
+    assertthrows!MeanEmptyInputError({
         new int[0].mean;
     });
 }
-unittest{
+
+/// Array inputs
+unittest {
     assert([0].mean == 0);
     assert([100.0].mean == 100.0);
     assert([0.0, 1.0].mean == 0.5);
     assert([0, 1, 2, 3, 4, 5, 6].mean == 3);
 }
-unittest{
+
+/// Range inputs
+unittest {
     struct IntRange{
         int end, i = 0;
         @property bool empty() const{return this.i == this.end;}
@@ -145,7 +150,8 @@ unittest{
     assert(IntRange(100001).mean == 50000);
 }
 
-unittest{
+/// Variadic arguments
+unittest {
     assert(mean(0, 0) == 0);
     assert(mean(0, 1) == 0);
     assert(mean(0, 2) == 1);
