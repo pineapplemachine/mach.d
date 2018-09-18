@@ -7,6 +7,7 @@ private:
 import mach.text.ascii;
 import mach.io;
 import mach.io.file.sys;
+import mach.io.file.path;
 import mach.range;
 import mach.text.utf;
 
@@ -33,6 +34,7 @@ immutable readmepaths = [
     "mach/text/utf",
     "mach/text/utf/utf8",
     "mach/text/utf/utf16",
+    "mach/time",
     "mach/types",
 ];
 
@@ -95,6 +97,9 @@ ParseResult parsemodule(in string path, in dstring content, ref dstring[][dstrin
         if(line.headis("module") && line.tailis(";")){
             modulename = stripws(line[6 .. $-1]);
             section = modulename;
+        }else if(line.headis("deprecated module") && line.tailis(";")){
+            modulename = stripws(line[17 .. $-1]);
+            section = modulename;
         }else if(line.headis("/++ Docs")){
             if(line.length > 8 && line[8] == ':'){
                 section = stripws(line[9 .. $]);
@@ -107,7 +112,10 @@ ParseResult parsemodule(in string path, in dstring content, ref dstring[][dstrin
                 docs[section] ~= docsline;
                 countlines++;
             }
-        }else if(line.headis("unittest{ /// Example")){
+        }else if(
+            line.headis("unittest{ /// Example") ||
+            line.headis("unittest { /// Example")
+        ){
             if(section == ""){
                 assert(false, "Must specify a section in file \"" ~ path ~ "\".");
             }

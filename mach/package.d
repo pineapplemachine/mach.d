@@ -9,8 +9,9 @@ import mach.json;
 import mach.math;
 import mach.meta;
 import mach.range;
-//import mach.sdl; // Unstable!
+//import mach.sdl; // Unstable! TODO: move to own package
 import mach.text;
+import mach.time;
 import mach.traits;
 import mach.types;
 import mach.sys;
