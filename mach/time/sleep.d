@@ -56,13 +56,14 @@ void sleep(in double seconds) @trusted @nogc nothrow {
         enum ulong MaxSleepSeconds = (MaxSleepMillisecs / 1000) - 1;
         ulong sleepseconds = iseconds;
         while(sleepseconds > MaxSleepSeconds){
-            Sleep(MaxSleepSeconds);
+            Sleep(cast(uint) (1000 * MaxSleepSeconds));
             sleepseconds -= MaxSleepSeconds;
         }
         const uint remainingms = cast(uint) ((seconds % 1.0) * 1000);
         // Condition should be guaranteed by the nature of the while loop
-        assert(sleepseconds + sleepms <= MaxSleepMillisecs);
-        Sleep(cast(uint) sleepseconds + remainingms);
+        const ulong sleepms = 1000 * sleepseconds + remainingms;
+        assert(sleepms <= MaxSleepMillisecs);
+        Sleep(cast(uint) sleepms);
     }else version(Posix){
         enum MaxSleepSeconds = typeof(timespec.tv_sec).max;
         timespec requested = void;
@@ -99,7 +100,7 @@ void sleep(in double seconds) @trusted @nogc nothrow {
 /// On Posix platforms, sleep terminates if the process received a signal.
 void sleep(T)(in Duration!T duration) @trusted @nogc nothrow {
     static const error = new SleepError();
-    if(duration.value <= 0){
+    if(!duration){
         return;
     }
     version(Windows){
@@ -156,17 +157,30 @@ void sleep(T)(in Duration!T duration) @trusted @nogc nothrow {
 // Manually uncomment these functions to test `sleep` with inputs exceeding
 // what Sleep/nanosleep can accept all in one go, and comment out the imports.
 
-//private void Sleep(in uint milliseconds) @safe @nogc pure nothrow {
+//ulong totalsleepns = 0;
+//version(Posix) import core.sys.posix.time : timespec;
+//private void Sleep(in uint milliseconds) @safe @nogc nothrow {
 //    assert(milliseconds > 0); // sleep functions shouldn't do this
 //    assert(milliseconds != uint.max); // Special INFINITY value
+//    totalsleepns += milliseconds * 1_000_000L;
 //}
-//private uint nanosleep(in timespec* req, timespec* rem) @safe @nogc pure nothrow {
+//version(Posix) private uint nanosleep(
+//    in timespec* req, timespec* rem
+//) @safe @nogc nothrow {
+//    totalsleepns += req.tv_sec * 1_000_000_000L;
+//    totalsleepns += req.tv_nsec;
 //    rem.tv_sec = 0;
 //    rem.tv_nsec = 0;
 //    return 0;
 //}
 //unittest {
-//    const toomanyseconds = double(uint.max) * 4;
+//    const toomanyseconds = double(uint.max) * 2;
+//    // Seconds
+//    totalsleepns = 0;
 //    sleep(toomanyseconds);
+//    assert(totalsleepns == toomanyseconds * 1_000_000_000L);
+//    // Duration
+//    totalsleepns = 0;
 //    sleep(Duration!long.Seconds(toomanyseconds));
+//    assert(totalsleepns == toomanyseconds * 1_000_000_000L);
 //}
