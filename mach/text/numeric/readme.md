@@ -71,8 +71,8 @@ The `parsenumber` method, like `parseint` and `parsefloat`, throws a
 `NumberParseException` when the input was malformed.
 
 ``` D
-import mach.error.mustthrow : mustthrow;
-mustthrow!NumberParseException({
+import mach.test.assertthrows : assertthrows;
+assertthrows!NumberParseException({
     "some malformed input".parsenumber!int;
 });
 ```
@@ -124,8 +124,8 @@ assert("678e9".parsefloat!double == double(678e9));
 ```
 
 ``` D
-import mach.error.mustthrow : mustthrow;
-mustthrow!NumberParseException({
+import mach.test.assertthrows : assertthrows;
+assertthrows!NumberParseException({
     "malformed input".parsefloat!double;
 });
 ```
@@ -154,8 +154,8 @@ assert(parsehexfloat!double("0x1.23abcp10") == double(0x1.23abcp10));
 input string.
 
 ``` D
-import mach.error.mustthrow : mustthrow;
-mustthrow!NumberParseException({
+import mach.test.assertthrows : assertthrows;
+assertthrows!NumberParseException({
     "malformed input".parsehexfloat;
 });
 ```
@@ -176,8 +176,8 @@ assert("5678".parseint == 5678);
 
 ``` D
 // Bad inputs provoke a `NumberParseException`.
-import mach.error.mustthrow : mustthrow;
-mustthrow!NumberParseException({
+import mach.test.assertthrows : assertthrows;
+assertthrows!NumberParseException({
     "Not really a number".parseint;
 });
 ```
@@ -187,9 +187,9 @@ Parsing functions provided by this module, such as `parseint`, may receive an
 optional template parameter specifying the storage type.
 
 ``` D
-import mach.error.mustthrow : mustthrow;
+import mach.test.assertthrows : assertthrows;
 assert("100".parseint!ulong == 100);
-mustthrow!NumberParseException({
+assertthrows!NumberParseException({
     "-100".parseint!ulong; // Can't store a negative number in a ulong!
 });
 ```
@@ -247,9 +247,9 @@ for when compiling in release mode. (In release mode the check is omitted, and
 the function may produce nonsense data.)
 
 ``` D
-import mach.error.mustthrow : mustthrow;
+import mach.test.assertthrows : assertthrows;
 assert(byte(16).writehex == "10"); // Positive signed inputs ok.
-mustthrow!NumberWriteError({
+assertthrows!NumberWriteError({
     byte(-16).writehex; // Negative inputs not ok.
 });
 ```

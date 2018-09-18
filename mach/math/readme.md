@@ -170,7 +170,7 @@ an `IndexOutOfBoundsError` to be thrown.
 
 ``` D
 import mach.math.vector : vector;
-import mach.error.mustthrow : mustthrow;
+import mach.test.assertthrows : assertthrows;
 auto mat = Matrix2i.Rows(
     vector(1, 2),
     vector(3, 4),
@@ -183,7 +183,7 @@ assert(mat.index(1, 0) == 2);
 static assert(!is(typeof({
     mat[100][100];
 })));
-mustthrow({
+assertthrows({
     auto x = mat.index(200, 200);
 });
 ```
@@ -368,8 +368,8 @@ When not compiled in release mode, `mean` throws a `MeanEmptyInputError` when
 the input iterable was empty. In release mode, this error reporting is omitted.
 
 ``` D
-import mach.error.mustthrow : mustthrow;
-mustthrow!MeanEmptyInputError({
+import mach.test.assertthrows : assertthrows;
+assertthrows!MeanEmptyInputError({
     new int[0].mean; // Can't calculate mean with an empty input!
 });
 ```
@@ -399,8 +399,8 @@ assert([5, 2, 4, 1].median == 3);
 ```
 
 ``` D
-import mach.error.mustthrow : mustthrow;
-mustthrow!MedianEmptyInputError({
+import mach.test.assertthrows : assertthrows;
+assertthrows!MedianEmptyInputError({
     new int[0].median; // Can't calculate median with an empty input!
 });
 ```

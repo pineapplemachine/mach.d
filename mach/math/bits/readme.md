@@ -153,10 +153,11 @@ When compiling in debug mode asserts will fail when junk bits are present,
 but outside debug mode the function will simply behave incorrectly.
 
 ``` D
-import mach.error.mustthrow : mustthrow;
-debug mustthrow({
-    // Because the value 0xFF has bits set outside its four low bits,
-    // which are the ones being injected, this is an illegal operation.
+import mach.test.assertthrows : assertthrows;
+import core.exception : AssertError;
+// Because the value 0xFF has bits set outside its four low bits,
+// which are the ones being injected, this is an illegal operation.
+debug assertthrows!AssertError({
     0.injectbits!(0, 4)(0xFF);
 });
 ```

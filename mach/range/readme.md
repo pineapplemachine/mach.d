@@ -152,11 +152,11 @@ assert(range.front == 2); // Now check the second element,
 range.popFront(); // And consume that one, too.
 assert(range.empty);
 // Now that the range has been fully consumed...
-import mach.error.mustthrow : mustthrow;
-mustthrow({
+import mach.test.assertthrows : assertthrows;
+assertthrows({
     range.front; // Accessing its front produces an error,
 });
-mustthrow({
+assertthrows({
     range.popFront(); // And so does calling `popFront`.
 });
 ```
@@ -185,11 +185,11 @@ range.popBack();
 assert(range.empty);
 // Like `front` and `popFront`, `back` and `popBack` also fail for
 // ranges that have already been fully consumed.
-import mach.error.mustthrow : mustthrow;
-mustthrow({
+import mach.test.assertthrows : assertthrows;
+assertthrows({
     range.back;
 });
-mustthrow({
+assertthrows({
     range.popBack();
 });
 ```
@@ -374,8 +374,9 @@ assert(range[1] == 1);
 assert(range[2] == 2);
 // Like many range types, those produced by `rangeof` throw a `IndexOutOfBoundsError`
 // when an index is out of bounds.
-import mach.error : mustthrow, IndexOutOfBoundsError;
-mustthrow!IndexOutOfBoundsError({
+import mach.test.assertthrows : assertthrows;
+import mach.error : IndexOutOfBoundsError;
+assertthrows!IndexOutOfBoundsError({
     auto nope = range[3]; // Index out of bounds!
 });
 ```
@@ -651,9 +652,9 @@ this error reporting are ommitted.
 
 ``` D
 import mach.range.rangeof : rangeof;
-import mach.error.mustthrow : mustthrow;
+import mach.test.assertthrows : assertthrows;
 auto range = rangeof!int(0, 1, 2, 3);
-mustthrow!AsStaticArrayError({
+assertthrows!AsStaticArrayError({
     range.asstaticarray!10; // Fails because of incorrect length.
 });
 ```
@@ -716,8 +717,10 @@ This benefit would also apply to transient ranges for which, contrary to the
 standard, accessing `front` or `back` also consumes that element.
 
 ``` D
-import mach.error.mustthrow : mustthrow;
-// A range which causes an error when `front` is accessed more than once.
+import mach.test.assertthrows : assertthrows;
+import core.exception : AssertError;
+// A range which causes an error when `front`
+// is accessed more than once.
 struct Test{
     enum bool empty = false;
     int element = 0;
@@ -732,12 +735,12 @@ struct Test{
     }
 }
 // For example:
-mustthrow({
+assertthrows!AssertError({
     Test test;
-    test.front;
-    test.front;
+    test.front; // Ok
+    test.front; // Not ok
 });
-// But, using `cache`:
+// But, using `cache`...
 auto range = Test(0).cache;
 assert(range.front == 0);
 assert(range.front == 0); // Repeated access ok!
@@ -1244,8 +1247,8 @@ If in these cases a fallback is not provided, an error is produced:
 `first` throws a `NoFirstElementError` and `last` a `NoLastElementError`.
 
 ``` D
-import mach.error.mustthrow : mustthrow;
-mustthrow!NoFirstElementError({
+import mach.test.assertthrows : assertthrows;
+assertthrows!NoFirstElementError({
     [0, 1, 2].first!(n => n > 10); // No elements satisfy the predicate.
 });
 ```
@@ -1739,12 +1742,12 @@ In this case a `ReduceEmptyError` is thrown, except for code compiled in
 release mode, for which this check is ommitted.
 
 ``` D
-import mach.error.mustthrow : mustthrow;
+import mach.test.assertthrows : assertthrows;
 alias sum = (acc, next) => (acc + next);
-mustthrow!ReduceEmptyError({
+assertthrows!ReduceEmptyError({
     new int[0].reduceeager!sum;
 });
-mustthrow!ReduceEmptyError({
+assertthrows!ReduceEmptyError({
     new int[0].reducelazy!sum;
 });
 ```
@@ -1801,8 +1804,8 @@ unless the code has been compiled in release mode, in which case the check is
 omitted and a nastier error may occur instead.
 
 ``` D
-import mach.error.mustthrow : mustthrow;
-mustthrow!InfiniteRepeatEmptyError({
+import mach.test.assertthrows : assertthrows;
+assertthrows!InfiniteRepeatEmptyError({
     "".repeat; // Can't infinitely repeat an empty input.
 });
 ```
@@ -2062,12 +2065,12 @@ and `walkslice`, where if the indexes being acquired exceed the length of the
 input, the fallback is returned for the missing elements instead.
 
 ``` D
-import mach.error.mustthrow : mustthrow;
+import mach.test.assertthrows : assertthrows;
 import mach.range.consume : consume;
-mustthrow({
+assertthrows({
     "hello".walkindex(100);
 });
-mustthrow({
+assertthrows({
     // The error is thrown upon the invalid index being encountered,
     // not upon creation of the `walkslice` range.
     "hello".walkslice(0, 100).consume;
