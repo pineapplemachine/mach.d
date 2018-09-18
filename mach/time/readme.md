@@ -32,3 +32,22 @@ assert(duration.fminutes == 0.25);
 ```
 
 
+## mach.time.sleep
+
+
+This module implements the `sleep` function.
+The function suspends the calling thread for approximately the amount of
+time specified.
+Sleep time may be given either as a number of seconds or as a `Duration`
+object, from the `mach.time.duration` module.
+
+``` D
+sleep(0.001); // Sleep for 1 millisecond
+```
+
+``` D
+import mach.time.duration : Duration;
+sleep(Duration!long.Milliseconds(2)); // Sleep for 2 milliseconds
+```
+
+
