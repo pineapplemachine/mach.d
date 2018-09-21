@@ -242,8 +242,8 @@ unittest{
                 test(range.equals("420"));
             });
             tests("Disallow stride < 1", {
-                testfail({"xyz".stride(0);});
-                testfail({"xyz".stride(-1);});
+                testfail({auto x = "xyz".stride(0);});
+                testfail({auto x = "xyz".stride(-1);});
             });
             tests("Length", {
                 testeq("0123".stride(1).length, 4);

@@ -468,7 +468,7 @@ unittest{
                     range.popFront();
                     testeq(range.length, 3);
                     testeq(range.remaining, 0);
-                    testfail({range.front;});
+                    testfail({auto x = range.front;});
                     testfail({range.popFront();});
                 }
                 tests("Mutable", {
@@ -494,9 +494,9 @@ unittest{
                 range.popBack();
                 test(range.empty);
                 testeq(range.remaining, 0);
-                testfail({range.front;});
+                testfail({auto x = range.front;});
+                testfail({auto x = range.back;});
                 testfail({range.popFront();});
-                testfail({range.back;});
                 testfail({range.popBack();});
             });
             tests("Removal", {

@@ -205,8 +205,8 @@ unittest{
     assert(utf.pointlength == 4);
     utf.popFront();
     assert(utf.empty());
-    assertthrows({utf.front;});
+    assertthrows({auto x = utf.front;});
+    assertthrows({auto x = utf.pointindex;});
+    assertthrows({auto x = utf.pointlength;});
     assertthrows({utf.popFront;});
-    assertthrows({utf.pointindex;});
-    assertthrows({utf.pointlength;});
 }

@@ -2,8 +2,20 @@ module mach.math.collatz;
 
 private:
 
-import mach.traits : isIntegral;
-import mach.range : recur;
+import mach.traits.primitives : isIntegral;
+import mach.range.recur : recur;
+
+/++ Docs
+
+The `collatzseq` function returns a range which enumerates the values in the
+[Collatz sequence](https://en.wikipedia.org/wiki/Collatz_conjecture) of an input.
+
++/
+
+unittest { /// Example
+    import mach.range.compare : equals;
+    assert(collatzseq(3).equals([3, 10, 5, 16, 8, 4, 2, 1]));
+}
 
 public:
 
@@ -21,17 +33,20 @@ auto collatzseq(N)(N value) if(isIntegral!N) in{
 
 
 
-version(unittest){
-    private:
-    import mach.test;
+private version(unittest) {
     import mach.range.compare : equals;
+    import mach.test.assertthrows : assertthrows;
 }
-unittest{
-    tests("Collatz sequence", {
-        test(collatzseq(1).equals([1]));
-        test(collatzseq(2).equals([2, 1]));
-        test(collatzseq(3).equals([3, 10, 5, 16, 8, 4, 2, 1]));
-        testfail({collatzseq(0);});
-        testfail({collatzseq(-1);});
-    });
+
+/// Valid inputs
+unittest {
+    assert(collatzseq(1).equals([1]));
+    assert(collatzseq(2).equals([2, 1]));
+    assert(collatzseq(3).equals([3, 10, 5, 16, 8, 4, 2, 1]));
+}
+
+/// Invalid inputs
+unittest {
+    assertthrows({auto x = collatzseq(0);});
+    assertthrows({auto x = collatzseq(-1);});
 }

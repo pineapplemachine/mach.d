@@ -38,8 +38,7 @@ class NumberWriteError: Error{
     this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
         this("Failed to serialize number to string.", next, line, file);
     }
-    auto enforce(T)(auto ref T cond) const{
+    void enforce(T)(auto ref T cond) const{
         if(!cond) throw this;
-        return cond;
     }
 }

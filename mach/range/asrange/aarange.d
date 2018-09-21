@@ -163,7 +163,7 @@ unittest{
             auto range = AssociativeArrayRange!Array(array);
             testeq(range["zero"].value, 0);
             testeq(range["one"].value, 1);
-            testfail({range["not_a_key"];});
+            testfail({auto x = range["not_a_key"];});
         });
         tests("Mutability", {
             auto arraydup = array.dup;

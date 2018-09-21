@@ -161,18 +161,29 @@ auto asarray(bool enforce = false, Iter)(auto ref Iter iter, size_t maxlength) i
 auto asarray(Element, bool enforce = false, Iter)(auto ref Iter iter, size_t maxlength) if(
     canMakeMaxLengthArrayOf!(Element, Iter)
 ){
-    static if(isArrayOf!(Element, Iter)){
+    static if(enforce && !isFiniteIterable!Iter){
+        static assert(false, text(
+            "Infinite iterable exceeds maximum expected length."
+        ));
+    }else static if(isArrayOf!(Element, Iter)){
+        assert(!enforce || iter.length <= maxlength, text(
+            "Iterable exceeded maximum expected length ", maxlength, "."
+        ));
         return iter[0 .. maxlength < iter.length ? maxlength : iter.length].dup;
     }else{
         Element[] array;
         foreach(item; iter){
             if(array.length >= maxlength){
-                static if(enforce) assert(false,
-                    text("Iterable exceeded maximum expected length ", maxlength, ".")
-                );
-                else break;
+                static if(enforce){
+                    assert(false, text(
+                        "Iterable exceeded maximum expected length ", maxlength, "."
+                    ));
+                }else{
+                    break;
+                }
+            }else{
+                array ~= cast(Element) item;
             }
-            array ~= cast(Element) item;
         }
         return array;
     }
@@ -239,8 +250,7 @@ auto asarray(T)(auto ref T input) if(isAssociativeArray!T){
 
 
 
-version(unittest){
-    private:
+private version(unittest) {
     import mach.test;
     struct KnownLengthTest{
         int low, high;
@@ -267,7 +277,8 @@ version(unittest){
         enum bool empty = false;
     }
 }
-unittest{
+
+unittest {
     tests("As array", {
         tests("Automatic length", {
             testeq(KnownLengthTest(0, 4).asarray, [0, 1, 2, 3]);
@@ -277,7 +288,8 @@ unittest{
         });
         tests("Infinite range, max length", {
             testeq(InfiniteRangeTest(0).asarray(4), [0, 1, 2, 3]);
-            testfail({InfiniteRangeTest(0).asarray!true(4);});
+            // Fails statically
+            static assert(!is(typeof(InfiniteRangeTest(0).asarray!true(4))));
         });
         tests("Specify element type", {
             auto im = KnownLengthTest(0, 4).asarray!(immutable size_t);

@@ -412,9 +412,9 @@ unittest{ /// Number range as range bidirectionality
     range.popFront();
     assert(range.empty);
     assert(range.remaining == 0);
-    assertthrows({range.front;});
+    assertthrows({auto x = range.front;});
+    assertthrows({auto x = range.back;});
     assertthrows({range.popFront();});
-    assertthrows({range.back;});
     assertthrows({range.popBack();});
 }
 

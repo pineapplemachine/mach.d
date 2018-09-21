@@ -299,7 +299,7 @@ unittest{
                 range.popFront();
                 testeq(range.remaining, 0);
                 test(range.empty);
-                testfail({range.front;});
+                testfail({auto x = range.front;});
                 testfail({range.popFront();});
             });
             tests("With seed", {
@@ -323,7 +323,7 @@ unittest{
                 range.popFront();
                 testeq(range.remaining, 0);
                 test(range.empty);
-                testfail({range.front;});
+                testfail({auto x = range.front;});
                 testfail({range.popFront();});
             });
             tests("Saving", {

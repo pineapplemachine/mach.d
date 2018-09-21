@@ -83,7 +83,7 @@ unittest { /// Example
     // Because the value 0xFF has bits set outside its four low bits,
     // which are the ones being injected, this is an illegal operation.
     debug assertthrows!AssertError({
-        0.injectbits!(0, 4)(0xFF);
+        auto nope = 0.injectbits!(0, 4)(0xFF);
     });
 }
 
@@ -325,7 +325,7 @@ unittest {
                 PluralTests!pluralcttest();
                 debug tests("Junk bits", {
                     testfail({
-                        0.injectbits!(0, 1)(2);
+                        auto x = 0.injectbits!(0, 1)(2);
                     });
                 });
             });
@@ -333,7 +333,7 @@ unittest {
                 PluralTests!pluralrttest();
                 debug tests("Junk bits", {
                     testfail({
-                        0.injectbits(0, 1, 2);
+                        auto x = 0.injectbits(0, 1, 2);
                     });
                 });
             });

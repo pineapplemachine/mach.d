@@ -576,7 +576,7 @@ unittest{
                 test(pairs.empty);
                 testeq(pairs.length, 1);
                 testeq(pairs.remaining, 0);
-                testfail({pairs.front;});
+                testfail({auto x = pairs.front;});
                 testfail({pairs.popFront();});
             });
             tests("Bidirectionality", {
@@ -600,9 +600,9 @@ unittest{
                 pairs.popBack();
                 testeq(pairs.remaining, 0);
                 test(pairs.empty);
-                testfail({pairs.front;});
+                testfail({auto x = pairs.front;});
+                testfail({auto x = pairs.back;});
                 testfail({pairs.popFront();});
-                testfail({pairs.back;});
                 testfail({pairs.popBack();});
             });
             tests("Immutable elements", {

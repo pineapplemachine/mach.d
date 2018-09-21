@@ -2,7 +2,7 @@ module mach.math.bits.extract;
 
 private:
 
-import mach.traits : isUnsignedIntegral;
+import mach.traits.primitives : isUnsignedIntegral;
 
 /++ Docs
 
@@ -151,104 +151,103 @@ auto extractbits(R = ulong, T)(in T value, in uint offset, in uint length) if(
 
 
 
-version(unittest){
-    private:
-    import mach.test;
+private version(unittest) {
+    import mach.test.assertthrows : assertthrows;
 }
-unittest{
-    tests("Bit extraction", {
-        tests("Singular", {
-            tests("Compile time", {
-                // Extraction from uints
-                testeq(uint(0).extractbit!0, 0);
-                testeq(uint(1).extractbit!0, 1);
-                testeq(uint(1).extractbit!1, 0);
-                testeq(uint(7).extractbit!0, 1);
-                testeq(uint(7).extractbit!1, 1);
-                testeq(uint(7).extractbit!2, 1);
-                testeq(uint(7).extractbit!3, 0);
-                testeq(uint(7).extractbit!4, 0);
-                testeq(uint(7).extractbit!30, 0);
-                testeq(uint(7).extractbit!31, 0);
-                static assert(!is(typeof({uint(0).extractbit!(-1);})));
-                static assert(!is(typeof({uint(0).extractbit!(32);})));
-                // From ubyte
-                testeq(ubyte(0).extractbit!0, 0);
-                testeq(ubyte(1).extractbit!0, 1);
-                testeq(ubyte(1).extractbit!1, 0);
-                // Extraction of sign bit from floats
-                testeq(float(-1).extractbit!31, 1);
-                testeq(float(1).extractbit!31, 0);
-                testeq(double(-1).extractbit!63, 1);
-                testeq(double(1).extractbit!63, 0);
-            });
-            tests("Runtime", {
-                // Extraction from uints
-                testeq(uint(0).extractbit(0), 0);
-                testeq(uint(1).extractbit(0), 1);
-                testeq(uint(1).extractbit(1), 0);
-                testeq(uint(7).extractbit(0), 1);
-                testeq(uint(7).extractbit(1), 1);
-                testeq(uint(7).extractbit(2), 1);
-                testeq(uint(7).extractbit(3), 0);
-                testeq(uint(7).extractbit(4), 0);
-                testeq(uint(7).extractbit(30), 0);
-                testeq(uint(7).extractbit(31), 0);
-                testfail({uint(0).extractbit(32);});
-                // From ubyte
-                testeq(ubyte(0).extractbit(0), 0);
-                testeq(ubyte(1).extractbit(0), 1);
-                testeq(ubyte(1).extractbit(1), 0);
-                // Extraction of sign bit from floats
-                testeq(float(-1).extractbit(31), 1);
-                testeq(float(1).extractbit(31), 0);
-                testeq(double(-1).extractbit(63), 1);
-                testeq(double(1).extractbit(63), 0);
-            });
-        });
-        tests("Plural", {
-            tests("Compile time", {
-                // Extraction from uint
-                testeq(uint(0x12345678).extractbits!(0, 0), 0x00000000);
-                testeq(uint(0x12345678).extractbits!(16, 0), 0x00000000);
-                testeq(uint(0x12345678).extractbits!(0, 4), 0x00000008);
-                testeq(uint(0x12345678).extractbits!(4, 4), 0x00000007);
-                testeq(uint(0x12345678).extractbits!(8, 4), 0x00000006);
-                testeq(uint(0x12345678).extractbits!(24, 4), 0x00000002);
-                testeq(uint(0x12345678).extractbits!(28, 4), 0x00000001);
-                testeq(uint(0x00000000).extractbits!(0, 32), 0x00000000);
-                testeq(uint(0x0000000f).extractbits!(0, 32), 0x0000000f);
-                testeq(uint(0xffffffff).extractbits!(0, 32), 0xffffffff);
-                testeq(uint(0x12345678).extractbits!(0, 32), 0x12345678);
-                static assert(is(typeof(uint(0).extractbits!(0, 16)) == uint));
-                static assert(is(typeof(uint(0).extractbits!(0, 32)) == uint));
-                static assert(is(typeof(ulong(0).extractbits!(0, 16)) == uint));
-                static assert(is(typeof(ulong(0).extractbits!(0, 32)) == uint));
-                static assert(is(typeof(ulong(0).extractbits!(0, 48)) == ulong));
-                static assert(is(typeof(ulong(0).extractbits!(0, 64)) == ulong));
-                // From ubyte
-                testeq(uint(0x12).extractbits!(0, 4), 0x02);
-                testeq(uint(0x12).extractbits!(4, 4), 0x01);
-                testeq(uint(0x12).extractbits!(0, 8), 0x12);
-            });
-            tests("Runtime", {
-                // Extraction from uint
-                testeq(uint(0x12345678).extractbits(0, 0), 0x00000000);
-                testeq(uint(0x12345678).extractbits(16, 0), 0x00000000);
-                testeq(uint(0x12345678).extractbits(0, 4), 0x00000008);
-                testeq(uint(0x12345678).extractbits(4, 4), 0x00000007);
-                testeq(uint(0x12345678).extractbits(8, 4), 0x00000006);
-                testeq(uint(0x12345678).extractbits(24, 4), 0x00000002);
-                testeq(uint(0x12345678).extractbits(28, 4), 0x00000001);
-                testeq(uint(0x00000000).extractbits(0, 32), 0x00000000);
-                testeq(uint(0x0000000f).extractbits(0, 32), 0x0000000f);
-                testeq(uint(0xffffffff).extractbits(0, 32), 0xffffffff);
-                testeq(uint(0x12345678).extractbits(0, 32), 0x12345678);
-                // From ubyte
-                testeq(uint(0x12).extractbits(0, 4), 0x02);
-                testeq(uint(0x12).extractbits(4, 4), 0x01);
-                testeq(uint(0x12).extractbits(0, 8), 0x12);
-            });
-        });
-    });
+
+/// Singular compile-time bit extraction
+unittest {
+    // Extraction from uints
+    assert(uint(0).extractbit!0 == 0);
+    assert(uint(1).extractbit!0 == 1);
+    assert(uint(1).extractbit!1 == 0);
+    assert(uint(7).extractbit!0 == 1);
+    assert(uint(7).extractbit!1 == 1);
+    assert(uint(7).extractbit!2 == 1);
+    assert(uint(7).extractbit!3 == 0);
+    assert(uint(7).extractbit!4 == 0);
+    assert(uint(7).extractbit!30 == 0);
+    assert(uint(7).extractbit!31 == 0);
+    static assert(!is(typeof({uint(0).extractbit!(-1);})));
+    static assert(!is(typeof({uint(0).extractbit!(32);})));
+    // From ubyte
+    assert(ubyte(0).extractbit!0 == 0);
+    assert(ubyte(1).extractbit!0 == 1);
+    assert(ubyte(1).extractbit!1 == 0);
+    // Extraction of sign bit from floats
+    assert(float(-1).extractbit!31 == 1);
+    assert(float(1).extractbit!31 == 0);
+    assert(double(-1).extractbit!63 == 1);
+    assert(double(1).extractbit!63 == 0);
+}
+
+/// Singular runtime bit extraction
+unittest {
+    // Extraction from uints
+    assert(uint(0).extractbit(0) == 0);
+    assert(uint(1).extractbit(0) == 1);
+    assert(uint(1).extractbit(1) == 0);
+    assert(uint(7).extractbit(0) == 1);
+    assert(uint(7).extractbit(1) == 1);
+    assert(uint(7).extractbit(2) == 1);
+    assert(uint(7).extractbit(3) == 0);
+    assert(uint(7).extractbit(4) == 0);
+    assert(uint(7).extractbit(30) == 0);
+    assert(uint(7).extractbit(31) == 0);
+    assertthrows({auto x = uint(0).extractbit(32);});
+    // From ubyte
+    assert(ubyte(0).extractbit(0) == 0);
+    assert(ubyte(1).extractbit(0) == 1);
+    assert(ubyte(1).extractbit(1) == 0);
+    // Extraction of sign bit from floats
+    assert(float(-1).extractbit(31) == 1);
+    assert(float(1).extractbit(31) == 0);
+    assert(double(-1).extractbit(63) == 1);
+    assert(double(1).extractbit(63) == 0);
+}
+
+/// Plural compile-time bit extraction
+unittest {
+    // Extraction from uint
+    assert(uint(0x12345678).extractbits!(0, 0) == 0x00000000);
+    assert(uint(0x12345678).extractbits!(16, 0) == 0x00000000);
+    assert(uint(0x12345678).extractbits!(0, 4) == 0x00000008);
+    assert(uint(0x12345678).extractbits!(4, 4) == 0x00000007);
+    assert(uint(0x12345678).extractbits!(8, 4) == 0x00000006);
+    assert(uint(0x12345678).extractbits!(24, 4) == 0x00000002);
+    assert(uint(0x12345678).extractbits!(28, 4) == 0x00000001);
+    assert(uint(0x00000000).extractbits!(0, 32) == 0x00000000);
+    assert(uint(0x0000000f).extractbits!(0, 32) == 0x0000000f);
+    assert(uint(0xffffffff).extractbits!(0, 32) == 0xffffffff);
+    assert(uint(0x12345678).extractbits!(0, 32) == 0x12345678);
+    static assert(is(typeof(uint(0).extractbits!(0, 16)) == uint));
+    static assert(is(typeof(uint(0).extractbits!(0, 32)) == uint));
+    static assert(is(typeof(ulong(0).extractbits!(0, 16)) == uint));
+    static assert(is(typeof(ulong(0).extractbits!(0, 32)) == uint));
+    static assert(is(typeof(ulong(0).extractbits!(0, 48)) == ulong));
+    static assert(is(typeof(ulong(0).extractbits!(0, 64)) == ulong));
+    // From ubyte
+    assert(uint(0x12).extractbits!(0, 4) == 0x02);
+    assert(uint(0x12).extractbits!(4, 4) == 0x01);
+    assert(uint(0x12).extractbits!(0, 8) == 0x12);
+}
+
+/// Plural runtime bit extraction
+unittest {
+    // Extraction from uint
+    assert(uint(0x12345678).extractbits(0, 0) == 0x00000000);
+    assert(uint(0x12345678).extractbits(16, 0) == 0x00000000);
+    assert(uint(0x12345678).extractbits(0, 4) == 0x00000008);
+    assert(uint(0x12345678).extractbits(4, 4) == 0x00000007);
+    assert(uint(0x12345678).extractbits(8, 4) == 0x00000006);
+    assert(uint(0x12345678).extractbits(24, 4) == 0x00000002);
+    assert(uint(0x12345678).extractbits(28, 4) == 0x00000001);
+    assert(uint(0x00000000).extractbits(0, 32) == 0x00000000);
+    assert(uint(0x0000000f).extractbits(0, 32) == 0x0000000f);
+    assert(uint(0xffffffff).extractbits(0, 32) == 0xffffffff);
+    assert(uint(0x12345678).extractbits(0, 32) == 0x12345678);
+    // From ubyte
+    assert(uint(0x12).extractbits(0, 4) == 0x02);
+    assert(uint(0x12).extractbits(4, 4) == 0x01);
+    assert(uint(0x12).extractbits(0, 8) == 0x12);
 }

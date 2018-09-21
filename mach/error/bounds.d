@@ -13,8 +13,9 @@ static singletons, rather than created and thrown anew.
 
 +/
 
-unittest{ /// Example
+unittest { /// Example
     import mach.test.assertthrows : assertthrows;
+    // Statically allocate an error object
     static const boundserror = new IndexOutOfBoundsError();
     // High-exclusive check: enforce 0 <= 5 < 10.
     boundserror.enforce(5, 0, 10);
@@ -28,8 +29,9 @@ unittest{ /// Example
     assert(thrownerror is boundserror);
 }
 
-unittest{ /// Example
+unittest { /// Example
     import mach.test.assertthrows : assertthrows;
+    // Statically allocate an error object
     static const error = new InvalidSliceBoundsError();
     // Slice 1 .. 2 is contained within 0 .. 10.
     error.enforce(1, 2, 0, 10);
@@ -63,7 +65,7 @@ public:
 
 
 /// Error class for failed index bounds checks.
-class IndexOutOfBoundsError: Error{
+class IndexOutOfBoundsError : Error {
     this(Throwable next = null, size_t line = __LINE__, string file = __FILE__){
         this("Index out of bounds.");
     }
@@ -74,39 +76,37 @@ class IndexOutOfBoundsError: Error{
     /// High-exclusive bounds check.
     /// If the condition (low <= value < high) is not satisfied, throw this error.
     /// Returns the value being bounds-checked.
-    auto enforce(V, L, H)(in V value, in L low, in H high) const if(
+    void enforce(V, L, H)(in V value, in L low, in H high) pure @safe @nogc const if(
         isNumeric!V && isNumeric!L && isNumeric!H
     ){
         if(value < low || value >= high) throw this;
-        return value;
     }
     
     /// High-inclusive bounds check.
     /// If the condition (low <= value <= high) is not satisfied, throw this error.
     /// Returns the value being bounds-checked.
-    auto enforcei(V, L, H)(in V value, in L low, in H high) const if(
+    void enforcei(V, L, H)(in V value, in L low, in H high) pure @safe @nogc const if(
         isNumeric!V && isNumeric!L && isNumeric!H
     ){
         if(value < low || value > high) throw this;
-        return value;
     }
     
     /// High-exclusive bounds check.
     /// Low is 0 and high is the length of the passed object.
     /// Returns the value being bounds-checked.
-    auto enforce(V, Obj)(in V value, auto ref Obj object) const if(
+    void enforce(V, Obj)(in V value, auto ref Obj object) const if(
         isNumeric!V && hasNumericLength!Obj
     ){
-        return this.enforce(value, 0, object.length);
+        this.enforce(value, 0, object.length);
     }
     
     /// High-inclusive bounds check.
     /// Low is 0 and high is the length of the passed object.
     /// Returns the value being bounds-checked.
-    auto enforcei(V, Obj)(in V value, auto ref Obj object) const if(
+    void enforcei(V, Obj)(in V value, auto ref Obj object) const if(
         isNumeric!V && hasNumericLength!Obj
     ){
-        return this.enforcei(value, 0, object.length);
+        this.enforcei(value, 0, object.length);
     }
 }
 
@@ -123,9 +123,9 @@ class InvalidSliceBoundsError: IndexOutOfBoundsError{
     
     /// Check that the slice represented by `slow .. shigh` is entirely
     /// contained within the slice `ilow .. ihigh` and throw this error if not.
-    auto enforce(SliceLow, SliceHigh, InLow, InHigh)(
+    void enforce(SliceLow, SliceHigh, InLow, InHigh)(
         in SliceLow slow, in SliceHigh shigh, in InLow ilow, in InHigh ihigh
-    ) const if(
+    ) pure @safe @nogc const if(
         isNumeric!SliceLow && isNumeric!SliceHigh &&
         isNumeric!InLow && isNumeric!InHigh
     ){
@@ -134,7 +134,7 @@ class InvalidSliceBoundsError: IndexOutOfBoundsError{
     
     /// Check that the slice represented by `slow .. shigh` is entirely
     /// contained within the slice `0 .. obj.length` and throw this error if not.
-    auto enforce(SliceLow, SliceHigh, InObj)(
+    void enforce(SliceLow, SliceHigh, InObj)(
         in SliceLow slow, in SliceHigh shigh, auto ref InObj obj
     ) const if(
         isNumeric!SliceLow && isNumeric!SliceHigh && hasNumericLength!InObj
@@ -159,41 +159,53 @@ deprecated auto enforceboundsincl(A...)(A args){
 
 
 private version(unittest) {
-    import mach.test;
+    import mach.test.assertthrows : assertthrows;
 }
 
+/// High-exclusive index bounds
 unittest {
-    tests("Index bounds", {
-        tests("High-exclusive", {
-            static const error = new IndexOutOfBoundsError();
-            testeq(error.enforce(0, -1, 1), 0);
-            testeq(error.enforce(1, [0, 1, 2]), 1);
-            testfail((Throwable e) => (e is error), {
-                error.enforce(1, 0, 1);
-            });
-            testfail((Throwable e) => (e is error), {
-                error.enforce(10, [0, 1]);
-            });
-        });
-        tests("High-inclusive", {
-            static const error = new IndexOutOfBoundsError();
-            testeq(error.enforcei(0, -1, 1), 0);
-            testeq(error.enforcei(1, 0, 1), 1);
-            testeq(error.enforcei(1, [0, 1, 2]), 1);
-            testfail((Throwable e) => (e is error), {
-                error.enforcei(10, 0, 1);
-            });
-            testfail((Throwable e) => (e is error), {
-                error.enforcei(10, [0, 1]);
-            });
-        });
-    });
-    tests("Slice validity", {
-        static const error = new InvalidSliceBoundsError();
-        error.enforce(0, 0, 0, 0);
-        error.enforce(1, 2, 0, 10);
-        testfail((Throwable e) => (e is error), {
-            error.enforce(0, 2, 0, 1);
-        });
-    });
+    static const error = new IndexOutOfBoundsError();
+    error.enforce(0, -1, 1);
+    error.enforce(1, [0, 1, 2]);
+    assert(error is assertthrows({
+        error.enforce(1, 0, 1);
+    }));
+    assert(error is assertthrows({
+        error.enforce(10, [0, 1]);
+    }));
+}
+
+/// High-inclusive index bounds
+unittest {
+    static const error = new IndexOutOfBoundsError();
+    error.enforcei(0, -1, 1);
+    error.enforcei(1, 0, 1);
+    error.enforcei(1, [0, 1, 2]);
+    assert(error is assertthrows({
+        error.enforcei(10, 0, 1);
+    }));
+    assert(error is assertthrows({
+        error.enforcei(10, [0, 1]);
+    }));
+}
+
+/// Slice bounds (numeric inputs)
+unittest {
+    static const error = new InvalidSliceBoundsError();
+    error.enforce(0, 0, 0, 0);
+    error.enforce(1, 2, 0, 10);
+    assert(error is assertthrows({
+        error.enforce(0, 2, 0, 1);
+    }));
+}
+
+/// Slice bounds (input object with length)
+unittest {
+    static const error = new InvalidSliceBoundsError();
+    const array = [1, 2, 3, 4];
+    error.enforce(0, 0, array);
+    error.enforce(1, 2, array);
+    assert(error is assertthrows({
+        error.enforce(0, 5, array);
+    }));
 }

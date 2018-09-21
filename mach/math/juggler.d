@@ -24,19 +24,22 @@ auto jugglerseq(N, F = double)(N value) if(
 
 
 
-version(unittest){
-    private:
-    import mach.test;
+private version(unittest) {
     import mach.range.compare : equals;
+    import mach.test.assertthrows : assertthrows;
 }
-unittest{
-    tests("Juggler sequence", {
-        test(jugglerseq(1).equals([1]));
-        test(jugglerseq(2).equals([2, 1]));
-        test(jugglerseq(3).equals([3, 5, 11, 36, 6, 2, 1]));
-        test(jugglerseq(4).equals([4, 2, 1]));
-        test(jugglerseq(5).equals([5, 11, 36, 6, 2, 1]));
-        testfail({jugglerseq(0);});
-        testfail({jugglerseq(-1);});
-    });
+
+/// Valid inputs
+unittest {
+    assert(jugglerseq(1).equals([1]));
+    assert(jugglerseq(2).equals([2, 1]));
+    assert(jugglerseq(3).equals([3, 5, 11, 36, 6, 2, 1]));
+    assert(jugglerseq(4).equals([4, 2, 1]));
+    assert(jugglerseq(5).equals([5, 11, 36, 6, 2, 1]));
+}
+
+/// Invalid inputs
+unittest {
+    assertthrows({auto x = jugglerseq(0);});
+    assertthrows({auto x = jugglerseq(-1);});
 }

@@ -122,7 +122,7 @@ struct MemoryStream(bool mutable){
     @property void position(in size_t pos) in{
         this.assertactive();
         static const ooberror = new IndexOutOfBoundsError("Position out of bounds.");
-        const checked = ooberror.enforce(pos, 0, this.length);
+        ooberror.enforce(pos, 0, this.length);
     }body{
         this.pos = pos;
     }
@@ -182,7 +182,7 @@ struct MemoryStream(bool mutable){
     auto opIndex(in size_t index) in{
         this.assertactive();
         static const ooberror = new IndexOutOfBoundsError("Position out of bounds.");
-        const checked = ooberror.enforce(index, 0, this.length);
+        ooberror.enforce(index, 0, this.length);
     }body{
         return this.ptr[index];
     }
@@ -190,7 +190,7 @@ struct MemoryStream(bool mutable){
     static if(mutable) auto opIndexAssign(in ubyte value, in size_t index) in{
         this.assertactive();
         static const ooberror = new IndexOutOfBoundsError("Position out of bounds.");
-        const checked = ooberror.enforce(index, 0, this.length);
+        ooberror.enforce(index, 0, this.length);
     }body{
         return this.ptr[index] = value;
     }

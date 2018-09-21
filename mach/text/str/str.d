@@ -135,7 +135,7 @@ private version(unittest){
     class TestClass{string hi; this(string hi){this.hi = hi;}}
     struct EmptyRange{
         enum bool empty = true;
-        @property int front(){assert(false); return 0;}
+        @property int front(){assert(false);}
         void popFront(){}
     }
     struct InfRange{
@@ -145,12 +145,12 @@ private version(unittest){
     }
     struct FiniteRange{
         int front = 0;
-        @property bool empty() const{return this.front < 0;}
+        @property bool empty() const {return this.front < 0;}
         void popFront(){this.front--;}
     }
     struct ToStringStruct{
         string x;
-        string toString() const{return this.x;}
+        string toString() const {return this.x;}
     }
     class ToStringClass{
         string x;

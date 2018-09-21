@@ -163,15 +163,15 @@ private version(unittest){
 /// Existing file path
 unittest {
     auto st = Stat(TestPath);
-    st.permissions;
-    st.inode;
-    st.device;
-    st.userid;
-    st.groupid;
-    st.accessedtime;
-    st.ctime;
-    st.modifiedtime;
-    st.links;
+    auto permissions = st.permissions;
+    auto inode = st.inode;
+    auto device = st.device;
+    auto userid = st.userid;
+    auto groupid = st.groupid;
+    auto accessedtime = st.accessedtime;
+    auto ctime = st.ctime;
+    auto modifiedtime = st.modifiedtime;
+    auto links = st.links;
     version(CRuntime_Microsoft){} else{
         // MSVC libc doesn't correctly support these operations
         assert(st.size == 85);
