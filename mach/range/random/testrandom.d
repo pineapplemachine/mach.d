@@ -2,7 +2,6 @@ module mach.range.random.testrandom;
 
 private:
 
-import mach.test;
 import mach.meta : Aliases;
 import mach.range.random.lcong : lcong;
 import mach.range.random.mersenne : mersenne;
@@ -14,6 +13,8 @@ import mach.io : stdio;
 /++ Docs
 
 This module contains tests for the PRNGs implemented in `mach.range.random`.
+It runs several tests and reports how well the results conformed to a
+perfect distribution of random values.
 
 +/
 
