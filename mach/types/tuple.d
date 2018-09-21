@@ -25,7 +25,7 @@ to acquire a tuple holding some given values.
 
 +/
 
-unittest{ /// Example
+unittest { /// Example
     // Reference a tuple type with `Tuple` or instantiate one with `tuple`.
     Tuple!(string, char) tup = tuple("hello", '!');
     static assert(tup.length == 2); /// Length is known at compile time.
@@ -35,7 +35,7 @@ unittest{ /// Example
     static assert(!is(typeof({tup[2];})));
 }
 
-unittest{ /// Example
+unittest { /// Example
     // Unary operators are simply applied to every member of the tuple.
     // They are only allowed when every member of the tuple supports the operator.
     Tuple!(int, int) itup = tuple(1, 2);
@@ -44,7 +44,7 @@ unittest{ /// Example
     assert(-itup == -ftup);
 }
 
-unittest{ /// Example
+unittest { /// Example
     // Binary operators are applied to every pair of elements in tuples.
     // They're only allowed when every pair of elements supports the operator.
     auto tup = tuple(1, 2, 3);
@@ -52,7 +52,7 @@ unittest{ /// Example
     assert(tup - tuple(1, 1, 1) == tuple(0, 1, 2));
 }
 
-unittest{ /// Example
+unittest { /// Example
     // Tuples can be ordered if their corresponding pairs of elements can be ordered.
     // The second elements are compared only if the first are equal, the third
     // only if the second are equal, etc., in a manner similar to string sorting.
@@ -309,22 +309,16 @@ struct Tuple(X...){
         static if(T.length == 0){
             return 0;
         }else{
+            static assert(rhs.length > 0); // Shouldn't ever fail
             foreach(i, _; rhs){
                 if(this.expand[i] > rhs[i]){
-                    return 1;
+                    return +1;
                 }else if(this.expand[i] < rhs[i]){
                     return -1;
-                }else{
-                    static if(T.length == 1){
-                        return 0;
-                    }else{
-                        return this.slice!(1, this.length).opCmp(
-                            rhs.slice!(1, rhs.length)
-                        );
-                    }
+                }else static if(i == T.length - 1){
+                    return 0;
                 }
             }
-            return true;
         }
     }
     
@@ -385,8 +379,7 @@ struct Tuple(X...){
 
 
 
-version(unittest){
-    private:
+private version(unittest) {
     struct TupRange(T...){
         Tuple!T t;
         bool empty = false;
@@ -395,7 +388,8 @@ version(unittest){
     }
 }
 
-unittest{ /// isTuple template
+/// isTuple template
+unittest {
     static assert(isTuple!(Tuple!()));
     static assert(isTuple!(Tuple!(int)));
     static assert(isTuple!(Tuple!(int, int)));
@@ -406,7 +400,8 @@ unittest{ /// isTuple template
     static assert(!isTuple!(void));
 }
 
-unittest{ /// Empty tuple
+/// Empty tuple
+unittest {
     {
         auto t = tuple();
         static assert(t.length == 0);
@@ -436,7 +431,8 @@ unittest{ /// Empty tuple
     }
 }
 
-unittest{ /// Single-element tuple
+/// Single-element tuple
+unittest {
     {
         auto t = tuple(0);
         static assert(t.length == 1);
@@ -490,7 +486,8 @@ unittest{ /// Single-element tuple
     }
 }
 
-unittest{ /// Multiple-element tuple
+/// Multiple-element tuple
+unittest {
     {
         auto t = tuple(0, 1);
         static assert(t.length == 2);
@@ -551,7 +548,20 @@ unittest{ /// Multiple-element tuple
     }
 }
 
-unittest{ /// Concatenation
+/// Comparison
+unittest {
+    assert(tuple('a', 'b') < tuple('a', 'c'));
+    assert(tuple(0) < tuple(1));
+    assert(tuple(3, 3) < tuple(3, 4));
+    assert(tuple(1, 2, 3) < tuple(2, 3, 4));
+    assert(tuple(0) <= tuple(1));
+    assert(tuple(1) <= tuple(1));
+    assert(tuple(1) >= tuple(1));
+    assert(tuple(1) >= tuple(0));
+}
+
+/// Concatenation
+unittest {
     assert(tuple().concat() is tuple());
     assert(tuple().concat(tuple()) is tuple());
     assert(tuple().concat(tuple(), tuple()) is tuple());
