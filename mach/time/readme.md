@@ -32,6 +32,22 @@ assert(duration.fminutes == 0.25);
 ```
 
 
+The module also provides convenience functions for tersely constructing
+a Duration object.
+These functions are named `weeks`, `days`, `hours`, `minutes`, `seconds`,
+`milliseconds`, `microseconds`, and `nanoseconds`.
+
+``` D
+const dur = 5.seconds;
+assert(dur.milliseconds == 5_000);
+```
+
+``` D
+const intdur = 500.microseconds!int;
+assert(intdur.fmilliseconds == 0.5);
+```
+
+
 ## mach.time.sleep
 
 

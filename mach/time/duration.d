@@ -34,6 +34,25 @@ unittest { /// Example
     assert(duration.fminutes == 0.25);
 }
 
+/++ Docs
+
+The module also provides convenience functions for tersely constructing
+a Duration object.
+These functions are named `weeks`, `days`, `hours`, `minutes`, `seconds`,
+`milliseconds`, `microseconds`, and `nanoseconds`.
+
++/
+
+unittest { /// Example
+    const dur = 5.seconds;
+    assert(dur.milliseconds == 5_000);
+}
+
+unittest { /// Example
+    const intdur = 500.microseconds!int;
+    assert(intdur.fmilliseconds == 0.5);
+}
+
 public:
 
 /// Helper to determine what type should be returned when performing
@@ -47,52 +66,110 @@ template CommonDurationType(AT, BT){
     }
 }
 
+/// The default Duration time unit storage type.
+/// Must be a signed integer primitive type.
+/// TODO: What about other integer types? None exist in mach right now,
+/// but they probably will one day.
+alias DefaultDurationValueType = long;
+
+/// Get a Duration object containing the given number of weeks.
+auto weeks(T = DefaultDurationValueType, N)(in N value) if(isNumeric!N){
+    return Duration!T.Weeks(value);
+}
+/// Get a Duration object containing the given number of days.
+auto days(T = DefaultDurationValueType, N)(in N value) if(isNumeric!N){
+    return Duration!T.Days(value);
+}
+/// Get a Duration object containing the given number of hours.
+auto hours(T = DefaultDurationValueType, N)(in N value) if(isNumeric!N){
+    return Duration!T.Hours(value);
+}
+/// Get a Duration object containing the given number of minutes.
+auto minutes(T = DefaultDurationValueType, N)(in N value) if(isNumeric!N){
+    return Duration!T.Minutes(value);
+}
+/// Get a Duration object containing the given number of seconds.
+auto seconds(T = DefaultDurationValueType, N)(in N value) if(isNumeric!N){
+    return Duration!T.Seconds(value);
+}
+/// Get a Duration object containing the given number of milliseconds.
+auto milliseconds(T = DefaultDurationValueType, N)(in N value) if(isNumeric!N){
+    return Duration!T.Milliseconds(value);
+}
+/// Get a Duration object containing the given number of microseconds.
+auto microseconds(T = DefaultDurationValueType, N)(in N value) if(isNumeric!N){
+    return Duration!T.Microseconds(value);
+}
+/// Get a Duration object containing the given number of nanoseconds.
+auto nanoseconds(T = DefaultDurationValueType, N)(in N value) if(isNumeric!N){
+    return Duration!T.Nanoseconds(value);
+}
+
 /// Represents some time duration
-struct Duration (T = long) if(isSignedIntegral!T) {
+/// With a 64-bit signed integer backing type and nanosecond precision,
+/// durations in the range of roughly -292 to +292 years
+/// (precisely -2^63 nanoseconds to +2^63 - 1 nanoseconds)
+/// can be represented.
+struct Duration (
+    T = DefaultDurationValueType,
+) if(isSignedIntegral!T) {
+    /// The type of the backing integer value.
+    alias Value = T;
+    
     /// A Duration containing zero time
     enum typeof(this) Zero = typeof(this)(0);
     
+    /// Helpful constants.
+    enum T UnitsPerNanosecond = T(1);
+    enum T UnitsPerMicrosecond = T(1_000);
+    enum T UnitsPerMillisecond = T(1_000_000);
+    enum T UnitsPerSecond = T(1_000_000_000);
+    enum T UnitsPerMinute = UnitsPerSecond * T(60);
+    enum T UnitsPerHour = UnitsPerMinute * T(60);
+    enum T UnitsPerDay = UnitsPerHour * T(24);
+    enum T UnitsPerWeek = UnitsPerDay * T(7);
+    
     /// The backing time value for this duration,
     /// measured in nanoseconds
-    T value;
+    Value value;
     
     /// Construct a Duration object with the given number of time units.
     this(N)(in N value) if(isNumeric!N){
-        this.value = cast(T) value;
+        this.value = cast(Value) value;
     }
     
     /// Initialize a Duration object from a posix timespec object
     version(Posix) this(in timespec time){
-        this(time.tv_sec * T(1_000_000_000) + cast(T) time.tv_nsec);
+        this(time.tv_sec * UnitsPerSecond + cast(T) time.tv_nsec);
     }
     
     /// Initialize a Duration object with a length of N weeks
     static typeof(this) Weeks(N)(in N value) if(isNumeric!N) {
-        return typeof(this).Days(value * 7L);
+        return typeof(this)(cast(T) (value * UnitsPerWeek));
     }
     /// Initialize a Duration object with a length of N days
     static typeof(this) Days(N)(in N value) if(isNumeric!N) {
-        return typeof(this).Hours(value * 24L);
+        return typeof(this)(cast(T) (value * UnitsPerDay));
     }
     /// Initialize a Duration object with a length of N hours
     static typeof(this) Hours(N)(in N value) if(isNumeric!N) {
-        return typeof(this).Seconds(value * 3_600L);
+        return typeof(this)(cast(T) (value * UnitsPerHour));
     }
     /// Initialize a Duration object with a length of N minutes
     static typeof(this) Minutes(N)(in N value) if(isNumeric!N) {
-        return typeof(this).Seconds(value * 60L);
+        return typeof(this)(cast(T) (value * UnitsPerMinute));
     }
     /// Initialize a Duration object with a length of N seconds
     static typeof(this) Seconds(N)(in N value) if(isNumeric!N) {
-        return typeof(this)(cast(T) (value * 1_000_000_000L));
+        return typeof(this)(cast(T) (value * UnitsPerSecond));
     }
     /// Initialize a Duration object with a length of N milliseconds
     static typeof(this) Milliseconds(N)(in N value) if(isNumeric!N) {
-        return typeof(this)(cast(T) (value * 1_000_000L));
+        return typeof(this)(cast(T) (value * UnitsPerMillisecond));
     }
     /// Initialize a Duration object with a length of N microseconds
     static typeof(this) Microseconds(N)(in N value) if(isNumeric!N) {
-        return typeof(this)(cast(T) (value * 1_000L));
+        return typeof(this)(cast(T) (value * UnitsPerMicrosecond));
     }
     /// Initialize a Duration object with a length of N nanoseconds
     static typeof(this) Nanoseconds(N)(in N value) if(isNumeric!N) {
@@ -101,59 +178,59 @@ struct Duration (T = long) if(isSignedIntegral!T) {
     
     /// Get the number of weeks as an integer, rounded down
     @property T weeks() const{
-        return this.days / T(7);
+        return this.value / UnitsPerWeek;
     }
     /// Get the number of weeks as a floating point number
     @property double fweeks() const{
-        return this.fdays / double(7);
+        return this.value / double(UnitsPerWeek);
     }
     /// Get the number of days as an integer, rounded down
     @property T days() const{
-        return this.hours / T(24);
+        return this.value / UnitsPerDay;
     }
     /// Get the number of days as a floating point number
     @property double fdays() const{
-        return this.fhours / double(24);
+        return this.value / double(UnitsPerDay);
     }
     /// Get the number of hours as an integer, rounded down
     @property T hours() const{
-        return this.seconds / T(3_600);
+        return this.value / UnitsPerHour;
     }
     /// Get the number of hours as a floating point number
     @property double fhours() const{
-        return this.fseconds / double(3_600);
+        return this.value / double(UnitsPerHour);
     }
     /// Get the number of minutes as an integer, rounded down
     @property T minutes() const{
-        return this.seconds / T(60);
+        return this.value / UnitsPerMinute;
     }
     /// Get the number of minutes as a floating point number
     @property double fminutes() const{
-        return this.fseconds / double(60);
+        return this.value / double(UnitsPerMinute);
     }
     /// Get the number of seconds as an integer, rounded down
     @property T seconds() const{
-        return this.value / T(1_000_000_000);
+        return this.value / UnitsPerSecond;
     }
     /// Get the number of seconds as a floating point number
     @property double fseconds() const{
-        return this.value / double(1_000_000_000);
+        return this.value / double(UnitsPerSecond);
     }
     /// Get the number of milliseconds as an integer, rounded down
     @property T milliseconds() const{
-        return this.value / T(1_000_000);
+        return this.value / UnitsPerMillisecond;
     }
     /// Get the number of milliseconds as a floating point number
     @property double fmilliseconds() const{
-        return this.value / double(1_000_000);
+        return this.value / double(UnitsPerMillisecond);
     }
     /// Get the number of microseconds as an integer, rounded down
     @property T microseconds() const{
-        return this.value / T(1_000);
+        return this.value / UnitsPerMicrosecond;
     }
     /// Get the number of microseconds as a floating point number
     @property double fmicroseconds() const{
-        return this.value / double(1_000);
+        return this.value / double(UnitsPerMicrosecond);
     }
     /// Get the number of nanoseconds as an integer, rounded down
     @property T nanoseconds() const{
@@ -246,6 +323,18 @@ version(Posix) unittest {
     alias Dur = Duration!long;
     const timespec t = {tv_sec: 1, tv_nsec: 500};
     assert(Dur(t).nanoseconds == 1_000_000_500L);
+}
+
+/// Create duration objects using convenience functions
+unittest {
+    assert(1.weeks.fdays == 7);
+    assert(2.days.fhours == 48);
+    assert(6.hours.fdays == 0.25);
+    assert(45.minutes.fhours == 0.75);
+    assert(30.seconds.fminutes == 0.5);
+    assert(3000.milliseconds.fseconds == 3);
+    assert(2500.microseconds.fmilliseconds == 2.5);
+    assert(125.nanoseconds.fmicroseconds == 0.125);
 }
 
 /// Get fractional time values
