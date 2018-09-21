@@ -117,7 +117,11 @@ struct Duration (
     alias Value = T;
     
     /// A Duration containing zero time
-    enum typeof(this) Zero = typeof(this)(0);
+    enum typeof(this) zero = typeof(this)(0);
+    /// The minimum representable duration
+    enum typeof(this) min = typeof(this)(T.min);
+    /// The maximum representable duration
+    enum typeof(this) max = typeof(this)(T.max);
     
     /// Helpful constants.
     enum T UnitsPerNanosecond = T(1);
@@ -131,7 +135,7 @@ struct Duration (
     
     /// The backing time value for this duration,
     /// measured in nanoseconds
-    Value value;
+    Value value = 0;
     
     /// Construct a Duration object with the given number of time units.
     this(N)(in N value) if(isNumeric!N){
@@ -350,6 +354,14 @@ unittest {
     assert(Dur.Nanoseconds(100).fnanoseconds == 100.0);
 }
 
+/// zero, min, and max
+unittest {
+    alias Dur = Duration!long;
+    assert(Dur.zero.fseconds == 0);
+    assert(Dur.min.nanoseconds == long.min);
+    assert(Dur.max.nanoseconds == long.max);
+}
+
 /// Negative durations
 unittest {
     alias Dur = Duration!long;
@@ -359,7 +371,7 @@ unittest {
 
 /// opCast(T: boolean)
 unittest {
-    assert(!Duration!long.Zero);
+    assert(!Duration!long.zero);
     assert(Duration!long.Nanoseconds(+1));
     assert(Duration!long.Nanoseconds(-1));
 }
@@ -368,7 +380,7 @@ unittest {
 unittest {
     alias DurInt = Duration!int;
     alias DurLong = Duration!long;
-    assert(DurInt.Zero == DurLong.Zero);
+    assert(DurInt.zero == DurLong.zero);
     assert(DurInt.Milliseconds(+20) == DurLong.Milliseconds(+20));
     assert(DurInt.Milliseconds(-20) == DurLong.Milliseconds(-20));
     assert(DurInt.Milliseconds(100) != DurLong.Milliseconds(300));
@@ -379,20 +391,20 @@ unittest {
 unittest {
     alias DurInt = Duration!int;
     alias DurLong = Duration!long;
-    assert(DurInt.Zero >= DurLong.Zero);
-    assert(DurInt.Zero <= DurLong.Zero);
-    assert(!(DurInt.Zero > DurLong.Zero));
-    assert(!(DurInt.Zero < DurLong.Zero));
+    assert(DurInt.zero >= DurLong.zero);
+    assert(DurInt.zero <= DurLong.zero);
+    assert(!(DurInt.zero > DurLong.zero));
+    assert(!(DurInt.zero < DurLong.zero));
     const posInt = DurInt.Milliseconds(+10);
     const negInt = DurInt.Milliseconds(-10);
     const posLong = DurInt.Milliseconds(+10);
     const negLong = DurInt.Milliseconds(-10);
     assert(negInt < posInt);
     assert(posInt > negInt);
-    assert(posInt > DurInt.Zero);
+    assert(posInt > DurInt.zero);
     assert(negLong < posLong);
     assert(posLong > negLong);
-    assert(posLong > DurLong.Zero);
+    assert(posLong > DurLong.zero);
     assert(negInt < posLong);
     assert(posInt > negLong);
 }
