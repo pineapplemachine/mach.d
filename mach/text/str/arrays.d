@@ -150,7 +150,7 @@ unittest{
 unittest{
     struct EmptyRange{
         enum bool empty = true;
-        @property int front(){assert(false); return 0;}
+        @property int front(){assert(false);}
         void popFront(){}
     }
     assert(EmptyRange().iterabletostring == "[]");
@@ -171,7 +171,7 @@ unittest{
 unittest{
     class NullableEmptyRange{
         enum bool empty = true;
-        @property int front(){assert(false); return 0;}
+        @property int front(){assert(false);}
         void popFront(){}
     }
     assert(new NullableEmptyRange().iterabletostring == "[]");

@@ -36,7 +36,7 @@ struct StrSettings{
     string typestring(TypeDetail detail, T)() const{
         static if(detail is TypeDetail.Unqual) return Unqual!T.stringof;
         else static if(detail is TypeDetail.Full) return T.stringof;
-        return "";
+        else return "";
     }
     string typelabel(T, bool asrange = false)() const{
         string getlabel(){
