@@ -2,6 +2,8 @@ module mach.time.duration;
 
 private:
 
+version(Posix) import core.sys.posix.time : timespec;
+
 import mach.traits.primitives : isNumeric, isSignedIntegral;
 
 /++ Docs
@@ -53,6 +55,16 @@ struct Duration (T = long) if(isSignedIntegral!T) {
     /// The backing time value for this duration,
     /// measured in nanoseconds
     T value;
+    
+    /// Construct a Duration object with the given number of time units.
+    this(N)(in N value) if(isNumeric!N){
+        this.value = cast(T) value;
+    }
+    
+    /// Initialize a Duration object from a posix timespec object
+    version(Posix) this(in timespec time){
+        this(time.tv_sec * T(1_000_000_000) + cast(T) time.tv_nsec);
+    }
     
     /// Initialize a Duration object with a length of N weeks
     static typeof(this) Weeks(N)(in N value) if(isNumeric!N) {
@@ -227,6 +239,13 @@ unittest {
     assert(Dur.Milliseconds(100).milliseconds == 100);
     assert(Dur.Microseconds(100).microseconds == 100);
     assert(Dur.Nanoseconds(100).nanoseconds == 100);
+}
+
+/// Create Duration object from a posix timespec object
+version(Posix) unittest {
+    alias Dur = Duration!long;
+    const timespec t = {tv_sec: 1, tv_nsec: 500};
+    assert(Dur(t).nanoseconds == 1_000_000_500L);
 }
 
 /// Get fractional time values
