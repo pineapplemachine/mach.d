@@ -1,0 +1,12 @@
+language: d
+
+os:
+  - linux
+  - osx
+
+d:
+  - dmd-2.072.2
+  - dmd-2.081.2
+  - ldc-0.11.0
+  - ldc-0.16.6 # "Bootstrapping" version
+  
