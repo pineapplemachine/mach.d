@@ -2,7 +2,8 @@ module mach.math.floats.log;
 
 private:
 
-import mach.traits : IEEEFormatOf, isFloatingPoint;
+import mach.traits.ieee : IEEEFormatOf;
+import mach.traits.primitives : isFloatingPoint;
 import mach.math.bits : injectbit, extractbit, pow2;
 import mach.math.ints.intproduct : intproduct;
 import mach.math.constants : e;
@@ -135,60 +136,58 @@ private @trusted pure nothrow @nogc T lognativeimpl(real base, T)(in T value) if
         return T.infinity;
     }else if(value.fiszero){
         return -T.infinity;
-    }else{
-        static if(base == 2){
-            enum Format = IEEEFormatOf!T;
-            // Get unbiased exponent.
-            immutable unbiasedexp = value.fextractexp;
-            // Get normalized significand.
-            enum sigbits = Format.sigsize + (!Format.intpart);
-            ulong sig = cast(ulong) value.fextractnsig << (64 - sigbits);
-            
-            // Log is at least (low) and less than (low + 1).
-            int low = void;
-            if(unbiasedexp > 0){ // Normal
-                low = unbiasedexp - Format.expbias;
-            }else{ // Subnormal (non-zero, by virtue of conditional a few checks up)
-                low = Format.nsexpmin;
-                while(!(sig & pow2!63)){
-                    sig <<= 1;
-                    low--;
-                }
+    }else static if(base == 2){
+        enum Format = IEEEFormatOf!T;
+        // Get unbiased exponent.
+        immutable unbiasedexp = value.fextractexp;
+        // Get normalized significand.
+        enum sigbits = Format.sigsize + (!Format.intpart);
+        ulong sig = cast(ulong) value.fextractnsig << (64 - sigbits);
+        
+        // Log is at least (low) and less than (low + 1).
+        int low = void;
+        if(unbiasedexp > 0){ // Normal
+            low = unbiasedexp - Format.expbias;
+        }else{ // Subnormal (non-zero, by virtue of conditional a few checks up)
+            low = Format.nsexpmin;
+            while(!(sig & pow2!63)){
+                sig <<= 1;
+                low--;
             }
-            
-            /// Get log of value >= 2^0 and < 2^1.
-            ulong flog = 0;
-            static if(Format.intpart) flog |= pow2!(Format.sigsize - 1);
-            immutable imax = Format.sigsize - Format.intpart;
-            for(int i = imax - 1; i >= 0; i--){
-                immutable sq = intproduct(sig, sig); // Square the significand
-                if(sq.high & pow2!63){ // If new significand >= 2:
-                    // Capture new bits of significand (divided by 2).
-                    sig = sq.high;
-                    // Add 1/2, 1/4, 1/8, ... to the log.
-                    flog |= pow2!ulong(i);
-                }else{
-                    // Capture new bits of significand.
-                    sig = (sq.high << 1) | (sq.low >> 63);
-                }
-            }
-            
-            // All done
-            return (low - 1) + fcompose!T(false, Format.expbias, flog);
-        }else static if(base == e){
-            return lognativeimpl!2(value) / Log2_e;
-        }else static if(base == 10){
-            return lognativeimpl!2(value) / Log2_10;
-        }else{
-            return lognativeimpl!2(value) / lognativeimpl!2(base);
         }
+        
+        /// Get log of value >= 2^0 and < 2^1.
+        ulong flog = 0;
+        static if(Format.intpart) flog |= pow2!(Format.sigsize - 1);
+        immutable imax = Format.sigsize - Format.intpart;
+        for(int i = imax - 1; i >= 0; i--){
+            immutable sq = intproduct(sig, sig); // Square the significand
+            if(sq.high & pow2!63){ // If new significand >= 2:
+                // Capture new bits of significand (divided by 2).
+                sig = sq.high;
+                // Add 1/2, 1/4, 1/8, ... to the log.
+                flog |= pow2!ulong(i);
+            }else{
+                // Capture new bits of significand.
+                sig = (sq.high << 1) | (sq.low >> 63);
+            }
+        }
+        
+        // All done
+        return (low - 1) + fcompose!T(false, Format.expbias, flog);
+    }else static if(base == e){
+        return lognativeimpl!2(value) / Log2_e;
+    }else static if(base == 10){
+        return lognativeimpl!2(value) / Log2_10;
+    }else{
+        return lognativeimpl!2(value) / lognativeimpl!2(base);
     }
 }
 
 
 
 private version(unittest){
-    import mach.meta : Aliases;
+    import mach.meta.aliases : Aliases;
     import mach.math.abs : abs;
     import mach.math.constants : pi;    
 }
@@ -252,10 +251,12 @@ unittest{ /// Special cases for bases other than 1
             assert(lognativeimpl!base(-T.infinity).fisnan);
             assert(lognativeimpl!base(T(0.0)) == -T.infinity);
             assert(lognativeimpl!base(T.infinity) == T.infinity);
-            assert(log87impl!base(T(-1.0)).fisnan);
-            assert(log87impl!base(-T.infinity).fisnan);
-            assert(log87impl!base(T(0.0)) == -T.infinity);
-            assert(log87impl!base(T.infinity) == T.infinity);
+            static if(InlineLog){
+                assert(log87impl!base(T(-1.0)).fisnan);
+                assert(log87impl!base(-T.infinity).fisnan);
+                assert(log87impl!base(T(0.0)) == -T.infinity);
+                assert(log87impl!base(T.infinity) == T.infinity);
+            }
         }
     }
 }
@@ -264,7 +265,7 @@ unittest{ /// Subnormals
     // Floats
     void testfloat(int exp){
         assert(lognativeimpl!2(float(2) ^^ exp) == exp);
-        assert(log87impl!2(float(2) ^^ exp) == exp);
+        static if(InlineLog) assert(log87impl!2(float(2) ^^ exp) == exp);
     }
     testfloat(-126); // Smallest normal
     testfloat(-127); // Largest power of 2 subnormal
@@ -272,10 +273,10 @@ unittest{ /// Subnormals
     testfloat(-149); // Smallest subnormal
     //// Doubles
     assert(lognativeimpl!2(double(2) ^^ -1030) == -1030);
-    assert(log87impl!2(double(2) ^^ -1030) == -1030);
+    static if(InlineLog) assert(log87impl!2(double(2) ^^ -1030) == -1030);
     // Reals
     // TODO: Why does `real(2) ^^ -16388` result in -infinity?
     import mach.math.floats.inject : fcomposeexp;
     assert(lognativeimpl!2(fcomposeexp!real(-16388)) == -16388);
-    assert(log87impl!2(fcomposeexp!real(-16388)) == -16388);
+    static if(InlineLog) assert(log87impl!2(fcomposeexp!real(-16388)) == -16388);
 }
