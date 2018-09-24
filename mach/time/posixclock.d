@@ -210,5 +210,5 @@ static if(PosixClockPlatform){
 
 // TODO: More thorough unit tests (how?)
 static if(PosixClockPlatform) unittest {
-    auto monotime = posixtime!PosixClock.Monotonic;
+    auto monotime = posixtime!(PosixClock.Monotonic)();
 }
