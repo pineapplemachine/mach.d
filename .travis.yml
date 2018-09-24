@@ -7,6 +7,6 @@ os:
 d:
   - dmd-2.072.2
   - dmd-2.081.2
-  - ldc-1.11.0
-  - ldc-0.17.6 # "Bootstrapping" version
+  # LDC to be supported when it stops being so damned buggy
+  # - ldc-1.11.0
   
