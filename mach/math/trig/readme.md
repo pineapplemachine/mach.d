@@ -313,7 +313,7 @@ results due to rounding errors.
 import mach.math.floats : fnearequal;
 import mach.math.constants : pi;
 assert(fnearequal(tan(pi), 0));
-assert(fnearequal(tan(1.0), 1.5574077246549022, 1e-12));
+assert(fnearequal(tan(1.0), 1.5574077246549022L, 1e-12));
 ```
 
 

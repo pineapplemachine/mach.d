@@ -70,6 +70,18 @@ assert(300.clamp(150, 250) == 250);
 ```
 
 
+## mach.math.collatz
+
+
+The `collatzseq` function returns a range which enumerates the values in the
+[Collatz sequence](https://en.wikipedia.org/wiki/Collatz_conjecture) of an input.
+
+``` D
+import mach.range.compare : equals;
+assert(collatzseq(3).equals([3, 10, 5, 16, 8, 4, 2, 1]));
+```
+
+
 ## mach.math.constants
 
 
