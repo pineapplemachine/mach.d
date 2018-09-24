@@ -80,15 +80,22 @@ alias fromcstring = eagerfromcstring;
 ){
     return eagerfromcstring(cstr.ptr, approxlength);
 }
-/// ditto
+/// Ditto
 @system pure nothrow auto eagerfromcstring(Char)(in Char* cstr, in size_t approxlength = 256) if(
     isCharacter!Char
 ){
     immutable(Char)[] result;
+    if(cstr == null) return result;
     result.reserve(approxlength);
     const(Char)* ptr = cstr;
     while(*ptr != 0) result ~= *(ptr++);
     return result;
+}
+/// Ditto
+@system pure nothrow auto eagerfromcstring(
+    in typeof(null) cstr, in size_t approxlength = 256
+){
+    return (immutable(char)[]).init;
 }
 
 
@@ -100,15 +107,22 @@ alias fromcstring = eagerfromcstring;
 ) if(isCharacter!Char){
     return eagerfromcstring!limit(cstr.ptr, approxlength);
 }
-/// ditto
+/// Ditto
 @system pure nothrow auto eagerfromcstring(size_t limit, Char)(
     in Char* cstr, in size_t approxlength = 256
 ) if(isCharacter!Char){
     immutable(Char)[] result;
+    if(cstr == null) return result;
     result.reserve(varmin(limit, approxlength));
     const(Char)* ptr = cstr;
     while(*ptr != 0 && result.length < limit) result ~= *(ptr++);
     return result;
+}
+/// Ditto
+@system pure nothrow auto eagerfromcstring(size_t limit)(
+    in typeof(null) cstr, in size_t approxlength = 256
+){
+    return (immutable(char)[]).init;
 }
 
 
@@ -184,7 +198,7 @@ struct CString(Char) if(isCharacter!Char){
 
 
 
-private version(unittest){
+private version(unittest) {
     import mach.text.cstring.length : cstringlength;
     void TestString(alias str)(){
         mixin(`string utf8 = "` ~ str ~ `";`);
@@ -209,7 +223,8 @@ private version(unittest){
     }
 }
 
-unittest{ /// Convert to and from cstring
+/// Convert to and from cstring
+unittest {
     TestString!"";
     TestString!"!";
     TestString!"?";
@@ -221,11 +236,24 @@ unittest{ /// Convert to and from cstring
     TestString!"this is a somewhat longer input";
 }
 
-unittest{ /// fromcstring with limit
+/// fromcstring with null input
+unittest {
+    assert(fromcstring(null) == "");
+    assert(fromcstring(cast(char*) null) == "");
+    assert(fromcstring!char(cast(char*) null) == "");
+    assert(fromcstring!char(cast(char[]) null) == "");
+    assert(fromcstring!4(null) == "");
+    assert(fromcstring!4(cast(char*) null) == "");
+    assert(fromcstring!(4, char)(cast(char*) null) == "");
+    assert(fromcstring!(4, char)(cast(char[]) null) == "");
+}
+
+/// fromcstring with limit
+unittest {
     auto input = "abcdef\0";
     assert(fromcstring!4(input.ptr) == "abcd");
 }
 
-unittest{
+unittest {
     assert(['a', 'b', 'c', '\0', '\0'].fromcstring == "abc");
 }
