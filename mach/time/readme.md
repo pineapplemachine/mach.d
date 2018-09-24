@@ -48,6 +48,49 @@ assert(intdur.fmilliseconds == 0.5);
 ```
 
 
+## mach.time.monotonic
+
+
+This module implements the `monotonic` and `monotonicns` functions,
+which can be used to retrieve the system's monotonic time.
+The `monotonic` function returns a `Duration` object whereas the
+`monotonicns` function returns an integral number of nanoseconds.
+
+``` D
+import mach.time.sleep : sleep;
+// Get initial monotonic time in nanoseconds
+const long begin = monotonicns();
+// Sleep for 5 milliseconds
+sleep(0.005);
+// Get monotonic time after sleeping
+const long end = monotonicns();
+// Elapsed time will roughly equal 5,000,000 nanoseconds (5 milliseconds).
+const long elapsed = end - begin;
+```
+
+``` D
+import mach.time.duration : Duration;
+// Get monotonic time as a duration
+Duration!long monotime = monotonic();
+const monominutes = monotime.minutes;
+```
+
+
+## mach.time.posixclock
+
+
+This module implements the `posixclock` function. It can be used to read
+the time on different clocks on Posix systems, such as the real-time clock
+or the monotonic clock.
+
+``` D
+version(linux) {
+    import core.sys.posix.time : timespec;
+    timespec monotime = posixtime!(PosixClock.Monotonic)();
+}
+```
+
+
 ## mach.time.sleep
 
 
