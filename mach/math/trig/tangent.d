@@ -26,7 +26,7 @@ unittest{ /// Example
     import mach.math.floats : fnearequal;
     import mach.math.constants : pi;
     assert(fnearequal(tan(pi), 0));
-    assert(fnearequal(tan(1.0), 1.5574077246549022, 1e-12));
+    assert(fnearequal(tan(1.0), 1.5574077246549022L, 1e-12));
 }
 
 public:
@@ -35,7 +35,11 @@ public:
 
 /// Calculate the tangent of an angle given in radians.
 auto tan(in real value){
-    static if(InlineAsm_X86_Any){
+    version(LDC){
+        // Workaround for LDC inline asm bug
+        // https://github.com/ldc-developers/ldc/issues/2854
+        return tannativeimpl(value);
+    }else static if(InlineAsm_X86_Any){
         if(__ctfe) return tannativeimpl(value);
         return tanx86impl(value);
     }else{
@@ -188,10 +192,10 @@ unittest{ /// Tangent of zero
 
 unittest{ /// Tangent of multiples of pi
     foreach(TanFn; TanFns){
-        assert(fnearequal(TanFn(pi), 0));
-        assert(fnearequal(TanFn(-pi), 0));
-        assert(fnearequal(TanFn(pi + pi), 0));
-        assert(fnearequal(TanFn(pi * 8), 0));
+        assert(fnearequal(TanFn(pi), 0.0L, 1e-12));
+        assert(fnearequal(TanFn(-pi), 0.0L, 1e-12));
+        assert(fnearequal(TanFn(pi + pi), 0.0L, 1e-12));
+        assert(fnearequal(TanFn(pi * 8), 0.0L, 1e-12));
     }
 }
 
@@ -199,7 +203,6 @@ unittest{ /// Tangent is infinite (or very large in magnitude)
     // Why isn't tan(pi / 2) infinite?
     // See: http://www.website.masmforum.com/tutorials/fptute/fpuchap10.htm
     foreach(TanFn; TanFns){
-        import mach.io.stdio;
         assert(abs(TanFn(halfpi)) > 1e18);
         assert(abs(TanFn(-halfpi)) > 1e18);
         assert(abs(TanFn(pi + halfpi)) > 1e18);

@@ -53,7 +53,11 @@ struct SinCosResult{
 /// On some platforms, this will be more performant than making separate calls
 /// to `sin` and `cos`.
 SinCosResult sincos(in real value){
-    static if(InlineAsm_X86_Any){
+    version(LDC){
+        // Workaround for LDC x86 issue
+        // https://github.com/ldc-developers/ldc/issues/2854
+        return sincossepimpl(value);
+    }else static if(InlineAsm_X86_Any){
         if(__ctfe) return sincossepimpl(value);
         return sincosx86impl(value);
     }else{
