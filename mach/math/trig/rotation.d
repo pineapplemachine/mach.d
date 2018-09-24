@@ -141,7 +141,7 @@ private auto commonrotation(AA, AR, BA, BR)(
 
 
 
-/// A type representing an amont of rotation.
+/// A type representing an amount of rotation.
 struct Rotation(AT = ulong, RT = Signed!AT) if(
     is(Angle!AT) && isSignedIntegral!RT
 ){
@@ -544,8 +544,8 @@ struct Rotation(AT = ulong, RT = Signed!AT) if(
 
 
 private version(unittest){
-    import mach.meta : Aliases;
-    import mach.traits : SignedIntegralTypes, UnsignedIntegralTypes;
+    import mach.meta.aliases : Aliases;
+    import mach.traits.primitives : SignedIntegralTypes, UnsignedIntegralTypes;
     import mach.math.trig.arctangent : atan, atan2;
     import mach.math.trig.inverse : asin, acos;
     import mach.math.trig.sincos : sin, cos;
