@@ -17,6 +17,7 @@ version(OSX) {
     }
 }
 else version(Posix) {
+    import core.sys.posix.time : timespec;
     import mach.time.posixclock : PosixClock, posixtime;
 }
 else version(Windows) {
