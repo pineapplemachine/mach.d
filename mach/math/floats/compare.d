@@ -5,7 +5,10 @@ private:
 import mach.traits : isFloatingPoint, isImaginary, isComplex, IEEEFormatOf;
 import mach.math.bits : pow2d, bitsidentical;
 
-enum DefaultEpsilon = 1e-10;
+// Dependency used only in assertions
+version(assert) import mach.math.floats.properties : fisnan;
+
+enum double DefaultEpsilon = 1e-10;
 
 /++ Docs
 
@@ -39,12 +42,17 @@ public:
 
 /// Returns true when the inputs have exactly the same binary representation.
 @safe bool fidentical(T)(in T a, in T b) if(isFloatingPoint!T){
+    // Size may not be exactly T.sizeof. For example, DMD `real.sizeof` is
+    // 128 bits, but only 80 of those bits are actually used to represent
+    // the floating point value. Hence `IEEEFormatOf!T.size` is used here
+    // instead of the simpler `T.sizeof`.
     enum uint size = IEEEFormatOf!T.size;
     return bitsidentical!size(a, b);
 }
 
 /// Returns true when two values are equal or close to equal.
 bool fnearequal(T)(in T a, in T b, in T epsilon = DefaultEpsilon) if(isFloatingPoint!T){
+    assert(!epsilon.fisnan, "Float comparison epsilon must not be NaN.");
     immutable delta = a - b;
     return delta >= -epsilon && delta <= epsilon;
 }
