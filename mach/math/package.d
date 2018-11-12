@@ -14,6 +14,7 @@ import mach.math.box;
 import mach.math.clamp;
 import mach.math.constants;
 import mach.math.cube;
+import mach.math.fixed;
 import mach.math.floats;
 import mach.math.ints;
 import mach.math.lcm;
