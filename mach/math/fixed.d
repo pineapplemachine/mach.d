@@ -1,4 +1,4 @@
-module math.fixed;
+module mach.math.fixed;
 
 private:
 
