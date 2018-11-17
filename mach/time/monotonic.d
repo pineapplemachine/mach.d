@@ -114,7 +114,7 @@ else version(Windows) long monotonicns(){
     // have failed already.
     assert(status != 0, "Monotonic clock not available for this platform.");
     // Convert the number of ticks to a number of nanoseconds
-    return ticksperns(ticks, tickspersecond);
+    return tickstons(ticks, tickspersecond);
 }
 
 
