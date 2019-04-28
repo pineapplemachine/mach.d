@@ -4,7 +4,11 @@ private:
 
 import mach.traits : Unqual, isNumeric, isIntegral, isSigned, Unsigned;
 import mach.traits : isCharacter, isString, hasNumericLength;
-import mach.math : uabs, divceil, log, clog2, ceil, ispow2;
+import mach.math.abs : uabs;
+import mach.math.bits.pow2 : ispow2;
+import mach.math.floats : log;
+import mach.math.ints.log2 : clog2;
+import mach.math.round : ceil, divceil;
 import mach.text.numeric.exceptions;
 
 private auto clog(uint base, T)(in T value){
