@@ -93,9 +93,6 @@ else version(Posix) long monotonicns(){
 }
 
 /// Get monotonic time as a number of nanoseconds on Windows.
-/// The OSX monotonic clock should be accurate to the nanosecond.
-/// The clock counts up from the last reboot time. The clock
-/// does not count up while the system is asleep or hibernating.
 else version(Windows) long monotonicns(){
     // https://msdn.microsoft.com/en-us/library/ms644904(v=VS.85).aspx
     // https://msdn.microsoft.com/en-us/library/ms644905(v=VS.85).aspx

@@ -4,7 +4,8 @@ private:
 
 import mach.traits : isNumeric, isIntegral, isFloatingPoint;
 import mach.math.abs : abs;
-import mach.math.floats : ffloor, fceil, fisinf, fisnan;
+import mach.math.floats.properties : fisinf, fisnan;
+import mach.math.floats.round : ffloor, fceil;
 
 /++ Docs
 

@@ -2,7 +2,7 @@ module mach.math.bits.hamming;
 
 private:
 
-import mach.traits : isIntegral;
+import mach.traits.primitives : isIntegral;
 
 /++ Docs
 

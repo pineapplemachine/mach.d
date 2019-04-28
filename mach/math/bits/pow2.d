@@ -2,7 +2,7 @@ module mach.math.bits.pow2;
 
 private:
 
-import mach.traits : isIntegral, isSigned;
+import mach.traits.primitives : isIntegral, isSigned;
 import mach.math.bits.hamming : hamming;
 
 public:
