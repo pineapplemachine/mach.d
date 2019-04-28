@@ -612,7 +612,7 @@ struct Matrix(size_t valueswidth, size_t valuesheight, T) if(isMatrixComponent!T
     /// Create a matrix where every component is set to the given value.
     this(N)(in N value) if(isNumeric!N){
         foreach(i, _; Columns){
-            this.columns[i] = Column(value);
+            this.columns[i] = Column.fill(value);
         }
     }
     /// Create a matrix using vectors to represent the columns.

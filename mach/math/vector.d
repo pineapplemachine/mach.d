@@ -396,7 +396,7 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     static enum isSameSizeVector(X) = isVector!(size, X);
     
     /// A vector with all-zero components.
-    static enum zero = typeof(this)(0);
+    static enum zero = typeof(this).fill(0);
     
     alias Value = T;
     alias Values = Repeat!(size, T);
@@ -406,15 +406,15 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     alias values this;
     
     /// Initialize with the given components.
-    static if(size > 1) this(N...)(in N values) if(
-        All!(isNumeric, N) && values.length == size
-    ){
-        foreach(i, _; this.values) this.values[i] = cast(T) values[i];
+    /// Excessive components are truncated.
+    /// Missing components are set to zero.
+    this(N...)(in N values) if(values.length && All!(isNumeric, N)){
+        foreach(i, _; this.values) {
+            static if(i < values.length) this.values[i] = cast(T) values[i];
+            else this.values[i] = T(0);
+        }
     }
-    /// Initialize with all components equal to the given value.
-    this(N)(in N value) if(isNumeric!N){
-        foreach(i, _; this.values) this.values[i] = cast(T) value;
-    }
+    
     /// Initialize with the components of another vector.
     /// If the input vector is smaller than this one, trailing components
     /// are made zero.
@@ -423,12 +423,18 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     this(size_t Z, X)(in Vector!(Z, X) vec){
         foreach(i, _; this.values){
             static if(i < vec.size) this.values[i] = cast(T) vec.values[i];
-            else this.values[i] = 0;
+            else this.values[i] = T(0);
         }
     }
+    
     /// Initialize with components given by a tuple.
     this(X)(in X tup) if(isTuple!X){ // TODO: Better template constraint
-        this.values = tup.expand.varmap!(x => cast(T) x).expand;
+        static if(tup.length) this(tup.expand);
+    }
+    
+    /// Initialize with all components equal to the given value.
+    static fill(N)(in N value) if(isNumeric!N){
+        return typeof(this)(Repeat!(size, value));
     }
     
     /// Get this vector as a tuple.
@@ -1009,6 +1015,27 @@ unittest{ /// Zero vector
     assert(Vector!(3, int).zero == vector(0, 0, 0));
     assert(Vector!(4, int).zero == vector(0, 0, 0, 0));
     assert(Vector!(6, int).zero == vector(0, 0, 0, 0, 0, 0));
+}
+
+unittest{ // Invoke constructor with component list
+    assert(Vector!(4, int)(1) == vector(1, 0, 0, 0));
+    assert(Vector!(4, int)(1, 2, 3, 4) == vector(1, 2, 3, 4));
+    assert(Vector!(4, int)(1, 2, 3, 4, 5, 6) == vector(1, 2, 3, 4));
+}
+
+unittest{ // Invoke constructor with another vector as input
+    assert(Vector!(4, int)(vector(1)) == vector(1, 0, 0, 0));
+    assert(Vector!(4, int)(vector(1, 2, 3, 4)) == vector(1, 2, 3, 4));
+}
+
+unittest{ // Invoke constructor with a tuple as input
+    assert(Vector!(4, int)(tuple(1)) == vector(1, 0, 0, 0));
+    assert(Vector!(4, int)(tuple(1, 2, 3, 4)) == vector(1, 2, 3, 4));
+}
+
+unittest{ // Initialization using static fill method
+    assert(Vector!(2, int).fill(3) == vector(3, 3));
+    assert(Vector!(4, int).fill(1) == vector(1, 1, 1, 1));
 }
 
 unittest{ /// Equality comparison
