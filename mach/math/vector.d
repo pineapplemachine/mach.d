@@ -2,7 +2,7 @@ module mach.math.vector;
 
 private:
 
-import mach.meta : All, Repeat, Retro, varzip, varmap, varall, varsum, ctint;
+import mach.meta : All, Repeat, Retro, varzip, varmap, varmapi, varall, varsum, ctint;
 import mach.types : tuple, isTuple;
 import mach.traits : isTemplateOf, CommonType, hasCommonType, Unqual;
 import mach.traits : isNumeric, isFloatingPoint, isIntegral, isSignedIntegral;
@@ -241,6 +241,42 @@ auto vector(T)() if(isVectorComponent!T){
 
 
 
+/// Perform a map operation upon the components of a vector
+auto map(alias transform, T)(T mapVector) if(isVector!T) {
+    static if(mapVector.size == 0) {
+        return mapVector;
+    }else {
+        return vector(mapVector.expand.varmap!transform);
+    }
+}
+
+/// Perform a map operation upon the components of a vector
+/// The transform callback will also receive a component index argument
+auto mapi(alias transform, T)(T mapVector) if(isVector!T) {
+    static if(mapVector.size == 0) {
+        return mapVector;
+    }else {
+        return vector(mapVector.expand.varmapi!transform);
+    }
+}
+
+/// Perform a map operation upon the components of multiple input vectors
+auto map(alias transform, T...)(T mapVectors) if(T.length != 1 && All!(isVector, T)) {
+    return vector(mapVectors.varmap!((v) => (v.astuple)).expand.varzip.expand.varmap!(
+        (tup) => (transform(tup.expand))
+    ));
+}
+
+/// Perform a map operation upon the components of multiple input vectors
+/// The transform callback will also receive a component index argument
+auto mapi(alias transform, T...)(T mapVectors) if(T.length != 1 && All!(isVector, T)) {
+    return vector(mapVectors.varmap!((v) => (v.astuple)).expand.varzip.expand.varmapi!(
+        (index, tup) => (transform(index, tup.expand))
+    ));
+}
+
+
+
 /// Convenience template for getting whether a type is a vector with two components.
 template isVector2(T){
     enum bool isVector2 = isVector!(2, T);
@@ -426,7 +462,7 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     /// Component-wise binary operation with a vector having the same number
     /// of components.
     auto opBinary(string op, X)(in Vector!(size, X) vec) const if(
-        op == "+" || op == "-" || op == "*" || op == "/" || op == "^^"
+        op == "+" || op == "-" || op == "*" || op == "/" || op == "%" || op == "^^"
     ){
         static if(size == 0){
             mixin(`return vector!(typeof(T.init ` ~ op ~ ` X.init))();`);
@@ -438,7 +474,7 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     }
     /// Ditto
     auto opOpAssign(string op, X)(in Vector!(size, X) vec) if(
-        op == "+" || op == "-" || op == "*" || op == "/" || op == "^^"
+        op == "+" || op == "-" || op == "*" || op == "/" || op == "%" || op == "^^"
     ){
         foreach(i, _; Values){
             mixin(`this[i] = this[i] ` ~ op ~ ` vec[i];`);
@@ -449,7 +485,7 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     /// Increment, decrement, multiply, divide, or exponentiate all components
     /// in the vector by some scalar value.
     auto opBinary(string op, N)(in N value) const if(isNumeric!N && (
-        op == "+" || op == "-" || op == "*" || op == "/" || op == "^^"
+        op == "+" || op == "-" || op == "*" || op == "/" || op == "%" || op == "^^"
     )){
         static if(size == 0){
             mixin(`return vector!(typeof(T.init ` ~ op ~ ` value))();`);
@@ -465,7 +501,7 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     }
     /// Ditto
     auto opOpAssign(string op, N)(in N value) if(isNumeric!N && (
-        op == "+" || op == "-" || op == "*" || op == "/" || op == "^^"
+        op == "+" || op == "-" || op == "*" || op == "/" || op == "%" || op == "^^"
     )){
         foreach(i, _; Values) mixin(`this[i] ` ~ op ~ `= value;`);
         return this;
@@ -1163,6 +1199,12 @@ unittest{ /// Component-wise binary operations
     assert((vector(2) /= 2) == vector(1));
     assert((vector(8, 16) /= 2) == vector(4, 8));
     assert((vector(8, 16, 32) /= 2) == vector(4, 8, 16));
+    assert((vector(2) % 3) == vector(2));
+    assert((vector(2, 4) % 3) == vector(2, 1));
+    assert((vector(2, 4, 6) % 3) == vector(2, 1, 0));
+    assert((vector(2) %= 3) == vector(2));
+    assert((vector(2, 4) %= 3) == vector(2, 1));
+    assert((vector(2, 4, 6) %= 3) == vector(2, 1, 0));
     assert((vector(2) ^^ 2) == vector(4));
     assert((vector(2, 3) ^^ 2) == vector(4, 9));
     assert((vector(2, 3, 4) ^^ 2) == vector(4, 9, 16));
@@ -1322,4 +1364,21 @@ unittest{ /// Spherical linear interpolation, three-dimensional inputs
     immutable mid = x.slerp(y, 0.5);
     // Output length should be a linear interpolation of input lengths.
     assert(fnearequal(mid.length, (x.length + y.length) / 2, 1e-12));
+}
+
+unittest { /// Vector singular map and mapi
+    immutable x = vector(1, 2, 3);
+    immutable y = Vector!(0, int)();
+    assert(x.map!((c) => (c + 1)) == vector(2, 3, 4));
+    assert(x.mapi!((index, c) => (c + 2 * index)) == vector(1, 4, 7));
+    assert(y.map!((c) => (c + 1)) == y);
+    assert(y.mapi!((index, c) => (c + 1)) == y);
+}
+
+unittest { /// Vector plural map and mapi
+    immutable x = vector(+1, +2, +3);
+    immutable y = vector(-1, -2, -3);
+    assert(map!((i, j) => (i + j))(x, y) == vector(0, 0, 0));
+    assert(map!((i, j) => (i * j))(x, y) == vector(-1, -4, -9));
+    assert(mapi!((index, i, j) => (i - j + index))(x, y) == vector(2, 5, 8));
 }
