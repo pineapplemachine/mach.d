@@ -60,14 +60,10 @@ struct XorshiftRange(T) if(canXorshift!T){
     this(typeof(this) range){
         this.seed!false(range.front, range.x, range.y, range.z);
     }
-    /// For convenience, a construcor to allow initialization with a single
+    /// For convenience, a constructor to allow initialization with a single
     /// integral seed.
     this(T seed){
-        this.seed(
-            seed, cast(T)(seed + T.max),
-            cast(T)(seed + seed),
-            cast(T)(T.max * T.max + seed)
-        );
+        this.seed(seed);
     }
     this(T[4] seeds){
         this.seed(seeds);
@@ -78,7 +74,7 @@ struct XorshiftRange(T) if(canXorshift!T){
     
     void seed(bool pop = true)(T seed){
         // Please don't use this
-        this.seed!pop(T, T * 1571, T * 83, T * 18371);
+        this.seed!pop(seed, seed * 1571, seed * 83, seed * 18371);
     }
     void seed(bool pop = true)(T[4] seeds){
         this.seed!pop(seeds[0], seeds[1], seeds[2], seeds[3]);
