@@ -427,6 +427,22 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
         }
     }
     
+    /// Initialize with components given by a dynamic array
+    this(N)(in N[] array) if(isNumeric!N) {
+        foreach(i, _; this.values){
+            if(i < array.length) this.values[i] = cast(T) array[i];
+            else this.values[i] = T(0);
+        }
+    }
+    
+    /// Initialize with components given by a static array
+    this(size_t Z, N)(in N[Z] array) if(isNumeric!N) {
+        foreach(i, _; this.values){
+            static if(i < array.length) this.values[i] = cast(T) array[i];
+            else this.values[i] = T(0);
+        }
+    }
+    
     /// Initialize with components given by a tuple.
     this(X)(in X tup) if(isTuple!X){ // TODO: Better template constraint
         static if(tup.length) this(tup.expand);
@@ -1031,6 +1047,17 @@ unittest{ // Invoke constructor with another vector as input
 unittest{ // Invoke constructor with a tuple as input
     assert(Vector!(4, int)(tuple(1)) == vector(1, 0, 0, 0));
     assert(Vector!(4, int)(tuple(1, 2, 3, 4)) == vector(1, 2, 3, 4));
+}
+
+unittest{ // Invoke constructor with arrays as input
+    int[] dynamicArray = [1, 2, 3];
+    int[3] staticArray = [4, 5, 6];
+    assert(Vector!(2, int)(dynamicArray) == vector(1, 2));
+    assert(Vector!(3, int)(dynamicArray) == vector(1, 2, 3));
+    assert(Vector!(4, int)(dynamicArray) == vector(1, 2, 3, 0));
+    assert(Vector!(2, int)(staticArray) == vector(4, 5));
+    assert(Vector!(3, int)(staticArray) == vector(4, 5, 6));
+    assert(Vector!(4, int)(staticArray) == vector(4, 5, 6, 0));
 }
 
 unittest{ // Initialization using static fill method
