@@ -38,6 +38,17 @@ unittest{ /// Example
 
 /++ Docs
 
+The `ln` function is a shortcut for `log!e`.
+
++/
+
+unittest{ /// Example
+    import mach.math.constants : e;
+    assert(abs(ln(e) - 1) < 1.0e-16);
+}
+
+/++ Docs
+
 Additionally, the `flog2` and `clog2` functions can be used to quickly
 determine `floor(log!2(n))` and `ceil(log!2(n))`, respectively.
 These functions assume a nonzero noninfinite non-nan input.
@@ -68,7 +79,6 @@ enum real Ln_2 = 0.693147180559945309417232121458176568075500134360255254120L;
 
 
 
-
 /// Returns `floor(log2(abs(value)))` as a signed integer.
 /// Behavior undefined for zero, nan, and infinite inputs.
 @trusted pure nothrow @nogc int flog2(T)(in T value) if(isFloatingPoint!T){
@@ -81,6 +91,13 @@ enum real Ln_2 = 0.693147180559945309417232121458176568075500134360255254120L;
 @trusted pure nothrow @nogc int clog2(T)(in T value) if(isFloatingPoint!T){
     assert(!value.fiszero && !value.fisnan && !value.fisinf);
     return value.fextractsexp + (value.fextractsig != 0);
+}
+
+
+
+/// Convenience alias. Same as `log!e`.
+@safe pure nothrow @nogc auto ln(T)(in T value) if(isFloatingPoint!T) {
+    return log!e(value);
 }
 
 
