@@ -8,7 +8,7 @@ import mach.math.abs.ints : uabs;
 import mach.math.bits.inject : injectbit, injectbits;
 import mach.math.floats.extract : fextractsgn;
 
-public:
+pure public:
 
 
 
@@ -109,11 +109,17 @@ auto fcomposeexp(T)(in int exp) if(isFloatingPoint!T){
 
 
 /// Get a float the same as the input, but with the given sign.
+/// Guaranteed to behave correctly with NaN inputs at runtime.
+/// Not guaranteed to behave correctly with NaN inputs in CTFE. (TODO: How to fix?)
 auto finjectsgn(bool assumezero = false, T)(in T value, in bool sgn) if(
     isFloatingPoint!T
 ){
-    enum offset = IEEEFormatOf!T.sgnoffset;
-    return value.injectbit!(offset, assumezero)(sgn);
+    if(__ctfe) {
+        return fextractsgn(value) == sgn ? value : -value;
+    }else {
+        enum offset = IEEEFormatOf!T.sgnoffset;
+        return value.injectbit!(offset, assumezero)(sgn);
+    }
 }
 
 /// Get a float the same as the input, but with the given exponent bits.

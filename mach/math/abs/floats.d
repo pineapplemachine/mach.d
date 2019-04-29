@@ -7,7 +7,7 @@ import mach.traits.primitives : isFloatingPoint, isImaginary;
 import mach.math.floats.inject : finjectsgn;
 import mach.math.floats.properties : fisnan;
 
-public:
+public @trusted:
 
 
 
