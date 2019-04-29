@@ -89,6 +89,17 @@ This module defines some mathematical constants, including `e`, `pi`, `tau`,
 `sqrt2`, and `GoldenRatio`.
 
 
+## mach.math.fixed
+
+
+This module implements a fixed-point numeric type.
+
+``` D
+Fixed!int fixed = 1234.5;
+assert(fixed + 0.5 == 1235);
+```
+
+
 ## mach.math.floats
 
 

@@ -12,7 +12,7 @@ import mach.math.bits.pow2 : pow2d;
 
 This module implements a fixed-point numeric type.
 
-++/
++/
 
 unittest { /// Example
     Fixed!int fixed = 1234.5;
