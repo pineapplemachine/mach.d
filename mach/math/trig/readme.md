@@ -139,6 +139,28 @@ assert(x.lerp(y, 0.5).revolutions == 0.25);
 ```
 
 
+## mach.math.trig.arcsincos
+
+
+This module implements the [`asin` and `acos` trigonometric functions]
+(https://en.wikipedia.org/wiki/Inverse_trigonometric_functions).
+
+`asin` accepts a sine value and outputs the corresponding angle,
+a value between -π/2 and +π/2 radians.
+
+`acos` accepts a cosine value and outputs the corresponding angle,
+a value between 0 and π radians.
+
+When the input to `asin` or `acos` is outside the range -1 to +1
+inclusive, the functions will output NaN.
+
+``` D
+import mach.math.floats.compare : fnearequal;
+assert(fnearequal(asin(0.5), 0.52359877559829887307L, 1e-18));
+assert(fnearequal(acos(0.5), 1.04719755119659774615L, 1e-18));
+```
+
+
 ## mach.math.trig.arctangent
 
 
