@@ -73,7 +73,7 @@ private SinCosResult sincossepimpl(in real value){
 }
 
 
-import mach.io.stdio;
+
 /// Calculate sine and cosine simultaneously using the `fsincos` x86 instruction.
 /// More efficient than calculating the values separately.
 private SinCosResult sincosx86impl(in real value){
@@ -235,9 +235,9 @@ unittest{ /// Can be evaluated by CTFE?
     enum x = sincos(1);
 }
 
-unittest{ /// Check sin and cosine for some set cases
+unittest{ /// Check sine and cosine for some set cases
     // Reference values obtained via wolfram alpha.
-    enum cases = [ // Array of [input, expected sine] cases
+    enum cases = [ // Array of [radians, sine, cosine] cases
         [-20.0L, -0.91294525072762765437609998384568230129793258370818995630L, 0.408082061813391986062267860927644957099299510316252822755L],
         [-2.0L, -0.90929742682568169539601986591174484270225497144789026837L, -0.41614683654714238699756822950076218976600077107554489075L],
         [-1.5L, -0.99749498660405443094172337114148732270665142592211582194L, 0.070737201667702910088189851434268709085091027563346869422L],
@@ -248,14 +248,14 @@ unittest{ /// Check sin and cosine for some set cases
         [22.0L, -0.00885130929040387592169025681577233246328920395133256644L, -0.99996082639463712645417473921269377413598846747941929305L],
     ];
     foreach(sccase; cases){
-        immutable input = sccase[0];
+        immutable radians = sccase[0];
         immutable expectedsin = sccase[1];
         immutable expectedcos = sccase[2];
-        assert(fnearequal(sin(input), expectedsin, 1e-18));
-        assert(fnearequal(cos(input), expectedcos, 1e-18));
-        assert(fnearequal(cos(input - halfpi), expectedsin, 1e-18));
-        assert(fnearequal(sin(input + halfpi), expectedcos, 1e-18));
-        immutable sim = sincos(input);
+        assert(fnearequal(sin(radians), expectedsin, 1e-18));
+        assert(fnearequal(cos(radians), expectedcos, 1e-18));
+        assert(fnearequal(cos(radians - halfpi), expectedsin, 1e-18));
+        assert(fnearequal(sin(radians + halfpi), expectedcos, 1e-18));
+        immutable sim = sincos(radians);
         assert(fnearequal(sim.sin, expectedsin, 1e-18));
         assert(fnearequal(sim.cos, expectedcos, 1e-18));
     }
