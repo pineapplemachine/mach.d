@@ -141,4 +141,6 @@ test_script:
  - echo %DMD%
  - echo %PATH%
  - '%DC% --help'
- - dub test --arch=%Darch% --compiler=%DC%
+ # - dub install digger
+ # - dub run digger -- build --model=64 v2.072.2
+ - dub test --combined --arch=%Darch% --compiler=%DC%
