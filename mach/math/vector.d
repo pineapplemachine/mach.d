@@ -717,6 +717,13 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
         }
     }
     
+    /// Get a vector pointing in the same direction as this one,
+    /// but normalized then scaled by a given length value.
+    static if(size >= 1) auto withLength(N)(in N length) const if(isNumeric!N) {
+        const scale = (cast(T) length) / this.length;
+        return scale * this;
+    }
+    
     /// Get a reflection of this vector on the plane perpendicular to a unit vector.
     /// http://mathworld.wolfram.com/Reflection.html
     /// hhttp://math.stackexchange.com/questions/13261/how-to-get-a-reflection-vector
@@ -779,7 +786,7 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     /// The function may be called with Angle objects or with floating point
     /// values representing values in radians.
     /// https://en.wikipedia.org/wiki/N-sphere#Spherical_coordinates
-    static if(size > 1){
+    static if(size > 1) {
         static auto unit(A...)(in A angles) if(A.length == size - 1 && All!(isAngle, A)){
             mixin(VectorUnitMixin(size));
         }
@@ -1237,6 +1244,12 @@ unittest{ /// Normalization
             }
         }
     }
+}
+
+unittest{ /// Set length
+    assert(vector(0, 2).withLength(3) == vector(0, 3));
+    assert(vector(3, 4).withLength(10) == vector(6, 8));
+    assert(vector(3, 0, 0).withLength(2) == vector(2, 0, 0));
 }
 
 unittest{ /// Component-wise binary operations
