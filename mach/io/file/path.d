@@ -3,7 +3,8 @@ module mach.io.file.path;
 private:
 
 import mach.meta.logical : All;
-import mach.traits : isIterable, isString;
+import mach.traits.iter : isIterableOf;
+import mach.traits.string : isString;
 import mach.io.stream : FileStream, write, asrange, asarray;
 import mach.range.asarray : asarray;
 import mach.text.utf : utf8encode;
@@ -55,18 +56,22 @@ public:
 
 /// Represents a file path.
 struct Path{
+    static bool isPosixSep(in dchar ch) pure nothrow @safe {
+        return ch == '/';
+    }
+    
+    static bool isWinSep(in dchar ch) pure nothrow @safe {
+        return ch == '/' || ch == '\\';
+    }
+    
     version(Windows){
         enum CaseInsensitive = true;
         enum DefaultSeparator = '/';
-        static bool issep(in dchar ch) pure nothrow @safe {
-            return ch == '/' || ch == '\\';
-        }
+        alias issep = isWinSep;
     }else{
         enum CaseInsensitive = false;
         enum DefaultSeparator = '/';
-        static bool issep(in dchar ch) pure nothrow @safe {
-            return ch == '/';
-        }
+        alias issep = isPosixSep;
     }
     
     string path;
@@ -110,6 +115,31 @@ struct Path{
             }
             return Path(result);
         }
+    }
+    
+    /// Split on separators and eagerly return an array.
+    /// Leading slashes at the beginning of the path are included at the
+    /// beginning of the first string.
+    string[] split() const {
+        string[] parts;
+        size_t lastSepIndex = 0;
+        bool anyNotSep = false;
+        bool lastWasSep = false;
+        for(size_t i = 0; i < this.length; i++) {
+            const issep = Path.issep(this[i]);
+            if(issep && anyNotSep) {
+                parts ~= this[lastSepIndex + (lastSepIndex == 0 ? 0 : 1) .. i];
+                lastSepIndex = i;
+                lastWasSep = true;
+            }else {
+                anyNotSep = true;
+                lastWasSep = false;
+            }
+        }
+        if(!lastWasSep) {
+            parts ~= this[lastSepIndex + (lastSepIndex == 0 ? 0 : 1) .. $];
+        }
+        return parts;
     }
     
     /// Get the base name of the file, directory, etc. that this path refers to.
@@ -187,6 +217,55 @@ struct Path{
     Path stripext() const{
         immutable ext = this.extension;
         return Path(this.path[0 .. $ - (ext.length ? ext.length + 1 : 0)]);
+    }
+    
+    /// Get a normalized path, i.e. get rid of "./" and "../" and "//" and
+    /// make all path separators the same.
+    Path normalize() const {
+        string[] normalParts;
+        const string[] parts = this.split();
+        foreach(part; parts) {
+            if(part == ".." && normalParts.length && normalParts[$ - 1] != "..") {
+                normalParts.length--;
+            }else if(part.length && part != ".") {
+                normalParts ~= part;
+            }
+        }
+        string normalPath = "";
+        foreach(normalPart; normalParts) {
+            if(normalPath.length) normalPath ~= DefaultSeparator;
+            normalPath ~= normalPart;
+        }
+        return Path(normalPath);
+    }
+    
+    /// Get an absolute path.
+    /// Relative paths become absolute by making them relative to the base path.
+    Path absolute(lazy string basePath = Path.currentdir) const {
+        if(!this.length || this.isAbsolute()) return this;
+        return Path.join(basePath, this);
+    }
+    
+    /// Determine whether a file path is absolute on the current platform.
+    version(Posix) alias isAbsolute = isAbsolutePosix;
+    /// ditto
+    version(Windows) alias isAbsolute = isAbsoluteWin;
+    
+    /// Determine whether a Posix file path is absolute.
+    /// Absolute Posix paths always start with '/'.
+    bool isAbsolutePosix() const {
+        return this.path.length && Path.isPosixSep(this[0]);
+    }
+    
+    /// Determine whether a Windows file path is absolute.
+    /// A Windows path is absolute when it fits one of these forms:
+    /// Relative to current drive "\path" or UNC "\\path"
+    /// Relative to given drive "C:\path"
+    bool isAbsoluteWin() const {
+        return (
+            (this.length && Path.isWinSep(this[0])) ||
+            (this.length >= 3 && (this[1] == ':' && Path.isWinSep(this[2])))
+        );
     }
     
     /// Get the size of a file to which the path refers.
@@ -591,4 +670,32 @@ unittest{ /// Join paths
     assert(Path.join("abc", "/def").path == "abc/def");
     assert(Path.join("abc/", "/def").path == "abc//def");
     assert(Path.join("abc/", "def/", "gh").path == "abc/def/gh");
+}
+
+unittest { /// Absolute paths
+    // isAbsolutePosix
+    assert(Path("/usr/bin").isAbsolutePosix);
+    assert(!Path("foo").isAbsolutePosix);
+    assert(!Path("../foo").isAbsolutePosix);
+    // isAbsoluteWin
+    assert(Path("//UNC").isAbsoluteWin);
+    assert(Path("\\\\UNC").isAbsoluteWin);
+    assert(Path("E:/").isAbsoluteWin);
+    assert(Path("C:/foo").isAbsoluteWin);
+    assert(Path("C:\\foo").isAbsoluteWin);
+    assert(!Path("foo").isAbsoluteWin);
+    assert(!Path("../foo").isAbsoluteWin);
+    // Make absolute
+    assert(Path("/foo/bar").absolute("/root").path == "/foo/bar");
+    assert(Path("foo/bar").absolute("/root").path == "/root/foo/bar");
+}
+
+unittest { /// Normalize paths
+    assert(Path("/root/foo/bar/..").normalize.path == "/root/foo");
+    assert(Path("foo/bar").normalize.path == "foo/bar");
+    assert(Path("foo//bar").normalize.path == "foo/bar");
+    assert(Path("foo/.//bar/./").normalize.path == "foo/bar");
+    assert(Path("foo/bar").normalize.path == "foo/bar");
+    assert(Path("foo/../bar").normalize.path == "bar");
+    assert(Path("foo/bar/..").normalize.path == "foo");
 }
