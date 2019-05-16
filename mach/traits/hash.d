@@ -14,7 +14,7 @@ enum canHash(alias T) = canHash!(typeof(T));
 template canHash(T){
     enum bool canHash = is(typeof({
         T value = T.init;
-        size_t hash = typeid(value).getHash(&value);
+        ulong hash = typeid(value).getHash(&value);
     }));
 }
 
@@ -22,10 +22,10 @@ template canHash(T){
 
 /// Get the hash of some value.
 auto hash(T)(auto ref T value) if(canHash!T){
-    static if(is(typeof({size_t h = value.toHash();}))){
+    static if(is(typeof({ulong h = value.toHash();}))){
         return value.toHash();
     }else{
-        size_t gethash() @trusted{return typeid(value).getHash(&value);}
+        ulong gethash() @trusted{return typeid(value).getHash(&value);}
         return gethash();
     }
 }
