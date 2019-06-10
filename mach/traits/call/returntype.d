@@ -87,6 +87,7 @@ template ReturnsExactlyWith(T...) if(T.length >= 2){
 unittest{
     void fn1(){}
     int fn2(){return 0;}
+    int fn3(in int x){return 0;}
     static assert(is(ReturnType!(int function()) == int));
     static assert(is(ReturnType!(string function()) == string));
     static assert(is(ReturnType!(void function()) == void));
@@ -95,6 +96,7 @@ unittest{
     static assert(is(ReturnType!(int delegate(int)) == int));
     static assert(is(ReturnType!fn1 == void));
     static assert(is(ReturnType!fn2 == int));
+    static assert(is(ReturnType!fn3 == int));
 }
 unittest{
     struct StaticCall{static int opCall(int){return 0;}}
