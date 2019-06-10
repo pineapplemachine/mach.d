@@ -13,6 +13,7 @@ public:
 
 import mach.types.keyvaluepair;
 import mach.types.manage;
+import mach.types.option;
 import mach.types.rebindable;
 import mach.types.refcounted;
 import mach.types.tuple;
