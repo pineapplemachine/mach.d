@@ -18,6 +18,62 @@ assert(pair.value == 1);
 ```
 
 
+## mach.types.option
+
+
+This module implements an Option type, sometimes called an Optional or Maybe type.
+The implemented `Option` type contains either no value or one value.
+
+``` D
+auto option = Option!int(123);
+assert(option.ok);
+assert(!option.empty);
+assert(option.value == 123);
+```
+
+``` D
+// Accessing `option.value` would produce an assertion error
+auto option = Option!int.None;
+assert(!option.ok);
+assert(option.empty);
+// Get value with fallback
+assert(option.get(900) == 900);
+```
+
+
+The module additionally provides the `None` and `Some` helpers, which
+allow for more concise expressions related to creating `Option` objects.
+
+``` D
+auto option = Some("Hello world!");
+assert(option.value == "Hello world!");
+```
+
+``` D
+auto option = None!string;
+assert(option.empty);
+```
+
+
+`Option` objects are valid as ranges, which means that you can use them
+easily in combination with mach's range-related functions such as `filter`
+or `map`.
+
+``` D
+auto range = Some(500).asrange;
+foreach(i; range) {
+    assert(i == 500);
+}
+```
+
+``` D
+auto range = None!int.asrange;
+foreach(i; range) {
+    assert(false); // Range is empty
+}
+```
+
+
 ## mach.types.rebindable
 
 
