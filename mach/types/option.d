@@ -2,8 +2,6 @@ module mach.types.option;
 
 private:
 
-import mach.traits.call.returntype : ReturnType;
-
 /++ Docs
 
 This module implements an Option type, sometimes called an Optional or Maybe type.
