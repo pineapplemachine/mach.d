@@ -73,48 +73,58 @@ public:
 
 
 /// True when any of the inputs meet a predicate.
-template Any(alias predicate, T...){
-    static if(T.length == 0){
-        enum bool Any = false;
-    }else static if(T.length == 1){
-        enum bool Any = predicate!(T[0]);
-    }else{
-        enum bool Any = (
-            Any!(predicate, T[0]) ||
-            Any!(predicate, T[1 .. $])
-        );
+bool Any(alias predicate, T...)() {
+    static if(T.length == 0) {
+        return false;
+    }else static if(T.length == 1) {
+        return cast(bool) predicate!(T[0]);
+    }else {
+        foreach(Item; T) {
+            if(predicate!Item) {
+                return true;
+            }
+        }
+        return false;
     }
 }
+
 /// True when all of the inputs meet a predicate.
-template All(alias predicate, T...){
-    static if(T.length == 0){
-        enum bool All = true;
-    }else static if(T.length == 1){
-        enum bool All = predicate!(T[0]);
-    }else{
-        enum bool All = (
-            All!(predicate, T[0]) &&
-            All!(predicate, T[1 .. $])
-        );
+bool All(alias predicate, T...)() {
+    static if(T.length == 0) {
+        return true;
+    }else static if(T.length == 1) {
+        return cast(bool) predicate!(T[0]);
+    }else {
+        foreach(Item; T) {
+            if(!predicate!Item) {
+                return false;
+            }
+        }
+        return true;
     }
 }
 
 /// True when none of the inputs meet a predicate.
-enum bool None(alias predicate, T...) = !Any!(predicate, T);
+bool None(alias predicate, T...)() {
+    return !(Any!(predicate, T)());
+}
 
 
 
 /// Returns the number of inputs meeting a predicate.
-template Count(alias predicate, T...){
-    static if(T.length == 0){
-        enum size_t Count = 0;
-    }else static if(T.length == 1){
-        enum size_t Count = predicate!(T[0]) ? 1 : 0;
-    }else{
-        enum size_t Count = (
-            Count!(predicate, T[0]) +
-            Count!(predicate, T[1 .. $])
-        );
+size_t Count(alias predicate, T...)() {
+    static if(T.length == 0) {
+        return 0;
+    }else static if(T.length == 1) {
+        return predicate!(T[0]) ? 1 : 0;
+    }else {
+        size_t sum = 0;
+        foreach(Item; T) {
+            if(predicate!Item) {
+                sum++;
+            }
+        }
+        return sum;
     }
 }
 
@@ -132,6 +142,7 @@ template First(alias predicate, T...){
         static assert(false, "Found no elements matching the predicate.");
     }
 }
+
 /// Returns the last element to meet a predicate.
 template Last(alias predicate, T...){
     static if(T.length == 0){
