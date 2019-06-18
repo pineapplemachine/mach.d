@@ -81,6 +81,19 @@ static assert(is(typeof({fn1(ints.init);})));
 ```
 
 
+## mach.meta.contains
+
+
+Given at least one argument, `Contains` determines whether
+the first template argument is equivalent to any of the
+subsequent arguments.
+
+``` D
+static assert(Contains!(int, byte, short, int));
+static assert(!Contains!(int, void, void, void));
+```
+
+
 ## mach.meta.ctint
 
 
@@ -110,6 +123,22 @@ static assert(is(Filter!(NotVoid, void, int, void, long) == Aliases!(int, long))
 ``` D
 enum bool isInt(T) = is(T == int);
 static assert(is(Filter!(isInt, double, float, long) == Aliases!()));
+```
+
+
+## mach.meta.indexof
+
+
+Given at least one argument, `IndexOf` determines whether
+the first template argument is equivalent to any of the
+subsequent arguments, and returns the index of that argument
+if so. The function returns -1 when the first argument was
+missing or when it was not equivalent to any of the successive
+arguments.
+
+``` D
+static assert(IndexOf!(int, byte, short, int));
+static assert(IndexOf!(int, void, void, void) == -1);
 ```
 
 

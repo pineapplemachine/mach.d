@@ -13,11 +13,13 @@ public:
 
 import mach.meta.adjoin;
 import mach.meta.aliases;
+import mach.meta.contains;
 import mach.meta.ctint;
 import mach.meta.filter;
 import mach.meta.logical;
 import mach.meta.map;
 import mach.meta.numericseq;
+import mach.meta.indexof;
 import mach.meta.predicates;
 import mach.meta.reduce;
 import mach.meta.repeat;
