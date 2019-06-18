@@ -12,7 +12,9 @@ Perhaps most notably, `extractbit` and `extractbits`, and `injectbit` and
 
 public:
 
+import mach.math.bits.clz;
 import mach.math.bits.compare;
+import mach.math.bits.ctz;
 import mach.math.bits.extract;
 import mach.math.bits.hamming;
 import mach.math.bits.inject;

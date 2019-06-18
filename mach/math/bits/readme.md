@@ -6,6 +6,19 @@ Perhaps most notably, `extractbit` and `extractbits`, and `injectbit` and
 `injectbits`, which can be used to read and write specific bits in a value.
 
 
+## mach.math.bits.clz
+
+
+The `clz` function returns the number of leading zeros for an integer value.
+It returns the number of bits in the value when there were no set bits.
+
+``` D
+assert(clz!int(-1) == 0);
+assert(clz!int(0) == 32);
+assert(clz!int(0x00F00000) == 8);
+```
+
+
 ## mach.math.bits.compare
 
 
@@ -20,6 +33,19 @@ and defaults to the total number of bits in that type.
 assert(bitsidentical(0xabcdef, 0xabcdef));
 // Compare low bits
 assert(bitsidentical!16(ushort(0x1234), uint(0xffff1234)));
+```
+
+
+## mach.math.bits.ctz
+
+
+The `ctz` function returns the number of trailing zeros for an integer value.
+It returns the number of bits in the value when there were no set bits.
+
+``` D
+assert(ctz!int(1) == 0);
+assert(ctz!int(0) == 32);
+assert(ctz!int(0x00F00000) == 20);
 ```
 
 
