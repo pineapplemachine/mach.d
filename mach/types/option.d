@@ -101,7 +101,7 @@ struct Option(T) {
     }
     
     /// Get an OptionRange for enumerating the option's content.
-    @property auto asrange() inout {
+    @property auto asrange() {
         return OptionRange!T(this.content, this.empty);
     }
     
@@ -125,6 +125,10 @@ struct Option(T) {
     bool opCast(To: bool)() const {
         return !this.empty;
     }
+    
+    auto opEquals(T)(auto ref Option!T option) {
+        return this.empty ? option.empty : this.content == option.content;
+    }
 }
 
 /// Range for enumerating the zero or one element in an Option object.
@@ -145,7 +149,7 @@ struct OptionRange(T) {
     
     /// Get an Option containing the same information as whatever Option
     /// used to construct the range.
-    auto option() inout {
+    auto option() {
         return Option!T(this.content, this.optionEmpty);
     }
     
@@ -212,6 +216,7 @@ unittest { /// Properties of empty Option
     assert(!option.ok);
     assert(!cast(bool) option);
     assert(option.get(20) == 20);
+    assert(option == option);
 }
 
 unittest { /// Properties of non-empty Option
@@ -220,6 +225,9 @@ unittest { /// Properties of non-empty Option
     assert(option.ok);
     assert(cast(bool) option);
     assert(option.get(20) == 10);
+    assert(option == option);
+    assert(option != Option!double(15));
+    assert(option != Option!double.None);
 }
 
 unittest { /// Empty Option as range
@@ -240,4 +248,24 @@ unittest { /// Non-empty Option as range
     assert(range.empty);
     assert(range.length == 1);
     assert(range.remaining == 0);
+}
+
+unittest { /// opEquals with edge-casey wrapped values
+    struct ConstOpEquals {
+        int x;
+        bool opEquals(in typeof(this) other) const {
+            return this.x == other.x;
+        }
+    }
+    struct MutOpEquals {
+        int x;
+        bool opEquals(typeof(this) other) {
+            return this.x == other.x;
+        }
+    }
+    const x = ConstOpEquals(4);
+    assert(Some(x) == Some(x));
+    assert(Some(x) != Some(ConstOpEquals(2)));
+    assert(Some(MutOpEquals(4)) == Some(MutOpEquals(4)));
+    assert(Some(MutOpEquals(1)) != Some(MutOpEquals(2)));
 }
