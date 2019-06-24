@@ -115,6 +115,10 @@ to a padded serialization function, a `NumberWriteError` will result except
 for when compiling in release mode. (In release mode the check is omitted, and
 the function may produce nonsense data.)
 
+If you want to write a negative integer with one of these functions, then
+you probably want to cast it to its unsigned complement before passing it
+to the write function.
+
 +/
 
 unittest{ /// Example
@@ -624,200 +628,151 @@ alias writeb64 = WriteBase!64;
 
 
 
-version(unittest){
-    private:
-    import mach.test;
-    auto IntsTest(T)(T num){
-        tests("byte", {
-            if(num >= byte.min && num <= byte.max) NumTest!byte(cast(byte) num);
-        });
-        tests("ubyte", {
-            if(num >= ubyte.min && num <= ubyte.max) NumTest!ubyte(cast(ubyte) num);
-        });
-        tests("short", {
-            if(num >= short.min && num <= short.max) NumTest!short(cast(short) num);
-        });
-        tests("ushort", {
-            if(num >= ushort.min && num <= ushort.max) NumTest!ushort(cast(ushort) num);
-        });
-        tests("int", {
-            if(num >= int.min && num <= int.max) NumTest!int(cast(int) num);
-        });
-        tests("uint", {
-            if(num >= uint.min && num <= uint.max) NumTest!uint(cast(uint) num);
-        });
-        tests("long", {
-            if(num >= long.min && num <= long.max) NumTest!long(cast(long) num);
-        });
-        tests("ulong", {
-            if(num >= ulong.min && num <= ulong.max) NumTest!ulong(cast(ulong) num);
-        });
+private version(unittest) {
+    import mach.test.assertthrows : assertthrows;
+    void IntsTest(T)(T num){
+        if(num >= byte.min && num <= byte.max) NumTest!byte(cast(byte) num);
+        if(num >= ubyte.min && num <= ubyte.max) NumTest!ubyte(cast(ubyte) num);
+        if(num >= short.min && num <= short.max) NumTest!short(cast(short) num);
+        if(num >= ushort.min && num <= ushort.max) NumTest!ushort(cast(ushort) num);
+        if(num >= int.min && num <= int.max) NumTest!int(cast(int) num);
+        if(num >= uint.min && num <= uint.max) NumTest!uint(cast(uint) num);
+        if(num >= long.min && num <= long.max) NumTest!long(cast(long) num);
+        if(num >= ulong.min && num <= ulong.max) NumTest!ulong(cast(ulong) num);
     }
-    auto NumTest(T)(T num){
-        bool failpred(Throwable e){
-            return (
-                cast(NumberParseException) e !is null ||
-                cast(NumberWriteError) e !is null
-            );
+    void NumTest(T)(T num){
+        BaseTest!(ParseBase!10, WriteBase!10, T)(num);
+        BaseTest!(ParseBase!16, WriteBase!16, T)(num);
+        BaseTest!(ParseBase!8, WriteBase!8, T)(num);
+        BaseTest!(ParseBase!2, WriteBase!2, T)(num);
+        BaseTest!(ParseBase!3, WriteBase!3, T)(num);
+        if(num >= -64 && num <= 64) {
+            BaseTest!(ParseBase!1, WriteBase!1, T)(num);
         }
-        tests("Decimal", {
-            BaseTest!(ParseBase!10, WriteBase!10, T)(num);
-        });
-        tests("Hex", {
-            BaseTest!(ParseBase!16, WriteBase!16, T)(num);
-            if(num >= 0){
+        if(num >= 0){
+            // Successfully write padded non-negative numbers
+            BaseTest!(ParseBase!16, WriteBasePadded!16, T)(num);
+            BaseTest!(ParseBase!8, WriteBasePadded!8, T)(num);
+            BaseTest!(ParseBase!2, WriteBasePadded!2, T)(num);
+            BaseTest!(ParseBase!3, WriteBasePadded!3, T)(num);
+            BaseTest!(ParseBase!32, WriteBase!32, T)(num);
+            BaseTest!(ParseBase!64, WriteBase!64, T)(num);
+        }else {
+            // Negative numbers can't be written with padding
+            // Explicitly cast the argument to an unsigned type first
+            assertthrows!NumberWriteError({
                 BaseTest!(ParseBase!16, WriteBasePadded!16, T)(num);
-            }else{
-                testfail(&failpred, {
-                    BaseTest!(ParseBase!16, WriteBasePadded!16, T)(num);
-                });
-            }
-        });
-        tests("Octal", {
-            BaseTest!(ParseBase!8, WriteBase!8, T)(num);
-            if(num >= 0){
+            });
+            assertthrows!NumberWriteError({
                 BaseTest!(ParseBase!8, WriteBasePadded!8, T)(num);
-            }else{
-                testfail(&failpred, {
-                    BaseTest!(ParseBase!8, WriteBasePadded!8, T)(num);
-                });
-            }
-        });
-        tests("Binary", {
-            BaseTest!(ParseBase!2, WriteBase!2, T)(num);
-            if(num >= 0){
+            });
+            assertthrows!NumberWriteError({
                 BaseTest!(ParseBase!2, WriteBasePadded!2, T)(num);
-            }else{
-                testfail(&failpred, {
-                    BaseTest!(ParseBase!2, WriteBasePadded!2, T)(num);
-                });
-            }
-        });
-        tests("Ternary", {
-            BaseTest!(ParseBase!3, WriteBase!3, T)(num);
-            if(num >= 0){
+            });
+            assertthrows!NumberWriteError({
                 BaseTest!(ParseBase!3, WriteBasePadded!3, T)(num);
-            }else{
-                testfail(&failpred, {
-                    BaseTest!(ParseBase!3, WriteBasePadded!3, T)(num);
-                });
-            }
-        });
-        tests("Base 32", {
-            if(num >= 0){
+            });
+            assertthrows!NumberWriteError({
                 BaseTest!(ParseBase!32, WriteBase!32, T)(num);
-            }else{
-                testfail(&failpred, {
-                    BaseTest!(ParseBase!32, WriteBase!32, T)(num);
-                });
-            }
-        });
-        tests("Base 64", {
-            if(num >= 0){
+            });
+            assertthrows!NumberWriteError({
                 BaseTest!(ParseBase!64, WriteBase!64, T)(num);
-            }else{
-                testfail(&failpred, {
-                    BaseTest!(ParseBase!64, WriteBase!64, T)(num);
-                });
-            }
-        });
-        tests("Unary", {
-            if(num >= -64 && num <= 64) BaseTest!(ParseBase!1, WriteBase!1, T)(num);
-        });
+            });
+        }
     }
-    auto BaseTest(alias parse, alias write, T)(T num){
-        testeq(parse!T(write(num)), num);
+    void BaseTest(alias parse, alias write, T)(T num){
+        assert(parse!T(write(num)) == num);
     }
 }
-unittest{
-    tests("Simple", {
-        tests("Writing", {
-            testeq(WriteBase!10(0), "0");
-            testeq(WriteBase!10(1), "1");
-            testeq(WriteBase!10(-1), "-1");
-            testeq(WriteBase!10(10), "10");
-            testeq(WriteBase!10(-10), "-10");
-            testeq(WriteBase!10(123456789), "123456789");
-            testeq(WriteBase!1(0), "");
-            testeq(WriteBase!1(1), "1");
-            testeq(WriteBase!1(-1), "-1");
-            testeq(WriteBase!1(4), "1111");
-            testeq(WriteBase!1(-4), "-1111");
-            testeq(WriteBase!2(0), "0");
-            testeq(WriteBase!2(1), "1");
-            testeq(WriteBase!2(-1), "-1");
-            testeq(WriteBase!2(2), "10");
-            testeq(WriteBase!3(3), "10");
-            testeq(WriteBase!3(-3), "-10");
-            testeq(WriteBase!16(0x1234abcd), "1234ABCD");
-            testeq(WriteBase!16(0xabcd1234), "ABCD1234");
-        });
-        tests("Parsing", {
-            testeq(ParseBase!10("0"), 0);
-            testeq(ParseBase!10("1"), 1);
-            testeq(ParseBase!10("-1"), -1);
-            testeq(ParseBase!10("10"), 10);
-            testeq(ParseBase!10("-10"), -10);
-            testeq(ParseBase!10("123456789"), 123456789);
-            testeq(ParseBase!1(""), 0);
-            testeq(ParseBase!1("1"), 1);
-            testeq(ParseBase!1("-1"), -1);
-            testeq(ParseBase!1("1111"), 4);
-            testeq(ParseBase!1("-1111"), -4);
-            testeq(ParseBase!2("0"), 0);
-            testeq(ParseBase!2("1"), 1);
-            testeq(ParseBase!2("-1"), -1);
-            testeq(ParseBase!2("10"), 2);
-            testeq(ParseBase!3("10"), 3);
-            testeq(ParseBase!3("-10"), -3);
-            testeq(ParseBase!16("1234abcd"), 0x1234abcd);
-            testeq(ParseBase!16("ABCD1234"), 0xabcd1234);
-        });
-        tests("Combination", {
-            IntsTest(0);
-            IntsTest(1);
-            IntsTest(10);
-            IntsTest(100);
-            IntsTest(123);
-            IntsTest(255);
-            IntsTest(256);
-            IntsTest(12341234);
-            IntsTest(int.max);
-            IntsTest(long.max);
-            IntsTest(uint.max);
-            IntsTest(ulong.max);
-            IntsTest(-1);
-            IntsTest(-10);
-            IntsTest(-100);
-            IntsTest(-123);
-            IntsTest(-255);
-            IntsTest(-256);
-            IntsTest(-12341234);
-            IntsTest(int.min);
-            IntsTest(long.min);
-        });
-    });
-    tests("With character type specified", {
-        // char
-        string cbin = writebin!char(ubyte(7));
-        testeq(cbin, "00000111");
-        string cdec = writeint!char(10);
-        testeq(cdec, "10");
-        string chex = writehex!char(uint(0x34F));
-        testeq(chex, "0000034F");
-        // wchar
-        wstring wbin = writebin!wchar(ubyte(7));
-        testeq(wbin, "00000111"w);
-        wstring wdec = writeint!wchar(10);
-        testeq(wdec, "10"w);
-        wstring whex = writehex!wchar(uint(0x34F));
-        testeq(whex, "0000034F"w);
-        // dchar
-        dstring dbin = writebin!dchar(ubyte(7));
-        testeq(dbin, "00000111"d);
-        dstring ddec = writeint!dchar(10);
-        testeq(ddec, "10"d);
-        dstring dhex = writehex!dchar(uint(0x34F));
-        testeq(dhex, "0000034F"d);
-    });
+
+unittest { /// Write integers
+    assert(WriteBase!10(0) == "0");
+    assert(WriteBase!10(1) == "1");
+    assert(WriteBase!10(-1) == "-1");
+    assert(WriteBase!10(10) == "10");
+    assert(WriteBase!10(-10) == "-10");
+    assert(WriteBase!10(123456789) == "123456789");
+    assert(WriteBase!1(0) == "");
+    assert(WriteBase!1(1) == "1");
+    assert(WriteBase!1(-1) == "-1");
+    assert(WriteBase!1(4) == "1111");
+    assert(WriteBase!1(-4) == "-1111");
+    assert(WriteBase!2(0) == "0");
+    assert(WriteBase!2(1) == "1");
+    assert(WriteBase!2(-1) == "-1");
+    assert(WriteBase!2(2) == "10");
+    assert(WriteBase!3(3) == "10");
+    assert(WriteBase!3(-3) == "-10");
+    assert(WriteBase!16(0x1234abcd) == "1234ABCD");
+    assert(WriteBase!16(0xabcd1234) == "ABCD1234");
+}
+
+unittest { /// Parse integers
+    assert(ParseBase!10("0") == 0);
+    assert(ParseBase!10("1") == 1);
+    assert(ParseBase!10("-1") == -1);
+    assert(ParseBase!10("10") == 10);
+    assert(ParseBase!10("-10") == -10);
+    assert(ParseBase!10("123456789") == 123456789);
+    assert(ParseBase!1("") == 0);
+    assert(ParseBase!1("1") == 1);
+    assert(ParseBase!1("-1") == -1);
+    assert(ParseBase!1("1111") == 4);
+    assert(ParseBase!1("-1111") == -4);
+    assert(ParseBase!2("0") == 0);
+    assert(ParseBase!2("1") == 1);
+    assert(ParseBase!2("-1") == -1);
+    assert(ParseBase!2("10") == 2);
+    assert(ParseBase!3("10") == 3);
+    assert(ParseBase!3("-10") == -3);
+    assert(ParseBase!16("1234abcd") == 0x1234abcd);
+    assert(ParseBase!16("ABCD1234") == 0xabcd1234);
+};
+
+unittest { /// Writing and integer then parsing it provides the same value
+    IntsTest(0);
+    IntsTest(1);
+    IntsTest(10);
+    IntsTest(100);
+    IntsTest(123);
+    IntsTest(255);
+    IntsTest(256);
+    IntsTest(12341234);
+    IntsTest(int.max);
+    IntsTest(long.max);
+    IntsTest(uint.max);
+    IntsTest(ulong.max);
+    IntsTest(-1);
+    IntsTest(-10);
+    IntsTest(-100);
+    IntsTest(-123);
+    IntsTest(-255);
+    IntsTest(-256);
+    IntsTest(-12341234);
+    IntsTest(int.min);
+    IntsTest(long.min);
+}
+
+unittest { /// Specify character type
+    // char
+    string cbin = writebin!char(ubyte(7));
+    assert(cbin == "00000111");
+    string cdec = writeint!char(10);
+    assert(cdec == "10");
+    string chex = writehex!char(uint(0x34F));
+    assert(chex == "0000034F");
+    // wchar
+    wstring wbin = writebin!wchar(ubyte(7));
+    assert(wbin == "00000111"w);
+    wstring wdec = writeint!wchar(10);
+    assert(wdec == "10"w);
+    wstring whex = writehex!wchar(uint(0x34F));
+    assert(whex == "0000034F"w);
+    // dchar
+    dstring dbin = writebin!dchar(ubyte(7));
+    assert(dbin == "00000111"d);
+    dstring ddec = writeint!dchar(10);
+    assert(ddec == "10"d);
+    dstring dhex = writehex!dchar(uint(0x34F));
+    assert(dhex == "0000034F"d);
 }
