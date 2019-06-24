@@ -73,41 +73,43 @@ public:
 
 
 /// True when any of the inputs meet a predicate.
-bool Any(alias predicate, T...)() {
-    static if(T.length == 0) {
-        return false;
-    }else static if(T.length == 1) {
-        return cast(bool) predicate!(T[0]);
-    }else {
-        foreach(Item; T) {
-            if(predicate!Item) {
-                return true;
+template Any(alias predicate, T...) {
+    enum bool Any = () {
+        static if(T.length == 0) {
+            return false;
+        }else static if(T.length == 1) {
+            return cast(bool) predicate!(T[0]);
+        }else {
+            foreach(Item; T) {
+                if(predicate!Item) {
+                    return true;
+                }
             }
+            return false;
         }
-        return false;
-    }
+    }();
 }
 
 /// True when all of the inputs meet a predicate.
-bool All(alias predicate, T...)() {
-    static if(T.length == 0) {
-        return true;
-    }else static if(T.length == 1) {
-        return cast(bool) predicate!(T[0]);
-    }else {
-        foreach(Item; T) {
-            if(!predicate!Item) {
-                return false;
+template All(alias predicate, T...) {
+    enum bool All = () {
+        static if(T.length == 0) {
+            return true;
+        }else static if(T.length == 1) {
+            return cast(bool) predicate!(T[0]);
+        }else {
+            foreach(Item; T) {
+                if(!predicate!Item) {
+                    return false;
+                }
             }
+            return true;
         }
-        return true;
-    }
+    }();
 }
 
 /// True when none of the inputs meet a predicate.
-bool None(alias predicate, T...)() {
-    return !(Any!(predicate, T)());
-}
+enum bool None(alias predicate, T...) = !Any!(predicate, T);
 
 
 
@@ -164,14 +166,18 @@ version(unittest){
 }
 unittest{
     // Any
-    static assert(Any!(isIntegral, int, int, float));
-    static assert(!Any!(isIntegral, float, float));
+    static assert(Any!(isIntegral) is false);
+    static assert(Any!(isIntegral, int, int, float) is true);
+    static assert(Any!(isIntegral, float, float) is false);
     // All
-    static assert(All!(isIntegral, int, int));
-    static assert(!All!(isIntegral, int, int, float));
+    static assert(All!(isIntegral) is true);
+    static assert(All!(isIntegral, int, int) is true);
+    static assert(All!(isIntegral, int, int, float) is false);
     // None
-    static assert(None!(isIntegral, float, float));
+    static assert(None!(isIntegral) is true);
+    static assert(None!(isIntegral, float, float) is true);
     // Count
+    static assert(Count!(isIntegral) == 0);
     static assert(Count!(isIntegral, int, float, int) == 2);
     static assert(Count!(isIntegral, int) == 1);
     static assert(Count!(isIntegral, float) == 0);
