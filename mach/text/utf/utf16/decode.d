@@ -46,7 +46,7 @@ auto utf16decode(Iter)(auto ref Iter iter) if(canUTF16Decode!Iter){
 static dchar getutf16surrogate(in wchar first, in wchar second){
     static const error = new UTFDecodeInvalidException("UTF-16");
     if(second < 0xdc00 || second > 0xdfff) throw error;
-    return 0x10000 | ((first & 0x3ff) << 10) | (second & 0x3ff);
+    return 0x10000 + (((first & 0x7ff) << 10) | (second & 0x3ff));
 }
 
 
@@ -155,6 +155,8 @@ unittest{
     assert("😃"w.utf16decode.equals("😃"d));
     assert("?😃?"w.utf16decode.equals("?😃?"d));
     assert("!אツ😃"w.utf16decode.equals("!אツ😃"d));
+    assert("𤭢"w.utf16decode.equals("𤭢"d));
+    assert("\U0010F000"w.utf16decode.equals("\U0010F000"d));
 }
 unittest{
     assert("test"w.asrange.utf16decode.equals("test"d));
