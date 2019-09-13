@@ -6,8 +6,12 @@
     "description": "Library for the D programming language.",
     "copyright": "Copyright © 2018, Sophie Kirschner",
     "license": "Zlib",
+    "buildRequirements": ["allowWarnings"],
     "sourcePaths": ["mach"],
     "importPaths": ["."],
+    "targetType": "library",
+    "targetPath": "lib",
+    "targetName": "mach",
     "excludedSourceFiles": [
         "**/test.d",
         "**/wip_*.d",
