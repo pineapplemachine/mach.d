@@ -24,10 +24,6 @@ regularly tests on as many platforms as possible.)
 The majority of this package depends only on the druntime and D's standard library,
 Phobos, and I'm working on cutting out the remaining Phobos dependencies.
 
-The `mach.sdl` package requires some additional dependencies.
-See the [package readme](https://github.com/pineapplemachine/mach.d/blob/master/mach/sdl/readme.md)
-for details.
-
 ## Usage
 
 The `mach` folder should be placed where you are loading dependencies from.

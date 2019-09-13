@@ -246,6 +246,10 @@ to a padded serialization function, a `NumberWriteError` will result except
 for when compiling in release mode. (In release mode the check is omitted, and
 the function may produce nonsense data.)
 
+If you want to write a negative integer with one of these functions, then
+you probably want to cast it to its unsigned complement before passing it
+to the write function.
+
 ``` D
 import mach.test.assertthrows : assertthrows;
 assert(byte(16).writehex == "10"); // Positive signed inputs ok.
