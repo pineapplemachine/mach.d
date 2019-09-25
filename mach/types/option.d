@@ -154,7 +154,7 @@ struct OptionRange(T) {
     }
     
     /// Returns 1 when the Option was not empty. Returns 0 otherwise.
-    alias opDollar = this.length;
+    alias opDollar = typeof(this).length;
     
     /// Ditto
     size_t length() const {
