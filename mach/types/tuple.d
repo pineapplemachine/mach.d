@@ -3,6 +3,7 @@ module mach.types.tuple;
 private:
 
 import mach.meta.logical : Any, All;
+import mach.meta.repeat : Repeat;
 import mach.types.types : Types, isTypes;
 import mach.traits.op : AsUnaryOp, isUnaryOpPlural, AsBinaryOp;
 import mach.traits.op : isBinaryOpPlural, canCastPlural;
@@ -90,8 +91,14 @@ template isTuple(T...) if(T.length == 1){
 
 
 /// Build a tuple from the given values.
-auto tuple(T...)(T args){
-    return Tuple!T(args);
+auto tuple(T...)(auto ref T values) {
+    return Tuple!T(values);
+}
+
+/// Build a tuple from the values in a static array.
+auto tupleFromArray(T, size_t N)(auto ref T[N] array) {
+    alias ArrayTuple = Tuple!(Repeat!(N, T));
+    return ArrayTuple(array);
 }
 
 
@@ -160,16 +167,22 @@ struct Tuple(X...){
     
     alias expand this;
     
-    static if(T.length){
-        this(T values){
-            this.expand = values;
-        }
-    }else{
-        /// Silence default constructor nonsense, allow construction with
-        /// an empty list of arguments.
-        static typeof(this) opCall(){
-            typeof(this) value; return value;
-        }
+    /// Initialize values given a series of arguments
+    static if(T.length) this(T values) {
+        this.expand = values;
+    }
+    
+    /// Initialize values via a static array.
+    static if(T.length) this(A)(auto ref A[T.length] array) if(
+        true//canAssignTuple!(typeof(this), Tuple!(Repeat!(T.length, A)))
+    ){
+        foreach(i, _; T) this.expand[i] = array[i];
+    }
+        
+    /// Silence default constructor nonsense; allow construction with
+    /// an empty list of arguments.
+    static if(T.length == 0) static typeof(this) opCall() {
+        typeof(this) value; return value;
     }
     
     /// Return another tuple which contains a slice of those values in this one.
@@ -178,9 +191,15 @@ struct Tuple(X...){
     ){
         return tuple(this.expand[low .. high]);
     }
+    /// Ditto
+    auto ref slice(size_t low, size_t high)() const if(
+        low >= 0 && high >= low && high <= this.length
+    ){
+        return tuple(this.expand[low .. high]);
+    }
     
-    /// Return a tuple which is a concatenation of this and some other tuples.
-    auto ref concat(Args...)(auto ref Args args) if(All!(isTuple, Args)){
+    /// Ditto
+    auto ref concat(Args...)(auto ref Args args) const if(All!(isTuple, Args)) {
         static if(Args.length == 0){
             return this;
         }else static if(Args.length == 1){
@@ -193,31 +212,36 @@ struct Tuple(X...){
     /// Return a tuple for which each value is the result of applying a unary
     /// operator to every value of this tuple.
     auto ref opUnary(string op)() if(
+        (op == `++` || op == `--`) &&
         canUnaryOpTuple!(op, typeof(this))
     ){
-        static if(op == `++` || op == `--`){
-            foreach(i, _; T){
-                mixin(op ~ `this.expand[i];`);
-            }
+        foreach(i, _; T){
+            mixin(op ~ `this.expand[i];`);
+        }
+        return this;
+    }
+    
+    auto ref opUnary(string op)() const if(
+        (op != `++` && op != `--`) &&
+        canUnaryOpTuple!(op, typeof(this))
+    ){
+        alias UnOp = AsUnaryOp!op;
+        static if(T.length == 0){
             return this;
+        }else static if(T.length == 1){
+            return tuple(UnOp(this.expand));
         }else{
-            alias UnOp = AsUnaryOp!op;
-            static if(T.length == 0){
-                return this;
-            }else static if(T.length == 1){
-                return tuple(UnOp(this.expand));
-            }else{
-                return tuple(
-                    UnOp(this.expand[0]),
-                    this.slice!(1, this.length).opUnary!op().expand
-                );
-            }
+            return tuple(
+                UnOp(this.expand[0]),
+                this.slice!(1, this.length).opUnary!op().expand
+            );
         }
     }
     
     /// Return a tuple for which each value is the result of applying a binary
     /// operator to every pair of values between this tuple and another.
-    auto ref opBinary(string op, R)(auto ref R rhs) if(
+    auto ref opBinary(string op, R)(auto ref R rhs) const if(
+        op != "==" && op != "!=" &&
         canBinaryOpTuple!(op, typeof(this), R)
     ){
         alias BinOp = AsBinaryOp!op;
@@ -235,14 +259,16 @@ struct Tuple(X...){
         }
     }
     
-    auto ref opBinary(string op, R...)(auto ref R rhs) if(
+    auto ref opBinary(string op, R...)(auto ref R rhs) const if(
+        op != "==" && op != "!=" &&
         !canBinaryOpTuple!(op, typeof(this), R) &&
         isBinaryOpPlural!(AsBinaryOp!op, Types, .Types!R)
     ){
         return this.opBinary!op(tuple(rhs));
     }
     
-    auto ref opBinaryRight(string op, L...)(auto ref L lhs) if(
+    auto ref opBinaryRight(string op, L...)(auto ref L lhs) const if(
+        op != "==" && op != "!=" &&
         !canBinaryOpTuple!(op, L, typeof(this)) &&
         isBinaryOpPlural!(AsBinaryOp!op, .Types!L, Types)
     ){
@@ -262,6 +288,12 @@ struct Tuple(X...){
         foreach(i, _; T) this.expand[i] = rhs[i];
     }
     
+    void opAssign(A)(auto ref A[T.length] rhs) if(
+        true//canAssignTuple!(typeof(this), Tuple!(Repeat!(T.length, A)))
+    ){
+        foreach(i, _; T) this.expand[i] = rhs[i];
+    }
+    
     void opOpAssign(string op, R...)(auto ref R rhs) if(
         canOpAssignTuple!(op, typeof(this), R)
     ){
@@ -276,7 +308,7 @@ struct Tuple(X...){
     }
     
     /// Compare equality of each pair of values with another tuple.
-    auto ref opEquals(R)(auto ref R rhs) if(
+    auto ref opEquals(R)(auto ref R rhs) const if(
         canBinaryOpTuple!(`==`, typeof(this), R)
     ){
         foreach(i, _; T){
@@ -287,7 +319,7 @@ struct Tuple(X...){
     
     /// Compare equality of each pair of values with a compatible sequence of
     /// arguments.
-    auto opEquals(R...)(auto ref R rhs) if(
+    auto opEquals(R...)(auto ref R rhs) const if(
         !canBinaryOpTuple!(`==`, typeof(this), R) &&
         isBinaryOpPlural!(AsBinaryOp!`==`, Types, .Types!R)
     ){
@@ -302,7 +334,7 @@ struct Tuple(X...){
     /// then this method returns zero.
     /// Think of it like ordering strings alphabetically, where each string is
     /// actually a tuple of characters.
-    auto opCmp(R)(auto ref R rhs) if(
+    auto opCmp(R)(auto ref R rhs) const if(
         canBinaryOpTuple!(`>`, typeof(this), R) &&
         canBinaryOpTuple!(`<`, typeof(this), R)
     ){
@@ -322,7 +354,7 @@ struct Tuple(X...){
         }
     }
     
-    auto opCmp(R...)(auto ref R rhs) if(
+    auto opCmp(R...)(auto ref R rhs) const if(
         !(
             canBinaryOpTuple!(`>`, typeof(this), R) &&
             canBinaryOpTuple!(`<`, typeof(this), R)
@@ -335,7 +367,7 @@ struct Tuple(X...){
     }
     
     /// Cast this tuple to another type of tuple.
-    auto opCast(To)() if(canCastTuple!(typeof(this), To)){
+    auto opCast(To)() const if(canCastTuple!(typeof(this), To)){
         static if(To.length == 0){
             return this;
         }else static if(To.length == 1){
@@ -352,7 +384,7 @@ struct Tuple(X...){
     
     /// When there is only a single element in the tuple, allow it to
     /// be cast to any type that the single element can be cast to.
-    auto opCast(To)() if(
+    auto opCast(To)() const if(
         T.length == 1 && !canCastTuple!(typeof(this), To) && is(typeof({
             auto x = cast(To) this.expand[0];
         }))
@@ -362,7 +394,7 @@ struct Tuple(X...){
     
     /// Get a hash which is a function of the hashes of each item in the
     /// tuple.
-    size_t toHash()() if(All!(canHash, T)){
+    size_t toHash()() const if(All!(canHash, T)){
         static if(T.length == 0){
             return 0;
         }else static if(T.length == 1){
@@ -571,4 +603,15 @@ unittest {
     assert(tuple(0).concat(tuple(1, 2)) is tuple(0, 1, 2));
     assert(tuple().concat(tuple(1), tuple(2, 3), tuple(4)) is tuple(1, 2, 3, 4));
     assert(tuple(0, 0).concat(tuple(1), tuple(2, 3), tuple(4)) is tuple(0, 0, 1, 2, 3, 4));
+}
+
+/// Initialization and assignment via static array
+unittest {
+    const int[3] array = [1, 2, 3];
+    const a = tuple(int(1), int(2), int(3));
+    const b = tupleFromArray(array);
+    Tuple!(int, int, int) c;
+    c = array;
+    assert(a == b);
+    assert(a == c);
 }

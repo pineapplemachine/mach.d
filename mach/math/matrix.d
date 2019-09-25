@@ -3,7 +3,7 @@ module mach.math.matrix;
 private:
 
 import mach.meta : Repeat, Retro, All, NumericSequence, varmap, varzip, varsum, ctint;
-import mach.types : tuple;
+import mach.types.tuple : tuple;
 import mach.traits : isNumeric, CommonType, hasCommonType;
 import mach.error : IndexOutOfBoundsError;
 import mach.text.str : str;
@@ -1132,7 +1132,7 @@ struct Matrix(size_t valueswidth, size_t valuesheight, T) if(isMatrixComponent!T
     /// target matrix type are square.
     /// Casting to a larger matrix type when this matrix is not square or the
     /// target matrix is not square is an invalid operation.
-    auto opCast(To: Matrix!(W, H, X), size_t W, size_t H, X)() const{
+    auto opCast(To: Matrix!(W, H, X), size_t W, size_t H, X)() const {
         static if(W == width && H == height){
             return To(this.columns.varmap!(v => cast(To.Column) v).expand);
         }else static if(W <= width && H <= height){
