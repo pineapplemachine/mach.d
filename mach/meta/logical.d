@@ -80,12 +80,13 @@ template Any(alias predicate, T...) {
         }else static if(T.length == 1) {
             return cast(bool) predicate!(T[0]);
         }else {
+            bool result = false;
             foreach(Item; T) {
                 if(predicate!Item) {
-                    return true;
+                    result = true;
                 }
             }
-            return false;
+            return result;
         }
     }();
 }
@@ -98,12 +99,13 @@ template All(alias predicate, T...) {
         }else static if(T.length == 1) {
             return cast(bool) predicate!(T[0]);
         }else {
+            bool result = true;
             foreach(Item; T) {
                 if(!predicate!Item) {
-                    return false;
+                    result = false;
                 }
             }
-            return true;
+            return result;
         }
     }();
 }
@@ -160,30 +162,40 @@ template Last(alias predicate, T...){
 
 
 
-version(unittest){
-    private:
+private version(unittest) {
     import mach.traits.primitives : isIntegral;
 }
-unittest{
-    // Any
+
+unittest { /// Any
     static assert(Any!(isIntegral) is false);
     static assert(Any!(isIntegral, int, int, float) is true);
     static assert(Any!(isIntegral, float, float) is false);
-    // All
+}
+
+unittest { /// All
     static assert(All!(isIntegral) is true);
     static assert(All!(isIntegral, int, int) is true);
     static assert(All!(isIntegral, int, int, float) is false);
-    // None
+    static assert(All!(isIntegral, int, float, long, int) is false);
+}
+
+unittest { /// None
     static assert(None!(isIntegral) is true);
     static assert(None!(isIntegral, float, float) is true);
-    // Count
+}
+
+unittest { /// Count
     static assert(Count!(isIntegral) == 0);
     static assert(Count!(isIntegral, int, float, int) == 2);
     static assert(Count!(isIntegral, int) == 1);
     static assert(Count!(isIntegral, float) == 0);
-    // First
+}
+
+unittest { /// First
     static assert(is(First!(isIntegral, real, double, int, long) == int));
-    // Last
+}
+
+unittest { /// Last
     static assert(is(Last!(isIntegral, real, double, int, long) == long));
 }
 
