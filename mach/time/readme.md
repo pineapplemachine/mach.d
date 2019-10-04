@@ -110,3 +110,39 @@ sleep(Duration!long.Milliseconds(2)); // Sleep for 2 milliseconds
 ```
 
 
+## mach.time.systime
+
+
+The `systime` function returns the amount of time since the local
+Unix epoch as a `Duration` object.
+This system time is distinctly different from monotonic time.
+Where monotonic time can be relied on to always increase uniformly
+over time, the system time reflects a realtime clock and may jump
+forward or backward as the result of timezone changes or user
+configuration.
+
+The realtime clock resolution varies across platforms. In the best
+case, the clock will have a resolution of one nanosecond.
+The Windows clock is likely the lowest resolution among platforms, in
+which case the clock has a resolution of roughly ten milliseconds.
+
+``` D
+// Assertion succeeds because you most certainly aren't
+// running this program in or before 1970
+const currentTime = systime();
+assert(currentTime.seconds > 0);
+```
+
+
+The module also provides a `systimens` function, which returns the
+approximate number of nanoseconds since local Unix epoch as an integer,
+rather than as `Duration` object.
+
+``` D
+const Duration!long currentTime = systime();
+const long currentNanoseconds = systimens();
+const long delta = currentTime.nanoseconds - currentNanoseconds;
+assert(delta >= -1_000 && delta <= +1_000);
+```
+
+
