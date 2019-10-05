@@ -208,7 +208,7 @@ template isVector(size_t size, T){
 
 /// Indicates whether a Vector may have this type as its component type.
 template isVectorComponent(T){
-    enum bool isVectorComponent = isFloatingPoint!T || isSignedIntegral!T;
+    enum bool isVectorComponent = isFloatingPoint!T || isIntegral!T;
 }
 
 /// Determine whether a Vector could be created from arguments of the given
