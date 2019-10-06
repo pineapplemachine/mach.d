@@ -24,6 +24,15 @@ public:
 
 
 
+private string RepeatMixin(in size_t args) {
+    string codegen = ``;
+    foreach(i; 0 .. args) {
+        if(i != 0) codegen ~= `, `;
+        codegen ~= `T`;
+    }
+    return `Aliases!(` ~ codegen ~ `);`;
+}
+
 /// Repeat a list of aliases some given number of times.
 template Repeat(size_t count, T...) {
     static if(count == 0 || T.length == 0) {
@@ -32,19 +41,8 @@ template Repeat(size_t count, T...) {
     else static if(count == 1) {
         alias Repeat = T;
     }
-    else static if(count == 2) {
-        alias Repeat = Aliases!(T, T);
-    }
-    else static if(count == 3) {
-        alias Repeat = Aliases!(T, T, T);
-    }
-    else static if(count == 4) {
-        alias Repeat = Aliases!(T, T, T, T);
-    }
     else {
-        alias left = Aliases!(Repeat!(count / 2, T));
-        alias right = Aliases!(Repeat!(count - (count / 2), T));
-        alias Repeat = Aliases!(left, right);
+        mixin(`alias Repeat = ` ~ RepeatMixin(count));
     }
 }
 

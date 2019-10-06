@@ -3,6 +3,7 @@ module mach.meta.retro;
 private:
 
 import mach.meta.aliases : Aliases;
+import mach.meta.ctint : ctint;
 
 /++ Docs: mach.meta.retro
 
@@ -23,12 +24,22 @@ public:
 
 
 
+private string RetroMixin(in size_t args) {
+    string codegen = ``;
+    foreach(i; 0 .. args) {
+        if(i != 0) codegen ~= `, `;
+        codegen ~= `T[` ~ ctint(args - i - 1) ~ `]`;
+    }
+    return `Aliases!(` ~ codegen ~ `);`;
+}
+
 /// Get a sequence with the items in reverse order.
-template Retro(T...){
-    static if(T.length <= 1){
+template Retro(T...) {
+    static if(T.length <= 1) {
         alias Retro = T;
-    }else{
-        alias Retro = Aliases!(Retro!(T[1 .. $]), T[0]);
+    }
+    else {
+        mixin(`alias Retro = ` ~ RetroMixin(T.length));
     }
 }
 
