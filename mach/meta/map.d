@@ -3,6 +3,7 @@ module mach.meta.map;
 private:
 
 import mach.meta.aliases : Aliases;
+import mach.meta.ctint : ctint;
 
 /++ Docs: mach.meta.map
 
@@ -14,7 +15,7 @@ is applied to the sequence represented by the subsequent template arguments.
 
 +/
 
-unittest{ /// Example
+unittest { /// Example
     enum AddOne(alias n) = n + 1;
     alias added = Map!(AddOne, 3, 2, 1);
     static assert(added.length == 3);
@@ -27,35 +28,45 @@ public:
 
 
 
-template Map(alias transform, T...){
-    static if(T.length == 0){
+private string MapMixin(in size_t args) {
+    string codegen = ``;
+    foreach(i; 0 .. args) {
+        if(i != 0) codegen ~= `, `;
+        codegen ~= `transform!(T[` ~ ctint(i) ~ `])`;
+    }
+    return `Aliases!(` ~ codegen ~ `);`;
+}
+
+template Map(alias transform, T...) {
+    static if(T.length == 0) {
         alias Map = Aliases!();
-    }else static if(T.length == 1){
+    }
+    else static if(T.length == 1) {
         alias Map = Aliases!(transform!(T[0]));
-    }else{
-        alias Map = Aliases!(
-            Map!(transform, T[0]),
-            Map!(transform, T[1 .. $])
-        );
+    }
+    else {
+        mixin(`alias Map = ` ~ MapMixin(T.length));
     }
 }
 
 
 
-version(unittest){
-    private:
+private version(unittest) {
     import mach.traits.primitives : isIntegral;
-    template Embiggen(T){
-        static if(is(T == int)){
+    template Embiggen(T) {
+        static if(is(T == int)) {
             alias Embiggen = long;
-        }else static if(is(T == float)){
+        }
+        else static if(is(T == float)) {
             alias Embiggen = double;
-        }else{
+        }
+        else {
             alias Embiggen = T;
         }
     }
 }
-unittest{
+
+unittest {
     static assert(is(
         Map!(Embiggen, int, float, double) == Aliases!(long, double, double)
     ));
