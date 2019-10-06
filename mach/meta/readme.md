@@ -446,6 +446,19 @@ assert(varmapi!func(1, 1, 1) == tuple(1, 2, 3));
 ```
 
 
+Alternatively, the `varmaprange` function can be used when the only
+thing that's important is the index.
+It accepts either an inclusive low and exclusive high bound, or only
+an exclusive high bound with an implicit zero low bound, and it doesn't
+accept any value argument list like `varmap` or `varmapi`.
+
+``` D
+alias func = (index) => (index * index);
+assert(varmaprange!(4, func) == tuple(0, 1, 4, 9));
+assert(varmaprange!(-2, +3, func) == tuple(4, 1, 0, 1, 4));
+```
+
+
 ## mach.meta.varreduce
 
 
