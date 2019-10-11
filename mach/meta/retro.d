@@ -30,7 +30,7 @@ private string RetroMixin(in size_t args) {
         if(i != 0) codegen ~= `, `;
         codegen ~= `T[` ~ ctint(args - i - 1) ~ `]`;
     }
-    return `Aliases!(` ~ codegen ~ `);`;
+    return `Aliases!(` ~ codegen ~ `)`;
 }
 
 /// Get a sequence with the items in reverse order.
@@ -39,7 +39,7 @@ template Retro(T...) {
         alias Retro = T;
     }
     else {
-        mixin(`alias Retro = ` ~ RetroMixin(T.length));
+        mixin(`alias Retro = ` ~ RetroMixin(T.length) ~ `;`);
     }
 }
 

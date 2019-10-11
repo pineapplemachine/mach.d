@@ -1,5 +1,14 @@
 module mach.traits;
 
+private:
+
+/++ Docs
+
+This module provides a variety of templates which primarily regard
+the inspection of types.
+
++/
+
 public:
 
 import mach.traits.array;

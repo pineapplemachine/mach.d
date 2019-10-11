@@ -35,6 +35,7 @@ immutable readmepaths = [
     "mach/text/utf/utf8",
     "mach/text/utf/utf16",
     "mach/time",
+    "mach/traits",
     "mach/types",
 ];
 
