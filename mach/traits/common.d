@@ -29,7 +29,7 @@ public:
 
 
 
-string CommonTypeMixin(in size_t args) {
+private string CommonTypeMixin(in size_t args) {
     assert(args >= 2);
     string codegen = `T[0].init`;
     foreach(i; 1 .. args) {
