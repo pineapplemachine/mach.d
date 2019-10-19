@@ -34,12 +34,13 @@ private string FilterMixin(in size_t args) {
     string aliasArgs = ``;
     foreach(i; 0 .. args) {
         if(i != 0) aliasArgs ~= `, `;
+        const istr = ctint(i);
         aliasDecls ~= (
-            `static if(predicate!(T[` ~ ctint(i) ~ `])) ` ~
-            `alias F` ~ ctint(i) ~ ` = Aliases!(T[` ~ ctint(i) ~ "]);\n" ~
-            `else alias F` ~ ctint(i) ~ " = Aliases!();\n"
+            `static if(predicate!(T[` ~ istr ~ `])) ` ~
+            `alias F` ~ istr ~ ` = Aliases!(T[` ~ istr ~ "]);\n" ~
+            `else alias F` ~ istr ~ " = Aliases!();\n"
         );
-        aliasArgs ~= `F` ~ ctint(i);
+        aliasArgs ~= `F` ~ istr;
     }
     return aliasDecls ~ `alias Filter = Aliases!(` ~ aliasArgs ~ `);`;
 }
