@@ -169,10 +169,10 @@ assert(tuple(1, 1) > tuple(1, 0));
 
 
 The `Value` struct simply wraps a single attribute of a specified type.
-The `asvalue` function may be used to obtain a `Value` from a given input.
+The `asValue` function may be used to obtain a `Value` from a given input.
 
 ``` D
-Value!string x = asvalue("hello");
+Value!string x = asValue("hello");
 assert(x.value == "hello");
 ```
 

@@ -5,12 +5,12 @@ private:
 /++ Docs
 
 The `Value` struct simply wraps a single attribute of a specified type.
-The `asvalue` function may be used to obtain a `Value` from a given input.
+The `asValue` function may be used to obtain a `Value` from a given input.
 
 +/
 
 unittest{ /// Example
-    Value!string x = asvalue("hello");
+    Value!string x = asValue("hello");
     assert(x.value == "hello");
 }
 
@@ -18,7 +18,7 @@ public:
 
 
 
-Value!T asvalue(T)(auto ref T value){
+Value!T asValue(T)(auto ref T value){
     return Value!T(value);
 }
 
@@ -31,5 +31,5 @@ struct Value(T){
 
 unittest{
     Value!int x = Value!int(0);
-    x = asvalue(int(0));
+    x = asValue(int(0));
 }
