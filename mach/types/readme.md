@@ -115,6 +115,93 @@ assert(freed == 1); // No more references, so the callback was evaluated.
 ```
 
 
+## mach.types.ternary
+
+
+This module provides an enumeration of
+[ternary logic values](https://en.wikipedia.org/wiki/Three-valued_logic)
+as well as a wrapper struct type with operator overloads implementing
+common ternary logic operations.
+
+The values for this module's ternary logic system are named
+"true", "false", and "unknown".
+They can be thought of as representing a certainly true state,
+a certainly false state, and an uncertain or indeterminate state,
+respectively.
+
+``` D
+// Using the TernaryValue enum directly
+assert(TernaryValue.True is +1);
+assert(TernaryValue.False is -1);
+assert(TernaryValue.Unknown is 0);
+```
+
+``` D
+// Using the Ternary type
+assert((Ternary.True & Ternary.True).isTrue);
+assert((Ternary.True & Ternary.False).isFalse);
+assert((Ternary.True & Ternary.Unknown).isUnknown);
+```
+
+
+Here is a complete list of the operations implemented for the
+Ternary struct and their truth tables.
+
+Note that casting a Ternary value to a boolean is the same as
+calling its `isTrue` method.
+
+Unary operators `[T, U, F]`:
+
+- Is true **x.isTrue** (returns a bool): `[T, F, F]`
+- Is false **x.isFalse** (returns a bool): `[F, F, T]`
+- Is unknown **x.isUnknown** (returns a bool): `[F, T, F]`
+- Assume true **x.assumeTrue**: `[T, T, F]`
+- Assume false **x.assumeFalse**: `[T, F, F]`
+- Negation **x.negate**, **-x**: `[F, U, T]`
+
+Binary operators `[T-T, T-U, T-F,  U-T, U-U, U-F,  F-T, F-U, F-F]`:
+
+- Identity **x.identity(y)** `[T, F, F,  F, T, F,  F, F, T]`
+- Equality **x.equals(y)**, **x == y** `[T, U, F,  U, U, U,  F, U, T]`
+- Implication **x.implies(y)**, **x >> y** `[T, U, F,  T, U, U,  T, T, T]`
+- Conjunction **x.and(y)**, **x & y** `[T, U, F,  U, U, F,  F, F, F]`
+- Disjunction **x.or(y)**, **x | y** `[T, T, T,  T, U, U,  T, U, F]`
+- Exclusive disjunction **x.xor(y)**, **x ^ y** `[F, U, T,  U, U, U,  T, U, F]`
+
+``` D
+// Identity (returning a boolean)
+assert(Ternary.True.isTrue is true);
+assert(Ternary.True.isFalse is false);
+assert(Ternary.True.isUnknown is false);
+// Assumption
+assert(Ternary.Unknown.assumeTrue.isTrue);
+assert(Ternary.Unknown.assumeFalse.isFalse);
+// Negation
+assert((-Ternary.False).isTrue);
+assert(Ternary.False.negate.isTrue);
+```
+
+``` D
+// Identity
+assert(Ternary.True.identity(Ternary.False).isFalse);
+// Equality
+assert(Ternary.True.equals(Ternary.Unknown).isUnknown);
+assert((Ternary.True == Ternary.Unknown).isUnknown);
+// Implication
+assert(Ternary.False.implies(Ternary.Unknown).isTrue);
+assert((Ternary.False >> Ternary.Unknown).isTrue);
+// Conjunction
+assert(Ternary.False.and(Ternary.True).isFalse);
+assert((Ternary.False & Ternary.True).isFalse);
+// Disjunction
+assert(Ternary.False.or(Ternary.True).isTrue);
+assert((Ternary.False | Ternary.True).isTrue);
+// Exclusive disjunction
+assert(Ternary.Unknown.xor(Ternary.True).isUnknown);
+assert((Ternary.Unknown ^ Ternary.True).isUnknown);
+```
+
+
 ## mach.types.tuple
 
 

@@ -16,6 +16,7 @@ import mach.types.manage;
 import mach.types.option;
 import mach.types.rebindable;
 import mach.types.refcounted;
+import mach.types.ternary;
 import mach.types.tuple;
 import mach.types.types;
 import mach.types.value;
