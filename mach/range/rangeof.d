@@ -2,7 +2,7 @@ module mach.range.rangeof;
 
 private:
 
-import mach.traits : CommonType, hasCommonType;
+import mach.traits.common : CommonType, hasCommonType;
 import mach.range.asrange : asarrayrange;
 import mach.error : IndexOutOfBoundsError, InvalidSliceBoundsError;
 
