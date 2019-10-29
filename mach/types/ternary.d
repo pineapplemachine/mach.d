@@ -44,14 +44,19 @@ Unary operators `[T, U, F]`:
 - Is true **x.isTrue** (returns a bool): `[T, F, F]`
 - Is false **x.isFalse** (returns a bool): `[F, F, T]`
 - Is unknown **x.isUnknown** (returns a bool): `[F, T, F]`
+- Is not true **x.isNotTrue** (returns a bool): `[F, T, T]`
+- Is not false **x.isNotFalse** (returns a bool): `[T, T, F]`
+- Is not unknown **x.isNotUnknown** (returns a bool): `[T, F, T]`
 - Assume true **x.assumeTrue**: `[T, T, F]`
 - Assume false **x.assumeFalse**: `[T, F, F]`
 - Negation **x.negate**, **-x**: `[F, U, T]`
+- Integer conversion **cast(int) x**, **+x**: `[-1, 0, +1]`
 
 Binary operators `[T-T, T-U, T-F,  U-T, U-U, U-F,  F-T, F-U, F-F]`:
 
 - Identity **x.identity(y)** `[T, F, F,  F, T, F,  F, F, T]`
 - Equality **x.equals(y)**, **x == y** `[T, U, F,  U, U, U,  F, U, T]`
+- Possible equality **x.possibly(y)** `[T, T, F,  T, T, T,  F, T, T]`
 - Implication **x.implies(y)**, **x >> y** `[T, U, F,  T, U, U,  T, T, T]`
 - Conjunction **x.and(y)**, **x & y** `[T, U, F,  U, U, F,  F, F, F]`
 - Disjunction **x.or(y)**, **x | y** `[T, T, T,  T, U, U,  T, U, F]`
@@ -64,12 +69,19 @@ unittest { /// Example
     assert(Ternary.True.isTrue is true);
     assert(Ternary.True.isFalse is false);
     assert(Ternary.True.isUnknown is false);
+    // Negated identity (returning a boolean)
+    assert(Ternary.True.isNotTrue is false);
+    assert(Ternary.True.isNotFalse is true);
+    assert(Ternary.True.isNotUnknown is true);
     // Assumption
     assert(Ternary.Unknown.assumeTrue.isTrue);
     assert(Ternary.Unknown.assumeFalse.isFalse);
     // Negation
     assert((-Ternary.False).isTrue);
     assert(Ternary.False.negate.isTrue);
+    // Integer conversion
+    assert((+Ternary.Unknown) == 0);
+    assert((cast(int) Ternary.Unknown) == 0);
 }
 
 unittest { /// Example
@@ -78,6 +90,8 @@ unittest { /// Example
     // Equality
     assert(Ternary.True.equals(Ternary.Unknown).isUnknown);
     assert((Ternary.True == Ternary.Unknown).isUnknown);
+    // Possible equality
+    assert(Ternary.Unknown.possibly(Ternary.True) is true);
     // Implication
     assert(Ternary.False.implies(Ternary.Unknown).isTrue);
     assert((Ternary.False >> Ternary.Unknown).isTrue);
@@ -141,7 +155,7 @@ struct Ternary {
         }
     }
     
-    void opAssign(T)(in T numberValue) if(
+    void opAssign(T)(in T value) if(
         is(T == Ternary) || is(typeof({bool x = T.init < 0 || T.init > 0;}))
     ) {
         static if(is(T == bool)) {
@@ -189,6 +203,19 @@ struct Ternary {
         return this.value == 0;
     }
     
+    /// [F, T, T]
+    bool isNotTrue() const {
+        return this.value <= 0;
+    }
+    /// [T, T, F]
+    bool isNotFalse() const {
+        return this.value >= 0;
+    }
+    /// [T, F, T]
+    bool isNotUnknown() const {
+        return this.value != 0;
+    }
+    
     /// Where the value is unknown, assume it represents a true value.
     /// [T, T, F]
     Ternary assumeTrue() const {
@@ -205,6 +232,23 @@ struct Ternary {
         if(this.value > 0) return Ternary.False;
         else if(this.value < 0) return Ternary.True;
         else return Ternary.Unknown;
+    }
+    
+    /// Same as `cast(bool) ((a == b).assumeTrue)`
+    /// [T, T, F,  T, T, T,  F, T, T]
+    bool possibly(in bool value) const {
+        if(value) return this.value >= 0;
+        else return this.value <= 0;
+    }
+    bool possibly(in TernaryValue value) const {
+        if(value > 0) return this.value >= 0;
+        else if(value < 0) return this.value <= 0;
+        else return true;
+    }
+    bool possibly(in Ternary value) const {
+        if(value.value > 0) return this.value >= 0;
+        else if(value.value < 0) return this.value <= 0;
+        else return true;
     }
     
     /// [T, F, F,  F, T, F,  F, F, T]
@@ -303,6 +347,11 @@ struct Ternary {
         return this.equals(value);
     }
     
+    /// [-1, 0, +1]
+    int opUnary(string op: "+")() const {
+        return cast(int) this.value;
+    }
+    
     /// [F, U, T]
     Ternary opUnary(string op: "-")() const {
         return this.negate();
@@ -379,6 +428,18 @@ unittest { /// Identity methods: isTrue, isFalse, isUnknown
     assert(Ternary.Unknown.isFalse is false);
 }
 
+unittest { /// Negated identity methods: isNotTrue, isNotFalse, isNotUnknown
+    assert(Ternary.True.isNotTrue is false);
+    assert(Ternary.True.isNotFalse is true);
+    assert(Ternary.True.isNotUnknown is true);
+    assert(Ternary.False.isNotFalse is false);
+    assert(Ternary.False.isNotTrue is true);
+    assert(Ternary.False.isNotUnknown is true);
+    assert(Ternary.Unknown.isNotUnknown is false);
+    assert(Ternary.Unknown.isNotTrue is true);
+    assert(Ternary.Unknown.isNotFalse is true);
+}
+
 unittest { /// Construct with booleans
     assert(Ternary(true).isTrue);
     assert(Ternary(false).isFalse);
@@ -404,6 +465,24 @@ unittest { /// Construct with ternary values
     assert(Ternary(TernaryValue.Unknown).isUnknown);
     assert(Ternary(TernaryValue.True).isTrue);
     assert(Ternary(TernaryValue.False).isFalse);
+}
+
+unittest { /// opAssign
+    Ternary x;
+    x = true;
+    assert(x.isTrue);
+    x = false;
+    assert(x.isFalse);
+    x = -1;
+    assert(x.isFalse);
+    x = +1;
+    assert(x.isTrue);
+    x = 0;
+    assert(x.isUnknown);
+    x = TernaryValue.False;
+    assert(x.isFalse);
+    x = Ternary.True;
+    assert(x.isTrue);
 }
 
 unittest { /// Cast to boolean
@@ -436,6 +515,18 @@ unittest { /// Negation (-a)
     assert((-Ternary.True).isFalse);
     assert((-Ternary.Unknown).isUnknown);
     assert((-Ternary.False).isTrue);
+}
+
+unittest { /// Integer conversion/promotion (+a)
+    // Cast
+    assert((cast(int) Ternary.True) is +1);
+    assert((cast(int) Ternary.Unknown) is 0);
+    assert((cast(int) Ternary.False) is -1);
+    // Operator overload
+    static assert(is(typeof(+Ternary.True) == int));
+    assert((+Ternary.True) is +1);
+    assert((+Ternary.Unknown) is 0);
+    assert((+Ternary.False) is -1);
 }
 
 unittest { /// Assume true or false
@@ -522,6 +613,36 @@ unittest { /// Equality (a == b)
     assert((false == Ternary.Unknown).isUnknown());
     assert((true == Ternary.False).isFalse());
     assert((false == Ternary.False).isTrue());
+}
+
+unittest { /// Possible equality (a possibly b)
+    // Ternary
+    assert((Ternary.True.possibly(Ternary.True)) is true);
+    assert((Ternary.Unknown.possibly(Ternary.True)) is true);
+    assert((Ternary.False.possibly(Ternary.True)) is false);
+    assert((Ternary.True.possibly(Ternary.Unknown)) is true);
+    assert((Ternary.Unknown.possibly(Ternary.Unknown)) is true);
+    assert((Ternary.False.possibly(Ternary.Unknown)) is true);
+    assert((Ternary.True.possibly(Ternary.False)) is false);
+    assert((Ternary.Unknown.possibly(Ternary.False)) is true);
+    assert((Ternary.False.possibly(Ternary.False)) is true);
+    // TernaryValue
+    assert((Ternary.True.possibly(TernaryValue.True)) is true);
+    assert((Ternary.Unknown.possibly(TernaryValue.True)) is true);
+    assert((Ternary.False.possibly(TernaryValue.True)) is false);
+    assert((Ternary.True.possibly(TernaryValue.Unknown)) is true);
+    assert((Ternary.Unknown.possibly(TernaryValue.Unknown)) is true);
+    assert((Ternary.False.possibly(TernaryValue.Unknown)) is true);
+    assert((Ternary.True.possibly(TernaryValue.False)) is false);
+    assert((Ternary.Unknown.possibly(TernaryValue.False)) is true);
+    assert((Ternary.False.possibly(TernaryValue.False)) is true);
+    // boolean
+    assert((Ternary.True.possibly(true)) is true);
+    assert((Ternary.Unknown.possibly(true)) is true);
+    assert((Ternary.False.possibly(true)) is false);
+    assert((Ternary.True.possibly(false)) is false);
+    assert((Ternary.Unknown.possibly(false)) is true);
+    assert((Ternary.False.possibly(false)) is true);
 }
 
 unittest { /// Implication (a → b) A.K.A. (a >> b)
