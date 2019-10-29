@@ -2,7 +2,14 @@ module mach.math.vector;
 
 private:
 
-import mach.meta : All, Repeat, Retro, varzip, varmap, varmapi, varall, varsum, ctint;
+import mach.meta.ctint : ctint;
+import mach.meta.logical : All;
+import mach.meta.repeat : Repeat;
+import mach.meta.retro : Retro;
+import mach.meta.varlogical : varall;
+import mach.meta.varmap : varmap, varmapi, varmaprange;
+import mach.meta.varreduce : varsum;
+import mach.meta.varzip : varzip;
 import mach.types : tuple, isTuple;
 import mach.traits : isTemplateOf, CommonType, hasCommonType, Unqual;
 import mach.traits : isNumeric, isFloatingPoint, isIntegral, isSignedIntegral;
@@ -10,7 +17,7 @@ import mach.error : IndexOutOfBoundsError;
 import mach.text.str : str;
 import mach.math.abs : abs;
 import mach.math.sqrt : sqrt;
-import mach.math.trig : Angle;
+import mach.math.trig.angle : Angle;
 import mach.math.matrix : Matrix;
 
 /// Get whether a type is some Angle type.
@@ -20,7 +27,7 @@ template isAngle(T){
 
 /++ Docs
 
-This module implements a `Vector` template type with signed numeric components
+This module implements a `Vector` template type with numeric components
 and arbitrary dimensionality.
 For convenience, several symbols are defined as shortcuts for common uses,
 including `Vector2i` and `Vector2f`, `Vector3i` and `Vector3f`, and
@@ -207,8 +214,22 @@ template isVector(size_t size, T){
 
 
 /// Indicates whether a Vector may have this type as its component type.
+/// Merely checks whether the type seems to behave like a number.
 template isVectorComponent(T){
-    enum bool isVectorComponent = isFloatingPoint!T || isIntegral!T;
+    static if(!is(typeof(T.init[0])) && is(typeof(T(0)))) {
+        enum bool isVectorComponent = (
+            (T(4) + T(3) == T(2) + T(5)) &&
+            (T(7) - T(2) == T(9) - T(4)) &&
+            (T(1) + T(5) == T(8) - T(2)) &&
+            (T(3) * T(6) == T(9) * T(2)) &&
+            (T(4) * T(2) == T(3) + T(5)) &&
+            (T(9) / T(3) == T(6) / T(2)) &&
+            (T(8) / T(2) == T(3) + T(1))
+        );
+    }
+    else {
+        enum bool isVectorComponent = false;
+    }
 }
 
 /// Determine whether a Vector could be created from arguments of the given
@@ -351,10 +372,10 @@ private string VectorDirectionTupMixin(in size_t size){
     foreach(i; 0 .. size - 2){
         if(ret.length) ret ~= `, `;
         immutable istr = ctint(i);
-        ret ~= `Angle!().acos(this.values[` ~ istr ~ `] / sqrt(sq` ~ istr ~ `))`;
+        ret ~= `Angle!().acos(this.values[` ~ istr ~ `] / (sq` ~ istr ~ `).sqrt)`;
     }
     if(ret.length) ret ~= `, `;
-    immutable lastterm = `Angle!().acos(this.values[$-2] / sqrt(sq` ~ ctint(size - 2) ~ `))`;
+    immutable lastterm = `Angle!().acos(this.values[$-2] / (sq` ~ ctint(size - 2) ~ `).sqrt)`;
     ret ~= `this.values[$-1] >= 0 ? ` ~ lastterm ~ ` : ~` ~ lastterm;
     return squares ~ ` return tuple(` ~ ret ~ `);`;
 }
@@ -377,6 +398,18 @@ private string VectorUnitMixin(in size_t size){
     return sines ~ ` return typeof(this)(` ~ ret ~ `);`;
 }
 
+/// Mixin used to implement the `Vector.scalingMatrix` method.
+private string VectorScalingMatrixMixin(in size_t size) {
+    string codegen = ``;
+    foreach(i; 0 .. size) {
+        foreach(j; 0 .. size) {
+            if(i != 0 || j != 0) codegen ~= `, `;
+            codegen ~= i == j ? `this.values[` ~ ctint(i) ~ `]` : `0`;
+        }
+    }
+    return `Matrix!(size, size, Value)(` ~ codegen ~ `);`;
+}
+
 
 
 /// Arbitrary-dimensionality vector type with signed numeric components.
@@ -388,8 +421,8 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     
     /// Magnitude type. `double` when the component type is an integer,
     /// otherwise the component type itself.
-    static if(isFloatingPoint!T) alias Magnitude = T;
-    else alias Magnitude = double;
+    static if(isIntegral!T) alias Magnitude = double;
+    else alias Magnitude = T;
     
     /// Helper template to get whether another type is a Vector with the same
     /// dimensionality as this one.
@@ -408,9 +441,9 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     /// Initialize with the given components.
     /// Excessive components are truncated.
     /// Missing components are set to zero.
-    this(N...)(in N values) if(values.length && All!(isNumeric, N)){
-        foreach(i, _; this.values) {
-            static if(i < values.length) this.values[i] = cast(T) values[i];
+    this(N...)(in N vals) if(N.length && All!(isVectorComponent, N)){
+        static if(size > 0) foreach(i, _; this.values) {
+            static if(i < vals.length) this.values[i] = cast(T) vals[i];
             else this.values[i] = T(0);
         }
     }
@@ -577,11 +610,11 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     }
     
     /// Get the magnitude of this vector.
-    @property Magnitude length() const{
+    static if(is(typeof(this.lengthsq.sqrt))) @property Magnitude length() const{
         static if(size == 0){
             return 0;
         }else{
-            return sqrt(this.lengthsq);
+            return this.lengthsq.sqrt;
         }
     }
     /// Get the squared magnitude of this vector.
@@ -605,7 +638,7 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     
     /// Get a vector pointing in the same direction as this one, but with its
     /// magnitude clamped.
-    auto clamplength(N)(in N length) const if(isNumeric!N){
+    auto clampLength(N)(in N length) const if(isNumeric!N){
         static if(size == 0){
             return vector!(typeof(T.init * (length / Magnitude.init)))();
         }else static if(size == 1){
@@ -803,14 +836,43 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     
     /// Get the cross product matrix of a three-dimensional vector.
     /// The cross-product of two vectors may b defined as
-    /// `a.cross(b) == a.crossmat * b` or as
-    /// `a.cross(b) == b.crossmat.transpose * a`.
-    static if(size == 3 && isSignedIntegral!T) @property auto crossmat() const{
+    /// `a.cross(b) == a.crossMatrix * b` or as
+    /// `a.cross(b) == b.crossMatrix.transpose * a`.
+    static if(size == 3) @property auto crossMatrix() const {
         return Matrix!(3, 3, T)(
             0, this.z, -this.y,
             -this.z, 0, this.x,
             this.y, -this.x, 0,
         );
+    }
+    
+    /// Compute a look-at matrix with this vector as the origin and
+    /// another vector as the target.
+    /// // https://www.scratchapixel.com/lessons/mathematics-physics-for-computer-graphics/lookat-function
+    static if(size == 3) auto lookAtMatrix(
+        in typeof(this) target, in typeof(this) up = typeof(this)(0, 1, 0)
+    ) const {
+        const typeof(this) zAxis = (target - this).normalize();
+        const typeof(this) xAxis = up.cross(zAxis).normalize();
+        const typeof(this) yAxis = zAxis.cross(xAxis);
+        return Matrix!(3, 3, Value)(xAxis.values, yAxis.values, zAxis.values);
+    }
+    
+    /// Get a translation matrix from this position vector
+    static if(size > 0) auto translationMatrix() const {
+        auto matrix = Matrix!(size, size, this.Value).identity;
+        matrix.row!(matrix.height - 1) = this;
+        return matrix;
+    }
+    
+    /// Get a scaling matrix from this scaling factor vector
+    static if(size > 0) auto scalingMatrix() const {
+        mixin(`return ` ~ VectorScalingMatrixMixin(size));
+    }
+    
+    /// Get a rotation matrix from this Euler angle vector
+    static if(size == 3) auto rotationMatrix() const {
+        return Matrix!(size, size, Value).rotation(this.values);
     }
     
     /// Get a concatenation of vectors.
@@ -878,7 +940,7 @@ struct Vector(size_t valuessize, T) if(isVectorComponent!T){
     /// If the target type is smaller, trailing components are truncated.
     /// If the target type is larger, trailing components will be zero.
     auto opCast(To: Vector!(Z, X), size_t Z, X)() const{
-        return To(this);
+        return To(this.values);
     }
     
     /// Get a readable string representation.
@@ -1018,7 +1080,7 @@ unittest{ /// Zero-length vector (Why would you even do this??)
     assert(vec * 2 == vec);
     assert(vec.dot(vec) == 0);
     assert(vec.normalize == vec);
-    assert(vec.clamplength(2) == vec);
+    assert(vec.clampLength(2) == vec);
     assert(vec.lerp(vec, 0.5) == vec);
     assert(vec.slerp(vec, 0.5) == vec);
     assert(vec.reflect(vec) == vec);
@@ -1108,7 +1170,7 @@ unittest{ /// Indexing
 }
 
 unittest{ /// Casting
-    Vector2f x = cast(Vector2f) vector!int();
+    Vector2f x = cast(Vector2f) vector(int(0), int(0));
     assert(x == vector(0, 0));
     Vector!(0, int) y = cast(Vector!(0, int)) vector(1, 2, 3);
     assert(y is vector!int());
@@ -1185,13 +1247,13 @@ unittest{ /// Manhattan distance
 }
 
 unittest{ /// Clamp length
-    assert(vector(1).clamplength(10) == vector(1));
-    assert(vector(1, 2).clamplength(10) == vector(1, 2));
-    assert(vector(1, 2, 3).clamplength(10) == vector(1, 2, 3));
-    assert(vector(+2).clamplength(1) == vector(+1));
-    assert(vector(-2).clamplength(1) == vector(-1));
-    assert(vector(1, 2).clamplength(1).equals(vector(1, 2).normalize, 1e-12));
-    assert(vector(1, 2, 3).clamplength(1).equals(vector(1, 2, 3).normalize, 1e-12));
+    assert(vector(1).clampLength(10) == vector(1));
+    assert(vector(1, 2).clampLength(10) == vector(1, 2));
+    assert(vector(1, 2, 3).clampLength(10) == vector(1, 2, 3));
+    assert(vector(+2).clampLength(1) == vector(+1));
+    assert(vector(-2).clampLength(1) == vector(-1));
+    assert(vector(1, 2).clampLength(1).equals(vector(1, 2).normalize, 1e-12));
+    assert(vector(1, 2, 3).clampLength(1).equals(vector(1, 2, 3).normalize, 1e-12));
 }
 
 unittest{ /// String representation
@@ -1320,8 +1382,8 @@ unittest{ /// Cross product of three-dimensional vectors
 unittest{ /// Cross product matrix of three-dimensional vector
     auto a = vector(+1, +2, +3);
     auto b = vector(-5, -6, -7);
-    assert(a.crossmat * b == a.cross(b));
-    assert(b.crossmat.transpose * a == a.cross(b));
+    assert(a.crossMatrix * b == a.cross(b));
+    assert(b.crossMatrix.transpose * a == a.cross(b));
 }
 
 unittest{ /// Reflection

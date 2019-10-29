@@ -2,12 +2,20 @@ module mach.math.matrix;
 
 private:
 
-import mach.meta : Repeat, Retro, All, NumericSequence, varmap, varzip, varsum, ctint;
+import mach.meta.repeat : Repeat;
+import mach.meta.logical : All;
+import mach.meta.varmap : varmap;
+import mach.meta.varzip : varzip;
+import mach.meta.varreduce : varsum;
+import mach.meta.ctint : ctint;
 import mach.types.tuple : tuple;
-import mach.traits : isNumeric, CommonType, hasCommonType;
+import mach.traits.common : CommonType, hasCommonType;
+import mach.traits.primitives : isNumeric;
 import mach.error : IndexOutOfBoundsError;
 import mach.text.str : str;
-import mach.math.trig : Angle;
+import mach.math.trig.angle : Angle;
+import mach.math.trig.sincos : sin, cos;
+import mach.math.trig.tangent : tan;
 import mach.math.vector : Vector, vector, isVector, isVectorComponent;
 
 /++ Docs
@@ -453,10 +461,12 @@ private string MatrixRowsVectorsInitMixin(in size_t width, in size_t height){
     string codegen = ``;
     foreach(i; 0 .. width){
         if(i != 0) codegen ~= `, `;
+        const istr = ctint(i);
         codegen ~= `vector(`;
         foreach(j; 0 .. height){
             if(j != 0) codegen ~= `, `;
-            codegen ~= `vectors[` ~ ctint(j) ~ `][` ~ ctint(i) ~ `]`;
+            const jstr = ctint(j);
+            codegen ~= `vectors[` ~ jstr ~ `][` ~ istr ~ `]`;
         }
         codegen ~= `)`;
     }
@@ -490,27 +500,42 @@ string MatrixDeterminantMixin(in size_t size){
 private string MatrixCofactorMixin(in size_t size){
     string codegen = ``;
     foreach(i; 0 .. size){
-        if(i != 0) codegen ~= `, `;
+        const istr = ctint(i);
         foreach(j; 0 .. size){
-            if(j != 0) codegen ~= `, `;
+            if(codegen.length) codegen ~= `, `;
             if((i + j) % 2) codegen ~= `-`;
-            codegen ~= `this.minor!(` ~ ctint(i) ~ `, ` ~ ctint(j) ~ `).determinant`;
+            const jstr = ctint(j);
+            codegen ~= `this.minor!(` ~ istr ~ `, ` ~ jstr ~ `).determinant`;
         }
     }
     return `return matrix!(width, height)(` ~ codegen ~ `);`;
 }
 
-/// Mixin for the `Matrix.product` method.
-private string MatrixProductMixin(in size_t width, in size_t height){
+/// Mixin for the `Matrix.product` method with a matrix operand.
+private string MatrixMatrixProductMixin(in size_t width, in size_t height){
     string codegen = ``;
     foreach(i; 0 .. width){
-        if(i != 0) codegen ~= `, `;
+        const istr = ctint(i);
         foreach(j; 0 .. height){
-            if(j != 0) codegen ~= `, `;
-            codegen ~= `this.row!` ~ ctint(j) ~ `.dot(mat.col!` ~ ctint(i) ~ `)`;
+            if(codegen.length) codegen ~= `, `;
+            const jstr = ctint(j);
+            codegen ~= `this.row!` ~ jstr ~ `.dot(mat.col!` ~ istr ~ `)`;
         }
     }
     return `return matrix!(` ~ ctint(width) ~ `, ` ~ ctint(height) ~ `)(` ~ codegen ~ `);`;
+}
+
+/// Mixin for the `Matrix.product` method with a vector operand.
+private string MatrixVectorProductMixin(in size_t width, in size_t height){
+    string codegen = ``;
+    for(size_t i = 0; i < height; i++) {
+        if(codegen.length) codegen ~= `, `;
+        codegen ~= `this.rows[` ~ ctint(i) ~ `].dot(vec)`;
+    }
+    return (
+        `return Vector!(` ~ ctint(height) ~ `, typeof(T.init * X.init))` ~
+        `(` ~ codegen ~ `);`
+    );
 }
 
 /// Mixin to implement the `Matrix.scroll` method.
@@ -525,6 +550,181 @@ private string MatrixScrollMixin(in size_t width, in size_t height, in size_t x,
         }
     }
     return `return typeof(this)(` ~ codegen ~ `);`;
+}
+
+/// Mixin to implement the `Matrix.minor` method.
+private string MatrixMinorMixin(
+    in size_t width, in size_t height, in size_t col, in size_t row
+) {
+    string codegen = ``;
+    for(size_t i = 0; i < width; i++) {
+        if(i == col) continue;
+        const istr = ctint(i);
+        for(size_t j = 0; j < height; j++) {
+            if(j == row) continue;
+            else if(codegen.length) codegen ~= `, `;
+            const jstr = ctint(j);
+            codegen ~= `this[` ~ istr ~ `][` ~ jstr ~ `]`;
+        }
+    }
+    return (`return Matrix!(` ~
+        ctint(width - 1) ~ `, ` ~ ctint(height - 1) ~ `, T)` ~ 
+    `(` ~ codegen ~ `);`);
+}
+
+/// Mixin to implement the `Matrix.sub` method.
+private string MatrixSubMixin(
+    in size_t xlow, in size_t xhigh, in size_t ylow, in size_t yhigh
+) {
+    string codegen = ``;
+    for(size_t i = xlow; i < xhigh; i++) {
+        const istr = ctint(i);
+        for(size_t j = ylow; j < yhigh; j++) {
+            if(codegen.length) codegen ~= `, `;
+            const jstr = ctint(j);
+            codegen ~= `this[` ~ istr ~ `][` ~ jstr ~ `]`;
+        }
+    }
+    return (`return Matrix!(` ~
+        ctint(xhigh - xlow) ~ `, ` ~ ctint(yhigh - ylow) ~ `, T)` ~ 
+    `(` ~ codegen ~ `);`);
+}
+
+/// Mixin to implement the `Matrix.rotate` method.
+private string MatrixRotateClockwiseMixin(in size_t width, in size_t height) {
+    string codegen = ``;
+    for(size_t i = 0; i < height; i++) {
+        const vstr = ctint(height - i - 1);
+        for(size_t j = 0; j < width; j++) {
+            if(codegen.length) codegen ~= `, `;
+            const ustr = ctint(j); 
+            codegen ~= `this[` ~ ustr ~ `][` ~ vstr ~ `]`;
+        }
+    }
+    return (`return Matrix!(` ~
+        ctint(height) ~ `, ` ~ ctint(width) ~ `, T)` ~ 
+    `(` ~ codegen ~ `);`);
+}
+
+/// Mixin to implement the `Matrix.rotate` method.
+private string MatrixRotateCounterClockwiseMixin(in size_t width, in size_t height) {
+    string codegen = ``;
+    for(size_t i = 0; i < height; i++) {
+        const vstr = ctint(i);
+        for(size_t j = 0; j < width; j++) {
+            if(codegen.length) codegen ~= `, `;
+            const ustr = ctint(width - j - 1); 
+            codegen ~= `this[` ~ ustr ~ `][` ~ vstr ~ `]`;
+        }
+    }
+    return (`return Matrix!(` ~
+        ctint(height) ~ `, ` ~ ctint(width) ~ `, T)` ~ 
+    `(` ~ codegen ~ `);`);
+}
+
+/// Mixin to implement the `Matrix.flipv` method.
+private string MatrixFlipHorizontalMixin(in size_t width, in size_t height) {
+    string codegen = ``;
+    for(size_t i = 0; i < width; i++) {
+        const istr = ctint(width - i - 1);
+        for(size_t j = 0; j < height; j++) {
+            if(codegen.length) codegen ~= `, `;
+            const jstr = ctint(j); 
+            codegen ~= `this[` ~ istr ~ `][` ~ jstr ~ `]`;
+        }
+    }
+    return (`return typeof(this)(` ~ codegen ~ `);`);
+}
+
+/// Mixin to implement the `Matrix.flipv` method.
+private string MatrixFlipVerticalMixin(in size_t width, in size_t height) {
+    string codegen = ``;
+    for(size_t i = 0; i < width; i++) {
+        const istr = ctint(i);
+        for(size_t j = 0; j < height; j++) {
+            if(codegen.length) codegen ~= `, `;
+            const jstr = ctint(height - j - 1); 
+            codegen ~= `this[` ~ istr ~ `][` ~ jstr ~ `]`;
+        }
+    }
+    return (`return typeof(this)(` ~ codegen ~ `);`);
+}
+
+/// Mixin to implement the `Matrix.flipvh` method.
+private string MatrixFlipBothMixin(in size_t width, in size_t height) {
+    string codegen = ``;
+    for(size_t i = 0; i < width; i++) {
+        const istr = ctint(width - i - 1);
+        for(size_t j = 0; j < height; j++) {
+            if(codegen.length) codegen ~= `, `;
+            const jstr = ctint(height - j - 1); 
+            codegen ~= `this[` ~ istr ~ `][` ~ jstr ~ `]`;
+        }
+    }
+    return (`return typeof(this)(` ~ codegen ~ `);`);
+}
+
+/// Mixin for opBinary with a scalar operand
+/// Additionally used by `matrix.scale`.
+private string MatrixOpBinaryScalarMixin(
+    in string op, in size_t width, in size_t height
+){
+    string codegen = ``;
+    for(size_t i = 0; i < width; i++) {
+        const istr = ctint(i);
+        for(size_t j = 0; j < height; j++) {
+            if(codegen.length) codegen ~= `, `;
+            const jstr = ctint(j);
+            codegen ~= `this[` ~ istr ~ `][` ~ jstr ~ `] ` ~ op ~ ` value`;
+        }
+    }
+    return (
+        `return Matrix!(` ~ ctint(width) ~ `, ` ~ ctint(height) ~ `, ` ~
+        `typeof(T.init ` ~ op ~ ` value))(` ~ codegen ~ `);`
+    );
+}
+
+/// Mixin for component-wise opBinary with a matrix operand
+/// Additionally used by `matrix.scale`.
+private string MatrixOpBinaryMatrixMixin(
+    in string op, in size_t width, in size_t height
+){
+    string codegen = ``;
+    for(size_t i = 0; i < width; i++) {
+        const istr = ctint(i);
+        for(size_t j = 0; j < height; j++) {
+            if(codegen.length) codegen ~= `, `;
+            const jstr = ctint(j);
+            const sub = `[` ~ istr ~ `][` ~ jstr ~ `]`;
+            codegen ~= `this` ~ sub ~ ` ` ~ op ~ ` mat` ~ sub;
+        }
+    }
+    return (
+        `return Matrix!(` ~ ctint(width) ~ `, ` ~ ctint(height) ~ `, ` ~
+        `typeof(T.init ` ~ op ~ ` X.init))(` ~ codegen ~ `);`
+    );
+}
+
+/// Mixin to implement matrix casting to another matrix type.
+private string MatrixOpCastMixin(
+    in size_t oldWidth, in size_t oldHeight,
+    in size_t newWidth, in size_t newHeight
+) {
+    string codegen = ``;
+    for(size_t i = 0; i < newWidth; i++) {
+        const istr = ctint(i);
+        for(size_t j = 0; j < newHeight; j++) {
+            const jstr = ctint(j);
+            if(codegen.length) codegen ~= `, `;
+            if(i < oldWidth && j < oldHeight) {
+                codegen ~= `cast(X) this[` ~ istr ~ `][` ~ jstr ~ `]`;
+            }
+            else {
+                codegen ~= (i == j) ? `X(1)` : `X(0)`;
+            }
+        }
+    }
+    return `return To(` ~ codegen ~ `);`;
 }
 
 /// Mixin to generate a tuple representing the contents of an identity matrix.
@@ -806,15 +1006,7 @@ struct Matrix(size_t valueswidth, size_t valuesheight, T) if(isMatrixComponent!T
     auto minor(size_t col, size_t row)() const{
         static assert(col < width, "Column index out of bounds.");
         static assert(row < height, "Row index out of bounds.");
-        return Matrix!(width - 1, height - 1, T)(
-            this.columns[0 .. col].varmap!(
-                v => v.slice!(0, row).concat(v.slice!(row + 1, v.size))
-            ).concat(
-                this.columns[col + 1 .. $].varmap!(
-                    v => v.slice!(0, row).concat(v.slice!(row + 1, v.size))
-                )
-            ).expand
-        );
+        mixin(MatrixMinorMixin(width, height, col, row));
     }
     
     /// Rotate the contents of a matrix clockwise.
@@ -822,64 +1014,66 @@ struct Matrix(size_t valueswidth, size_t valuesheight, T) if(isMatrixComponent!T
     /// `matrix.rotate!1` returns the matrix rotated clockwise by 90 degrees.
     /// `matrix.rotate!2` returns the matrix rotated clockwise by 180 degrees.
     /// `matrix.rotate!3` returns the matrix rotated clockwise by 270 degrees.
-    auto rotate(size_t amount = 1)() const{
+    auto rotate(size_t turns = 1)() const {
         static if(width == 0 && height == 0){
             return this;
         }else static if(width == 0 || height == 0){
-            static if(amount % 2 == 0) return this;
+            static if(turns % 2 == 0) return this;
             else return Matrix!(height, width, T).zero;
         }else{
-            enum amountmod = amount % 4;
-            static if(amountmod == 0){
+            enum turnsmod = turns % 4;
+            static if(turnsmod == 0){
                 return this;
-            }else static if(amountmod == 1){
-                return Matrix!(height, width, T).Rows(
-                    this.columns.varmap!(v => v.flip).expand
-                );
-            }else static if(amountmod == 2){
+            }else static if(turnsmod == 1){
+                mixin(MatrixRotateClockwiseMixin(width, height));
+            }else static if(turnsmod == 2){
                 return this.flipvh();
             }else{
-                return Matrix!(height, width, T).Rows(Retro!(this.columns));
+                mixin(MatrixRotateCounterClockwiseMixin(width, height));
             }
         }
     }
     
     /// Mirror the contents of the matrix vertically and/or horizontally.
-    auto flip(bool vertical, bool horizontal)() const{
-        static if(vertical && horizontal){
+    auto flip(bool vertical, bool horizontal)() const {
+        static if(vertical && horizontal) {
             return this.flipvh;
-        }else static if(vertical){
+        }
+        else static if(vertical) {
             return this.flipv;
-        }else static if(horizontal){
+        }
+        else static if(horizontal) {
             return this.fliph;
-        }else{
+        }
+        else {
             return this;
         }
     }
     /// Mirror the contents of the matrix vertically.
-    auto flipv() const{
-        static if(height <= 1){
+    auto flipv() const {
+        static if(height <= 1) {
             return this;
-        }else{
-            return typeof(this)(this.columns.varmap!(v => v.flip).expand);
+        }
+        else {
+            mixin(MatrixFlipVerticalMixin(width, height));
         }
     }
     /// Mirror the contents of the matrix horizontally.
-    auto fliph() const{
-        static if(width <= 1){
+    auto fliph() const {
+        static if(width <= 1) {
             return this;
-        }else{
-            return typeof(this)(Retro!(this.columns));
+        }
+        else {
+            mixin(MatrixFlipHorizontalMixin(width, height));
         }
     }
     /// Mirror the contents of the matrix both vertically and horizontally.
-    auto flipvh() const{
-        static if(width <= 1){
-            return this.flipv;
-        }else static if(height <= 1){
-            return this.fliph;
-        }else{
-            return typeof(this)(Retro!(this.columns).varmap!(v => v.flip).expand);
+    auto flipvh() const {
+        static if(width <= 1 && height <= 1) {
+            return this;
+        }
+        else {
+            mixin(MatrixFlipBothMixin(width, height));
         }
     }
     
@@ -928,7 +1122,7 @@ struct Matrix(size_t valueswidth, size_t valuesheight, T) if(isMatrixComponent!T
         static if(this.width == 0 || this.height == 0 || mat.width == 0){
             return Matrix!(mat.width, this.height, typeof(T.init * mat.Value.init)).zero;
         }else{
-            mixin(MatrixProductMixin(mat.width, this.height));
+            mixin(MatrixMatrixProductMixin(mat.width, this.height));
         }
     }
     /// Ditto
@@ -946,11 +1140,11 @@ struct Matrix(size_t valueswidth, size_t valuesheight, T) if(isMatrixComponent!T
     /// Multiply a matrix by a a column vector. Returns a vector.
     /// Essentially equivalent to `matrix.product(matrix(vector))[0]`.
     /// Multiplying a vector by a zero-width matrix produces the vector itself.
-    auto product(X)(in Vector!(height, X) vec) const{
+    auto product(X)(in Vector!(height, X) vec) const {
         static if(width == 0 || height == 0){
             return cast(Vector!(height, typeof(T.init * vec.Value.init))) vec;
         }else{
-            return vector(this.rows.expand.varmap!(x => x.dot(vec)));
+            mixin(MatrixVectorProductMixin(width, height));
         }
     }
     /// Ditto
@@ -963,73 +1157,70 @@ struct Matrix(size_t valueswidth, size_t valuesheight, T) if(isMatrixComponent!T
         return this;
     }
     
-    static if(width == 4 && height == 4){
-        /// Get an orthographic projection matrix specifically for use with
-        /// OpenGL rendering contexts.
-        /// http://www.songho.ca/opengl/gl_projectionmatrix.html#ortho
-        static auto glortho(N)(
-            in N leftx, in N rightx,
-            in N topy, in N bottomy,
-            in N nearz = +1, in N farz = -1
-        ) if(isNumeric!N){
-            immutable dx = cast(T)(rightx - leftx);
-            immutable dy = cast(T)(topy - bottomy);
-            immutable dz = cast(T)(farz - nearz);
-            return typeof(this)(
-                +2 / dx, 0, 0, 0,
-                0, +2 / dy, 0, 0,
-                0, 0, -2 / dz, 0,
-                (rightx + leftx) / -dx,
-                (topy + bottomy) / -dy,
-                (farz + nearz) / -dz, 1
-            );
-        }
-        /// Get a perspective matrix specifically for use with
-        /// OpenGL rendering contexts.
-        /// http://www.songho.ca/opengl/gl_projectionmatrix.html#perspective
-        static auto glperspective(N)(
-            in N leftx, in N rightx,
-            in N topy, in N bottomy,
-            in N nearz = +1, in N farz = -1
-        ) if(isNumeric!N){
-            immutable dx = cast(T)(rightx - leftx);
-            immutable dy = cast(T)(topy - bottomy);
-            immutable dz = cast(T)(farz - nearz);
-            immutable n2 = cast(T)(nearz + nearz);
-            return typeof(this)(
-                n2 / dx, 0, 0, 0,
-                0, n2 / dy, 0, 0,
-                (rightx + leftx) / dx,
-                (topy + bottomy) / dy,
-                (farz + nearz) / -dz, -1,
-                0, 0, 2 * nearz * farz / -dz, 0
-            );
-        }
-        /// Get an OpenGL perspective matrix given a field of view,
-        /// aspect ratio, and near and far z.
-        static auto glperspective(A, B, C)(
-            in Angle!A fov, in B aspect, in C nearz, in C farz
-        ) if(isNumeric!B && isNumeric!C){
-            immutable height = fov.tan * nearz;
-            immutable width = height * aspect;
-            return typeof(this).glperspective(
-                -width, width, -height, height, nearz, farz
-            );
-        }
+    /// Get an orthographic projection matrix e.g. for use with
+    /// OpenGL rendering contexts.
+    /// http://www.songho.ca/opengl/gl_projectionmatrix.html#ortho
+    static if(width == 4 && height == 4) static auto ortho(N)(
+        in N leftx, in N rightx,
+        in N topy, in N bottomy,
+        in N nearz = +1, in N farz = -1
+    ) if(isNumeric!N){
+        immutable dx = cast(T)(rightx - leftx);
+        immutable dy = cast(T)(topy - bottomy);
+        immutable dz = cast(T)(farz - nearz);
+        return typeof(this)(
+            +2 / dx, 0, 0, 0,
+            0, +2 / dy, 0, 0,
+            0, 0, -2 / dz, 0,
+            (rightx + leftx) / -dx,
+            (topy + bottomy) / -dy,
+            (farz + nearz) / -dz, 1
+        );
+    }
+    
+    /// Get a perspective matrix e.g. for use with
+    /// OpenGL rendering contexts.
+    /// http://www.songho.ca/opengl/gl_projectionmatrix.html#perspective
+    static if(width == 4 && height == 4) static auto perspective(N)(
+        in N leftx, in N rightx,
+        in N topy, in N bottomy,
+        in N nearz = +1, in N farz = -1
+    ) if(isNumeric!N){
+        immutable dx = cast(T)(rightx - leftx);
+        immutable dy = cast(T)(topy - bottomy);
+        immutable dz = cast(T)(farz - nearz);
+        immutable n2 = cast(T)(nearz + nearz);
+        return typeof(this)(
+            n2 / dx, 0, 0, 0,
+            0, n2 / dy, 0, 0,
+            (rightx + leftx) / dx,
+            (topy + bottomy) / dy,
+            (farz + nearz) / -dz, -1,
+            0, 0, 2 * nearz * farz / -dz, 0
+        );
+    }
+    
+    /// Get a perspective matrix given a field of view,
+    /// aspect ratio, and near and far z.
+    static if(width == 4 && height == 4) static auto perspective(A, B, C)(
+        in Angle!A fov, in B aspect, in C nearz, in C farz
+    ) if(isNumeric!B && isNumeric!C){
+        immutable height = fov.tan * nearz;
+        immutable width = height * aspect;
+        return typeof(this).glperspective(
+            -width, width, -height, height, nearz, farz
+        );
     }
     
     /// Perform a component-wise binary operation with some number.
     auto opBinary(string op, N)(in N value) const if(isNumeric!N && (
         op == "+" || op == "-" || op == "*" || op == "/" || op == "^^"
     )){
-        mixin(`alias X = typeof(T.init ` ~ op ~ ` value);`);
-        return Matrix!(width, height, X)(this.columns.varmap!((v){
-            mixin(`return v ` ~ op ~ ` value;`);
-        }).expand);
+        mixin(MatrixOpBinaryScalarMixin(op, width, height));
     }
     /// Ditto
     auto opBinaryRight(string op: "*", N)(in N value) const if(isNumeric!N){
-        return this.opBinary!(op)(value);
+        mixin(MatrixOpBinaryScalarMixin(op, width, height));
     }
     /// Ditto
     auto opOpAssign(string op, N)(in N value) if(isNumeric!N && (
@@ -1050,10 +1241,7 @@ struct Matrix(size_t valueswidth, size_t valuesheight, T) if(isMatrixComponent!T
         static if(width == 0 || height == 0){
             return Matrix!(width, height, typeof(T.init * mat.Value.init)).zero;
         }else{
-            immutable zip = varzip(tuple(this.columns), tuple(mat.columns));
-            return matrix(zip.expand.varmap!((x){
-                mixin(`return x[0] ` ~ op ~ ` x[1];`);
-            }).expand);
+            mixin(MatrixOpBinaryMatrixMixin(op, width, height));
         }
     }
     /// Ditto
@@ -1064,65 +1252,68 @@ struct Matrix(size_t valueswidth, size_t valuesheight, T) if(isMatrixComponent!T
         return this;
     }
     
-    /// Perform a component-wise multiplication of two matrixes.
-    auto scale(X)(in Matrix!(width, height, X) mat) const{
-        static if(width == 0 || height == 0){
-            return Matrix!(width, height, typeof(T.init * mat.Value.init)).zero;
-        }else{
-            immutable zip = varzip(tuple(this.columns), tuple(mat.columns));
-            return matrix(zip.expand.varmap!(x => x[0].scale(x[1])).expand);
+    /// Multiply every component of the matrix by a scalar value.
+    auto scale(X)(in X value) const if(!isMatrix!X && isVectorComponent!X) {
+        static if(width == 0 || height == 0) {
+            return Matrix!(width, height, typeof(T.init * value)).zero;
+        }
+        else {
+            mixin(MatrixOpBinaryScalarMixin("*", width, height));
         }
     }
     
-    static if(width == 2 && height == 2){
-        /// Get a two-dimensional rotation matrix.
-        /// https://en.wikipedia.org/wiki/Rotation_matrix#In_two_dimensions
-        /// TODO: Can this be generalized? (A: Probably?)
-        static auto rotation(X)(in Angle!X angle){
-            immutable s = angle.sin;
-            immutable c = angle.cos;
-            return typeof(this)(c, s, -s, c);
+    /// Perform a component-wise multiplication of two matrixes.
+    auto scale(X)(in Matrix!(width, height, X) mat) const {
+        static if(width == 0 || height == 0) {
+            return Matrix!(width, height, typeof(T.init * mat.Value.init)).zero;
         }
-        /// Ditto
-        static auto rotation(R)(in R radians) if(isNumeric!R){
-            return typeof(this).rotation(Angle!().Radians(radians));
+        else {
+            mixin(MatrixOpBinaryMatrixMixin("*", width, height));
         }
-    }else static if(width == 3 && height == 3){
-        /// Get a three-dimensional rotation matrix.
-        /// https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
-        static auto rotation(X)(
-            in Angle!X yaw, in Angle!X pitch, in Angle!X roll
-        ){
-            return (
-                typeof(this).pitchrotation(pitch) *
-                typeof(this).yawrotation(yaw) *
-                typeof(this).rollrotation(roll)
-            );
-        }
-        /// Ditto
-        static auto rotation(R)(in R yaw, in R pitch, in R roll) if(isNumeric!R){
-            return typeof(this)(
-                Angle!().Radians(yaw), Angle!().Radians(pitch), Angle!().Radians(roll)
-            );
-        }
-        /// Ditto
-        static auto yawrotation(X)(in Angle!X pitch){
-            immutable s = pitch.sin;
-            immutable c = pitch.cos;
-            return typeof(this)(c, 0, -s, 0, 1, 0, s, 0, c);
-        }
-        /// Ditto
-        static auto pitchrotation(X)(in Angle!X roll){
-            immutable s = roll.sin;
-            immutable c = roll.cos;
-            return typeof(this)(1, 0, 0, 0, c, s, 0, -s, c);
-        }
-        /// Ditto
-        static auto rollrotation(X)(in Angle!X yaw){
-            immutable s = yaw.sin;
-            immutable c = yaw.cos;
-            return typeof(this)(c, s, 0, -s, c, 0, 0, 0, 1);
-        }
+    }
+    
+    /// Get a two-dimensional rotation matrix.
+    /// https://en.wikipedia.org/wiki/Rotation_matrix#In_two_dimensions
+    /// TODO: Can this be generalized? (A: Probably?)
+    /// Numeric primitives are assumed to represent radians
+    static if(width == 2 && height == 2) static auto rotation(X)(in X angle){
+        immutable s = angle.sin;
+        immutable c = angle.cos;
+        return typeof(this)(c, s, -s, c);
+    }
+    
+    /// Get a three-dimensional rotation matrix.
+    /// https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
+    /// Numeric primitives are assumed to represent radians
+    static if(width == 3 && height == 3) static auto rotation(X)(
+        in X yaw, in X pitch, in X roll
+    ) {
+        return (
+            typeof(this).xRotation(pitch) *
+            typeof(this).yRotation(yaw) *
+            typeof(this).zRotation(roll)
+        );
+    }
+    /// Ditto
+    static if(width == 3 && height == 3) static auto xRotation(X)(in X pitch) {
+        // yaw
+        immutable s = pitch.sin;
+        immutable c = pitch.cos;
+        return typeof(this)(c, 0, -s, 0, 1, 0, s, 0, c);
+    }
+    /// Ditto
+    static if(width == 3 && height == 3) static auto yRotation(X)(in X roll) {
+        // pitch
+        immutable s = roll.sin;
+        immutable c = roll.cos;
+        return typeof(this)(1, 0, 0, 0, c, s, 0, -s, c);
+    }
+    /// Ditto
+    static if(width == 3 && height == 3) static auto zRotation(X)(in X yaw) {
+        // roll
+        immutable s = yaw.sin;
+        immutable c = yaw.cos;
+        return typeof(this)(c, s, 0, -s, c, 0, 0, 0, 1);
     }
     
     /// Cast to another matrix type.
@@ -1133,21 +1324,10 @@ struct Matrix(size_t valueswidth, size_t valuesheight, T) if(isMatrixComponent!T
     /// Casting to a larger matrix type when this matrix is not square or the
     /// target matrix is not square is an invalid operation.
     auto opCast(To: Matrix!(W, H, X), size_t W, size_t H, X)() const {
-        static if(W == width && H == height){
-            return To(this.columns.varmap!(v => cast(To.Column) v).expand);
-        }else static if(W <= width && H <= height){
-            return To(this.columns[0 .. W].varmap!(v => To.Column(v)).expand);
-        }else static if(this.square && To.square){
-            return To(
-                this.columns.varmap!(v => To.Column(v)).concat(
-                    tuple(To.identity.columns[width .. $])
-                ).expand
-            );
-        }else{
-            static assert(false,
-                "Cannot cast to a larger matrix when either type is not square."
-            );
-        }
+        static assert((W == H) || (W <= width && H <= height),
+            "Cannot cast to a larger matrix when either type is not square."
+        );
+        mixin(MatrixOpCastMixin(width, height, W, H));
     }
     
     /// Cast a single-column matrix to a column vector.
@@ -1155,12 +1335,14 @@ struct Matrix(size_t valueswidth, size_t valuesheight, T) if(isMatrixComponent!T
         return cast(To) this.columns[0];
     }
     
-    /// Get a two-dimensional slice of this matrix.
-    auto slice(size_t xlow, size_t xhigh, size_t ylow, size_t yhigh)() const{
+    /// Get a sub-rectangle of this matrix as another matrix.
+    auto sub(
+        size_t xlow, size_t xhigh, size_t ylow, size_t yhigh
+    )() const{
         static assert(
             xlow >= 0 && xhigh >= xlow && width >= xhigh &&
             ylow >= 0 && yhigh >= ylow && height >= yhigh,
-            "Invalid matrix slice bounds."
+            "Invalid matrix sub-rectangle bounds."
         );
         static if(xhigh == xlow && yhigh == ylow){
             return Matrix!(0, 0, T).zero;
@@ -1169,9 +1351,10 @@ struct Matrix(size_t valueswidth, size_t valuesheight, T) if(isMatrixComponent!T
         }else static if(yhigh == ylow){
             return Matrix!(xhigh - xlow, 0, T).zero;
         }else{
-            return Matrix!(xhigh - xlow, yhigh - ylow, T)(
-                this.columns[xlow .. xhigh].varmap!(v => v.slice!(ylow, yhigh)).expand
-            );
+            //return Matrix!(xhigh - xlow, yhigh - ylow, T)(
+            //    this.columns[xlow .. xhigh].varmap!(v => v.slice!(ylow, yhigh)).expand
+            //);
+            mixin(MatrixSubMixin(xlow, xhigh, ylow, yhigh));
         }
     }
     
@@ -1483,7 +1666,7 @@ unittest{ /// Zero-width and zero-height matrix
     assert(mat.flipv == mat);
     assert(mat.fliph == mat);
     assert(mat.flipvh == mat);
-    assert(mat.slice!(0, 0, 0, 0) is mat);
+    assert(mat.sub!(0, 0, 0, 0) is mat);
     assert(mat * mat == mat);
     assert(mat * vector!int() == vector!int());
     assert(mat + 2 == mat);
@@ -1504,6 +1687,7 @@ unittest{ /// Zero-width and zero-height matrix
     assert((mat -= mat) == mat);
     assert((mat /= mat) == mat);
     assert((mat ^^= mat) == mat);
+    assert(mat.scale(1) == mat);
     assert(mat.scale(mat) == mat);
     assert(cast(Matrix!(0, 0, float)) mat == mat);
     assert(cast(Matrix4i) mat == Matrix4i.identity);
@@ -1523,8 +1707,8 @@ unittest{ /// Zero-width and non-zero-height matrix
     assert(mat.flipv == mat);
     assert(mat.fliph == mat);
     assert(mat.flipvh == mat);
-    assert(mat.slice!(0, 0, 0, 0) is Matrix!(0, 0, int).zero);
-    assert(mat.slice!(0, 0, 0, 1) is Matrix!(0, 1, int).zero);
+    assert(mat.sub!(0, 0, 0, 0) is Matrix!(0, 0, int).zero);
+    assert(mat.sub!(0, 0, 0, 1) is Matrix!(0, 1, int).zero);
     assert(mat * vector(1, 2) == vector(1, 2));
     assert(mat + 2 == mat);
     assert(mat - 2 == mat);
@@ -1545,6 +1729,7 @@ unittest{ /// Zero-width and non-zero-height matrix
     assert((mat /= mat) == mat);
     assert((mat ^^= mat) == mat);
     assert(mat.scale(mat) == mat);
+    assert(mat.scale(1) == mat);
     assert(cast(Matrix!(0, 2, float)) mat == mat);
     assert(cast(Matrix!(0, 1, int)) mat == Matrix!(0, 1, int).zero);
 }
@@ -1563,8 +1748,8 @@ unittest{ /// Zero-height and non-zero-width matrix
     assert(mat.flipv == mat);
     assert(mat.fliph == mat);
     assert(mat.flipvh == mat);
-    assert(mat.slice!(0, 0, 0, 0) is Matrix!(0, 0, int).zero);
-    assert(mat.slice!(0, 1, 0, 0) is Matrix!(1, 0, int).zero);
+    assert(mat.sub!(0, 0, 0, 0) is Matrix!(0, 0, int).zero);
+    assert(mat.sub!(0, 1, 0, 0) is Matrix!(1, 0, int).zero);
     assert(mat * vector!int() == vector!int());
     assert(mat + 2 == mat);
     assert(mat - 2 == mat);
@@ -1585,6 +1770,7 @@ unittest{ /// Zero-height and non-zero-width matrix
     assert((mat /= mat) == mat);
     assert((mat ^^= mat) == mat);
     assert(mat.scale(mat) == mat);
+    assert(mat.scale(1) == mat);
     assert(cast(Matrix!(2, 0, float)) mat == mat);
     assert(cast(Matrix!(1, 0, int)) mat == Matrix!(1, 0, int).zero);
 }
@@ -1603,7 +1789,7 @@ unittest{ /// Single-component matrix
     assert(mat.flipv == mat);
     assert(mat.fliph == mat);
     assert(mat.flipvh == mat);
-    assert(mat.slice!(0, 1, 0, 1) is mat);
+    assert(mat.sub!(0, 1, 0, 1) is mat);
     assert(cast(Matrix!(1, 1, float)) mat == mat);
     assert(cast(Matrix4i) mat == Matrix4i.Rows(
         2, 0, 0, 0,
@@ -1639,6 +1825,14 @@ unittest{ /// Component-wise binary operations with other matrixes
     assert(Matrix2i(1, 2, 3, 4).scale(Matrix2i(2, 3, 1, 0)) == Matrix2i(2, 6, 3, 0));
 }
 
+unittest{ /// Scale all components by a scalar value
+    immutable mat = Matrix2i(0, 1, 2, 3);
+    assert(mat.scale(0) == Matrix2i(0, 0, 0, 0));
+    assert(mat.scale(1) == mat);
+    assert(mat.scale(2) == Matrix2i(0, 2, 4, 6));
+    assert(mat.scale(-1) == Matrix2i(0, -1, -2, -3));
+}
+
 unittest{ /// Minor matrix
     immutable mat = Matrix3i.Rows(
         0, 1, 2,
@@ -1659,15 +1853,15 @@ unittest{ /// Slicing
         0x7, 0x8, 0x9,
         0xA, 0xB, 0xC,
     );
-    assert(mat.slice!(0, 0, 0, 0) == Matrix!(0, 0, int)());
-    assert(mat.slice!(0, 0, 0, 1) == Matrix!(0, 1, int)());
-    assert(mat.slice!(0, 1, 0, 0) == Matrix!(1, 0, int)());
-    assert(mat.slice!(0, 1, 0, 1) == matrix!(1, 1)(0x1));
-    assert(mat.slice!(0, 1, 3, 4) == matrix!(1, 1)(0xA));
-    assert(mat.slice!(2, 3, 0, 1) == matrix!(1, 1)(0x3));
-    assert(mat.slice!(2, 3, 3, 4) == matrix!(1, 1)(0xC));
-    assert(mat.slice!(0, 2, 0, 2) == matrixrows!(2, 2)(0x1, 0x2, 0x4, 0x5));
-    assert(mat.slice!(1, 3, 2, 4) == matrixrows!(2, 2)(0x8, 0x9, 0xB, 0xC));
+    assert(mat.sub!(0, 0, 0, 0) == Matrix!(0, 0, int)());
+    assert(mat.sub!(0, 0, 0, 1) == Matrix!(0, 1, int)());
+    assert(mat.sub!(0, 1, 0, 0) == Matrix!(1, 0, int)());
+    assert(mat.sub!(0, 1, 0, 1) == matrix!(1, 1)(0x1));
+    assert(mat.sub!(0, 1, 3, 4) == matrix!(1, 1)(0xA));
+    assert(mat.sub!(2, 3, 0, 1) == matrix!(1, 1)(0x3));
+    assert(mat.sub!(2, 3, 3, 4) == matrix!(1, 1)(0xC));
+    assert(mat.sub!(0, 2, 0, 2) == matrixrows!(2, 2)(0x1, 0x2, 0x4, 0x5));
+    assert(mat.sub!(1, 3, 2, 4) == matrixrows!(2, 2)(0x8, 0x9, 0xB, 0xC));
 }
 
 unittest{ /// Indexing
@@ -1895,13 +2089,13 @@ unittest{ /// Multiply matrix by vector
     assert(a * b == a * matrix(b));
 }
 
-unittest{ /// Rotation matrixes
+unittest{ /// Rotation, position, and scaling matrices
     // TODO
 }
 
-unittest{ /// OpenGL orthographic matrix
+unittest{ /// Orthographic matrix
     // TODO: More thorough testing
-    assert(Matrix4f.glortho(0, 800, 0, 600).equals(
+    assert(Matrix4f.ortho(0, 800, 0, 600).equals(
         Matrix4f.Rows(
             0.0025, 0, 0, -1,
             0, -0.0033, 0, 1,
@@ -1911,6 +2105,6 @@ unittest{ /// OpenGL orthographic matrix
     ));
 }
 
-unittest{ /// OpenGL perspective matrix
+unittest{ /// Perspective matrix
     // TODO
 }
